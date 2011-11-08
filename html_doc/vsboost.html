@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Pyd vs. Boost.Python</title>
+</head>
+
+<body>
+<div id="nav">
+<p><big>Contents</big></p>
+<ul>
+<li><a class="nav" href="index.html">Main</a></li>
+<li><a class="nav" href="install.html">Installation</a></li>
+<li><a class="nav" href="basics.html">The basics</a></li>
+<li><a class="nav" href="celerid.html">CeleriD</a></li>
+<li><a class="nav" href="conversion.html">Type conversion</a></li>
+<li><a class="nav" href="adv_conversion.html">Advanced type conversion</a></li>
+<li><a class="nav" href="func_wrapping.html">Function wrapping</a></li>
+<li><a class="nav" href="class_wrapping.html">Class wrapping</a></li>
+<li><a class="nav" href="inherit.html">Inheritance</a></li>
+<li><a class="nav" href="struct_wrapping.html">Struct wrapping</a></li>
+<li><a class="nav" href="except_wrapping.html">Exception wrapping</a></li>
+<li><a class="nav" href="pydobject.html">PydObject</a></li>
+<li><a class="navcur" href="vsboost.html">vs. Boost.Python</a></li>
+<li><a class="nav" href="credits.html">Credits</a></li>
+</ul>
+</div>
+
+<div id="content">
+
+<h1>Pyd vs. Boost.Python</h1>
+
+<p><i>(This page is still being filled out, mostly because I am still adding features to Pyd. I am open to suggestions for additions to this page.)</i></p>
+
+<p><a href="http://www.boost.org/libs/python/doc/">Boost.Python</a> is a C++ library which fills much the same role that Pyd does for D. The two libraries are far from identical, however. Pyd has a number of advantages over Boost.Python, and Boost.Python has a few features that Pyd lacks. Here are some of the differences.</p>
+
+<h3><u>Advantages of Pyd</u></h3>
+
+<p><b>Pyd builds faster than Boost.Python.</b> C++, especially when using the Boost libraries, is notorious for long compilation times (sometimes in the range of hours). D, on the other hand, is gaining a reputation for very fast compilation times. Pyd builds extremely quickly (usually in mere seconds).</p>
+
+<p><b>Pyd runs faster than Boost.Python.</b> I have yet to directly compare the runtime performance of Pyd and Boost.Python, but Pyd manages to do most of the work involved with exposing functions at compile-time. I am confident that Pyd has a reduced runtime overhead compared to Boost.Python.</p>
+
+<p><b>Pyd directly supports default arguments.</b> Pyd operates on function aliases rather than function pointers. Therefore, it can call a function and take advantage of its default arguments directly, without generating a set of wrapper functions like Boost.Python has to.</p>
+
+<p><b>Pyd can do more automatically than Boost.Python can.</b> Pyd can automatically derive the names of functions and classes, can automatically detect how many default arguments a function has, and can automatically wrap all of the operator overloads in a class.</p>
+
+<h3><u>Advantages of Boost.Python</u></h3>
+
+<p><b>Boost.Python supports function overloading better than Pyd.</b> You can wrap multiple C++ functions under the same name with Boost.Python. Pyd does not support this, as it operates on a slightly lower level than Boost.Python. (Python does not directly support this, so Pyd doesn't, either.) Pyd must expose different function overloads as different Python functions, with different names.</p>
+
+<p><b>Pyd cannot support default member function arguments.</b> This is a limitation of D. D does not directly support pointers-to-member-functions, preferring the more general concept of delegates. This means that there is no way to directly call an alias of a member function in D.</p>
+
+</div>
+
+</body>
+</html>

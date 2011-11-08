@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Inheritance</title>
+</head>
+
+<body>
+%(nav)s
+<div id="content">
+
+<h1>Inheritance</h1>
+
+<p>If you wrap both a class and a child of that class, Pyd is smart enough to make the resulting Python classes have a parent-child relationship. Any methods of the parent class will automatically be available to the child class. If the child class overloads any of those methods, it is important that the user wrap them in the module's init function. For example:</p>
+
+<pre class="code"><span class="keyword">import</span> std.stdio;
+
+<span class="keyword">class</span> Base {
+    <span class="keyword">void</span> foo() { writefln(<span class="string">"Base.foo"</span>); }
+    <span class="keyword">void</span> bar() { writefln(<span class="string">"Base.bar"</span>); }
+}
+
+<span class="keyword">class</span> Derived : Base {
+    <span class="keyword">void</span> foo() { writefln(<span class="string">"Derived.foo"</span>); }
+}</pre>
+
+<p>These would be exposed to Python by putting this code in <code>PydMain</code> after the call to <code>module_init</code>:</p>
+
+<pre class="code">wrap_class!(
+    Base,
+    Def!(Base.foo),
+    Def!(Base.bar),
+);
+
+wrap_class!(
+    Derived,
+    Def!(Derived.foo),
+);</pre>
+
+<p>When used in Python, we get the expected behavior:</p>
+
+<pre class="code">&gt;&gt;&gt; issubclass(Derived, Base)
+True
+&gt;&gt;&gt; b = Base()
+&gt;&gt;&gt; d = Derived()
+&gt;&gt;&gt; b.foo()
+Base.foo
+&gt;&gt;&gt; b.bar()
+Base.bar
+&gt;&gt;&gt; d.foo()
+Derived.foo
+&gt;&gt;&gt; d.bar()
+Base.bar</pre>
+
+<p>Polymorphic behavior is also automatically taken care of. Take a function like the following:</p>
+
+<pre class="code"><span class="keyword">void</span> polymorphic_call(Base b) {
+    b.foo();
+}</pre>
+
+<p>And in Python:</p>
+
+<pre class="code">&gt;&gt;&gt; <span class="keyword">class</span> PyClass(Base):
+... 	<span class="keyword">def</span> foo(self):
+... 		<span class="keyword">print</span> <span class="string">"PyClass.foo"</span>
+... 
+&gt;&gt;&gt; p = PyClass()
+&gt;&gt;&gt; polymorphic_call(p)
+PyClass.foo</pre>
+
+<p><i>(TODO: Add support for interfaces and abstract classes.)</i></p>
+
+</div>
+
+</body>
+</html>
+

@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+  <title>Pyd: Connecting D and Python</title>
+  <meta http-equiv="content-type" content="text/html; charset=None">
+  <link rel="stylesheet" href="presentation.css" type="text/css">
+  <link rel="stylesheet" href="pygments.css" type="text/css">
+</head>
+<body>
+<br /><br />
+<center><h1>Pyd</h1>
+<h3>Connecting D and Python</h3>
+<h4><i>http://pyd.dsource.org/</i></h4></center>
+<br /><br />
+
+<hr />
+
+<h3>Simple Example</h3>
+
+<div class="highlight"><pre><span class="k">import</span> <span class="n">pyd</span>.<span class="n">pyd</span>;
+<span class="k">import</span> <span class="n">std</span>.<span class="n">stdio</span>;
+
+<span class="kt">void</span> <span class="n">hello</span>() {
+    <span class="n">writefln</span>(<span class="s">&quot;Hello, world!&quot;</span>);
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">hello</span>);
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<p>And in Python:</p>
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">hello</span><span class="p">()</span>
+<span class="go">Hello, world!</span>
+</pre></div>
+
+
+<hr />
+
+<h3>Compiling Pyd</h3>
+
+<p>Pyd extends distutils:</p>
+
+<div class="highlight"><pre><span class="c"># setup.py</span>
+<span class="k">from</span> <span class="nn">celerid.support</span><span class="err"> \</span>
+    <span class="k">import</span> <span class="n">setup</span><span class="p">,</span> <span class="n">Extension</span>
+
+<span class="n">setup</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">,</span>
+    <span class="n">ext_modules</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Extension</span><span class="p">(</span>
+            <span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;foo.d&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+
+
+<p>Compiling is as easy as:</p>
+
+<div class="highlight"><pre>python setup.py build
+</pre></div>
+
+
+<hr />
+
+<h3>Functions</h3>
+
+<p>Exposing simple functions to Python is simple:</p>
+
+<div class="highlight"><pre><span class="kt">int</span> <span class="n">func</span>(<span class="kt">int</span> <span class="n">i</span>) {
+    <span class="k">return</span> <span class="n">i</span> * <span class="mi">2</span>;
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">func</span>);
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">func</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">20</span>
+</pre></div>
+
+
+<p>More complicated functions are still simple:</p>
+
+<div class="highlight"><pre><span class="kt">int</span> <span class="n">func2</span>(<span class="kt">int</span> <span class="n">i</span>, <span class="kt">int</span> <span class="n">j</span>=<span class="mi">2</span>) {
+    <span class="k">return</span> <span class="n">i</span> * <span class="n">j</span>;
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">func2</span>);
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<p>This works as expected:</p>
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">func2</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">func2</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">6</span>
+</pre></div>
+
+
+<p>We can also wrap overloaded functions:</p>
+
+<div class="highlight"><pre><span class="kt">void</span> <span class="n">func3</span>(<span class="kt">double</span> <span class="n">d</span>) {}
+<span class="kt">void</span> <span class="n">func3</span>(<span class="kt">int</span> <span class="n">i</span>) {}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">func3</span>, <span class="s">&quot;func3a&quot;</span>,
+        <span class="kt">void</span> <span class="k">function</span>(<span class="kt">double</span>));
+    <span class="n">def</span>!(<span class="n">func3</span>, <span class="s">&quot;func3b&quot;</span>,
+        <span class="kt">void</span> <span class="k">function</span>(<span class="kt">int</span>));
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<div class="highlight"><pre>&gt;&gt;&gt; <span class="n">func3a</span>(<span class="mf">2.0</span>)
+&gt;&gt;&gt; <span class="n">func3b</span>(<span class="mi">5</span>)
+</pre></div>
+
+
+<hr />
+
+<h3>PydObject</h3>
+
+<p>We can handle any arbitrary Python object as a PydObject:</p>
+
+<div class="highlight"><pre><span class="n">PydObject</span> <span class="n">add</span>(<span class="n">PydObject</span> <span class="n">a</span>, <span class="n">PydObject</span> <span class="n">b</span>) {
+    <span class="k">return</span> <span class="n">a</span> + <span class="n">b</span>;
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">add</span>);
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="go">30</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="s">&#39;def&#39;</span><span class="p">)</span>
+<span class="go">&#39;abcdef&#39;</span>
+</pre></div>
+
+
+<hr />
+
+<h3>Exceptions</h3>
+
+<p>Exceptions are safely handled:</p>
+
+<div class="highlight"><pre><span class="kt">void</span> <span class="n">throw_something</span>() {
+    <span class="k">throw</span> <span class="k">new</span> <span class="n">Exception</span>(<span class="s">&quot;Boo!&quot;</span>);
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">throw_something</span>);
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">throw_something</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n-Identifier">&lt;module&gt;</span>
+<span class="nc">RuntimeError: D Exception: object.Exception</span>: <span class="n-Identifier">Boo!</span>
+</pre></div>
+
+
+<p>Exceptions caused by PydObject are handled, too:</p>
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;twelve&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n-Identifier">&lt;module&gt;</span>
+<span class="nc">TypeError: unsupported operand type(s) for +</span>: <span class="n-Identifier">&#39;int&#39; and &#39;str&#39;</span>
+</pre></div>
+
+
+<hr />
+
+<h3>Manual conversion</h3>
+
+<div class="highlight"><pre><span class="k">struct</span> <span class="n">S</span> {
+    <span class="kt">int</span> <span class="n">i</span>;
+}
+
+<span class="n">S</span> <span class="n">func1</span>() {
+    <span class="n">S</span> <span class="n">s</span>;
+    <span class="n">s</span>.<span class="n">i</span> = <span class="mi">50</span>;
+    <span class="k">return</span> <span class="n">s</span>;
+}
+
+<span class="kt">void</span> <span class="n">func2</span>(<span class="n">S</span> <span class="n">s</span>) {
+    <span class="n">writefln</span>(<span class="n">s</span>.<span class="n">i</span>);
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">d_to_python</span>(<span class="k">delegate</span> <span class="kt">int</span>(<span class="n">S</span> <span class="n">s</span>) {
+        <span class="k">return</span> <span class="n">s</span>.<span class="n">i</span>;
+    });
+    <span class="n">python_to_d</span>(<span class="k">delegate</span> <span class="n">S</span>(<span class="kt">int</span> <span class="n">i</span>) {
+        <span class="n">S</span> <span class="n">s</span>;
+        <span class="n">s</span>.<span class="n">i</span> = <span class="n">i</span>;
+        <span class="k">return</span> <span class="n">s</span>;
+    });
+    <span class="n">def</span>!(<span class="n">func1</span>);
+    <span class="n">def</span>!(<span class="n">func2</span>);
+    <span class="n">module_init</span>();
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">func1</span><span class="p">()</span>
+<span class="go">50</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">func2</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">20</span>
+</pre></div>
+
+
+<hr />
+
+<h3>Classes</h3>
+
+<p>A Simple Example</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="n">Foo</span> {
+    <span class="kt">void</span> <span class="n">bar</span>() {}
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">module_init</span>();
+    <span class="n">wrap_class</span>!(
+        <span class="n">Foo</span>,
+        <span class="n">Def</span>!(<span class="n">Foo</span>.<span class="n">bar</span>)
+    );
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">bar</span><span class="p">()</span>
+</pre></div>
+
+
+<p>Functions can use wrapped classes:</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="n">Foo</span> {}
+
+<span class="kt">void</span> <span class="n">func1</span>(<span class="n">Foo</span> <span class="n">f</span>) {}
+<span class="n">Foo</span> <span class="n">func2</span>() { <span class="k">return</span> <span class="k">new</span> <span class="n">Foo</span>; }
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">def</span>!(<span class="n">func1</span>);
+    <span class="n">def</span>!(<span class="n">func2</span>);
+    <span class="n">module_init</span>();
+    <span class="n">wrap_class</span>!(<span class="n">Foo</span>);
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">func1</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">func2</span><span class="p">()</span>
+</pre></div>
+
+
+<p>Returned objects keep their identity:
+
+<div class="highlight"><pre><span class="n">Foo</span> <span class="n">bar</span>() {
+    <span class="k">static</span> <span class="n">Foo</span> <span class="n">f</span>;
+    <span class="k">if</span> (!<span class="n">f</span>) { <span class="n">f</span> = <span class="k">new</span> <span class="n">Foo</span>; }
+    <span class="k">return</span> <span class="n">f</span>;
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">bar</span><span class="p">();</span> <span class="n">b</span> <span class="o">=</span> <span class="n">bar</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+</pre></div>
+
+
+<p>Inherited methods are wrapped automatically:</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="n">Base</span> {
+    <span class="kt">void</span> <span class="n">foo</span>() {
+        <span class="n">writefln</span>(<span class="s">&quot;Base.foo&quot;</span>);
+    }
+}
+
+<span class="k">class</span> <span class="n">Derived</span> : <span class="n">Base</span> {}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">module_init</span>();
+    <span class="n">wrap_class</span>!(
+        <span class="n">Base</span>,
+        <span class="n">Def</span>!(<span class="n">Base</span>.<span class="n">foo</span>)
+    );
+    <span class="n">wrap_class</span>!(<span class="n">Derived</span>);
+}
+</pre></div>
+
+
+<p>This works as expected in Python:</p>
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">Derived</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">foo</span><span class="p">()</span>
+<span class="go">Base.foo</span>
+</pre></div>
+
+
+<p>Returned objects always keep their real type:</p>
+
+<div class="highlight"><pre><span class="n">Base</span> <span class="n">foo</span>() {
+    <span class="k">return</span> <span class="k">new</span> <span class="n">Derived</span>;
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">o</span> <span class="o">=</span> <span class="n">foo</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+<span class="go">&lt;type &#39;test.Derived&#39;&gt;</span>
+</pre></div>
+
+
+<p>Operator overloads are wrapped automatically:</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="n">Foo</span> {
+    <span class="kt">int</span> <span class="n">a</span>;
+    <span class="k">this</span>(<span class="kt">int</span> <span class="n">a</span>) { <span class="k">this</span>.<span class="n">a</span> = <span class="n">a</span>; }
+    <span class="kt">int</span> <span class="n">opAdd</span>(<span class="n">Foo</span> <span class="n">f</span>) {
+        <span class="k">return</span> <span class="k">this</span>.<span class="n">a</span> + <span class="n">f</span>.<span class="n">a</span>;
+    }
+}
+
+<span class="k">extern</span>(<span class="n">C</span>) <span class="kt">void</span> <span class="n">PydMain</span>() {
+    <span class="n">module_init</span>();
+    <span class="n">wrap_class</span>!(
+        <span class="n">Foo</span>,
+        <span class="n">Init</span>!(<span class="kt">void</span> <span class="k">function</span>(<span class="kt">int</span>))
+    );
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Foo</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Foo</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+
+
+<p>You can even subclass D classes in Python.</p>
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">PyDerived</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">print</span> <span class="s">&quot;PyDerived.foo&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o</span> <span class="o">=</span> <span class="n">PyDerived</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o</span><span class="o">.</span><span class="n">foo</span><span class="p">()</span>
+<span class="go">PyDerived.foo</span>
+</pre></div>
+
+
+<p>And they can be passed back to D:<p>
+
+<div class="highlight"><pre><span class="kt">void</span> <span class="n">polymorphic_call</span>(<span class="n">Base</span> <span class="n">b</span>) {
+    <span class="n">b</span>.<span class="n">foo</span>();
+}
+</pre></div>
+
+
+<div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">polymorphic_call</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+<span class="go">PyDerived.foo</span>
+</pre></div>
+
+
+</body>
+</html>

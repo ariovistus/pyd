@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Advanced type conversion</title>
+</head>
+
+<body>
+<div id="nav">
+<p><big>Contents</big></p>
+<ul>
+<li><a class="nav" href="index.html">Main</a></li>
+<li><a class="nav" href="install.html">Installation</a></li>
+<li><a class="nav" href="basics.html">The basics</a></li>
+<li><a class="nav" href="celerid.html">CeleriD</a></li>
+<li><a class="nav" href="conversion.html">Type conversion</a></li>
+<li><a class="navcur" href="adv_conversion.html">Advanced type conversion</a></li>
+<li><a class="nav" href="func_wrapping.html">Function wrapping</a></li>
+<li><a class="nav" href="class_wrapping.html">Class wrapping</a></li>
+<li><a class="nav" href="inherit.html">Inheritance</a></li>
+<li><a class="nav" href="struct_wrapping.html">Struct wrapping</a></li>
+<li><a class="nav" href="except_wrapping.html">Exception wrapping</a></li>
+<li><a class="nav" href="pydobject.html">PydObject</a></li>
+<li><a class="nav" href="vsboost.html">vs. Boost.Python</a></li>
+<li><a class="nav" href="credits.html">Credits</a></li>
+</ul>
+</div>
+
+<div id="content">
+
+<h1>Advanced type conversion</h1>
+
+<p>It is frequently useful to extend Pyd's type conversion mechanisms. The usual way to do this is to wrap classes or structs. Pyd has two additional mechanisms for more complex situations.</p>
+
+<dl>
+<dt><code>void d_to_python(<span class="t_arg">dg_t</span>) (<span class="t_arg">dg_t</span> <span class="arg">dg</span>);</code></dt>
+<dd>This allows the user to define a function for returning a D type to Python. The <span class="arg">dg</span> may be either a function pointer or a delegate. The argument to the function pointer is of the type to convert. The return type of the function pointer can be any convertible type.</dd>
+
+<dt><code>void python_to_d(<span class="t_arg">dg_t</span>) (<span class="t_arg">dg_t</span> <span class="arg">dg</span>);</code></dt>
+<dd>This allows the user to define a function for converting a Python object to a D type. The <span class="arg">dg</span> may be either a function pointer or a delegate. The argument to the function pointer can be any convertible type. The return type of the function pointer is the type to convert.</dd>
+</dl>
+
+<p>Conversion functions defined with either of the above functions only take effect if Pyd's regular type conversion mechanisms fail. This would usually happen if a wrapped function returns or has a parameter of some un-wrapped class or struct type.</p>
+
+<h3><a class="anchor" name="examples">Examples</a></h3>
+
+<pre class="code"><span class="keyword">import</span> std.stdio;
+
+<span class="keyword">struct</span> S {
+    <span class="keyword">int</span> i;
+}
+
+S foo() {
+    S s;
+    s.i = <span class="number">12</span>;
+}
+<span class="keyword">void</span> bar(S s) {
+    writefln(s);
+}
+
+<span class="keyword">extern</span> (C) <span class="keyword">void</span> PydMain() {
+    d_to_python(<span class="keyword">delegate int</span>(S s) { <span class="keyword">return</span> s.i; });
+    python_to_d(<span class="keyword">delegate</span> S(<span class="keyword">int</span> i) { S s; s.i = i; <span class="keyword">return</span> s; });
+
+    def!(foo);
+    def!(bar);
+    module_init();
+}</pre>
+
+<p>And in Python:</p>
+
+<pre class="code">&gt;&gt;&gt; foo()
+12
+&gt;&gt;&gt; bar(<span class="number">20</span>)
+20</pre>
+
+</div>
+
+</body>
+</html>

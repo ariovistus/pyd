@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>CeleriD: Building Python Extensions With D</title>
+</head>
+
+<body>
+<div id="nav">
+<p><big>Contents</big></p>
+<ul>
+<li><a class="nav" href="index.html">Main</a></li>
+<li><a class="nav" href="install.html">Installation</a></li>
+<li><a class="nav" href="basics.html">The basics</a></li>
+<li><a class="navcur" href="celerid.html">CeleriD</a></li>
+<li><a class="nav" href="conversion.html">Type conversion</a></li>
+<li><a class="nav" href="adv_conversion.html">Advanced type conversion</a></li>
+<li><a class="nav" href="func_wrapping.html">Function wrapping</a></li>
+<li><a class="nav" href="class_wrapping.html">Class wrapping</a></li>
+<li><a class="nav" href="inherit.html">Inheritance</a></li>
+<li><a class="nav" href="struct_wrapping.html">Struct wrapping</a></li>
+<li><a class="nav" href="except_wrapping.html">Exception wrapping</a></li>
+<li><a class="nav" href="pydobject.html">PydObject</a></li>
+<li><a class="nav" href="vsboost.html">vs. Boost.Python</a></li>
+<li><a class="nav" href="credits.html">Credits</a></li>
+</ul>
+</div>
+
+<div id="content">
+
+<h1>CeleriD</h1>
+
+<p>CeleriD is an extension to Python's <a href="http://docs.python.org/dist/dist.html">distutils</a>, originally written by David Rushby. It extends distutils to know about the DMD compiler (on Windows) and the GDC compiler (on Linux). The following trivial example setup.py file is enough to compile a simple one-file extension module:</p>
+
+<pre class="code"><span class="comment"># Import from celerid instead of distutils</span>
+<span class="keyword">from</span> celerid.support <span class="keyword">import</span> setup, Extension
+
+project = '<span class="string">testdll</span>'
+
+setup(
+    name=project,
+    ext_modules=[
+        Extension(project, [project + '<span class="string">.d</span>'])
+    ],
+)</pre>
+
+<p>Compiling the module is a simple matter of running this:</p>
+
+<pre class="code">&gt;python setup.py build</pre>
+
+<p>The Python module <code>celerid.support</code>, when imported, hot-patches distutils to know about the D compiler. It also provides the following:</p>
+
+<dl>
+<dt><code>setup</code></dt> <dd>This is simply an alias of <code>distutils.core.setup</code>, included here so you only have to import <code>celerid.support</code> in your setup.py module.</dd>
+
+<dt><code>Extension</code></dt> <dd>This is a subclass of <code>distutils.core.Extension</code>. It supports all of the arguments of the base class, with the exception of <code>define_macros</code> and <code>undef_macros</code>. D does not have a preprocessor, so an exception will be raised if you attempt to use either of these options. This class also supports these additional arguments beyond the base class:
+    <dl>
+    <dt><code>version_flags</code></dt> <dd>This should be a list of strings, which will be passed to the D compiler as version flags.</dd>
+    <dt><code>debug_flags</code></dt> <dd>Similar to <code>version_flags</code>, the strings in this list will be passed to D as debug flags.</dd>
+    <dt><code>raw_only</code></dt> <dd>This flag defaults to <code>False</code>. When <code>True</code>, it supresses the compilation and linkage of Pyd, StackThreads, and meta. This is useful if you only want to write a raw Python/C extension without the overhead of Pyd and its auxiliary packages. This is equivalent to specifying <code>False</code> to the next four flags.</dd>
+    <dt><code>with_pyd</code></dt> <dd>This flag defaults to <code>True</code>. When <code>False</code>, it supresses the compilation and linkage of Pyd. This is useful if you want to write a raw Python/C extension and don't want the overhead of compiling Pyd.</dd>
+    <dt><code>with_st</code></dt> <dd>This flag defaults to <code>True</code>. When <code>False</code>, it supresses the compilation and linkage of StackThreads. Pyd uses StackThreads for its iteration wrapping support. By setting this to <code>False</code>, opApply wrapping, <code>Iter</code>, and <code>AltIter</code> will be unavailable. If <code>with_pyd</code> and this are <code>True</code>, then the <code>Pyd_with_StackThreads</code> version flag will be defined (which is used internally by Pyd). <b>Important note:</b> StackThreads does not currently work with GDC! CeleriD will always set this flag to <code>False</code> when using GDC! This means that opApply wrapping is not available on Linux at this time.</dd>
+    <dt><code>with_meta</code></dt> <dd>This flag defaults to <code>True</code>. When <code>False</code>, it supresses the compilation and linkage of <code>meta</code> (Pyd's metaprogramming package). Because Pyd depends on meta, an exception will be raised if <code>with_pyd</code> is <code>True</code> and this is not.</dd>
+    <dt><code>with_main</code></dt> <dd>This flag defaults to <code>True</code>. When <code>False</code>, it supresses the use of the "magic" <code>PydMain</code> function. (Instead, users must manually declare a C-style <code>init</code> function.) Do not use this unless you know what you are doing. If <code>with_pyd</code> is <code>False</code>, this will silently be set to <code>False</code> as well. <code>PydMain</code> can only be used if Pyd itself is in use.</dd>
+    </dl>
+</dd>
+</dl>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Wrapping functions</title>
+</head>
+
+<body>
+%(nav)s
+<div id="content">
+
+<h1>Function wrapping</h1>
+
+<p>Exposing D functions to Python is easy! The heart of Pyd's function wrapping features is the <code>def</code> template function:</p>
+
+<p><code>void def(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">fn_t</span> = typeof(&amp;fn), uint <span class="t_arg">MIN_ARGS</span> = minArgs!(fn)) (char[] <span class="arg">docstring</span>="");</code></p>
+    <ul>
+    <li><span class="t_arg">fn</span> is the function to wrap. Note that this is an alias parameter. <code>def</code> is only capable of wrapping full-fledged functions, not function pointers, function literals, or delegates.</li>
+    <li><span class="t_arg">name</span> is the name the function will have inside of Python. Usually, you don't have to specify this. (Special thanks to Don Clugston's Nameof module.)</li>
+    <li><span class="t_arg">fn_t</span> is the function type of the function. Typically, you won't have to specify this. It is used to wrap overloaded functions. (See below.)</li>
+    <li><span class="t_arg">MIN_ARGS</span> is the minimum number of arguments this function can accept. It is used when a function has default arguments. The <code>minArgs</code> template can derive the correct number automatically, so you typically won't specify this manually.</li>
+    <li><span class="arg">docstring</span> is the function's docstring. Note that this is a regular function argument!</li>
+    </ul>
+
+<p>All calls to <code>def</code> must occur <em>before</em> calling <code>module_init</code>. Any function whose return type and arguments are <a href="conversion.html">convertible</a> can be wrapped by <code>def</code>. <code>def</code> can only wrap functions with <code>in</code> arguments (not <code>out</code> or <code>inout</code> or <code>lazy</code>). <code>def</code> also provides support for wrapping overloaded functions as well as functions with default arguments. Here are some examples:</p>
+
+<pre class="code"><span class="keyword">import</span> pyd.pyd;
+<span class="keyword">import</span> std.stdio;
+
+<span class="keyword">void</span> foo(<span class="keyword">int</span> i) {
+    writefln(<span class="string">"You entered "</span>, i);
+}
+
+<span class="keyword">void</span> bar(<span class="keyword">int</span> i) {
+    writefln(<span class="string">"bar: i = "</span>, i);
+}
+
+<span class="keyword">void</span> bar(<span class="keyword">char</span>[] s) {
+    writefln(<span class="string">"bar: s = "</span>, s);
+}
+
+<span class="keyword">void</span> baz(<span class="keyword">int</span> i=<span class="number">10</span>, <span class="keyword">char</span>[] s=<span class="string">"moo"</span>) {
+    writefln(<span class="string">"i = %%s\ns = %%s"</span>, i, s);
+}
+
+<span class="keyword">extern</span> (C) <span class="keyword">void</span> PydMain() {
+    <span class="comment">// Plain old function</span>
+    def!(foo);
+    <span class="comment">// Wraps the lexically first function under the given name</span>
+    def!(bar, <span class="string">"bar1"</span>);
+    <span class="comment">// Wraps the function of the specified type</span>
+    def!(bar, <span class="string">"bar2"</span>, <span class="keyword">void function</span>(<span class="keyword">char</span>[]));
+    <span class="comment">// Wraps the function with default arguments</span>
+    def!(baz);
+
+    module_init();
+}</pre>
+
+<p>And when used in Python:</p>
+
+<pre class="code">&gt;&gt;&gt; import testmodule
+&gt;&gt;&gt; testmodule.foo(10)
+You entered 10
+&gt;&gt;&gt; testmodule.bar1(20)
+bar: i = 20
+&gt;&gt;&gt; testmodule.bar2("monkey")
+bar: s = monkey
+&gt;&gt;&gt; testmodule.baz()
+i = 10
+s = moo
+&gt;&gt;&gt; testmodule.baz(3)
+i = 3
+s = moo
+&gt;&gt;&gt; testmodule.baz(4, "apple")
+i = 4
+s = apple</pre>
+
+</div>
+
+</body>
+</html>

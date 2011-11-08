@@ -1,0 +1,77 @@
+public
+template ArgTypes(Tr) {
+    TypeInfo[] ArgTypes(Tr function() fn) {
+        return arrayOf!(TypeInfo)();
+    }
+}
+
+public
+template ArgTypes(Tr, A0) {
+    TypeInfo[] ArgTypes(Tr function(A0) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3, A4) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3, A4) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3), typeid(A4));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3, A4, A5) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3, A4, A5) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3), typeid(A4), typeid(A5));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3, A4, A5, A6) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3, A4, A5, A6) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3), typeid(A4), typeid(A5), typeid(A6));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3, A4, A5, A6, A7) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3, A4, A5, A6, A7) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3), typeid(A4), typeid(A5), typeid(A6), typeid(A7));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3, A4, A5, A6, A7, A8) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3, A4, A5, A6, A7, A8) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3), typeid(A4), typeid(A5), typeid(A6), typeid(A7), typeid(A8));
+    }
+}
+
+public
+template ArgTypes(Tr, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) {
+    TypeInfo[] ArgTypes(Tr function(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) fn) {
+        return arrayOf!(TypeInfo)(typeid(A0), typeid(A1), typeid(A2), typeid(A3), typeid(A4), typeid(A5), typeid(A6), typeid(A7), typeid(A8), typeid(A9));
+    }
+}
+

@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Wrapping structs</title>
+</head>
+
+<body>
+<div id="nav">
+<p><big>Contents</big></p>
+<ul>
+<li><a class="nav" href="index.html">Main</a></li>
+<li><a class="nav" href="install.html">Installation</a></li>
+<li><a class="nav" href="basics.html">The basics</a></li>
+<li><a class="nav" href="celerid.html">CeleriD</a></li>
+<li><a class="nav" href="conversion.html">Type conversion</a></li>
+<li><a class="nav" href="adv_conversion.html">Advanced type conversion</a></li>
+<li><a class="nav" href="func_wrapping.html">Function wrapping</a></li>
+<li><a class="nav" href="class_wrapping.html">Class wrapping</a></li>
+<li><a class="nav" href="inherit.html">Inheritance</a></li>
+<li><a class="navcur" href="struct_wrapping.html">Struct wrapping</a></li>
+<li><a class="nav" href="except_wrapping.html">Exception wrapping</a></li>
+<li><a class="nav" href="pydobject.html">PydObject</a></li>
+<li><a class="nav" href="vsboost.html">vs. Boost.Python</a></li>
+<li><a class="nav" href="credits.html">Credits</a></li>
+</ul>
+</div>
+
+<div id="content">
+
+<h1>Struct wrapping</h1>
+
+<p>Wrapping D's structs is similar to wrapping classes. In fact, many of the operations are identical.</p>
+
+<p><code>void wrap_struct(<span class="t_arg">T</span>, char[] <span class="t_arg">structname</span> = symbolnameof!(T), <span class="t_arg">Params</span>...) ();</code></p>
+    <ul>
+    <li><span class="t_arg">T</span> is the struct being wrapped.</li>
+    <li><span class="t_arg">structname</span> is the name of the struct as it will appear in Python.</li>
+    <li><span class="t_arg">Params</span> is a series of struct types (defined below), which define the various members of the struct.</li>
+    </ul>
+
+<p>As with calls to <a href="class_wrapping.html"><code>wrap_class</code></a>, calls to <code>wrap_struct</code> must occur <em>after</em> calling <code>module_init</code>.</p>
+
+<p>To expose the data members, member functions, and properties of the struct, you must pass a series of struct template instantiations to <code>wrap_struct</code>.</p>
+
+<dl>
+<dt><code>struct Member(char[] <span class="t_arg">realname</span>, char[] <span class="t_arg">name</span>=realname);</code></dt>
+<dd>This exposes a data member of the struct to Python. The member must be a <a href="conversion.html">convertible type</a>. The <span class="t_arg">realname</span> is the member's actual name. <span class="t_arg">name</span> is the name of the data member as it will be used in Python. This defaults to <span class="t_arg">realname</span>.</dd>
+
+<dt><code>struct Def(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">fn_t</span> = typeof(&amp;fn));</code></dt>
+<dd>This wraps a member function of the struct. It is in fact exactly the same <code>Def</code> struct template used to <a href="class_wrapping.html">wrap class methods</a>, including the lack of support for default arguments.</dd>
+
+<dt><code>struct StaticDef(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">fn_t</span> = typeof(&amp;fn), uint <span class="t_arg">MIN_ARGS</span> = minArgs!(fn));</code></dt>
+<dd>This wraps a static member function of the struct. It is the same <code>StaticDef</code> struct template used to wrap static class member functions, and also includes support for default arguments.</dd>
+
+<dt><code>struct Property(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), bool <span class="t_arg">RO</span> = false);</code></dt>
+<dd>This wraps a property. It is the same <code>Property</code> struct template used to <a href="class_wrapping.html">wrap class properties</a>.</dd>
+
+<dt><code>struct Repr(alias <span class="t_arg">fn</span>);</code></dt>
+<dd>This allows you to expose a member function of the struct as the Python type's <code>__repr__</code> function. The member function must have the signature <code>char[] function()</code>. It is the same <code>Repr</code> struct template used when <a href="class_wrapping.html">wrapping classes</a>.</dd>
+
+<dt><code>struct Iter(<span class="t_arg">iter_t</span>);</code></dt>
+<dd>This allows the user to specify a different overload of opApply than the default. (The default is always the one that is lexically first.) It is the same <code>Iter</code> struct template used in <a href="class_wrapping.html">class wrapping</a>.</dd>
+
+<dt><code>struct AltIter(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">iter_t</span> = <i>implementationDetail</i>);</code></dt>
+<dd>This wraps alternate iterator methods as Python methods that return iterator objects. It is the same <code>AltIter</code> struct template used in <a href="class_wrapping.html">class wrapping</a>.</dd>
+</dl>
+
+<!--<p><i>(Future enhancements: Support for struct ctors.)</i></p>-->
+
+<p>The <code>is_wrapped</code> template is available for wrapped structs, just like it is for wrapped classes.</p>
+
+<p>It is important to note that wrapping a struct <code>S</code> makes both <code>S</code> itself and <code>S*</code> available as <a href="conversion.html">convertible types</a>.</p>
+
+<h3><a class="anchor" name="opwrap">Automatic operator overloading</a></h3>
+
+<p>Support for operator overloading in structs is identical to that available for classes.</p>
+
+<h3><a class="anchor" name="inherit">Inheritance</a></h3>
+
+<p>D does not support struct inheritance. Therefore, Pyd does not provide any support for struct inheritance. However, the Python type wrapping the D struct can be subclassed from within Python. Users should not expect polymorphic behavior if they attempt to pass instances of any subclasses back to D.</p>
+
+<h3><a class="anchor" name="examples">Examples</a></h3>
+
+<p><i>(Todo.)</i></p>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Installing Pyd</title>
+</head>
+
+<body>
+%(nav)s
+<div id="content">
+<h1>Installing Pyd</h1>
+
+<h3>Requirements</h3>
+
+<p>Pyd requires Python 2.4 or newer and the latest version of DMD (on Windows) or GDC (on Linux). At the time of this writing, those versions are DMD 1.00 and GDC 0.21.</p>
+
+<p>Pyd is supported on Windows using the <a href="http://digitalmars.com/d/index.html">DMD</a> compiler and on Linux using <a href="http://dgcc.sourceforge.net/">GDC</a>. Support for Derek Parnell's <code>bud</code> is also planned.</p>
+
+<p>Release Candidate 1 of Pyd is available on dsource:</p>
+<ul>
+<li><a href="http://dsource.org/projects/pyd/browser/downloads/celerid-RC1.zip?format=raw">celerid-RC1.zip</a> (395 KB)</li>
+<li><a href="http://dsource.org/projects/pyd/browser/downloads/celerid-RC1.tar.bz2?format=raw">celerid-RC1.tar.bz2</a> (284 KB)</li>
+</ul>
+
+<p>Pyd's Subversion repository is located <a href="http://svn.dsource.org/projects/pyd/trunk">here</a>.</p>
+
+<h3>Installation</h3>
+
+<p>Pyd installs itself as a Python package called <a href="celerid.html"><code>celerid</code></a>. Once you have extracted the archive (or downloaded the "trunk" directory), simply run <code>python setup.py install</code>, and the <code>celerid</code> directory will be created in Python's site-packages directory.</p>
+
+<p>CeleriD is an extension to distutils. It tells Python how to use the D compiler. By default, it uses the first version of the compiler that it can find on the system PATH. If the compiler is not on your PATH, or you wish to specify a specific version of it, you may set the DMD_BIN or GDC_BIN environment variable (for Windows and Linux, respectively) to point to the executable you wish to use.</p>
+</div>
+
+</body>
+</html>

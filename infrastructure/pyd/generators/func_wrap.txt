@@ -1,0 +1,231 @@
+        } static if (MIN_ARGS <= 1 && MAX_ARGS >= 1) {
+            if (ARGS == 1) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 2 && MAX_ARGS >= 2) {
+            if (ARGS == 2) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 3 && MAX_ARGS >= 3) {
+            if (ARGS == 3) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 4 && MAX_ARGS >= 4) {
+            if (ARGS == 4) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 5 && MAX_ARGS >= 5) {
+            if (ARGS == 5) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 6 && MAX_ARGS >= 6) {
+            if (ARGS == 6) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 7 && MAX_ARGS >= 7) {
+            if (ARGS == 7) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 8 && MAX_ARGS >= 8) {
+            if (ARGS == 8) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6)),
+                        d_type!(ArgType!(fn_t, 8))(PyTuple_GetItem(args, 7))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6)),
+                        d_type!(ArgType!(fn_t, 8))(PyTuple_GetItem(args, 7))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 9 && MAX_ARGS >= 9) {
+            if (ARGS == 9) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6)),
+                        d_type!(ArgType!(fn_t, 8))(PyTuple_GetItem(args, 7)),
+                        d_type!(ArgType!(fn_t, 9))(PyTuple_GetItem(args, 8))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6)),
+                        d_type!(ArgType!(fn_t, 8))(PyTuple_GetItem(args, 7)),
+                        d_type!(ArgType!(fn_t, 9))(PyTuple_GetItem(args, 8))
+                    ) );
+                }
+            }
+        } static if (MIN_ARGS <= 10 && MAX_ARGS >= 10) {
+            if (ARGS == 10) {
+                static if (is(RetType : void)) {
+                    fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6)),
+                        d_type!(ArgType!(fn_t, 8))(PyTuple_GetItem(args, 7)),
+                        d_type!(ArgType!(fn_t, 9))(PyTuple_GetItem(args, 8)),
+                        d_type!(ArgType!(fn_t, 10))(PyTuple_GetItem(args, 9))
+                    );
+                    Py_INCREF(Py_None);
+                    ret = Py_None;
+                } else {
+                    ret = _py( fn(
+                        d_type!(ArgType!(fn_t, 1))(PyTuple_GetItem(args, 0)),
+                        d_type!(ArgType!(fn_t, 2))(PyTuple_GetItem(args, 1)),
+                        d_type!(ArgType!(fn_t, 3))(PyTuple_GetItem(args, 2)),
+                        d_type!(ArgType!(fn_t, 4))(PyTuple_GetItem(args, 3)),
+                        d_type!(ArgType!(fn_t, 5))(PyTuple_GetItem(args, 4)),
+                        d_type!(ArgType!(fn_t, 6))(PyTuple_GetItem(args, 5)),
+                        d_type!(ArgType!(fn_t, 7))(PyTuple_GetItem(args, 6)),
+                        d_type!(ArgType!(fn_t, 8))(PyTuple_GetItem(args, 7)),
+                        d_type!(ArgType!(fn_t, 9))(PyTuple_GetItem(args, 8)),
+                        d_type!(ArgType!(fn_t, 10))(PyTuple_GetItem(args, 9))
+                    ) );
+                }
+            }
+        }

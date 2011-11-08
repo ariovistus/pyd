@@ -1,0 +1,82 @@
+        } else static if (Ctor.ARGS == 2) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1))
+            );
+        } else static if (Ctor.ARGS == 3) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2))
+            );
+        } else static if (Ctor.ARGS == 4) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3))
+            );
+        } else static if (Ctor.ARGS == 5) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3)),
+                d_type!(Ctor.arg5)(PyTuple_GetItem(args, 4))
+            );
+        } else static if (Ctor.ARGS == 6) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3)),
+                d_type!(Ctor.arg5)(PyTuple_GetItem(args, 4)),
+                d_type!(Ctor.arg6)(PyTuple_GetItem(args, 5))
+            );
+        } else static if (Ctor.ARGS == 7) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3)),
+                d_type!(Ctor.arg5)(PyTuple_GetItem(args, 4)),
+                d_type!(Ctor.arg6)(PyTuple_GetItem(args, 5)),
+                d_type!(Ctor.arg7)(PyTuple_GetItem(args, 6))
+            );
+        } else static if (Ctor.ARGS == 8) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3)),
+                d_type!(Ctor.arg5)(PyTuple_GetItem(args, 4)),
+                d_type!(Ctor.arg6)(PyTuple_GetItem(args, 5)),
+                d_type!(Ctor.arg7)(PyTuple_GetItem(args, 6)),
+                d_type!(Ctor.arg8)(PyTuple_GetItem(args, 7))
+            );
+        } else static if (Ctor.ARGS == 9) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3)),
+                d_type!(Ctor.arg5)(PyTuple_GetItem(args, 4)),
+                d_type!(Ctor.arg6)(PyTuple_GetItem(args, 5)),
+                d_type!(Ctor.arg7)(PyTuple_GetItem(args, 6)),
+                d_type!(Ctor.arg8)(PyTuple_GetItem(args, 7)),
+                d_type!(Ctor.arg9)(PyTuple_GetItem(args, 8))
+            );
+        } else static if (Ctor.ARGS == 10) {
+            T t = new T(
+                d_type!(Ctor.arg1)(PyTuple_GetItem(args, 0)),
+                d_type!(Ctor.arg2)(PyTuple_GetItem(args, 1)),
+                d_type!(Ctor.arg3)(PyTuple_GetItem(args, 2)),
+                d_type!(Ctor.arg4)(PyTuple_GetItem(args, 3)),
+                d_type!(Ctor.arg5)(PyTuple_GetItem(args, 4)),
+                d_type!(Ctor.arg6)(PyTuple_GetItem(args, 5)),
+                d_type!(Ctor.arg7)(PyTuple_GetItem(args, 6)),
+                d_type!(Ctor.arg8)(PyTuple_GetItem(args, 7)),
+                d_type!(Ctor.arg9)(PyTuple_GetItem(args, 8)),
+                d_type!(Ctor.arg10)(PyTuple_GetItem(args, 9))
+            );
+        }

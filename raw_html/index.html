@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Pyd: Connecting D and Python</title>
+</head>
+
+<body>
+%(nav)s
+<div id="content">
+
+<h1>Pyd</h1>
+<p>Pyd is a library for the D programming language that wraps the raw <a href="http://docs.python.org/api/api.html">Python/C API</a> with a cleaner, simpler interface. It makes exposing raw D functions and classes to Python almost trivially simple. It bears certain similarities to <a href="http://www.boost.org/libs/python/doc/">Boost.Python</a>, and indeed Boost.Python is a major influence on Pyd. Pyd was written by Kirk McDonald.</p>
+
+<p>Pyd also comes with its own extension to Python's <a href="http://docs.python.org/dist/dist.html">distutils</a>, called <a href="celerid.html">CeleriD</a>, making the building of extension modules quite easy. CeleriD was originally written by David Rushby and is currently maintained by Kirk McDonald.</p>
+
+<p>Pyd includes the <code>meta.Nameof</code> package by Don Clugston. The source files meta.Nameof and meta.Demangle are copyright &copy; 2005-2006 Don Clugston.</p>
+
+<p>Pyd's Trac page can be found <a href="http://dsource.org/projects/pyd/wiki">here</a>.</p>
+
+<p>A simple "hello, world" module might look like this:</p>
+
+<pre class="code"><span class="keyword">import</span> pyd.pyd;
+<span class="keyword">import</span> std.stdio;
+
+<span class="keyword">void</span> hello_func() {
+    writefln(<span class="string">"Hello, world!"</span>);
+}
+
+<span class="keyword">extern</span> (C) <span class="keyword">void</span> PydMain() {
+    def!(hello_func);
+    module_init();
+}</pre>
+
+<p>When <a href="celerid.html">compiled</a>, the module can be loaded and used from Python like any other module:</p>
+
+<pre class="code">&gt;&gt;&gt; import testdll
+&gt;&gt;&gt; testdll.hello_func()
+Hello, world!</pre>
+
+</div>
+
+</body>
+</html>

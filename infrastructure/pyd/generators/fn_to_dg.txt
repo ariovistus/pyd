@@ -1,0 +1,21 @@
+    } else static if (ARGS == 1) {
+        alias RetType delegate(ArgType!(Fn, 1)) type;
+    } else static if (ARGS == 2) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2)) type;
+    } else static if (ARGS == 3) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3)) type;
+    } else static if (ARGS == 4) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4)) type;
+    } else static if (ARGS == 5) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4), ArgType!(Fn, 5)) type;
+    } else static if (ARGS == 6) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4), ArgType!(Fn, 5), ArgType!(Fn, 6)) type;
+    } else static if (ARGS == 7) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4), ArgType!(Fn, 5), ArgType!(Fn, 6), ArgType!(Fn, 7)) type;
+    } else static if (ARGS == 8) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4), ArgType!(Fn, 5), ArgType!(Fn, 6), ArgType!(Fn, 7), ArgType!(Fn, 8)) type;
+    } else static if (ARGS == 9) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4), ArgType!(Fn, 5), ArgType!(Fn, 6), ArgType!(Fn, 7), ArgType!(Fn, 8), ArgType!(Fn, 9)) type;
+    } else static if (ARGS == 10) {
+        alias RetType delegate(ArgType!(Fn, 1), ArgType!(Fn, 2), ArgType!(Fn, 3), ArgType!(Fn, 4), ArgType!(Fn, 5), ArgType!(Fn, 6), ArgType!(Fn, 7), ArgType!(Fn, 8), ArgType!(Fn, 9), ArgType!(Fn, 10)) type;
+    }

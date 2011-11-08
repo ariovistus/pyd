@@ -1,0 +1,10 @@
+MODULES = 
+	$(MODULE pyd.class_wrap)
+	$(MODULE pyd.ctor_wrap)
+	$(MODULE pyd.def)
+	$(MODULE pyd.dg_convert)
+	$(MODULE pyd.exception)
+	$(MODULE pyd.ftype)
+	$(MODULE pyd.make_object)
+	$(MODULE pyd.object)
+	$(MODULE pyd.pyd)

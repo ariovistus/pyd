@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Starting out with Pyd</title>
+</head>
+
+<body>
+<div id="nav">
+<p><big>Contents</big></p>
+<ul>
+<li><a class="nav" href="index.html">Main</a></li>
+<li><a class="nav" href="install.html">Installation</a></li>
+<li><a class="navcur" href="basics.html">The basics</a></li>
+<li><a class="nav" href="celerid.html">CeleriD</a></li>
+<li><a class="nav" href="conversion.html">Type conversion</a></li>
+<li><a class="nav" href="adv_conversion.html">Advanced type conversion</a></li>
+<li><a class="nav" href="func_wrapping.html">Function wrapping</a></li>
+<li><a class="nav" href="class_wrapping.html">Class wrapping</a></li>
+<li><a class="nav" href="inherit.html">Inheritance</a></li>
+<li><a class="nav" href="struct_wrapping.html">Struct wrapping</a></li>
+<li><a class="nav" href="except_wrapping.html">Exception wrapping</a></li>
+<li><a class="nav" href="pydobject.html">PydObject</a></li>
+<li><a class="nav" href="vsboost.html">vs. Boost.Python</a></li>
+<li><a class="nav" href="credits.html">Credits</a></li>
+</ul>
+</div>
+
+<div id="content">
+
+<h1>The basics</h1>
+
+<h3>Module basics</h3>
+
+<p>The most minimal working Pyd module looks something like this:</p>
+
+<pre class="code"><span class="keyword">import</span> pyd.pyd;
+
+<span class="keyword">extern</span> (C) <span class="keyword">void</span> PydMain() {
+    module_init();
+}</pre>
+
+<p>The first line imports Pyd:</p>
+
+<pre class="code"><span class="keyword">import</span> pyd.pyd;</pre>
+
+<p>The <code>pyd</code> module in the <code>pyd</code> package publicly imports all of the other components of Pyd.</p>
+
+<p>The <code>PydMain</code> function is called when the module is imported by Python. You will call most of Pyd's API from here. At the very least, <code>PydMain</code> <em>must</em> contain a call to <code>module_init</code>. The <code>module_init</code> function has the following form:</p>
+
+<p><code>PyObject* module_init(char[] <span class="arg">docstring</span>="");</code></p>
+
+<p>It does little more than call <a href="http://docs.python.org/api/allocating-objects.html">Py_InitModule</a> and return the new module object. This object is also available via the <code>Pyd_Module_p</code> property once you've called <code>module_init</code>.</p>
+
+<p>Due to the way in which Pyd implements function and class wrapping, any calls to <code>def</code> must occur <em>before</em> the call to <code>module_init</code>, and any calls to <code>wrap_class</code> must occur <em>after</em> the call. I know this seems like a rather arbitrary rule, but it is important. Calls to <code>def</code> in the wrong place will simply be ignored, and calls to <code>wrap_class</code> in the wrong place will throw an assert.</p>
+
+<p><code>PydMain</code> will catch any D exception that is thrown from inside it, and <a href="except_wrapping.html">safely pass that exception to Python</a>.</p>
+</div>
+
+</body>
+</html>

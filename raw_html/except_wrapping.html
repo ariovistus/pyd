@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Exceptions</title>
+</head>
+
+<body>
+%(nav)s
+<div id="content">
+
+<h1>Exception wrapping</h1>
+
+<p>The raw Python/C API has a <a href="http://docs.python.org/api/exceptionHandling.html">protocol</a> for allowing C extensions to use Python's exception mechanism. It is a goal of Pyd's that a user will never have to deal with this protocol. Instead, Pyd provides a mechanism for translating Python exceptions into D exceptions, and for translating D exceptions into Python exceptions.</p>
+
+<p>When wrapping functions and classes, the latter is usually of more interest. All wrapped functions, methods, constructors, properties, &amp;c, will catch any otherwise uncaught D exceptions and translate them into a Python <code>RuntimeError</code>. <i>(In the future, I may define a new Python exception type for this purpose.)</i> This is fairly important, as any uncaught D exceptions would otherwise crash the Python interpreter.</p>
+
+<p>The <a href="pydobject.html">PydObject</a> class wraps a portion of the Python/C API. Whenever a Python exception is raised by a method of PydObject, it will be thrown as a <code>PythonException</code>. This is a normal D exception that knows how to carry the complete state of a Python exception. <code>PythonException</code> objects have three properties, <code>type</code>, <code>value</code>, and <code>traceback</code>, which each return an owned reference to a <code>PyObject*</code> corresponding to a different part of a Python exception. If the <code>PythonException</code> goes uncaught, the function wrapper will catch it, and translate it back into the original Python exception.</p>
+
+<p>Pyd provides the following exception-related functions:</p>
+
+<dl>
+<dt><code>void handle_exception();</code></dt>
+<dd>This checks if a Python exception has been set and, if it has, throws a <code>PythonException</code> containing the set exception. It will also clear the Python error condition.</dd>
+
+<dt><code>T exception_catcher(<span class="t_arg">T</span>) (T delegate() <span class="arg">dg</span>);</code</dt>
+<dd>This template function calls the passed delegate within a <code>try ... catch</code> block, and if any exception occurs, sets an appropriate Python error condidition and returns an "invalid" value. (These are <code>null</code> for <code>PyObject*</code> and -1 for <code>int</code>. These and <code>void</code> are the only acceptable types which may be passed to <code>T</code>.) Otherwise, it will simply return whatever the delegate does. It is recommended that any function that interfaces directly with Python place its contents within a function literal in a call to this function. (D can usually infer the return type of a function literal. If it can't, you might want to review D's syntax for <a href="http://www.digitalmars.com/d/expression.html#FunctionLiteral">function literals</a>.) For example:
+
+<pre class="code"><span class="keyword">extern</span> (C)
+PyObject* some_func(PyObject* self) {
+    <span class="keyword">return</span> exception_catcher({
+        PyObject* result;
+        <span class="comment">// do something useful</span>
+        <span class="keyword">return</span> result;
+    });
+}</pre>
+</dd>
+
+</div>
+
+</body>
+</html>

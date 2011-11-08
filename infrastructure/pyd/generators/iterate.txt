@@ -1,0 +1,55 @@
+        } else static if (ARGS == 2) {
+            foreach (a0, a1; t) {
+                temp = _make_pytuple(_py(a0), _py(a1));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 3) {
+            foreach (a0, a1, a2; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 4) {
+            foreach (a0, a1, a2, a3; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 5) {
+            foreach (a0, a1, a2, a3, a4; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3), _py(a4));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 6) {
+            foreach (a0, a1, a2, a3, a4, a5; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3), _py(a4), _py(a5));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 7) {
+            foreach (a0, a1, a2, a3, a4, a5, a6; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3), _py(a4), _py(a5), _py(a6));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 8) {
+            foreach (a0, a1, a2, a3, a4, a5, a6, a7; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3), _py(a4), _py(a5), _py(a6), _py(a7));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 9) {
+            foreach (a0, a1, a2, a3, a4, a5, a6, a7, a8; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3), _py(a4), _py(a5), _py(a6), _py(a7), _py(a8));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        } else static if (ARGS == 10) {
+            foreach (a0, a1, a2, a3, a4, a5, a6, a7, a8, a9; t) {
+                temp = _make_pytuple(_py(a0), _py(a1), _py(a2), _py(a3), _py(a4), _py(a5), _py(a6), _py(a7), _py(a8), _py(a9));
+                if (temp is null) StackContext.throwYield(new DPyYield(null));
+                StackContext.throwYield(new DPyYield(temp));
+            }
+        }

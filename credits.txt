@@ -1,0 +1,14 @@
+Python/D bindings:
+Deja Augustine, David Rushby, Kirk McDonald
+
+CeleriD:
+David Rushby, Kirk McDonald
+
+Pyd:
+Kirk McDonald
+
+meta:
+Tomasz Stachowiak, Don Clugston, Kirk McDonald
+
+StackThreads:
+Mikola Lysenko, Daniel Keep, Lars Ivar Igesund

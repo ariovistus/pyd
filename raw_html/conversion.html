@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Converting types to and from Python</title>
+</head>
+
+<body>
+%(nav)s
+<div id="content">
+
+<h1>Type conversion</h1>
+
+<p>Pyd provides a series of template functions for converting types to and from Python. Template arguments are in <span class="t_arg">boldface</span>, function arguments are in <span class="arg">italics</span>.</p>
+
+<dl>
+<dt><code>PyObject* _py(<span class="t_arg">T</span>) (<span class="t_arg">T</span> <span class="arg">t</span>);</code></dt>
+<dd>Converts D item <span class="arg">t</span> of type <span class="t_arg">T</span> to a PyObject. The returned pointer is a new, owned reference. The following conversions are possible:
+
+<table border=1>
+<tr><th>D type</th>                             <th>Python type</th></tr>
+<tr><td>bool</td>                               <td>bool</td>       </tr>
+<tr><td>C_long (usually <tt>int</tt>)</td>      <td>int</td>        </tr>
+<tr><td>C_longlong (usually <tt>long</tt>)</td> <td>long</td>       </tr>
+<tr><td>double</td>                             <td>float</td>      </tr>
+<tr><td>idouble, cdouble</td>                   <td>complex</td>    </tr>
+<tr><td>char[] (as ASCII string)</td>           <td>str</td>        </tr>
+<!--<tr><td>wchar[] (as UCS2 string)</td>           <td>unicode</td>    </tr>-->
+<tr><td>dynamic array</td>                      <td>list</td>       </tr>
+<tr><td>associative array</td>                  <td>dict</td>       </tr>
+<tr><td>delegate or function pointer</td>       <td>A callable object</td></tr>
+<tr><td><a href="class_wrapping.html">A wrapped class</a></td> <td>The wrapped type</td></tr>
+<tr><td><a href="struct_wrapping.html">A wrapped struct</a></td> <td>The wrapped type</td></tr>
+<tr><td>Pointer-to-wrapped-struct</td>          <td>The wrapped type</td></tr>
+<tr><td><a href="pydobject.html">PydObject</a></td> <td>The wrapped object's type</td></tr>
+<tr><td>PyObject*</td>                          <td>The object's type</td></tr>
+</table>
+
+This function will set a Python <code>RuntimeError</code> and return <code>null</code> if the conversion is not possible.</dd>
+
+<dt><code>PydObject py(<span class="t_arg">T</span>) (<span class="t_arg">T</span> <span class="arg">t</span>);</code></dt>
+<dd>Converts D item <span class="arg">t</span> of type <span class="t_arg">T</span> to a PyObject with the <code>_py</code> function (above), and returns a <a href="pydobject.html">PydObject</a> wrapping that PyObject. This will <a href="except_wrapping.html">throw a wrapped Python <code>RuntimeError</code></a> if the conversion is not possible.</dd>
+
+<dt><code><span class="t_arg">T</span> d_type(<span class="t_arg">T</span>) (PyObject* <span class="arg">o</span>);</dt>
+<dd>Attempts to convert Python object <span class="arg">o</span> to the D type <span class="t_arg">T</span>. Note that this means you must call this function with both the template and function arguments. The following conversions are possible:
+
+<table border=1>
+<tr><th>Python type</th>    <th>D type</th>                             </tr>
+<tr><td>Any type</td>       <td>PyObject*</td>                          </tr>
+<tr><td>Any type</td>       <td><a href="pydobject.html">PydObject</a></td></tr>
+<tr><td><a href="struct_wrapping.html">Wrapped struct</a></td> <td>Wrapped struct</td></tr>
+<tr><td><a href="struct_wrapping.html">Wrapped struct</a></td> <td>Pointer to wrapped struct</td></tr>
+<tr><td><a href="class_wrapping.html">Wrapped class</a></td> <td>Wrapped class</td></tr>
+<tr><td>Any callable</td>   <td>delegate</td>                           </tr>
+<tr><td>Any iterable</td>   <td>dynamic array</td>                      </tr>
+<tr><td>str</td>            <td>char[]</td>                             </tr>
+<tr><td>complex</td>        <td>cdouble</td>                            </tr>
+<tr><td>float</td>          <td>double</td>                             </tr>
+<tr><td>long</td>           <td>C_longlong (usually <tt>long</tt>)</td> </tr>
+<tr><td>int</td>            <td>C_long (usually <tt>int</tt>)</td>      </tr>
+<tr><td>bool</td>           <td>bool</td>                               </tr>
+</table>
+
+This function will throw a <code>PydConversionException</code> if the conversion is not possible.</dd>
+</dl>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+    <link href="pyd.css" rel="stylesheet" type="text/css">
+    <title>Wrapping classes</title>
+</head>
+
+<body>
+<div id="nav">
+<p><big>Contents</big></p>
+<ul>
+<li><a class="nav" href="index.html">Main</a></li>
+<li><a class="nav" href="install.html">Installation</a></li>
+<li><a class="nav" href="basics.html">The basics</a></li>
+<li><a class="nav" href="celerid.html">CeleriD</a></li>
+<li><a class="nav" href="conversion.html">Type conversion</a></li>
+<li><a class="nav" href="adv_conversion.html">Advanced type conversion</a></li>
+<li><a class="nav" href="func_wrapping.html">Function wrapping</a></li>
+<li><a class="navcur" href="class_wrapping.html">Class wrapping</a></li>
+<li><a class="nav" href="inherit.html">Inheritance</a></li>
+<li><a class="nav" href="struct_wrapping.html">Struct wrapping</a></li>
+<li><a class="nav" href="except_wrapping.html">Exception wrapping</a></li>
+<li><a class="nav" href="pydobject.html">PydObject</a></li>
+<li><a class="nav" href="vsboost.html">vs. Boost.Python</a></li>
+<li><a class="nav" href="credits.html">Credits</a></li>
+</ul>
+</div>
+
+<div id="content">
+
+<h1>Class wrapping</h1>
+
+<p>Exposing D classes to Python is easy! The heart of Pyd's class wrapping features is the <code>wrap_class</code> function template:</p>
+
+<p><code>void wrap_class(<span class="t_arg">T</span>, char[] <span class="t_arg">classname</span> = symbolnameof!(T), <span class="t_arg">Params</span>...) ();</code></p>
+    <ul>
+    <li><span class="t_arg">T</span> is the class being wrapped.</li>
+    <li><span class="t_arg">classname</span> is the name of the class as it will appear in Python. It defaults to the name of the D class. If you are wrapping an instance of a class template, you will have to provide this explicitly.</li>
+    <li><span class="t_arg">Params</span> is a series of struct types (defined below), which define the various members of the class.</li>
+    </ul>
+
+<p>Calls to <code>wrap_class</code> must occur <em>after</em> calling <code>module_init</code>.</p>
+
+<p>To expose the constructors, methods, and properties of the class, you must pass <code>wrap_class</code> instantiations of these struct templates.</p>
+
+<dl>
+<dt><code>struct Def(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">fn_t</span> = typeof(&amp;fn));</code></dt>
+<dd>This wraps a method of the class. It functions very much like the <code>def</code> function used to <a href="func_wrapping.html">wrap regular functions</a>, with one very important difference: There is no support for default arguments. (This is a side-effect of the fact that you cannot call an alias of a method in D, and delegates do not understand default arguments.)</dd>
+
+<dt><code>struct StaticDef(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">fn_t</span> = typeof(&amp;fn), uint <span class="t_arg">MIN_ARGS</span> = minArgs!(fn));</code></dt>
+<dd>This wraps a static member function of the class. It also functions exactly like the <code>def</code> function used to wrap regular functions, and even includes support for default arguments.</dd>
+
+<dt><code>struct Property(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), bool <span class="t_arg">RO</span> = false);</code></dt>
+<dd>This wraps a property. See the examples below for more details.
+    <ul>
+    <li><span class="t_arg">fn</span> is the name of the property. <code>prop</code> will automatically attempt to wrap both the "get" and "set" forms of the property, unless <span class="t_arg">RO</span> is specified.</li>
+    <li><span class="t_arg">name</span> is the name of the property as it will appear in Python. As with <code>def</code>, <code>prop</code> will attempt to derive this automatically.</li>
+    <li><span class="t_arg">RO</span> specifies whether this is a <i>read-only</i> property. If true, it will only wrap the "get" form of the property. If false, it will wrap both the "get" and "set" forms. <i>(This is a little hackish, and I will probably try to make this detection more automatic in the future. It also means it cannot support a property that only has a "set" form.)</i></li>
+    </ul>
+</dd>
+
+<dt><code>struct Init(<span class="t_arg">C</span> ...);</code></dt>
+<dd>This allows you to expose the class's constructors to Python. If the class provides a zero-argument constructor, there is no need to specify it; it is always available. Each element of <span class="t_arg">C</span> should be a function type. Each function type should correspond to a constructor. (That is, the arguments to the function type should be the same as the arguments to the class constructor. The return type is ignored.) There is an additional limitation at this time: No two constructors may have the same number of arguments. Pyd will always attempt to call the first constructor with the right number of arguments. If you wish to support a constructor with default arguments, you must specify each possible constructor call as a different template argument to this function. The examples show a few uses of <code>Init</code>.</dd>
+
+<dt><code>struct Repr(alias <span class="t_arg">fn</span>);</code></dt>
+<dd>This allows you to expose a member function of the class as the Python type's <code>__repr__</code> function. The member function must have the signature <code>char[] function()</code>.</dd>
+
+<dt><code>struct Iter(<span class="t_arg">iter_t</span>);</code></dt>
+<dd>This allows the user to specify a different overload of opApply than the default. (The default is always the one that is lexically first.) The <span class="t_arg">iter_t</span> argument should be the type of the delegate that forms the argument to opApply. This might be e.g. <code>int delegate(inout int)</code>. Don't forget the <code>inout</code> modifiers! (This is not available in Linux; see the note below on opApply wrapping.)</dd>
+
+<dt><code>struct AltIter(alias <span class="t_arg">fn</span>, char[] <span class="t_arg">name</span> = symbolnameof!(fn), <span class="t_arg">iter_t</span> = <i>implementationDetail</i>);</code></dt>
+<dd>This wraps alternate iterator methods as Python methods that return iterator objects. The wrapped methods should have a signature like that of opApply. (In other words, they should be methods intended to be used with D's ability to iterate over delgates.) The <span class="t_arg">iter_t</span> argument should be the type of the delegate argument to the method. This will usually be derived automatically. (This is not available in Linux; see the note below on opApply wrapping.)
+</dd>
+</dl>
+
+<p>If you ever wish to check whether a given class has been wrapped, Pyd helpfully registers all wrapped classes with the <code>is_wrapped</code> template, which is just a templated <code>bool</code>:</p>
+
+<p><code>template is_wrapped(<span class="t_arg">T</span>);</code></p>
+
+<p>If you have a class <code>Foo</code>, you can check whether it is wrapped by simply checking whether <code>is_wrapped!(Foo)</code> is true. It is important to note that this is <em>not</em> a <code>const bool</code>, it is a <em>runtime</em> check.</p>
+
+<h3><a class="anchor" name="opwrap">Automatic operator overloading</a></h3>
+
+<p>Pyd will automatically wrap most of D's operator overload functions with appropriate Python operator overloads. There are some caveats:</p>
+
+<ul>
+<li>Pyd will only automatically wrap the lexically first <i>opFunc</i> defined for a given <i>opFunc</i>. <i>(In the future, I may add a mechanism allowing a user to specifiy a specific overload of an opFunc.)</i></li>
+<li>The usual rules for function wrapping apply: Only an <i>opFunc</i> whose return type and arguments are <a href="conversion.html">convertable</a> may be wrapped. <i>(The current implementation is pretty dumb: If the lexically first opFunc has an unconvertable return type or argument, the operator overload will still be wrapped, but won't work.)</i></li>
+</ul>
+
+<p>At the moment, only the following operator overloads are supported:</p>
+
+<p><code>opNeg, opPos, opCom, opAdd, opSub, opMul, opDiv, opMod, opAnd, opOr, opXor, opShl, opShr, opCat, opAddAssign, opSubAssign, opMulAssign, opDivAssign, opModAssign, opAndAssign, opOrAssign, opXorAssign, opShlAssign, opShrAssign, opCatAssign, opIn_r, opCmp, opCall, opApply, opIndex, opIndexAssign, opSlice, opSliceAssign</code></p>
+
+<p>Missing from this list are <code>opUShr</code> and <code>opUShrAssign</code>. Python does not have an unsigned right-shift operator, so these operator overloads are not supported. (You may still wrap them with a normal method using <code>Def</code>, of course.) Also missing from the list is <code>opApplyReverse</code>. This must be wrapped explicitly with <code>AltIter</code>.</p>
+
+<p>Also missing from the list is <code>opAssign</code>. Python has strict reference semantics for its objects, so overloading the assignment operator is not possible. You must explicitly wrap <code>opAssign</code> with a regular method.</p>
+
+<p>Additionally, if a class provides a <code>length</code> property, Pyd will automatically make it available via Python's built-in function <code>len</code> and the special <code>__len__</code> method. You may still wrap it with <code>Property</code> or <code>Def</code> if you wish it to be available as a normal property or method.</p>
+
+<p><b>Notes on wrapped operators</b></p>
+
+<dl>
+<dt><code>opApply</code></dt> <dd>Pyd wraps D's iteration protocol with the help of Mikola Lysenko's StackThreads package. This package does not work in GDC, and so opApply wrapping is not available in Linux. See also the <a href="celerid.html"><code>with_st</code></a> option offered by CeleriD.</dd>
+<dt><code>opSlice, opSliceAssign</code></dt> <dd>Pyd only supports these overloads if both of their two indexes are implicitly convertable to type <code>int</code>. This is a limitation of the Python/C API. Note that this means the zero-argument form of opSlice (for allowing the "empty slice," e.g. <code>foo[]</code>) cannot be wrapped. <i>(I may work around this in the future.)</i> Because Pyd can only automatically wrap the lexically-first method in a class, it will fail to wrap opSlice and opSliceAssign if you define an empty form first.</dd>
+<dt><code>opCat, opCatAssign</code></dt> <dd>Python does not have a dedicated array concatenation operator. The plus sign (<code>+</code>) is reused for this purpose. Therefore, odd behavior may result with classes that define both <code>opAdd/opAddAssign</code> and one or both of these operators. (Consider yourself warned.) However, the Python/C API considers addition and concatenation distinct operations, and so both of these sets of operator overloads are supported.</dd>
+<dt><code>opIn_r</code></dt> <dd>Python expects the <code>in</code> operator to return a boolean value (it is a containment test). D convention is for <code>in</code> to search for the value in the container, and to return a pointer to the found item, or <code>null</code> if the item is not found. That said, D does not enforce any particular signature on the <code>in</code> overload, while the Python/C API does. Pyd will check the boolean result of a call to <code>opIn_r</code>, and return that value to Python.</dd>
+</dl>
+
+<h3><a class="anchor" name="examples">Examples</a></h3>
+
+<p>Suppose we have the following simple class:</p>
+
+<pre class="code"><span class="keyword">import</span> std.stdio;
+
+<span class="keyword">class</span> Foo {
+    <span class="keyword">int</span> m_i;
+
+    <span class="keyword">this</span>() { m_i = <span class="number">0</span>; }
+    <span class="keyword">this</span>(<span class="keyword">int</span> j) { m_i = j; }
+    <span class="keyword">this</span>(<span class="keyword">int</span> j, <span class="keyword">int</span> k) { m_i = j + k; }
+
+    <span class="keyword">int</span> i() { <span class="keyword">return</span> m_i; }
+    <span class="keyword">void</span> i(<span class="keyword">int</span> j) { m_i = j; }
+
+    <span class="keyword">void</span> foo(<span class="keyword">char</span>[] s) {
+        writefln(s, m_i);
+    }
+
+    Foo opAdd(Foo rhs) {
+        <span class="keyword">return new</span> Foo(m_i + rhs.m_i);
+    }
+}</pre>
+
+<p>We would expose this class to Python by putting this code in <code>PydMain</code> after the call to <code>module_init</code>:</p>
+
+<pre class="code"><span class="comment">// Call wrap_class</span>
+wrap_class!(
+    Foo,
+    <span class="comment">// Wrap the "foo" method</span>
+    Def!(Foo.foo),
+    <span class="comment">// Wrap the "i" property</span>
+    Property!(Foo.i),
+    <span class="comment">// Wrap the constructors.</span>
+    Init!(<span class="keyword">void function</span>(<span class="keyword">int</span>), <span class="keyword">void function</span>(<span class="keyword">int</span>, <span class="keyword">int</span>))
+);</pre>
+
+<p>Now we can use this type from within Python like any other type.</p>
+
+<pre class="code">&gt;&gt;&gt; <span class="keyword">from</span> testmodule <span class="keyword">import</span> Foo
+&gt;&gt;&gt; f = Foo()
+&gt;&gt;&gt; f.i
+0
+&gt;&gt;&gt; f.i = <span class="number">20</span>
+&gt;&gt;&gt; f.foo(<span class="string">"Hello! i is "</span>)
+Hello! i is 20
+&gt;&gt;&gt; f = Foo(<span class="number">10</span>, <span class="number">10</span>)
+&gt;&gt;&gt; f.i
+20
+&gt;&gt;&gt; g = Foo(<span class="number">30</span>)
+&gt;&gt;&gt; g.i
+30
+&gt;&gt;&gt; e = f + g
+&gt;&gt;&gt; e.i
+50
+&gt;&gt;&gt; <span class="comment"># We can even subclass our D type</span>
+&gt;&gt;&gt; <span class="keyword">class</span> MyFoo(Foo):
+... 	<span class="keyword">def</span> bar(self):
+... 		<span class="keyword">print</span> <span class="string">"Hey, i+3 is"</span>, self.i + <span class="number">3</span>
+... 
+&gt;&gt;&gt; h = MyFoo(<span class="number">3</span>)
+&gt;&gt;&gt; h.bar()
+Hey, i+3 is 6
+&gt;&gt;&gt; </pre>
+
+</div>
+
+</body>
+</html>
+
