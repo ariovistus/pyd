@@ -252,7 +252,13 @@ class DCompiler(cc.CCompiler):
         #   } else {
         #     // Do it the hard way...
         #   }
-        pythonVersionOpt = self._versionOpt % ('Python_%d_%d_Or_Later' % sys.version_info[:2])
+        def pvo(opt):
+            major = sys.version_info[0]
+            minor = sys.version_info[1]
+            optf = 'Python_%d_%d_Or_Later'
+            return [opt % (optf % (major,m)) for m in range(4,minor+1)]
+            
+        pythonVersionOpts = pvo(self._versionOpt) 
 
         # Optimization opts
         args = [a.lower() for a in sys.argv[1:]]
@@ -282,7 +288,7 @@ class DCompiler(cc.CCompiler):
             outOpts[-1] = outOpts[-1] % _qp(objName)
             cmdElements = (
                 [binpath] + extra_preargs + compileOpts +
-                [pythonVersionOpt, self._unicodeOpt] + optimizationOpts +
+                pythonVersionOpts+[ self._unicodeOpt] + optimizationOpts +
                 includePathOpts + outOpts + userVersionAndDebugOpts +
                 [_qp(source)] + extra_postargs
             )
