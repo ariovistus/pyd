@@ -48,10 +48,10 @@ version(Python_2_5_Or_Later) {
 } else {
     alias int index_t;
     alias inquiry lenfunc_t;
-    alias intargfunc idxargfunc;
-    alias intintargfunc idxidxargfunc;
-    alias intobjargproc idxobjargproc;
-    alias intintobjargproc idxidxobjargproc;
+    alias ssizeargfunc idxargfunc;
+    alias ssizessizeargfunc idxidxargfunc;
+    alias ssizeobjargproc idxobjargproc;
+    alias ssizessizeobjargproc idxidxobjargproc;
 }
 
 template wrapped_class_as_number(T) {

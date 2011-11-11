@@ -13,10 +13,10 @@ XXX:
 module python;
 
 // here's what we like
-version(Python2_4){
-}else version(Python2_5){
-}else version(Python2_6){
-}else version(Python2_7){
+version(Python_2_7_Or_Later){
+}else version(Python_2_6_Or_Later){
+}else version(Python_2_5_Or_Later){
+}else version(Python_2_4_Or_Later){
 }else{
     static assert(false,"Python version not specified!");
 }
@@ -68,7 +68,7 @@ version(Windows) {
  * Py_ssize_t is defined as a signed type which is 8 bytes on X86_64 and 4
  * bytes on X86.
  */
-version(Python2_4){
+version(Python_2_4_Or_Later){
     /*
      * Seems Py_ssize_t didn't exist in 2.4, and int was everywhere it is now.
      */
@@ -121,6 +121,12 @@ extern (C) {
     mixin PyObject_VAR_HEAD;
   }
 
+  version(Python_2_6_Or_Later){
+      auto Py_REFCNT()(PyObject* ob){ return ob.ob_refcnt; }
+      auto Py_TYPE()(PyObject* ob){ return ob.ob_type; }
+      auto Py_SIZE()(PyVarObject* ob){ return ob.ob_size; }
+  }
+
   alias PyObject* function(PyObject *) unaryfunc;
   alias PyObject* function(PyObject *, PyObject *) binaryfunc;
   alias PyObject* function(PyObject *, PyObject *, PyObject *) ternaryfunc;
@@ -129,13 +135,13 @@ extern (C) {
   alias int function(PyObject **, PyObject **) coercion;
   alias PyObject* function(PyObject *, Py_ssize_t) ssizeargfunc;
   alias PyObject* function(PyObject *, Py_ssize_t, Py_ssize_t) ssizessizeargfunc;
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       alias ssizeargfunc intargfunc;
       alias ssizessizeargfunc intintargfunc;
   }
   alias int function(PyObject *, Py_ssize_t, PyObject *) ssizeobjargproc;
   alias int function(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *) ssizessizeobjargproc;
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       alias ssizeobjargproc intobjargproc;
       alias ssizessizeobjargproc intintobjargproc;
   }
@@ -146,12 +152,66 @@ extern (C) {
   alias Py_ssize_t function(PyObject *, Py_ssize_t, void **) writebufferproc;
   alias Py_ssize_t function(PyObject *, Py_ssize_t *) segcountproc;
   alias Py_ssize_t function(PyObject *, Py_ssize_t, char **) charbufferproc;
-  version(Python2_4){
+  version(Python_2_5_Or_Later){
+  }else{
       // int-based buffer interface
       alias readbufferproc getreadbufferproc;
       alias writebufferproc getwritebufferproc;
       alias segcountproc getsegcountproc;
       alias charbufferproc getcharbufferproc;
+  }
+
+  version(Python_2_6_Or_Later){
+      /* Py3k buffer interface */
+
+      struct Py_buffer{
+          void *buf;
+          PyObject *obj;        /* borrowed reference */
+          Py_ssize_t len;
+          Py_ssize_t itemsize;  /* This is Py_ssize_t so it can be
+                                   pointed to by strides in simple case.*/
+          int readonly;
+          int ndim;
+          char *format;
+          Py_ssize_t *shape;
+          Py_ssize_t *strides;
+          Py_ssize_t *suboffsets;
+          void *internal;
+      };
+
+      alias int function(PyObject *, Py_buffer *, int) getbufferproc;
+      alias void function(PyObject *, Py_buffer *) releasebufferproc;
+
+      /* Flags for getting buffers */
+      enum PyBUF_SIMPLE = 0;
+      enum PyBUF_WRITABLE = 0x0001;
+      /*  we used to include an E, backwards compatible alias  */
+      enum PyBUF_WRITEABLE = PyBUF_WRITABLE;
+      enum PyBUF_FORMAT = 0x0004;
+      enum PyBUF_ND = 0x0008;
+      enum PyBUF_STRIDES = (0x0010 | PyBUF_ND);
+      enum PyBUF_C_CONTIGUOUS = (0x0020 | PyBUF_STRIDES);
+      enum PyBUF_F_CONTIGUOUS = (0x0040 | PyBUF_STRIDES);
+      enum PyBUF_ANY_CONTIGUOUS = (0x0080 | PyBUF_STRIDES);
+      enum PyBUF_INDIRECT = (0x0100 | PyBUF_STRIDES);
+
+      enum PyBUF_CONTIG = (PyBUF_ND | PyBUF_WRITABLE);
+      enum PyBUF_CONTIG_RO = (PyBUF_ND);
+
+      enum PyBUF_STRIDED = (PyBUF_STRIDES | PyBUF_WRITABLE);
+      enum PyBUF_STRIDED_RO = (PyBUF_STRIDES);
+
+      enum PyBUF_RECORDS = (PyBUF_STRIDES | PyBUF_WRITABLE | PyBUF_FORMAT);
+      enum PyBUF_RECORDS_RO = (PyBUF_STRIDES | PyBUF_FORMAT);
+
+      enum PyBUF_FULL = (PyBUF_INDIRECT | PyBUF_WRITABLE | PyBUF_FORMAT);
+      enum PyBUF_FULL_RO = (PyBUF_INDIRECT | PyBUF_FORMAT);
+
+
+      enum PyBUF_READ  = 0x100;
+      enum PyBUF_WRITE = 0x200;
+      enum PyBUF_SHADOW = 0x400;
+      /* end Py3k buffer interface */
   }
 
   alias int function(PyObject *, PyObject *) objobjproc;
@@ -201,7 +261,7 @@ extern (C) {
     binaryfunc nb_inplace_floor_divide;
     binaryfunc nb_inplace_true_divide;
 
-    version(Python2_4){}
+    version(Python_2_4_Or_Later){}
     else{
         /* Added in release 2.5 */
         unaryfunc nb_index;
@@ -232,6 +292,10 @@ extern (C) {
     writebufferproc bf_getwritebuffer;
     segcountproc bf_getsegcount;
     charbufferproc bf_getcharbuffer;
+    version(Python_2_6_Or_Later){
+        getbufferproc bf_getbuffer;
+        releasebufferproc bf_releasebuffer;
+    }
   }
 
 
@@ -289,7 +353,7 @@ extern (C) {
 
     richcmpfunc tp_richcompare;
 
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
         C_long tp_weaklistoffset;
     }else{
         Py_ssize_t tp_weaklistoffset;
@@ -305,7 +369,7 @@ extern (C) {
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
     descrsetfunc tp_descr_set;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
         C_long tp_dictoffset;
     }else{
         Py_ssize_t tp_dictoffset;
@@ -321,12 +385,16 @@ extern (C) {
     PyObject *tp_subclasses;
     PyObject *tp_weaklist;
     destructor tp_del;
+    version(Python_2_6_Or_Later){
+        /* Type attribute cache version tag. Added in version 2.6 */
+        uint tp_version_tag;
+    }
   }
 
   //alias _typeobject PyTypeObject;
 
   struct _heaptypeobject {
-      version(Python2_4){
+      version(Python_2_4_Or_Later){
           PyTypeObject type;
       }else{
           PyTypeObject ht_type;
@@ -335,7 +403,7 @@ extern (C) {
     PyMappingMethods as_mapping;
     PySequenceMethods as_sequence;
     PyBufferProcs as_buffer;
-      version(Python2_4){
+      version(Python_2_4_Or_Later){
           PyObject *name;
           PyObject *slots;
       }else{
@@ -379,11 +447,19 @@ extern (C) {
   int PyType_Ready(PyTypeObject *);
   PyObject * PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
   PyObject * PyType_GenericNew(PyTypeObject *, PyObject *, PyObject *);
+  version(Python_2_6_Or_Later){
+      uint PyType_ClearCache();
+      void PyType_Modified(PyTypeObject *);
+  }
 
 
   int PyObject_Print(PyObject *, FILE *, int);
   PyObject * PyObject_Repr(PyObject *);
   PyObject * PyObject_Str(PyObject *);
+
+  version(Python_2_6_Or_Later){
+      alias PyObject_Str PyObject_Bytes;
+  }
 
   PyObject * PyObject_Unicode(PyObject *);
 
@@ -401,6 +477,9 @@ extern (C) {
   int PyObject_GenericSetAttr(PyObject *,
                 PyObject *, PyObject *);
   C_long PyObject_Hash(PyObject *);
+  version(Python_2_6_Or_Later){
+      C_long PyObject_HashNotImplemented(PyObject *);
+  }
   int PyObject_IsTrue(PyObject *);
   int PyObject_Not(PyObject *);
   //int PyCallable_Check(PyObject *);
@@ -438,41 +517,70 @@ extern (C) {
   //#else
   enum int Py_TPFLAGS_HAVE_STACKLESS_EXTENSION = 0;
   //#endif
-  version(Python2_4){
-  }else{
-      enum int Py_TPFLAGS_HAVE_INDEX               = 1L<<17;
+  version(Python_2_5_Or_Later){
+      enum Py_TPFLAGS_HAVE_INDEX               = 1L<<17;
+  }
+  version(Python_2_6_Or_Later){
+      /* Objects support type attribute cache */
+      enum Py_TPFLAGS_HAVE_VERSION_TAG =  (1L<<18);
+      enum Py_TPFLAGS_VALID_VERSION_TAG =  (1L<<19);
+
+      /* Type is abstract and cannot be instantiated */
+      enum Py_TPFLAGS_IS_ABSTRACT = (1L<<20);
+
+      /* Has the new buffer protocol */
+      enum Py_TPFLAGS_HAVE_NEWBUFFER = (1L<<21);
+
+      /* These flags are used to determine if a type is a subclass. */
+      enum Py_TPFLAGS_INT_SUBCLASS         =(1L<<23);
+      enum Py_TPFLAGS_LONG_SUBCLASS        =(1L<<24);
+      enum Py_TPFLAGS_LIST_SUBCLASS        =(1L<<25);
+      enum Py_TPFLAGS_TUPLE_SUBCLASS       =(1L<<26);
+      enum Py_TPFLAGS_STRING_SUBCLASS      =(1L<<27);
+      enum Py_TPFLAGS_UNICODE_SUBCLASS     =(1L<<28);
+      enum Py_TPFLAGS_DICT_SUBCLASS        =(1L<<29);
+      enum Py_TPFLAGS_BASE_EXC_SUBCLASS    =(1L<<30);
+      enum Py_TPFLAGS_TYPE_SUBCLASS        =(1L<<31);
   }
 
-  version(Python2_4){
-  enum int Py_TPFLAGS_DEFAULT =
-      Py_TPFLAGS_HAVE_GETCHARBUFFER |
-      Py_TPFLAGS_HAVE_SEQUENCE_IN |
-      Py_TPFLAGS_HAVE_INPLACEOPS |
-      Py_TPFLAGS_HAVE_RICHCOMPARE |
-      Py_TPFLAGS_HAVE_WEAKREFS |
-      Py_TPFLAGS_HAVE_ITER |
-      Py_TPFLAGS_HAVE_CLASS |
-      Py_TPFLAGS_HAVE_STACKLESS_EXTENSION |
-      0
-    ;
+  version(Python_2_5_Or_Later){
+      enum int Py_TPFLAGS_DEFAULT =
+          Py_TPFLAGS_HAVE_GETCHARBUFFER |
+          Py_TPFLAGS_HAVE_SEQUENCE_IN |
+          Py_TPFLAGS_HAVE_INPLACEOPS |
+          Py_TPFLAGS_HAVE_RICHCOMPARE |
+          Py_TPFLAGS_HAVE_WEAKREFS |
+          Py_TPFLAGS_HAVE_ITER |
+          Py_TPFLAGS_HAVE_CLASS |
+          Py_TPFLAGS_HAVE_STACKLESS_EXTENSION |
+          Py_TPFLAGS_HAVE_INDEX |
+          0
+          ;
+      version(Python_2_6_Or_Later){
+          // meh
+          enum Py_TPFLAGS_DEFAULT_EXTERNAL = Py_TPFLAGS_DEFAULT;
+      }
   }else{
-  enum int Py_TPFLAGS_DEFAULT =
-      Py_TPFLAGS_HAVE_GETCHARBUFFER |
-      Py_TPFLAGS_HAVE_SEQUENCE_IN |
-      Py_TPFLAGS_HAVE_INPLACEOPS |
-      Py_TPFLAGS_HAVE_RICHCOMPARE |
-      Py_TPFLAGS_HAVE_WEAKREFS |
-      Py_TPFLAGS_HAVE_ITER |
-      Py_TPFLAGS_HAVE_CLASS |
-      Py_TPFLAGS_HAVE_STACKLESS_EXTENSION |
-      Py_TPFLAGS_HAVE_INDEX |
-      0
-    ;
+      enum int Py_TPFLAGS_DEFAULT =
+          Py_TPFLAGS_HAVE_GETCHARBUFFER |
+          Py_TPFLAGS_HAVE_SEQUENCE_IN |
+          Py_TPFLAGS_HAVE_INPLACEOPS |
+          Py_TPFLAGS_HAVE_RICHCOMPARE |
+          Py_TPFLAGS_HAVE_WEAKREFS |
+          Py_TPFLAGS_HAVE_ITER |
+          Py_TPFLAGS_HAVE_CLASS |
+          Py_TPFLAGS_HAVE_STACKLESS_EXTENSION |
+          0
+          ;
   }
 
   // D translation of C macro:
   int PyType_HasFeature()(PyTypeObject *t, int f) {
     return (t.tp_flags & f) != 0;
+  }
+
+  version(Python_2_6_Or_Later){
+      alias PyType_HasFeature PyType_FastSubclass;
   }
 
 
@@ -531,6 +639,7 @@ extern (C) {
    *   case Python interpreters and extensions with mixed compiled in
    *   Unicode width assumptions are combined. */
 
+
   version (Python_Unicode_UCS2) {
     version (Windows) {
       alias wchar Py_UNICODE;
@@ -573,6 +682,83 @@ extern (C) {
   }
 
   Py_UNICODE Py_UNICODE_REPLACEMENT_CHARACTER = 0xFFFD;
+
+  // EMN: waddawedohere? TODO: figure it out
+  version(Python_2_6_Or_Later){
+      /* Similar to PyUnicode_FromUnicode(), but u points to Latin-1 encoded bytes */
+      PyObject* PyUnicode_FromStringAndSize(
+              const char *u,        /* char buffer */
+              Py_ssize_t size       /* size of buffer */
+              );
+
+      /* Similar to PyUnicode_FromUnicode(), but u points to null-terminated
+         Latin-1 encoded bytes */
+      PyObject* PyUnicode_FromString(
+              const char *u        /* string */
+              );
+      PyObject * PyUnicode_FromFormatV(const char*, va_list);
+      PyObject * PyUnicode_FromFormat(const char*, ...);
+
+      /* Format the object based on the format_spec, as defined in PEP 3101
+         (Advanced String Formatting). */
+      PyObject * _PyUnicode_FormatAdvanced(PyObject *obj,
+              Py_UNICODE *format_spec,
+              Py_ssize_t format_spec_len);
+      int PyUnicode_ClearFreeList();
+      PyObject* PyUnicode_DecodeUTF7Stateful(
+              const char *string,         /* UTF-7 encoded string */
+              Py_ssize_t length,          /* size of string */
+              const char *errors,         /* error handling */
+              Py_ssize_t *consumed        /* bytes consumed */
+              );
+      PyObject* PyUnicode_DecodeUTF32(
+              const char *string,         /* UTF-32 encoded string */
+              Py_ssize_t length,          /* size of string */
+              const char *errors,         /* error handling */
+              int *byteorder              /* pointer to byteorder to use
+                                             0=native;-1=LE,1=BE; updated on
+                                             exit */
+              );
+
+      PyObject* PyUnicode_DecodeUTF32Stateful(
+              const char *string,         /* UTF-32 encoded string */
+              Py_ssize_t length,          /* size of string */
+              const char *errors,         /* error handling */
+              int *byteorder,             /* pointer to byteorder to use
+                                             0=native;-1=LE,1=BE; updated on
+                                             exit */
+              Py_ssize_t *consumed        /* bytes consumed */
+              );
+      /* Returns a Python string using the UTF-32 encoding in native byte
+         order. The string always starts with a BOM mark.  */
+
+      PyObject* PyUnicode_AsUTF32String(
+              PyObject *unicode           /* Unicode object */
+              );
+
+      /* Returns a Python string object holding the UTF-32 encoded value of
+         the Unicode data.
+
+         If byteorder is not 0, output is written according to the following
+         byte order:
+
+         byteorder == -1: little endian
+         byteorder == 0:  native byte order (writes a BOM mark)
+         byteorder == 1:  big endian
+
+         If byteorder is 0, the output string will always start with the
+         Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark is
+         prepended.
+
+       */
+
+      PyObject* PyUnicode_EncodeUTF32(
+              const Py_UNICODE *data,     /* Unicode char buffer */
+              Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
+              const char *errors,         /* error handling */
+              int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
+              );
+  }
 
   // YYY: Unfortunately, we have to do it the tedious way since there's no
   // preprocessor in D:
@@ -661,7 +847,7 @@ extern (C) {
     PyObject *PyUnicodeUCS2_Concat(PyObject *left, PyObject *right);
     PyObject *PyUnicodeUCS2_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit);
     PyObject *PyUnicodeUCS2_Splitlines(PyObject *s, int keepends);
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
         PyObject *PyUnicodeUCS2_Partition(PyObject* s, PyObject* sep);
         PyObject *PyUnicodeUCS2_RPartition(PyObject* s, PyObject* sep);
@@ -788,7 +974,7 @@ extern (C) {
     PyObject *PyUnicodeUCS4_Concat(PyObject *left, PyObject *right);
     PyObject *PyUnicodeUCS4_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit);
     PyObject *PyUnicodeUCS4_Splitlines(PyObject *s, int keepends);
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
         PyObject *PyUnicodeUCS4_Partition(PyObject* s, PyObject* sep);
         PyObject *PyUnicodeUCS4_RPartition(PyObject* s, PyObject* sep);
@@ -879,7 +1065,7 @@ extern (C) {
     alias PyUnicodeUCS2_GetMax PyUnicode_GetMax;
     alias PyUnicodeUCS2_GetSize PyUnicode_GetSize;
     alias PyUnicodeUCS2_Join PyUnicode_Join;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
         alias PyUnicodeUCS2_Partition PyUnicode_Partition;
         alias PyUnicodeUCS2_Replace PyUnicode_Replace;
@@ -957,7 +1143,7 @@ extern (C) {
     alias PyUnicodeUCS4_GetMax PyUnicode_GetMax;
     alias PyUnicodeUCS4_GetSize PyUnicode_GetSize;
     alias PyUnicodeUCS4_Join PyUnicode_Join;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
         alias PyUnicodeUCS4_Partition PyUnicode_Partition;
         alias PyUnicodeUCS4_RPartition PyUnicode_RPartition;
@@ -1064,7 +1250,7 @@ extern (C) {
   PyObject *PyInt_FromString(char *, char **, int);
   PyObject *PyInt_FromUnicode(Py_UNICODE *, Py_ssize_t, int);
   PyObject *PyInt_FromLong(C_long);
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
       PyObject *PyInt_FromSize_t(size_t);
       PyObject *PyInt_FromSsize_t(Py_ssize_t);
@@ -1078,6 +1264,24 @@ extern (C) {
 
   C_ulong PyOS_strtoul(char *, char **, int);
   C_long PyOS_strtol(char *, char **, int);
+  version(Python_2_6_Or_Later){
+      long PyOS_strtol(char *, char **, int);
+
+      /* free list api */
+      int PyInt_ClearFreeList();
+
+      /* Convert an integer to the given base.  Returns a string.
+         If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'.
+         If newstyle is zero, then use the pre-2.6 behavior of octal having
+         a leading "0" */
+      PyObject* _PyInt_Format(PyIntObject* v, int base, int newstyle);
+
+      /* Format the object based on the format_spec, as defined in PEP 3101
+         (Advanced String Formatting). */
+      PyObject * _PyInt_FormatAdvanced(PyObject *obj,
+              char *format_spec,
+              Py_ssize_t format_spec_len);
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1107,13 +1311,19 @@ extern (C) {
 
   // &PyLong_Type is accessible via PyLong_Type_p.
 
-  // D translation of C macro:
-  int PyLong_Check()(PyObject *op) {
-    return PyObject_TypeCheck(op, PyLong_Type_p);
+  version(Python_2_6_Or_Later){
+      int PyLong_Check()(op){
+          return PyType_FastSubclass((op).ob_type, Py_TPFLAGS_LONG_SUBCLASS)
+      }
+  }else{
+      // D translation of C macro:
+      int PyLong_Check()(PyObject *op) {
+          return PyObject_TypeCheck(op, PyLong_Type_p);
+      }
   }
   // D translation of C macro:
   int PyLong_CheckExact()(PyObject *op) {
-    return op.ob_type == PyLong_Type_p;
+      return op.ob_type == PyLong_Type_p;
   }
 
   PyObject * PyLong_FromLong(C_long);
@@ -1123,11 +1333,18 @@ extern (C) {
   PyObject * PyLong_FromUnsignedLongLong(C_ulonglong);
 
   PyObject * PyLong_FromDouble(double);
+  version(Python_2_6_Or_Later){
+      PyObject * PyLong_FromSize_t(size_t);
+      PyObject * PyLong_FromSsize_t(Py_ssize_t);
+  }
   PyObject * PyLong_FromVoidPtr(void *);
 
   C_long PyLong_AsLong(PyObject *);
   C_ulong PyLong_AsUnsignedLong(PyObject *);
   C_ulong PyLong_AsUnsignedLongMask(PyObject *);
+  version(Python_2_6_Or_Later){
+      Py_ssize_t PyLong_AsSsize_t(PyObject *);
+  }
 
   C_longlong PyLong_AsLongLong(PyObject *);
   C_ulonglong PyLong_AsUnsignedLongLong(PyObject *);
@@ -1139,6 +1356,21 @@ extern (C) {
 
   PyObject * PyLong_FromString(char *, char **, int);
   PyObject * PyLong_FromUnicode(Py_UNICODE *, int, int);
+
+  version(Python_2_6_Or_Later){
+      /* _PyLong_Format: Convert the long to a string object with given base,
+         appending a base prefix of 0[box] if base is 2, 8 or 16.
+         Add a trailing "L" if addL is non-zero.
+         If newstyle is zero, then use the pre-2.6 behavior of octal having
+         a leading "0", instead of the prefix "0o" */
+      PyObject * _PyLong_Format(PyObject *aa, int base, int addL, int newstyle);
+
+      /* Format the object based on the format_spec, as defined in PEP 3101
+         (Advanced String Formatting). */
+      PyObject * _PyLong_FormatAdvanced(PyObject *obj,
+					      char *format_spec,
+					      Py_ssize_t format_spec_len);
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1163,12 +1395,26 @@ extern (C) {
     return op.ob_type == PyFloat_Type_p;
   }
 
+  version(Python_2_6_Or_Later){
+      double PyFloat_GetMax();
+      double PyFloat_GetMin();
+      PyObject * PyFloat_GetInfo();
+  }
+
   PyObject * PyFloat_FromString(PyObject *, char** junk);
   PyObject * PyFloat_FromDouble(double);
 
   double PyFloat_AsDouble(PyObject *);
   void PyFloat_AsReprString(char *, PyFloatObject *v);
   void PyFloat_AsString(char *, PyFloatObject *v);
+
+  version(Python_2_6_Or_Later){
+      // _PyFloat_Digits ??
+      // _PyFloat_DigitsInit ??
+      /* free list api */
+      int PyFloat_ClearFreeList();
+      // _PyFloat_FormatAdvanced ??
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1193,6 +1439,9 @@ extern (C) {
   Py_complex c_prod(Py_complex, Py_complex);
   Py_complex c_quot(Py_complex, Py_complex);
   Py_complex c_pow(Py_complex, Py_complex);
+  version(Python_2_6_Or_Later){
+      double c_abs(Py_complex);
+  }
 
   // &PyComplex_Type is accessible via PyComplex_Type_p.
 
@@ -1225,7 +1474,7 @@ extern (C) {
     return op.ob_type == PyRange_Type_p;
   }
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       PyObject * PyRange_New(C_long, C_long, C_long, int);
   }else{
       // Removed in 2.5
@@ -1305,6 +1554,25 @@ extern (C) {
 
   int PyString_AsStringAndSize(PyObject *obj, char **s, int *len);
 
+  version(Python_2_6_Or_Later){
+      /* Using the current locale, insert the thousands grouping
+         into the string pointed to by buffer.  For the argument descriptions,
+         see Objects/stringlib/localeutil.h */
+
+      int _PyString_InsertThousandsGrouping(char *buffer,
+              Py_ssize_t n_buffer,
+              Py_ssize_t n_digits,
+              Py_ssize_t buf_size,
+              Py_ssize_t *count,
+              int append_zero_char);
+
+      /* Format the object based on the format_spec, as defined in PEP 3101
+         (Advanced String Formatting). */
+      PyObject * _PyBytes_FormatAdvanced(PyObject *obj,
+              char *format_spec,
+              Py_ssize_t format_spec_len);
+  }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // BUFFER INTERFACE
@@ -1379,6 +1647,9 @@ extern (C) {
     return v;
   }
 
+  version(Python_2_6_Or_Later){
+      int PyTuple_ClearFreeList();
+  }
 
 ///////////////////////////////////////////////////////////////////////////////
 // LIST INTERFACE
@@ -1436,7 +1707,7 @@ extern (C) {
   enum int PyDict_MINSIZE = 8;
 
   struct PyDictEntry {
-      version(Python2_4){
+      version(Python_2_4_Or_Later){
           C_long me_hash;
       }else{
           Py_ssize_t me_hash;
@@ -1549,6 +1820,10 @@ extern (C) {
     PyObject    *m_module;
   }
 
+  version(Python_2_6_Or_Later){
+      int PyCFunction_ClearFreeList();
+  }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // MODULE INTERFACE
@@ -1574,16 +1849,16 @@ extern (C) {
 
   // Python-header-file: Include/modsupport.h:
 
-  version(Python2_4){
-      enum PYTHON_API_VERSION = 1012;
-      enum PYTHON_API_STRING = "1012";
-  }else version(Python2_5){
-      enum PYTHON_API_VERSION = 1013;
-      enum PYTHON_API_STRING = "1013";
-  }else{
-      // I bet this'll change
-      static assert(false);
-  }
+      version(Python_2_5_Or_Later){
+          enum PYTHON_API_VERSION = 1013;
+          enum PYTHON_API_STRING = "1013";
+      }else version(Python_2_4_Or_Later){
+          enum PYTHON_API_VERSION = 1012;
+          enum PYTHON_API_STRING = "1012";
+      }else{
+          // I bet this'll change
+          static assert(false);
+      }
 
   int PyArg_Parse(PyObject *, char *, ...);
   int PyArg_ParseTuple(PyObject *, char *, ...);
@@ -1745,6 +2020,10 @@ extern (C) {
 
   int PyClass_IsSubclass(PyObject *, PyObject *);
 
+  version(Python_2_6_Or_Later){
+      int PyMethod_ClearFreeList();
+  }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // FILE INTERFACE
@@ -1768,7 +2047,16 @@ extern (C) {
     int f_newlinetypes;
     int f_skipnextlf;
     PyObject *f_encoding;
+    version(Python_2_6_Or_Later){
+        PyObject *f_errors;
+    }
     PyObject *weakreflist;
+    version(Python_2_6_Or_Later){
+        int unlocked_count;         /* Num. currently running sections of code
+                                       using f_fp with the GIL released. */
+        int readable;
+        int writable;
+    }
   }
 
   // &PyFile_Type is accessible via PyFile_Type_p.
@@ -1784,9 +2072,16 @@ extern (C) {
   PyObject * PyFile_FromString(char *, char *);
   void PyFile_SetBufSize(PyObject *, int);
   int PyFile_SetEncoding(PyObject *,  char *);
+  version(Python_2_6_Or_Later){
+      int PyFile_SetEncodingAndErrors(PyObject *, const char *, char *errors);
+  }
   PyObject * PyFile_FromFile(FILE *, char *, char *,
                          int function(FILE *));
   FILE * PyFile_AsFile(PyObject *);
+  version(Python_2_6_Or_Later){
+      void PyFile_IncUseCount(PyFileObject *);
+      void PyFile_DecUseCount(PyFileObject *);
+  }
   PyObject * PyFile_Name(PyObject *);
   PyObject * PyFile_GetLine(PyObject *, int);
   int PyFile_WriteObject(PyObject *, PyObject *, int);
@@ -1825,6 +2120,15 @@ extern (C) {
   void * PyCObject_Import(char *module_name, char *cobject_name);
   int PyCObject_SetVoidPtr(PyObject *self, void *cobj);
 
+  version(Python_2_6_Or_Later){
+      struct PyCObject {
+          mixin PyObject_HEAD;
+          void *cobject;
+          void *desc;
+          void function(void *) destructor;
+      };
+  }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // TRACEBACK INTERFACE
@@ -1842,6 +2146,9 @@ extern (C) {
 
   int PyTraceBack_Here(PyFrameObject *);
   int PyTraceBack_Print(PyObject *, PyObject *);
+  version(Python_2_6_Or_Later){
+      int _Py_DisplaySourceLine(PyObject *, const char *, int, int);
+  }
 
   // &PyTraceBack_Type is accessible via PyTraceBack_Type_p.
   // D translation of C macro:
@@ -1987,6 +2294,11 @@ extern (C) {
   }
 
   // PyWrapperDescr_Type is currently not accessible from D.
+  version(Python_2_6_Or_Later){
+    // nor PyDictProxy_Type;
+    // norPyGetSetDescr_Type;
+    // nor PyMemberDescr_Type;
+  }
 
   PyObject * PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
   PyObject * PyDescr_NewClassMethod(PyTypeObject *, PyMethodDef *);
@@ -2037,7 +2349,7 @@ extern (C) {
   PyObject * PyWeakref_NewProxy(PyObject *ob, PyObject *callback);
   PyObject * PyWeakref_GetObject(PyObject *_ref);
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       C_long _PyWeakref_GetWeakrefCount(PyWeakReference *head);
   }else{
       Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
@@ -2081,7 +2393,7 @@ extern (C) {
 ///////////////////////////////////////////////////////////////////////////////
   // Python-header-file: Include/pyerrors.h:
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
   /* Error objects */
 
@@ -2112,8 +2424,13 @@ extern (C) {
       PyObject *message;
       PyObject *encoding;
       PyObject *object;
-      PyObject *start;
-      PyObject *end;
+      version(Python_2_6_Or_Later){
+          Py_ssize_t start;
+          Py_ssize_t end;
+      }else{
+          PyObject *start;
+          PyObject *end;
+      }
       PyObject *reason;
   }
 
@@ -2189,7 +2506,7 @@ extern (C) {
   PyObject * PyErr_NewException(char *name, PyObject *base, PyObject *dict);
   void PyErr_WriteUnraisable(PyObject *);
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       int PyErr_Warn(PyObject *, char *);
   }else{
       int PyErr_WarnEx(PyObject*, char*, Py_ssize_t);
@@ -2268,7 +2585,7 @@ extern (C) {
     PyObject *co_name;
     int co_firstlineno;
     PyObject *co_lnotab;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
         void *co_zombieframe;
     }
@@ -2284,16 +2601,17 @@ extern (C) {
   enum int CO_GENERATOR   = 0x0020;
   enum int CO_NOFREE      = 0x0040;
 
-  version(Python2_4){
-      enum int CO_GENERATOR_ALLOWED      = 0x1000;
-  }else{
+  version(Python_2_5_Or_Later){
       // Removed in 2.5
+  }else{
+      enum int CO_GENERATOR_ALLOWED      = 0x1000;
   }
   enum int CO_FUTURE_DIVISION        = 0x2000;
-  version(Python2_4){
-  }else{
+  version(Python_2_5_Or_Later){
       enum int CO_FUTURE_ABSOLUTE_IMPORT = 0x4000;
       enum int CO_FUTURE_WITH_STATEMENT  = 0x8000;
+      enum int CO_FUTURE_PRINT_FUNCTION  = 0x10000;
+      enum int CO_FUTURE_UNICODE_LITERALS  = 0x20000;
   }
 
   enum int CO_MAXBLOCKS = 20;
@@ -2318,11 +2636,15 @@ extern (C) {
   }
 
   int PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds);
+  version(Python_2_6_Or_Later){
+      PyObject* PyCode_Optimize(PyObject *code, PyObject* consts,
+                                      PyObject *names, PyObject *lineno_obj);
+  }
 
   // Python-header-file: Include/pyarena.h:
   struct PyArena;
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
       PyArena* PyArena_New();
       void PyArena_Free(PyArena*);
@@ -2339,7 +2661,7 @@ extern (C) {
     short	n_type;
     char	*n_str;
     int		n_lineno;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
     int		n_col_offset;
     }
@@ -2356,18 +2678,18 @@ extern (C) {
   PyCodeObject *PyNode_Compile(node *, char *);
 
   struct PyFutureFeatures {
-      version(Python2_4){
+      version(Python_2_4_Or_Later){
           int ff_found_docstring;
           int ff_last_linno;
       }
     int ff_features;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
     }else{
         int ff_lineno;
     }
   }
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       PyFutureFeatures *PyNode_Future(node *, char *);
       PyCodeObject *PyNode_CompileFlags(node *, char *, PyCompilerFlags *);
   }
@@ -2375,10 +2697,13 @@ extern (C) {
   enum FUTURE_NESTED_SCOPES = "nested_scopes";
   enum FUTURE_GENERATORS = "generators";
   enum FUTURE_DIVISION = "division";
-  version(Python2_4){
-  }else{
+  version(Python_2_5_Or_Later){
       enum FUTURE_ABSOLUTE_IMPORT = "absolute_import";
       enum FUTURE_WITH_STATEMENT = "with_statement";
+      version(Python_2_6_Or_Later){
+          enum FUTURE_PRINT_FUNCTION = "print_function";
+          enum FUTURE_UNICODE_LITERALS = "unicode_literals";
+      }
 
       struct _mod; /* Declare the existence of this type */
       PyCodeObject * PyAST_Compile(_mod *, char *, PyCompilerFlags *, PyArena *);
@@ -2411,7 +2736,7 @@ extern (C) {
   PyThreadState *Py_NewInterpreter();
   void Py_EndInterpreter(PyThreadState *);
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       int PyRun_AnyFile(FILE *, char *);
       int PyRun_AnyFileEx(FILE *, char *,int);
 
@@ -2457,7 +2782,7 @@ extern (C) {
   int PyRun_InteractiveOneFlags(FILE *, char *, PyCompilerFlags *);
   int PyRun_InteractiveLoopFlags(FILE *, char *, PyCompilerFlags *);
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       node *PyParser_SimpleParseString(char *, int);
       node *PyParser_SimpleParseFile(FILE *, char *, int);
       node *PyParser_SimpleParseStringFlagsFilename(char *, char *, int, int);
@@ -2478,7 +2803,7 @@ extern (C) {
   node *PyParser_SimpleParseFileFlags(FILE *, char *,int, int);
 
   PyObject *PyRun_StringFlags( char *, int, PyObject *, PyObject *, PyCompilerFlags *);
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       PyObject *PyRun_String(char *, int, PyObject *, PyObject *);
       PyObject *PyRun_File(FILE *, char *, int, PyObject *, PyObject *);
       PyObject *PyRun_FileEx(FILE *, char *, int, PyObject *, PyObject *, int);
@@ -2536,11 +2861,14 @@ extern (C) {
   char *Py_GetCopyright();
   char *Py_GetCompiler();
   char *Py_GetBuildInfo();
-  version(Python2_4){
-  }else{
+  version(Python_2_5_Or_Later){
       char * _Py_svnversion();
       char * Py_SubversionRevision();
       char * Py_SubversionShortBranch();
+  }
+
+  version(Python_2_6_Or_Later){
+      int PyByteArray_Init();
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2564,11 +2892,17 @@ extern (C) {
   void PyMethod_Fini();
   void PyFrame_Fini();
   void PyCFunction_Fini();
+  version(Python_2_6_Or_Later){
+      void PyDict_Fini();
+  }
   void PyTuple_Fini();
   void PyString_Fini();
   void PyInt_Fini();
   void PyFloat_Fini();
   void PyOS_FiniInterrupts();
+  version(Python_2_6_Or_Later){
+      void PyByteArray_Fini();
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // VARIOUS (API members documented as having "no proper home")
@@ -2594,7 +2928,7 @@ extern (C) {
 ///////////////////////////////////////////////////////////////////////////////
   // Python-header-file: Include/ceval.h:
   PyObject *PyEval_CallObjectWithKeywords(PyObject *, PyObject *, PyObject *);
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       PyObject *PyEval_CallObject(PyObject *, PyObject *);
   }else{
       PyObject *PyEval_CallObject()(PyObject *func, PyObject *arg) {
@@ -2633,7 +2967,7 @@ extern (C) {
 
   PyObject *PyEval_GetCallStats(PyObject *);
   PyObject *PyEval_EvalFrame(PyFrameObject *);
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
       PyObject *PyEval_EvalFrameEx(PyFrameObject *, int);
   }
@@ -2648,6 +2982,9 @@ extern (C) {
   int PySys_SetObject(char *, PyObject *);
   FILE *PySys_GetFile(char *, FILE *);
   void PySys_SetArgv(int, char **);
+  version(Python_2_6_Or_Later){
+      void PySys_SetArgvEx(int, char **, int);
+  }
   void PySys_SetPath(char *);
 
   void PySys_WriteStdout(char *format, ...);
@@ -2655,6 +2992,9 @@ extern (C) {
 
   void PySys_ResetWarnOptions();
   void PySys_AddWarnOption(char *);
+  version(Python_2_6_Or_Later){
+      int PySys_HasWarnOptions();
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2695,12 +3035,12 @@ extern (C) {
     PyThreadState *f_tstate;
     int f_lasti;
     int f_lineno;
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
         int f_restricted;
     }
     int f_iblock;
     PyTryBlock f_blockstack[CO_MAXBLOCKS];
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
         int f_nlocals;
         int f_ncells;
         int f_nfreevars;
@@ -2717,7 +3057,7 @@ extern (C) {
   int PyFrame_Check()(PyObject *op) {
     return op.ob_type == PyFrame_Type_p;
   }
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
       int PyFrame_IsRestricted()(PyFrameObject* f) {
           return f.f_builtins != f.f_tstate.interp.builtins;
@@ -2733,6 +3073,9 @@ extern (C) {
 
   void PyFrame_LocalsToFast(PyFrameObject *, int);
   void PyFrame_FastToLocals(PyFrameObject *);
+  version(Python_2_6_Or_Later){
+      int PyFrame_ClearFreeList();
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2806,6 +3149,10 @@ extern (C) {
   void PyInterpreterState_Delete(PyInterpreterState *);
 
   PyThreadState *PyThreadState_New(PyInterpreterState *);
+  version(Python_2_6_Or_Later){
+      PyThreadState * _PyThreadState_Prealloc(PyInterpreterState *);
+      void _PyThreadState_Init(PyThreadState *);
+  }
   void PyThreadState_Clear(PyThreadState *);
   void PyThreadState_Delete(PyThreadState *);
   void PyThreadState_DeleteCurrent();
@@ -2858,16 +3205,25 @@ extern (C) {
   PyObject *PyImport_GetModuleDict();
   PyObject *PyImport_AddModule(char *name);
   PyObject *PyImport_ImportModule(char *name);
-  version(Python2_4){
-      PyObject *PyImport_ImportModuleEx(char *, PyObject *, PyObject *, PyObject *);
-  }else{
+
+  version(Python_2_5_Or_Later){
       PyObject *PyImport_ImportModuleLevel(char *name,
               PyObject *globals, PyObject *locals, PyObject *fromlist, 
               int level);
+  }
+  version(Python_2_6_Or_Later){
+      PyObject * PyImport_ImportModuleNoBlock(const char *);
+  }else version(Python_2_5_Or_Later){
       PyObject *PyImport_ImportModuleEx()(char *n, PyObject *g, PyObject *l, 
               PyObject *f) {
           return PyImport_ImportModuleLevel(n, g, l, f, -1);
       }
+  }else{
+      PyObject *PyImport_ImportModuleEx(char *, PyObject *, PyObject *, PyObject *);
+  }
+
+  version(Python_2_6_Or_Later){
+      PyObject * PyImport_GetImporter(PyObject *path);
   }
   PyObject *PyImport_Import(PyObject *name);
   PyObject *PyImport_ReloadModule(PyObject *m);
@@ -2886,6 +3242,9 @@ extern (C) {
     char *name;
     void function() initfunc;
   }
+
+  // PyNullImporter_Type not available in d
+  // PyImport_Inittab not available in d
 
   int PyImport_AppendInittab(char *name, void function() initfunc);
   int PyImport_ExtendInittab(_inittab *newtab);
@@ -2922,13 +3281,13 @@ extern (C) {
 
   PyObject *PyObject_Call(PyObject *callable_object, PyObject *args, PyObject *kw);
   PyObject *PyObject_CallObject(PyObject *callable_object, PyObject *args);
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
       PyObject *PyObject_CallFunction(PyObject *callable_object, char *format, ...);
       PyObject *PyObject_CallMethod(PyObject *o, char *m, char *format, ...);
   }
   PyObject *_PyObject_CallFunction_SizeT(PyObject *callable, char *format, ...);
   PyObject *_PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...);
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
       alias _PyObject_CallFunction_SizeT PyObject_CallFunction;
       alias _PyObject_CallMethod_SizeT PyObject_CallMethod;
@@ -2948,6 +3307,11 @@ extern (C) {
   Py_ssize_t PyObject_Size(PyObject *o);
   //int PyObject_Length(PyObject *o);
   alias PyObject_Size PyObject_Length;
+  version(Python_2_6_Or_Later){
+      Py_ssize_t _PyObject_LengthHint(PyObject*, Py_ssize_t);
+  }else version(Python_2_5_Or_Later){
+      Py_ssize_t _PyObject_LengthHint(PyObject*);
+  }
 
   PyObject *PyObject_GetItem(PyObject *o, PyObject *key);
   int PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v);
@@ -2958,6 +3322,108 @@ extern (C) {
   int PyObject_CheckReadBuffer(PyObject *obj);
   int PyObject_AsReadBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len);
   int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len);
+
+  version(Python_2_6_Or_Later){
+    /* new buffer API */
+
+      void PyObject_CheckBuffer()(PyObject *obj){
+          return (obj.ob_type.tp_as_buffer !is null) &&
+              PyType_HasFeature(obj.ob_type, Py_TPFLAGS_HAVE_NEWBUFFER) &&
+              (obj.ob_type.tp_as_buffer.bf_getbuffer !is null);
+      }
+
+    /* Return 1 if the getbuffer function is available, otherwise
+       return 0 */
+
+     int PyObject_GetBuffer(PyObject *obj, Py_buffer *view,
+                                        int flags);
+
+    /* This is a C-API version of the getbuffer function call.  It checks
+       to make sure object has the required function pointer and issues the
+       call.  Returns -1 and raises an error on failure and returns 0 on
+       success
+    */
+
+
+     void* PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
+
+    /* Get the memory area pointed to by the indices for the buffer given.
+       Note that view->ndim is the assumed size of indices
+    */
+
+     int PyBuffer_SizeFromFormat(const char *);
+
+    /* Return the implied itemsize of the data-format area from a
+       struct-style description */
+
+
+
+     int PyBuffer_ToContiguous(void *buf, Py_buffer *view,
+                                           Py_ssize_t len, char fort);
+
+     int PyBuffer_FromContiguous(Py_buffer *view, void *buf,
+                                             Py_ssize_t len, char fort);
+
+
+    /* Copy len bytes of data from the contiguous chunk of memory
+       pointed to by buf into the buffer exported by obj.  Return
+       0 on success and return -1 and raise a PyBuffer_Error on
+       error (i.e. the object does not have a buffer interface or
+       it is not working).
+
+       If fort is 'F' and the object is multi-dimensional,
+       then the data will be copied into the array in
+       Fortran-style (first dimension varies the fastest).  If
+       fort is 'C', then the data will be copied into the array
+       in C-style (last dimension varies the fastest).  If fort
+       is 'A', then it does not matter and the copy will be made
+       in whatever way is more efficient.
+
+    */
+
+     int PyObject_CopyData(PyObject *dest, PyObject *src);
+
+    /* Copy the data from the src buffer to the buffer of destination
+     */
+
+     int PyBuffer_IsContiguous(Py_buffer *view, char fort);
+
+
+     void PyBuffer_FillContiguousStrides(int ndims,
+                                                    Py_ssize_t *shape,
+                                                    Py_ssize_t *strides,
+                                                    int itemsize,
+                                                    char fort);
+
+    /*  Fill the strides array with byte-strides of a contiguous
+        (Fortran-style if fort is 'F' or C-style otherwise)
+        array of the given shape with the given number of bytes
+        per element.
+    */
+
+     int PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
+                                       Py_ssize_t len, int readonly,
+                                       int flags);
+
+    /* Fills in a buffer-info structure correctly for an exporter
+       that can only share a contiguous chunk of memory of
+       "unsigned bytes" of the given length. Returns 0 on success
+       and -1 (with raising an error) on error.
+     */
+
+     void PyBuffer_Release(Py_buffer *view);
+
+       /* Releases a Py_buffer obtained from getbuffer ParseTuple's s*.
+    */
+
+     PyObject* PyObject_Format(PyObject* obj,
+                                            PyObject *format_spec);
+       /*
+     Takes an arbitrary object and returns the result of
+     calling obj.__format__(format_spec).
+       */
+
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // ITERATORS
@@ -2997,7 +3463,7 @@ extern (C) {
   PyObject *PyNumber_Xor(PyObject *o1, PyObject *o2);
   PyObject *PyNumber_Or(PyObject *o1, PyObject *o2);
 
-  version(Python2_4){
+  version(Python_2_4_Or_Later){
   }else{
       int PyIndex_Check()(PyObject* obj) {
           return obj.ob_type.tp_as_number !is null &&
@@ -3006,6 +3472,20 @@ extern (C) {
       }
       PyObject *PyNumber_Index(PyObject *o);
       Py_ssize_t PyNumber_AsSsize_t(PyObject* o, PyObject* exc);
+  }
+  version(Python_2_6_Or_Later){
+       /*
+     Returns the Integral instance converted to an int. The
+     instance is expected to be int or long or have an __int__
+     method. Steals integral's reference. error_format will be
+     used to create the TypeError if integral isn't actually an
+     Integral instance. error_format should be a format string
+     that can accept a char* naming integral's type.
+       */
+
+     PyObject * _PyNumber_ConvertIntegralToInt(
+         PyObject *integral,
+         const char* error_format);
   }
 
   PyObject *PyNumber_Int(PyObject *o);
@@ -3025,6 +3505,16 @@ extern (C) {
   PyObject *PyNumber_InPlaceAnd(PyObject *o1, PyObject *o2);
   PyObject *PyNumber_InPlaceXor(PyObject *o1, PyObject *o2);
   PyObject *PyNumber_InPlaceOr(PyObject *o1, PyObject *o2);
+
+  version(Python_2_6_Or_Later){
+     PyObject* PyNumber_ToBase(PyObject *n, int base);
+
+       /*
+     Returns the integer n converted to a string with a base, with a base
+     marker of 0b, 0o or 0x prefixed if applicable.
+     If n is not an int object, it is converted with PyNumber_Index first.
+       */
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // SEQUENCES
@@ -3120,6 +3610,12 @@ extern (C) {
   /////////////////////////////////////////////////////////////////////////////
   int PyObject_IsInstance(PyObject *object, PyObject *typeorclass);
   int PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
+
+  version(Python_2_6_Or_Later){
+      int _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
+
+      int _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3461,6 +3957,10 @@ struct PyGenObject {
   mixin PyObject_HEAD;
   PyFrameObject *gi_frame;
   int gi_running;
+  version(Python_2_6_Or_Later){
+      /* The code object backing the generator */
+      PyObject *gi_code;
+  }
   PyObject *gi_weakreflist;
 }
 
@@ -3482,10 +3982,10 @@ int PyGen_NeedsFinalizing(PyGenObject *);
 ///////////////////////////////////////////////////////////////////////////////
 // Python-header-file: Include/marshal.h:
 
-version(Python2_4){
-    enum Py_MARSHAL_VERSION = 1;
-}else version(Python2_5){
+version(Python_2_5_Or_Later){
     enum Py_MARSHAL_VERSION = 2;
+} else version(Python_2_4_Or_Later){
+    enum Py_MARSHAL_VERSION = 1;
 }else{
     static assert (false);
 }
@@ -3532,7 +4032,7 @@ enum WAIT_LOCK = 1;
 enum NOWAIT_LOCK = 0;
 void PyThread_release_lock(PyThread_type_lock);
 
-version(Python2_4){
+version(Python_2_4_Or_Later){
 }else{
     size_t PyThread_get_stacksize();
     int PyThread_set_stacksize(size_t);
@@ -3553,8 +4053,7 @@ void PyThread_delete_key_value(int key);
 ///////////////////////////////////////////////////////////////////////////////
 // Python-header-file: Include/setobject.h:
 
-version(Python2_4){
-}else{
+version(Python_2_5_Or_Later){
     enum PySet_MINSIZE = 8;
 
     struct setentry {
@@ -3566,7 +4065,7 @@ version(Python2_4){
 struct PySetObject {
     mixin PyObject_HEAD;
 
-    version(Python2_4){
+    version(Python_2_4_Or_Later){
         PyObject *data;
     }else{
         Py_ssize_t fill;
@@ -3601,9 +4100,18 @@ int PyAnySet_Check()(PyObject *ob) {
       || PyType_IsSubtype(ob.ob_type, PyFrozenSet_Type_p)
     );
 }
+version(Python_2_6_Or_Later){
+    bool PySet_Check()(PyObject *ob) {
+        return (ob.ob_type == &PySet_Type || 
+                PyType_IsSubtype(ob.ob_type, &PySet_Type));
+    }
+    bool PyFrozenSet_Check()(PyObject *ob) {
+        return (ob.ob_type == &PyFrozenSet_Type || 
+                PyType_IsSubtype(ob.ob_type, &PyFrozenSet_Type));
+    }
+}
 
-version(Python2_4){
-}else{
+version(Python_2_5_Or_Later){
     PyObject *PySet_New(PyObject *);
     PyObject *PyFrozenSet_New(PyObject *);
     Py_ssize_t PySet_Size(PyObject *anyset);
@@ -3646,11 +4154,16 @@ enum T_USHORT = 10;
 enum T_UINT = 11;
 enum T_ULONG = 12;
 enum T_STRING_INPLACE = 13;
+version(Python_2_6_Or_Later){
+    enum T_BOOL = 14;
+}
 enum T_OBJECT_EX = 16;
-version(Python2_4){
-}else{
+version(Python_2_5_Or_Later){
     enum T_LONGLONG = 17;
     enum T_ULONGLONG = 18;
+}
+version(Python_2_6_Or_Later){
+    enum T_PYSSIZET = 19;
 }
 
 enum READONLY = 1;
