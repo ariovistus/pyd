@@ -85,16 +85,16 @@ class DCompiler(cc.CCompiler):
                 # The environment variable wasn't supplied, so search the PATH.
                 # Windows requires the full path for reasons that escape me at
                 # the moment.
-                dBin = _findInPath(self.compiler_type + self.exe_extension)
+                dBin = _findInPath(self.executables['compiler'][0] + self.exe_extension)
                 if dBin is None:
                     raise DistutilsFileError('You must either set the %s'
                         ' environment variable to the full path of the %s'
                         ' executable, or place the executable on the PATH.' %
-                        (self._env_var, self.compiler_type)
+                        (self._env_var, self.executables['compiler'][0])
                     )
             else:
                 # Just run it via the PATH directly in Linux
-                dBin = self.compiler_type
+                dBin = self.executables['compiler'][0]
         self._binpath = dBin
         # _unicodeOpt
         self._unicodeOpt = self._versionOpt % ('Python_Unicode_UCS' + ((sys.maxunicode == 0xFFFF and '2') or '4'))
@@ -319,7 +319,10 @@ class DCompiler(cc.CCompiler):
         extra_postargs = extra_postargs or []
 
         binpath = self._binpath
-        outputOpts = self._outputOpts[:]
+        if hasattr(self, '_linkOutputOpts'):
+            outputOpts = self._linkOutputOpts[:]
+        else:
+            outputOpts = self._outputOpts[:]
         objectOpts = [_qp(fn) for fn in objects]
 
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
@@ -538,6 +541,65 @@ class GDCDCompiler(DCompiler):
 
     def library_option(self, lib):
         return '-l' + lib
+
+class LDCDCompiler(DCompiler):
+    compiler_type = 'ldc'
+    linker_type = 'gcc'
+
+    executables = {
+        'preprocessor' : None,
+        'compiler'     : ['ldc2'],
+        'compiler_so'  : ['ldc2'],
+        'linker_so'    : ['gcc'],
+        'linker_exe'   : ['gcc'],
+    }
+
+    _env_var = 'GDC_BIN'
+
+    def _initialize(self):
+        # _compileOpts
+        self._compileOpts = ['-relocation-model=pic', '-c']
+        # _outputOpts
+        self._outputOpts = ['-of', '%s']
+        self._linkOutputOpts = ['-o', '%s']
+        # _linkOpts
+        self._linkOpts = ['-nostartfiles', '-shared','-llphobos2','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
+        # _includeOpts
+        self._includeOpts = ['-I', '%s']
+        # _versionOpt
+        self._versionOpt = '-d-version=%s'
+        # _debugOpt
+        self._debugOpt = '-d-debug=%s'
+        # _defaultOptimizeOpts
+        self._defaultOptimizeOpts = ['-d-debug']
+        # _debugOptimizeOpts
+        self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', '-unittest']
+        # _releaseOptimizeOpts
+        self._releaseOptimizeOpts = ['-fversion=Optimized', '-release', '-O3', '-finline-functions']
+        # StackThreads support
+        self._st_support = False
+
+    def _def_file(self, output_dir, output_filename):
+        return ['-Wl,-soname,' + os.path.basename(output_filename)]
+
+    def library_dir_option(self, dir):
+        return '-L' + dir
+
+    def runtime_library_dir_option(self, dir):
+        return '-Wl,-R' + dir
+
+    def library_option(self, lib):
+        return '-l' + lib
+    def link (self, *args, **kwargs):
+        target_desc = args[0]
+        if target_desc != cc.CCompiler.SHARED_OBJECT:
+            raise LinkError('This CCompiler implementation does not know'
+                ' how to link anything except an extension module (that is, a'
+                ' shared object file).'
+            )
+        self._binpath = self.executables['linker_so'][0]
+        return DCompiler.link(self, *args, **kwargs)
+        
 
 # Utility functions:
 def _findInPath(fileName, startIn=None):

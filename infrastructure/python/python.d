@@ -1867,19 +1867,28 @@ extern (C) {
   int PyModule_AddIntConstant(PyObject *, char *, C_long);
   int PyModule_AddStringConstant(PyObject *, char *, char *);
 
-  PyObject * Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
-                            PyObject *self, int apiver);
+  version(Python_2_5_Or_Later){
+      version(X86_64){
+          enum Py_InitModuleSym = "Py_InitModule4_64";
+      }else{
+          enum Py_InitModuleSym = "Py_InitModule4";
+      }
+  }else{
+      enum Py_InitModuleSym = "Py_InitModule4";
+  }
+  mixin("PyObject * "~Py_InitModuleSym~"(char *name, PyMethodDef *methods, char *doc,
+                  PyObject *self, int apiver);
 
   PyObject * Py_InitModule()(char *name, PyMethodDef *methods)
   {
-    return Py_InitModule4(name, methods, cast(char *)(null),
+    return "~Py_InitModuleSym~"(name, methods, cast(char *)(null),
       cast(PyObject *)(null), PYTHON_API_VERSION);
   }
 
   PyObject * Py_InitModule3()(char *name, PyMethodDef *methods, char *doc) {
-    return Py_InitModule4(name, methods, doc, cast(PyObject *)null,
+    return "~Py_InitModuleSym~"(name, methods, doc, cast(PyObject *)null,
       PYTHON_API_VERSION);
-  }
+  }");
 
 
 ///////////////////////////////////////////////////////////////////////////////

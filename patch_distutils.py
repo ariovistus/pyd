@@ -18,6 +18,7 @@ cc.CCompiler.language_order.insert(0, 'd')
 
 cc.compiler_class['dmd'] = ('celerid.dcompiler', 'DMDDCompiler', 'Digital Mars D')
 cc.compiler_class['gdc'] = ('celerid.dcompiler', 'GDCDCompiler', 'GCC D Compiler')
+cc.compiler_class['ldc'] = ('celerid.dcompiler', 'LDCDCompiler', 'LLVM D Compiler')
 
 _old_new_compiler = cc.new_compiler
 
@@ -29,14 +30,16 @@ def new_compiler(compiler=None, dry_run=0, force=0, **kwargs):
         if dcompiler._isPlatWin:
             compiler = 'dmd'
         else:
-            compiler = 'gdc'
+            compiler = 'ldc'
 
-    if compiler not in ('dmd', 'gdc'):
+    if compiler not in ('dmd', 'gdc','ldc'):
         return _old_new_compiler(compiler=compiler,
             dry_run=dry_run, force=force, **kwargs
           )
     elif compiler == 'dmd':
         return dcompiler.DMDDCompiler(None, dry_run, force)
+    elif compiler == 'ldc':
+        return dcompiler.LDCDCompiler(None, dry_run, force)
     elif compiler == 'gdc':
         return dcompiler.GDCDCompiler(None, dry_run, force)
     else:

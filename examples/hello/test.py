@@ -8,6 +8,7 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
     '.'.join(str(v) for v in sys.version_info[:2])
 ))
 sys.path.append(os.path.abspath(libDir))
+print sys.path
 import hello
 
 hello.hello()

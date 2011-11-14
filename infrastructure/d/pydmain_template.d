@@ -11,3 +11,6 @@ export void init%(modulename)s() {
     });
 }
 
+extern(C) void _Dmain(){
+    // make druntime happy
+}
