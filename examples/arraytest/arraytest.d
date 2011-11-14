@@ -2,7 +2,7 @@ module arraytest;
 
 import pyd.pyd;
 import std.stdio : writefln, writef;
-import std.string : format, toString;
+import std.string : format;
 
 class Foo {
     int i;
@@ -10,8 +10,8 @@ class Foo {
     void bar() {
         writefln("Foo.bar: %s", i);
     }
-    char[] toString() {
-        return "{" ~ .toString(i) ~ "}";
+    string toString() {
+        return format("{%s}",i);
     }
 }
 

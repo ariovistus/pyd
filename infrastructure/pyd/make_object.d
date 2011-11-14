@@ -324,6 +324,7 @@ T d_type(T) (PyObject* o) {
     } else {
         could_not_convert!(T)(o);
     }
+    assert(0);
 }
 
 alias d_type!(Object) d_type_Object;
