@@ -11,5 +11,10 @@ sys.path.append(os.path.abspath(libDir))
 print sys.path
 import hello
 
-hello.hello()
+
+try:
+    hello.hello()
+except Exception, e:
+    print e
+    print e.__dict__
 

@@ -4,15 +4,15 @@
 // until Phobos is updated to explicitly allow it.
 extern(C) {
 
-void gc_init();
-void gc_term();
+void rt_init();
+void rt_term();
 
 void _init() {
-    gc_init();
+    rt_init();
 }
 
 void _fini() {
-    gc_term();
+    rt_term();
 }
 
 } /* extern(C) */
