@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006 Kirk McDonald
+Copyright 2006, 2007 Kirk McDonald
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -55,7 +55,7 @@ template wrapped_struct_init(T) {
     int init(PyObject* self, PyObject* args, PyObject* kwds) {
         return exception_catcher({
             static if (is(T S : S*)) {
-                pragma(msg, "wrapped_struct_init, S is " ~ prettynameof!(S));
+                pragma(msg, "wrapped_struct_init, S is '" ~ prettynameof!(S) ~ "'");
                 T t = new S;
                 WrapPyObject_SetObj(self, t);
             }
@@ -64,17 +64,19 @@ template wrapped_struct_init(T) {
     }
 }
 
-// This template accepts a Tuple of (either) function pointer types or other
-// Tuples, which each describe a ctor of T, and  uses them to wrap a Python
-// tp_init function.
+//import std.stdio;
+// This template accepts a tuple of function pointer types, which each describe
+// a ctor of T, and  uses them to wrap a Python tp_init function.
 template wrapped_ctors(T, C ...) {
+    //alias shim_class T;
     alias wrapped_class_object!(T) wrap_object;
 
     extern(C)
-    int init_func(PyObject* self, PyObject* args, PyObject* kwds) {
-        int len = PyObject_Length(args);
+    static int init_func(PyObject* self, PyObject* args, PyObject* kwds) {
+        Py_ssize_t len = PyObject_Length(args);
 
         return exception_catcher({
+            //writefln("in init_func: len=%s, T=%s, C.length=%s", len, typeid(T), C.length);
             // Default ctor
             static if (is(typeof(new T))) {
                 if (len == 0) {
@@ -86,12 +88,15 @@ template wrapped_ctors(T, C ...) {
             C c;
             foreach(i, arg; c) {
                 alias ParameterTypeTuple!(typeof(arg)) Ctor;
+                //writefln("  init_func: i=%s, Ctor.length=%s, Ctor=%s", i, Ctor.length, typeid(typeof(arg)));
                 if (Ctor.length == len) {
                     auto fn = &call_ctor!(T, ParameterTypeTuple!(typeof(arg)));
                     if (fn is null) {
                         PyErr_SetString(PyExc_RuntimeError, "Couldn't get pointer to class ctor redirect.");
                         return -1;
                     }
+                    alias typeof(fn) dg_t;
+                    //mixin applyPyTupleToDelegate!(dg_t) A;
                     T t = applyPyTupleToDelegate(fn, args);
                     if (t is null) {
                         PyErr_SetString(PyExc_RuntimeError, "Class ctor redirect didn't return a class instance!");

@@ -149,7 +149,7 @@ ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
     const uint ARGS = T.length;
     alias ReturnType!(dg_t) RT;
 
-    int argCount = 0;
+    Py_ssize_t argCount = 0;
     // This can make it more convenient to call this with 0 args.
     if (args !is null) {
         argCount = PyObject_Length(args);

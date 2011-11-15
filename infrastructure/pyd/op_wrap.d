@@ -201,7 +201,7 @@ template opindex_mapping_pyfunc(T) {
         alias method_wrap!(T, T.opIndex, typeof(&T.opIndex)) opindex_methodT;
         extern(C)
         PyObject* func(PyObject* self, PyObject* key) {
-            int args;
+            Py_ssize_t args;
             if (!PyTuple_CheckExact(key)) {
                 args = 1;
             } else {
@@ -224,7 +224,7 @@ template opindexassign_mapping_pyfunc(T) {
     static if (ARGS > 2) {
         extern(C)
         int func(PyObject* self, PyObject* key, PyObject* val) {
-            int args;
+            Py_ssize_t args;
             if (!PyTuple_CheckExact(key)) {
                 args = 2;
             } else {
@@ -315,6 +315,7 @@ template opcmp_wrap(T) {
             if (result < 0) return -1;
             if (result == 0) return 0;
             if (result > 0) return 1;
+            assert(0);
         });
     }
 }

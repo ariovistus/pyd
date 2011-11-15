@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006 Kirk McDonald
+Copyright 2006, 2007 Kirk McDonald
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -45,7 +45,9 @@ import pyd.func_wrap;
 import pyd.exception;
 import pyd.lib_abstract :
     objToStr,
-    toString
+    toString,
+    ParameterTypeTuple,
+    ReturnType
 ;
 
 package template isArray(T) {
@@ -67,6 +69,57 @@ package template isAA(T) {
     const bool isAA = is(typeof(T.init.values[0])[typeof(T.init.keys[0])] == T);
 }
 
+class to_conversion_wrapper(dg_t) {
+    alias ParameterTypeTuple!(dg_t)[0] T;
+    alias ReturnType!(dg_t) Intermediate;
+    dg_t dg;
+    this(dg_t fn) { dg = fn; }
+    PyObject* opCall(T t) {
+        static if (is(Intermediate == PyObject*)) {
+            return dg(t);
+        } else {
+            return _py(dg(t));
+        }
+    }
+}
+class from_conversion_wrapper(dg_t) {
+    alias ParameterTypeTuple!(dg_t)[0] Intermediate;
+    alias ReturnType!(dg_t) T;
+    dg_t dg;
+    this(dg_t fn) { dg = fn; }
+    T opCall(PyObject* o) {
+        static if (is(Intermediate == PyObject*)) {
+            return dg(o);
+        } else {
+            return dg(d_type!(Intermediate)(o));
+        }
+    }
+}
+
+template to_converter_registry(From) {
+    PyObject* delegate(From) dg=null;
+}
+template from_converter_registry(To) {
+    To delegate(PyObject*) dg=null;
+}
+
+void d_to_python(dg_t) (dg_t dg) {
+    static if (is(dg_t == delegate) && is(ReturnType!(dg_t) == PyObject*)) {
+        to_converter_registry!(ParameterTypeTuple!(dg_t)[0]).dg = dg;
+    } else {
+        auto o = new to_conversion_wrapper!(dg_t)(dg);
+        to_converter_registry!(typeof(o).T).dg = &o.opCall;
+    }
+}
+void python_to_d(dg_t) (dg_t dg) {
+    static if (is(dg_t == delegate) && is(ParameterTypeTuple!(dg_t)[0] == PyObject*)) {
+        from_converter_registry!(ReturnType!(dg_t)).dg = dg;
+    } else {
+        auto o = new from_conversion_wrapper!(dg_t)(dg);
+        from_converter_registry!(typeof(o).T).dg = &o.opCall;
+    }
+}
+
 /**
  * Returns a new (owned) reference to a Python object based on the passed
  * argument. If the passed argument is a PyObject*, this "steals" the
@@ -78,6 +131,12 @@ package template isAA(T) {
  * RuntimeError will be raised and this function will return null.
  */
 PyObject* _py(T) (T t) {
+    static if (!is(T == PyObject*) && is(typeof(t is null))) {
+        if (t is null) {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+    }
     static if (is(T : bool)) {
         PyObject* temp = (t) ? Py_True : Py_False;
         Py_INCREF(temp);
@@ -93,7 +152,7 @@ PyObject* _py(T) (T t) {
     } else static if (is(T : cdouble)) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if (is(T : string)) {
-        return PyString_FromString((t ~ "\0").dup.ptr);
+        return PyString_FromString((t ~ "\0").ptr);
     } else static if (is(T : wstring)) {
         return PyUnicode_FromWideChar(t, t.length);
     // Converts any array (static or dynamic) to a Python list
@@ -142,7 +201,13 @@ PyObject* _py(T) (T t) {
         PyObject* temp = t.ptr();
         Py_INCREF(temp);
         return temp;
-    // Convert wrapped type of a PyObject*
+    // The function expects to be passed a borrowed reference and return an
+    // owned reference. Thus, if passed a PyObject*, this will increment the
+    // reference count.
+    } else static if (is(T : PyObject*)) {
+        Py_INCREF(t);
+        return t;
+    // Convert wrapped type to a PyObject*
     } else static if (is(T == class)) {
         // But only if it actually is a wrapped type. :-)
         PyTypeObject** type = t.classinfo in wrapped_classes;
@@ -160,14 +225,16 @@ PyObject* _py(T) (T t) {
     // If converting a struct by reference, wrap the thing directly
     } else static if (is(typeof(*t) == struct)) {
         if (is_wrapped!(T)) {
+            if (t is null) {
+                Py_INCREF(Py_None);
+                return Py_None;
+            }
             return WrapPyObject_FromObject(t);
         }
-    // The function expects to be passed a borrowed reference and return an
-    // owned reference. Thus, if passed a PyObject*, this will increment the
-    // reference count.
-    } else static if (is(T : PyObject*)) {
-        Py_INCREF(t);
-        return t;
+    }
+    // No conversion found, check runtime registry
+    if (to_converter_registry!(T).dg) {
+        return to_converter_registry!(T).dg(t);
     }
     PyErr_SetString(PyExc_RuntimeError, ("D conversion function _py failed with type " ~ objToStr(typeid(T))).ptr);
     return null;
@@ -247,19 +314,23 @@ T d_type(T) (PyObject* o) {
     } else static if (is(T == class)) {
         // We can only convert to a class if it has been wrapped, and of course
         // we can only convert the object if it is the wrapped type.
-        if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
+        if (
+            is_wrapped!(T) &&
+            PyObject_IsInstance(o, cast(PyObject*)&wrapped_class_type!(T)) &&
+            cast(T)((cast(wrapped_class_object!(Object)*)o).d_obj) !is null
+        ) {
             return WrapPyObject_AsObject!(T)(o);
         }
         // Otherwise, throw up an exception.
-        could_not_convert!(T)(o);
+        //could_not_convert!(T)(o);
     } else static if (is(T == struct)) { // struct by value
         if (is_wrapped!(T*) && PyObject_TypeCheck(o, &wrapped_class_type!(T*))) { 
             return *WrapPyObject_AsObject!(T*)(o);
-        } else could_not_convert!(T)(o);
+        }// else could_not_convert!(T)(o);
     } else static if (is(typeof(*(T.init)) == struct)) { // pointer to struct   
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
             return WrapPyObject_AsObject!(T)(o);
-        } else could_not_convert!(T)(o);
+        }// else could_not_convert!(T)(o);
     } else static if (is(T == delegate)) {
         // Get the original wrapped delegate out if this is a wrapped delegate
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
@@ -267,13 +338,13 @@ T d_type(T) (PyObject* o) {
         // Otherwise, wrap the PyCallable with a delegate
         } else if (PyCallable_Check(o)) {
             return PydCallable_AsDelegate!(T)(o);
-        } else could_not_convert!(T)(o);
+        }// else could_not_convert!(T)(o);
     } else static if (is(T == function)) {
         // We can only make it a function pointer if we originally wrapped a
         // function pointer.
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
             return WrapPyObject_AsObject!(T)(o);
-        } else could_not_convert!(T)(o);
+        }// else could_not_convert!(T)(o);
     /+
     } else static if (is(wchar[] : T)) {
         wchar[] temp;
@@ -281,8 +352,8 @@ T d_type(T) (PyObject* o) {
         PyUnicode_AsWideChar(cast(PyUnicodeObject*)o, temp, temp.length);
         return temp;
     +/
-    } else static if (is(string : T)) {
-        char* result;
+    } else static if (is(string : T) || is(char[] : T)) {
+        const(char)* result;
         PyObject* repr;
         // If it's a string, convert it
         if (PyString_Check(o) || PyUnicode_Check(o)) {
@@ -295,7 +366,47 @@ T d_type(T) (PyObject* o) {
             Py_DECREF(repr);
         }
         if (result is null) handle_exception();
-        return .toString(result);
+        version (D_Version2) {
+            static if (is(string : T)) {
+                return .toString(result);
+            } else {
+                return .toString(result).dup;
+            }
+        } else {
+            return .toString(result).dup;
+        }
+    } else static if (is(T E : E[])) {
+        // Dynamic arrays
+        PyObject* iter = PyObject_GetIter(o);
+        if (iter is null) {
+            PyErr_Clear();
+            could_not_convert!(T)(o);
+        }
+        scope(exit) Py_DECREF(iter);
+        Py_ssize_t len = PyObject_Length(o);
+        if (len == -1) {
+            PyErr_Clear();
+            could_not_convert!(T)(o);
+        }
+        T array;
+        array.length = len;
+        int i = 0;
+        PyObject* item = PyIter_Next(iter);
+        while (item) {
+            try {
+                array[i] = d_type!(E)(item);
+            } catch(PydConversionException e) {
+                Py_DECREF(item);
+                // We re-throw the original conversion exception, rather than
+                // complaining about being unable to convert to an array. The
+                // partially constructed array is left to the GC.
+                throw e;
+            }
+            ++i;
+            Py_DECREF(item);
+            item = PyIter_Next(iter);
+        }
+        return array;
     } else static if (is(cdouble : T)) {
         double real_ = PyComplex_RealAsDouble(o);
         handle_exception();
@@ -321,9 +432,13 @@ T d_type(T) (PyObject* o) {
         int res = PyObject_IsTrue(o);
         handle_exception();
         return res == 1;
-    } else {
+    }/+ else {
         could_not_convert!(T)(o);
+    }+/
+    if (from_converter_registry!(T).dg) {
+        return from_converter_registry!(T).dg(o);
     }
+    could_not_convert!(T)(o);
     assert(0);
 }
 
@@ -339,7 +454,7 @@ void could_not_convert(T) (PyObject* o) {
     if (py_type is null) {
         py_typename = "<unknown>";
     } else {
-        py_type_str = PyObject_GetAttrString(py_type, "__name__".dup.ptr);
+        py_type_str = PyObject_GetAttrString(py_type, cast(const(char)*) "__name__".ptr);
         Py_DECREF(py_type);
         if (py_type_str is null) {
             py_typename = "<unknown>";
