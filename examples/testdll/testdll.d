@@ -46,7 +46,7 @@ class Foo {
         return x+y;
     }
     Foo opAdd(Foo f) { return new Foo(m_i + f.m_i); }
-    int opApply(int delegate(inout int, inout int) dg) {
+    int opApply(int delegate(ref int, ref int) dg) {
         int result = 0;
         int j;
         for (int i=0; i<10; ++i) {
@@ -97,7 +97,7 @@ class Bar {
     int[] m_a;
     this() { }
     this(int[] i ...) { m_a = i; }
-    int opApply(int delegate(inout int) dg) {
+    int opApply(int delegate(ref int) dg) {
         int result = 0;
         for (int i=0; i<m_a.length; ++i) {
             result = dg(m_a[i]);

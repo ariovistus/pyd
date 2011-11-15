@@ -1884,14 +1884,14 @@ extern (C) {
   mixin("PyObject * "~Py_InitModuleSym~"(Char1 *name, PyMethodDef *methods, Char1 *doc,
                   PyObject *self, int apiver);
 
-  PyObject * Py_InitModule()(Char1 *name, PyMethodDef *methods)
+  PyObject * Py_InitModule()(string name, PyMethodDef *methods)
   {
-    return "~Py_InitModuleSym~"(name, methods, cast(Char1 *)(null),
+    return "~Py_InitModuleSym~"(cast(Char1*) name.ptr, methods, cast(Char1 *)(null),
       cast(PyObject *)(null), PYTHON_API_VERSION);
   }
 
-  PyObject * Py_InitModule3()(Char1 *name, PyMethodDef *methods, Char1 *doc) {
-    return "~Py_InitModuleSym~"(name, methods, doc, cast(PyObject *)null,
+  PyObject * Py_InitModule3()(string name, PyMethodDef *methods, string doc) {
+    return "~Py_InitModuleSym~"(cast(Char1*)name.ptr, methods, cast(Char1*) doc, cast(PyObject *)null,
       PYTHON_API_VERSION);
   }");
 

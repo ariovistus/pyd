@@ -4,6 +4,9 @@ module rawexample;
 import python;
 import std.stdio;
 
+// our druntime handling is still a bit crummy
+extern(C) void _Dmain(){}
+
 static PyTypeObject Base_type;
 static PyTypeObject Derived_type;
 

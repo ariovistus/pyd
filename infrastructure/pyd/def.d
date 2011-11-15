@@ -110,7 +110,7 @@ PyObject* module_init(string docstring="") {
     //_loadPythonSupport();
     string name = pyd_module_name;
     ready_module_methods("");
-    pyd_modules[""] = Py_InitModule3((name ~ "\0").dup.ptr, module_methods[""].ptr, (docstring ~ "\0").dup.ptr);
+    pyd_modules[""] = Py_InitModule3(name ~ "\0", module_methods[""].ptr, docstring ~ "\0");
     return pyd_modules[""];
 }
 
@@ -119,7 +119,7 @@ PyObject* module_init(string docstring="") {
  */
 PyObject* add_module(string name, string docstring="") {
     ready_module_methods(name);
-    pyd_modules[name] = Py_InitModule3((name ~ "\0").dup.ptr, module_methods[name].ptr, (docstring ~ "\0").dup.ptr);
+    pyd_modules[name] = Py_InitModule3(name ~ "\0", module_methods[name].ptr, docstring ~ "\0");
     return pyd_modules[name];
 }
 
