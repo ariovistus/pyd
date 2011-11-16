@@ -10,10 +10,12 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
 sys.path.append(os.path.abspath(libDir))
 print sys.path
 import hello
+import hello2
 
 
 try:
     hello.hello()
+    hello2.hello()
 except Exception, e:
     print e
     print e.__dict__

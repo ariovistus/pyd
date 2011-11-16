@@ -1,11 +1,11 @@
 // A minimal "hello world" Pyd module.
-module hello;
+module hello2;
 
 import pyd.pyd;
 import std.stdio;
 
 void hello() {
-    writefln("Hello, world!");
+    writefln("Hello, burrito!");
 }
 
 extern(C) void PydMain() {
