@@ -427,14 +427,14 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
     static void call(T) () {
         pragma(msg, "class.prop: " ~ name);
         static PyGetSetDef empty = { null, null, null, null, null };
-        wrapped_prop_list!(T)[$-1].name = (name ~ "\0").ptr;
+        wrapped_prop_list!(T)[$-1].name = (name ~ "\0").dup.ptr;
         wrapped_prop_list!(T)[$-1].get =
             &wrapped_get!(T, fn).func;
         static if (!RO) {
             wrapped_prop_list!(T)[$-1].set =
                 &wrapped_set!(T, fn).func;
         }
-        wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").ptr;
+        wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").dup.ptr;
         wrapped_prop_list!(T)[$-1].closure = null;
         wrapped_prop_list!(T) ~= empty;
         // It's possible that appending the empty item invalidated the

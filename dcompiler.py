@@ -563,7 +563,7 @@ class LDCDCompiler(DCompiler):
         self._outputOpts = ['-of', '%s']
         self._linkOutputOpts = ['-o', '%s']
         # _linkOpts
-        self._linkOpts = ['-nostartfiles', '-shared','-llphobos2','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
+        self._linkOpts = ['-nostartfiles', '-shared','-lphobos-ldc','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt

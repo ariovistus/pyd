@@ -5,7 +5,7 @@ import pyd.pyd;
 import std.stdio, std.string;
 
 void foo() {
-    writefln("20 Monkey");
+    writeln("20 Monkey");
 }
 
 void foo(int i) {
@@ -38,11 +38,11 @@ class Foo {
     }
     int length() { return 10; }
     int opSlice(int i1, int i2) {
-        writefln(i1, " ", i2);
+        writeln(i1, " ", i2);
         return 12;
     }
     int opIndex(int x, int y) {
-        writefln(x, " ", y);
+        writeln(x, " ", y);
         return x+y;
     }
     Foo opAdd(Foo f) { return new Foo(m_i + f.m_i); }
@@ -86,7 +86,7 @@ class Foo {
 }
 
 void delegate() func_test() {
-    return { writefln("Delegate works!"); };
+    return { writeln("Delegate works!"); };
 }
 
 void dg_test(void delegate() dg) {
@@ -111,7 +111,7 @@ struct S {
     int i;
     char[] s;
     void write_s() {
-        writefln(s);
+        writeln(s);
     }
 }
 
@@ -136,7 +136,7 @@ A conv1() {
     return a;
 }
 void conv2(A a) {
-    writefln(a.i);
+    writeln(a.i);
 }
 
 mixin _wrap_class!(
@@ -183,6 +183,7 @@ extern(C) void PydMain() {
     // overload accepts a different number of minimum arguments, that number
     // must be specified.
     def!(foo, "foo2", void function(int), 1);
+    pragma(msg, bar.mangleof);
     def!(bar);
     // Default argument support - Now implicit!
     def!(baz);

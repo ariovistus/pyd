@@ -270,10 +270,10 @@ private template _pycallable_asdgT(Dg) {
 
     Dg func(PyObject* c) {
         auto f = new PydWrappedFunc(c);
-        pragma(msg, Dg);
-        pragma(msg, Tr);
-
-        return &f.fn!(Tr, Info);
+        // compiler bug 7572 preventing
+        // return &f.fn!(Tr,Info)
+        // which is probably cleaner than
+        return delegate Tr(Info i){return f.fn!(Tr, Info)(i);};
     }
 }
 

@@ -309,8 +309,10 @@ T d_type(T) (PyObject* o) {
         return new PydObject(o, true);
     } else static if (is(T == void)) {
         if (o != Py_None) could_not_convert!(T)(o);
-        Py_INCREF(Py_None);
-        return Py_None;
+        // the heck?
+        //Py_INCREF(Py_None);
+        //return Py_None;
+        return;
     } else static if (is(T == class)) {
         // We can only convert to a class if it has been wrapped, and of course
         // we can only convert the object if it is the wrapped type.
