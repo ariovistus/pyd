@@ -477,16 +477,16 @@ ifloat SomeFunc4(lazy void[] x...) { return 2i; }
 char[dchar] SomeFunc5(lazy int delegate()[] z...);
 
 extern (Windows) {
-    typedef void function (double, long) WinFunc;
+    alias void function (double, long) WinFunc;
 }
 extern (Pascal) {
-    typedef short[wchar] delegate (bool, ...) PascFunc;
+    alias short[wchar] delegate (bool, ...) PascFunc;
 }
 extern (C) {
-    typedef dchar delegate () CFunc;
+    alias dchar delegate () CFunc;
 }
 extern (C++) {
-    typedef cfloat function (wchar) CPPFunc;
+    alias cfloat function (wchar) CPPFunc;
 }
 
 interface SomeInterface {}

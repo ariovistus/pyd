@@ -270,6 +270,8 @@ private template _pycallable_asdgT(Dg) {
 
     Dg func(PyObject* c) {
         auto f = new PydWrappedFunc(c);
+        pragma(msg, Dg);
+        pragma(msg, Tr);
 
         return &f.fn!(Tr, Info);
     }
