@@ -114,6 +114,20 @@ extern (C) {
     mixin PyObject_HEAD;
   }
 
+  /++++ Not part of Python api!!! ++++/
+  // (^&!&^*& borrowed references should be reflected in the type system.
+  // evil casting will follow.
+  struct PyObject_BorrowedRef{
+  }
+
+  // see?
+  PyObject* OwnPyRef()(PyObject_BorrowedRef* bop) {
+      PyObject* op = cast(PyObject*) bop;
+      Py_INCREF(op);
+      return op;
+  }
+  /++++ End Not part of Python api!!! ++++/
+
   template PyObject_VAR_HEAD() {
     mixin PyObject_HEAD;
     Py_ssize_t ob_size; /* Number of items in variable part */
@@ -604,9 +618,16 @@ extern (C) {
   }
 
   void Py_DECREF()(PyObject *op) {
-    --op.ob_refcnt;
-    assert (op.ob_refcnt >= 0);
-    if (op.ob_refcnt == 0) {
+    // version(PY_REF_DEBUG) _Py_RefTotal++
+      --op.ob_refcnt;
+    
+    // EMN: this is a horrible idea because it takes forever to figure out 
+    //      what's going on if this is being called from within the garbage 
+    //      collector.
+      assert (op.ob_refcnt >= 0);
+    if(op.ob_refcnt != 0) {
+        // version(PY_REF_DEBUG) _Py_NegativeRefcount(__FILE__, __LINE__, cast(PyObject*)op);
+    }else {
       op.ob_type.tp_dealloc(op);
     }
   }
@@ -1626,7 +1647,7 @@ extern (C) {
 
   PyObject * PyTuple_New(Py_ssize_t size);
   Py_ssize_t PyTuple_Size(PyObject *);
-  PyObject * PyTuple_GetItem(PyObject *, Py_ssize_t);
+  PyObject_BorrowedRef* PyTuple_GetItem(PyObject*, Py_ssize_t);
   int PyTuple_SetItem(PyObject *, Py_ssize_t, PyObject *);
   PyObject * PyTuple_GetSlice(PyObject *, Py_ssize_t, Py_ssize_t);
   int _PyTuple_Resize(PyObject **, Py_ssize_t);
@@ -1634,7 +1655,7 @@ extern (C) {
 
   // D translations of C macros:
   // XXX: These do not work.
-  PyObject *PyTuple_GET_ITEM()(PyObject *op, Py_ssize_t i) {
+  PyObject_BorrowedRef* PyTuple_GET_ITEM()(PyObject* op, Py_ssize_t i) {
     return (cast(PyTupleObject *) op).ob_item[i];
   }
   size_t PyTuple_GET_SIZE()(PyObject *op) {
@@ -1676,19 +1697,19 @@ extern (C) {
   PyObject * PyList_New(Py_ssize_t size);
   Py_ssize_t PyList_Size(PyObject *);
 
-  PyObject * PyList_GetItem(PyObject *, Py_ssize_t);
-  int PyList_SetItem(PyObject *, Py_ssize_t, PyObject *);
-  int PyList_Insert(PyObject *, Py_ssize_t, PyObject *);
-  int PyList_Append(PyObject *, PyObject *);
-  PyObject * PyList_GetSlice(PyObject *, Py_ssize_t, Py_ssize_t);
-  int PyList_SetSlice(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
-  int PyList_Sort(PyObject *);
-  int PyList_Reverse(PyObject *);
-  PyObject * PyList_AsTuple(PyObject *);
+  PyObject_BorrowedRef* PyList_GetItem(PyObject*, Py_ssize_t);
+  int PyList_SetItem(PyObject*, Py_ssize_t, PyObject*);
+  int PyList_Insert(PyObject*, Py_ssize_t, PyObject*);
+  int PyList_Append(PyObject*, PyObject*);
+  PyObject* PyList_GetSlice(PyObject*, Py_ssize_t, Py_ssize_t);
+  int PyList_SetSlice(PyObject*, Py_ssize_t, Py_ssize_t, PyObject*);
+  int PyList_Sort(PyObject*);
+  int PyList_Reverse(PyObject*);
+  PyObject* PyList_AsTuple(PyObject*);
 
   // D translations of C macros:
-  PyObject *PyList_GET_ITEM()(PyObject *op, Py_ssize_t i) {
-    return (cast(PyListObject *) op).ob_item[i];
+  PyObject_BorrowedRef* PyList_GET_ITEM()(PyObject* op, Py_ssize_t i) {
+    return (cast(PyListObject*) op).ob_item[i];
   }
   void PyList_SET_ITEM()(PyObject *op, Py_ssize_t i, PyObject *v) {
     (cast(PyListObject*)op).ob_item[i] = v;
@@ -1738,12 +1759,12 @@ extern (C) {
     return op.ob_type == PyDict_Type_p;
   }
 
-  PyObject * PyDict_New();
-  PyObject * PyDict_GetItem(PyObject *mp, PyObject *key);
-  int PyDict_SetItem(PyObject *mp, PyObject *key, PyObject *item);
+  PyObject* PyDict_New();
+  PyObject_BorrowedRef* PyDict_GetItem(PyObject* mp, PyObject* key);
+  int PyDict_SetItem(PyObject* mp, PyObject* key, PyObject* item);
   int PyDict_DelItem(PyObject *mp, PyObject *key);
   void PyDict_Clear(PyObject *mp);
-  int PyDict_Next(PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value);
+  int PyDict_Next(PyObject *mp, Py_ssize_t *pos, PyObject_BorrowedRef** key, PyObject_BorrowedRef** value);
   PyObject * PyDict_Keys(PyObject *mp);
   PyObject * PyDict_Values(PyObject *mp);
   PyObject * PyDict_Items(PyObject *mp);
@@ -1755,9 +1776,9 @@ extern (C) {
   int PyDict_Merge(PyObject *mp, PyObject *other, int override_);
   int PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override_);
 
-  PyObject * PyDict_GetItemString(PyObject *dp, const(char)* key);
-  int PyDict_SetItemString(PyObject *dp, const(char)*key, PyObject *item);
-  int PyDict_DelItemString(PyObject *dp, const(char)*key);
+  PyObject_BorrowedRef* PyDict_GetItemString(PyObject* dp, const(char)* key);
+  int PyDict_SetItemString(PyObject* dp, const(char)* key, PyObject* item);
+  int PyDict_DelItemString(PyObject* dp, const(char)* key);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1845,10 +1866,10 @@ extern (C) {
     return op.ob_type == PyModule_Type_p;
   }
 
-  PyObject * PyModule_New(Char1 *);
-  PyObject * PyModule_GetDict(PyObject *);
-  char * PyModule_GetName(PyObject *);
-  char * PyModule_GetFilename(PyObject *);
+  PyObject* PyModule_New(Char1*);
+  PyObject_BorrowedRef* PyModule_GetDict(PyObject*);
+  char* PyModule_GetName(PyObject*);
+  char* PyModule_GetFilename(PyObject*);
   void _PyModule_Clear(PyObject *);
 
   // Python-header-file: Include/modsupport.h:
@@ -1881,16 +1902,16 @@ extern (C) {
   }else{
       enum Py_InitModuleSym = "Py_InitModule4";
   }
-  mixin("PyObject * "~Py_InitModuleSym~"(Char1 *name, PyMethodDef *methods, Char1 *doc,
+  mixin("PyObject_BorrowedRef* "~Py_InitModuleSym~"(Char1 *name, PyMethodDef *methods, Char1 *doc,
                   PyObject *self, int apiver);
 
-  PyObject * Py_InitModule()(string name, PyMethodDef *methods)
+  PyObject_BorrowedRef* Py_InitModule()(string name, PyMethodDef *methods)
   {
     return "~Py_InitModuleSym~"(cast(Char1*) name.ptr, methods, cast(Char1 *)(null),
       cast(PyObject *)(null), PYTHON_API_VERSION);
   }
 
-  PyObject * Py_InitModule3()(string name, PyMethodDef *methods, string doc) {
+  PyObject_BorrowedRef* Py_InitModule3()(string name, PyMethodDef *methods, string doc) {
     return "~Py_InitModuleSym~"(cast(Char1*)name.ptr, methods, cast(Char1*) doc, cast(PyObject *)null,
       PYTHON_API_VERSION);
   }");
@@ -1923,12 +1944,12 @@ extern (C) {
   }
 
   PyObject * PyFunction_New(PyObject *, PyObject *);
-  PyObject * PyFunction_GetCode(PyObject *);
-  PyObject * PyFunction_GetGlobals(PyObject *);
-  PyObject * PyFunction_GetModule(PyObject *);
-  PyObject * PyFunction_GetDefaults(PyObject *);
+  PyObject_BorrowedRef* PyFunction_GetCode(PyObject*);
+  PyObject_BorrowedRef* PyFunction_GetGlobals(PyObject*);
+  PyObject_BorrowedRef* PyFunction_GetModule(PyObject*);
+  PyObject_BorrowedRef* PyFunction_GetDefaults(PyObject*);
   int PyFunction_SetDefaults(PyObject *, PyObject *);
-  PyObject * PyFunction_GetClosure(PyObject *);
+  PyObject_BorrowedRef* PyFunction_GetClosure(PyObject *);
   int PyFunction_SetClosure(PyObject *, PyObject *);
 
   PyObject* PyFunction_GET_CODE()(PyObject* func) {
@@ -2012,20 +2033,20 @@ extern (C) {
   PyObject * PyInstance_NewRaw(PyObject *, PyObject *);
   PyObject * PyMethod_New(PyObject *, PyObject *, PyObject *);
 
-  PyObject * PyMethod_Function(PyObject *);
-  PyObject * PyMethod_Self(PyObject *);
-  PyObject * PyMethod_Class(PyObject *);
+  PyObject_BorrowedRef* PyMethod_Function(PyObject *);
+  PyObject_BorrowedRef* PyMethod_Self(PyObject *);
+  PyObject_BorrowedRef* PyMethod_Class(PyObject*);
 
   PyObject * _PyInstance_Lookup(PyObject *pinst, PyObject *name);
 
-  PyObject * PyMethod_GET_FUNCTION()(PyObject* meth) {
+  PyObject_BorrowedRef* PyMethod_GET_FUNCTION()(PyObject* meth) {
     return (cast(PyMethodObject*)meth).im_func;
   }
-  PyObject * PyMethod_GET_SELF()(PyObject* meth) {
+  PyObject_BorrowedRef* PyMethod_GET_SELF()(PyObject* meth) {
     return (cast(PyMethodObject*)meth).im_self;
   }
-  PyObject * PyMethod_GET_CLASS()(PyObject* meth) {
-    return (cast(PyMethodObject*)meth).im_class;
+  PyObject_BorrowedRef* PyMethod_GET_CLASS()(PyObject* meth) {
+    return cast(PyObject_BorrowedRef*)(cast(PyMethodObject*)meth).im_class;
   }
 
   int PyClass_IsSubclass(PyObject *, PyObject *);
@@ -2092,7 +2113,7 @@ extern (C) {
       void PyFile_IncUseCount(PyFileObject *);
       void PyFile_DecUseCount(PyFileObject *);
   }
-  PyObject * PyFile_Name(PyObject *);
+  PyObject_BorrowedRef* PyFile_Name(PyObject*);
   PyObject * PyFile_GetLine(PyObject *, int);
   int PyFile_WriteObject(PyObject *, PyObject *, int);
   int PyFile_SoftSpace(PyObject *, int);
@@ -2355,18 +2376,18 @@ extern (C) {
     return PyWeakref_CheckRef(op) || PyWeakref_CheckProxy(op);
   }
 
-  PyObject * PyWeakref_NewRef(PyObject *ob, PyObject *callback);
-  PyObject * PyWeakref_NewProxy(PyObject *ob, PyObject *callback);
-  PyObject * PyWeakref_GetObject(PyObject *_ref);
+  PyObject* PyWeakref_NewRef(PyObject* ob, PyObject* callback);
+  PyObject* PyWeakref_NewProxy(PyObject* ob, PyObject* callback);
+  PyObject_BorrowedRef* PyWeakref_GetObject(PyObject* _ref);
 
   version(Python_2_5_Or_Later){
-      Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+      Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference* head);
   }else{
       C_long _PyWeakref_GetWeakrefCount(PyWeakReference *head);
   }
   void _PyWeakref_ClearRef(PyWeakReference *self);
 
-  PyObject *PyWeakref_GET_OBJECT()(PyObject *_ref) {
+  PyObject_BorrowedRef* PyWeakref_GET_OBJECT()(PyObject* _ref) {
     return (cast(PyWeakReference *) _ref).wr_object;
   }
 
@@ -3165,9 +3186,9 @@ extern (C) {
   void PyThreadState_Delete(PyThreadState *);
   void PyThreadState_DeleteCurrent();
 
-  PyThreadState *PyThreadState_Get();
-  PyThreadState *PyThreadState_Swap(PyThreadState *);
-  PyObject *PyThreadState_GetDict();
+  PyThreadState* PyThreadState_Get();
+  PyThreadState* PyThreadState_Swap(PyThreadState *);
+  PyObject_BorrowedRef* PyThreadState_GetDict();
   int PyThreadState_SetAsyncExc(C_long, PyObject *);
 
   enum PyGILState_STATE {PyGILState_LOCKED, PyGILState_UNLOCKED};
@@ -3279,7 +3300,7 @@ extern (C) {
   // Python-header-file: Include/abstract.h:
 
   // D translations of C macros:
-  int PyObject_DelAttrString()(PyObject *o, char *a) {
+  int PyObject_DelAttrString()(PyObject *o, Char1 *a) {
     return PyObject_SetAttrString(o, a, null);
   }
   int PyObject_DelAttr()(PyObject *o, PyObject *a) {
@@ -3640,8 +3661,10 @@ extern (C) {
   void * PyObject_Realloc(void *, size_t);
   void PyObject_Free(void *);
 
-  PyObject * PyObject_Init(PyObject *, PyTypeObject *);
-  PyVarObject * PyObject_InitVar(PyVarObject *,
+  PyObject_BorrowedRef* PyObject_Init(PyObject*, PyTypeObject*);
+
+  // actually returns PyVarObject* 
+  PyObject_BorrowedRef* PyObject_InitVar(PyVarObject*,
                            PyTypeObject *, Py_ssize_t);
   /* Without macros, DSR knows of no way to translate PyObject_New and
    * PyObject_NewVar to D; the lower-level _PyObject_New and _PyObject_NewVar
@@ -4387,7 +4410,7 @@ PyObject* m_builtins, m_types, m_weakref;
 typeof(Ptr) lazy_sys(alias Ptr, string name) () {
     if (Ptr is null) {
         PyObject* sys_modules = PyImport_GetModuleDict();
-        Ptr = PyDict_GetItemString(sys_modules, (name ~ "\0").dup.ptr);
+        Ptr = cast(typeof(Ptr)) PyDict_GetItemString(sys_modules, (name ~ "\0").dup.ptr);
     }
     assert (Ptr !is null, "python.d couldn't load " ~ name ~ " attribute!");
     return Ptr;

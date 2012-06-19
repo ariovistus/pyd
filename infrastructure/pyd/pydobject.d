@@ -27,6 +27,15 @@ import pyd.exception;
 import pyd.make_object;
 //import std.string;
 
+char* zc(string s) {
+    if(s.length && s[$-1] == 0) return s.dup.ptr;
+    return ((cast(char[])s) ~ "\0").ptr;
+}
+
+const(char)* zcc(string s) {
+    return (s.length && s[$-1] == 0 || s.ptr && (s.ptr + s.length) && *(s.ptr+s.length) == 0) ?  s.ptr : (s ~ "\0").ptr;
+}
+
 /**
  * Wrapper class for a Python/C API PyObject.
  *
@@ -51,25 +60,33 @@ public:
      *                 Therefore, Py_INCREF will be called if borrowed is
      *                 $(D_KEYWORD true).
      */
-    this(PyObject* o, bool borrowed=false) {
+    this(PyObject* o) {
         if (o is null) handle_exception();
-        // PydObject always owns its references
-        if (borrowed) Py_INCREF(o);
         m_ptr = o;
     }
 
+    this(PyObject_BorrowedRef* o) {
+        if (o is null) handle_exception();
+        // PydObject always owns its references
+        m_ptr = OwnPyRef(o);
+    }
+
     /// The default constructor constructs an instance of the Py_None PydObject.
-    this() { this(Py_None, true); }
+    this() { 
+        m_ptr = Py_None;
+        Py_INCREF(m_ptr);
+    }
 
     /// Destructor. Calls Py_DECREF on owned PyObject reference.
     ~this() {
-        Py_DECREF(m_ptr);
+        if (m_ptr) Py_DECREF(m_ptr);
+        m_ptr = null;
     }
 
     /**
      * Returns a borrowed reference to the PyObject.
      */
-    PyObject* ptr() { return m_ptr; }
+    @property PyObject* ptr() { return m_ptr; }
     
     /*
      * Prints PyObject to a C FILE* object.
@@ -89,8 +106,8 @@ public:
     +/
 
     /// Same as _hasattr(this, attr_name) in Python.
-    bool hasattr(char[] attr_name) {
-        return PyObject_HasAttrString(m_ptr, (attr_name ~ "\0").ptr) == 1;
+    bool hasattr(string attr_name) {
+        return PyObject_HasAttrString(m_ptr, zcc(attr_name)) == 1;
     }
 
     /// Same as _hasattr(this, attr_name) in Python.
@@ -99,8 +116,8 @@ public:
     }
 
     /// Same as _getattr(this, attr_name) in Python.
-    PydObject getattr(char[] attr_name) {
-        return new PydObject(PyObject_GetAttrString(m_ptr, (attr_name ~ "\0").ptr));
+    PydObject getattr(string attr_name) {
+        return new PydObject(PyObject_GetAttrString(m_ptr, zcc(attr_name)));
     }
 
     /// Same as _getattr(this, attr_name) in Python.
@@ -111,8 +128,8 @@ public:
     /**
      * Same as _setattr(this, attr_name, v) in Python.
      */
-    void setattr(char[] attr_name, PydObject v) {
-        if (PyObject_SetAttrString(m_ptr, (attr_name ~ "\0").ptr, v.m_ptr) == -1)
+    void setattr(string attr_name, PydObject v) {
+        if (PyObject_SetAttrString(m_ptr, zcc(attr_name), v.m_ptr) == -1)
             handle_exception();
     }
 
@@ -127,8 +144,8 @@ public:
     /**
      * Same as del this.attr_name in Python.
      */
-    void delattr(char[] attr_name) {
-        if (PyObject_DelAttrString(m_ptr, (attr_name ~ "\0").ptr) == -1)
+    void delattr(string attr_name) {
+        if (PyObject_DelAttrString(m_ptr, zcc(attr_name)) == -1)
             handle_exception();
     }
 
@@ -246,9 +263,9 @@ public:
     /**
      *
      */
-    PydObject methodUnpack(char[] name, PydObject args=null) {
+    PydObject methodUnpack(string name, PydObject args=null) {
         // Get the method PydObject
-        PyObject* m = PyObject_GetAttrString(m_ptr, (name ~ "\0").ptr);
+        PyObject* m = PyObject_GetAttrString(m_ptr, zcc(name));
         PyObject* result;
         // If this method doesn't exist (or other error), throw exception
         if (m is null) handle_exception();
@@ -259,9 +276,9 @@ public:
         return new PydObject(result);
     }
 
-    PydObject methodUnpack(char[] name, PydObject args, PydObject kw) {
+    PydObject methodUnpack(string name, PydObject args, PydObject kw) {
         // Get the method PydObject
-        PyObject* m = PyObject_GetAttrString(m_ptr, (name ~ "\0").ptr);
+        PyObject* m = PyObject_GetAttrString(m_ptr, zcc(name));
         PyObject* result;
         // If this method doesn't exist (or other error), throw exception.
         if (m is null) handle_exception();
@@ -275,8 +292,8 @@ public:
     /**
      * Calls a method of the object with any convertible D items.
      */
-    PydObject method(T ...) (char[] name, T t) {
-        PyObject* mthd = PyObject_GetAttrString(m_ptr, (name ~ "\0").ptr);
+    PydObject method(T ...) (string name, T t) {
+        PyObject* mthd = PyObject_GetAttrString(m_ptr, zcc(name));
         if (mthd is null) handle_exception();
         PyObject* tuple = PyTuple_FromItems(t);
         if (tuple is null) {
@@ -348,8 +365,13 @@ public:
      * Equivalent to o['_key'] in Python; usually only makes sense for
      * mappings.
      */
-    PydObject opIndex(char[] key) {
-        return new PydObject(PyMapping_GetItemString(m_ptr, (key ~ "\0").ptr));
+    PydObject opIndex(string key) {
+        // wtf? PyMapping_GetItemString fails on dicts 
+        if(PyDict_Check(m_ptr)) {
+            return new PydObject(PyDict_GetItemString(m_ptr, zc(key)));
+        }else{
+            return new PydObject(PyMapping_GetItemString(m_ptr, zc(key)));
+        }
     }
     /// Equivalent to o[_i] in Python; usually only makes sense for sequences.
     PydObject opIndex(int i) {
@@ -365,8 +387,8 @@ public:
      * Equivalent to o['_key'] = _value in Python. Usually only makes sense for
      * mappings.
      */
-    void opIndexAssign(PydObject value, char[] key) {
-        if (PyMapping_SetItemString(m_ptr, (key ~ "\0").ptr, value.m_ptr) == -1)
+    void opIndexAssign(PydObject value, string key) {
+        if (PyMapping_SetItemString(m_ptr, zc(key), value.m_ptr) == -1)
             handle_exception();
     }
     /**
@@ -388,7 +410,7 @@ public:
      * mappings.
      */
     void delItem(string key) {
-        if (PyMapping_DelItemString(m_ptr, (key ~ "\0").dup.ptr) == -1)
+        if (PyMapping_DelItemString(m_ptr, zc(key)) == -1)
             handle_exception();
     }
     /**
@@ -473,14 +495,14 @@ public:
      * iterating through it is an especially bad idea.
      */
     int opApply(int delegate(ref PydObject, ref PydObject) dg) {
-        PyObject* key, value;
+        PyObject_BorrowedRef* key, value;
         Py_ssize_t pos = 0;
         int result = 0;
         PydObject k, v;
 
         while (PyDict_Next(m_ptr, &pos, &key, &value)) {
-            k = new PydObject(key, true);
-            v = new PydObject(value, true);
+            k = new PydObject(key);
+            v = new PydObject(value);
             result = dg(k, v);
             if (result) break;
         }
@@ -515,6 +537,9 @@ public:
     PydObject floorDiv(PydObject o) {
         return new PydObject(PyNumber_FloorDivide(m_ptr, o.m_ptr));
     }
+    PydObject trueDiv(PydObject o) {
+        return new PydObject(PyNumber_TrueDivide(m_ptr, o.m_ptr));
+    }
     ///
     PydObject opMod(PydObject o) {
         return new PydObject(PyNumber_Remainder(m_ptr, o.m_ptr));
@@ -522,6 +547,9 @@ public:
     ///
     PydObject divmod(PydObject o) {
         return new PydObject(PyNumber_Divmod(m_ptr, o.m_ptr));
+    }
+    PydObject opPow(PydObject o) {
+        return new PydObject(PyNumber_Power(m_ptr, o.m_ptr, Py_None));
     }
     ///
     PydObject pow(PydObject o1, PydObject o2=null) {
@@ -573,15 +601,17 @@ public:
     // A useful wrapper for most of the in-place operators
     private PydObject
     inplace(op_t op, PydObject rhs) {
+        /+ EMN: not seeming to be working the way we want it
         if (PyType_HasFeature(m_ptr.ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)) {
             op(m_ptr, rhs.m_ptr);
             handle_exception();
         } else {
+        +/
             PyObject* result = op(m_ptr, rhs.m_ptr);
             if (result is null) handle_exception();
             Py_DECREF(m_ptr);
             m_ptr = result;
-        }
+        // }
         return this;
     }
     ///
@@ -732,12 +762,47 @@ public:
             handle_exception();
         }
     }
-    // Added by list:
-    void insert(int i, PydObject item) { assert(false); }
-    void append(PydObject item) { assert(false); }
-    void sort() { assert(false); }
-    void reverse() { assert(false); }
     +/
+    // Added by list:
+    void insert(int i, PydObject item) { 
+        if(PyList_Check(m_ptr)) {
+            if(PyList_Insert(m_ptr, i, item.ptr) == -1) {
+                handle_exception();
+            }
+        }else{
+            throw new Exception("tried to call insert on non-list");
+        }
+    }
+    // Added by list:
+    void append(PydObject item) { 
+        if(PyList_Check(m_ptr)) {
+            if(PyList_Append(m_ptr, item.ptr) == -1) {
+                handle_exception();
+            }
+        }else{
+            throw new Exception("tried to call append on non-list");
+        }
+    }
+    // Added by list:
+    void sort() { 
+        if(PyList_Check(m_ptr)) {
+            if(PyList_Sort(m_ptr) == -1) {
+                handle_exception();
+            }
+        }else{
+            throw new Exception("tried to call sort on non-list");
+        }
+    }
+    // Added by list:
+    void reverse() { 
+        if(PyList_Check(m_ptr)) {
+            if(PyList_Reverse(m_ptr) == -1) {
+                handle_exception();
+            }
+        }else{
+            assert(false); 
+        }
+    }
 
     //-----------------
     // Mapping methods
@@ -754,31 +819,83 @@ public:
     /// Same as "'v' in this" in Python.
     //bool opIn_r(char[] key) {
     bool opBinaryRight(string op,T)(T key) if(op == "in" && is(T == string)){
-        return this.hasKey(key);
+        if(PyDict_Check(m_ptr) || PyMapping_Check(m_ptr)) {
+            return this.hasKey(key);
+        }else{
+            PydObject v = py(key);
+            int result = PySequence_Contains(m_ptr, v.m_ptr);
+            if (result == -1) handle_exception();
+            return result == 1;
+        }
     }
     /// Same as opIn_r
     bool hasKey(string key) {
-        int result = PyMapping_HasKeyString(m_ptr, (key ~ "\0").dup.ptr);
+        int result = PyMapping_HasKeyString(m_ptr, zc(key));
         if (result == -1) handle_exception();
         return result == 1;
     }
     ///
     PydObject keys() {
-        return new PydObject(PyMapping_Keys(m_ptr));
+        // wtf? PyMapping_Keys fails on dicts 
+        if(PyDict_Check(m_ptr)) {
+            return new PydObject(PyDict_Keys(m_ptr));
+        }else{
+            return new PydObject(PyMapping_Keys(m_ptr));
+        }
     }
     ///
     PydObject values() {
-        return new PydObject(PyMapping_Values(m_ptr));
+        // wtf? PyMapping_Values fails on dicts 
+        if(PyDict_Check(m_ptr)) {
+            return new PydObject(PyDict_Values(m_ptr));
+        }else{
+            return new PydObject(PyMapping_Values(m_ptr));
+        }
     }
     ///
     PydObject items() {
-        return new PydObject(PyMapping_Items(m_ptr));
+        // wtf? PyMapping_Items fails on dicts 
+        if(PyDict_Check(m_ptr)) {
+            return new PydObject(PyDict_Items(m_ptr));
+        }else{
+            return new PydObject(PyMapping_Items(m_ptr));
+        }
     }
-    /+
     // Added by dict
-    void clear() { assert(false); }
-    PydObject copy() { assert(false); }
-    void update(PydObject o, bool over_ride=true) { assert(false); }
-    +/
+    void clear() { 
+        if(PyDict_Check(m_ptr)) {
+            PyDict_Clear(m_ptr);
+        }else{
+            throw new Exception("tried to call clear on non-dict");
+        }
+    }
+
+    // Added by dict
+    PydObject copy() { 
+        if(PyDict_Check(m_ptr)) {
+            return new PydObject(PyDict_Copy(m_ptr));
+        }else{
+            throw new Exception("tried to call copy on non-dict");
+        }
+    }
+
+    // Added by dict
+    void merge(PydObject o, bool override_=true) { 
+        if(PyDict_Check(m_ptr)) {
+            PyDict_Merge(m_ptr,o.ptr,override_);
+        }else{
+            throw new Exception("tried to call copy on non-dict");
+        }
+    }
+
+
+    // Added by module
+    PydObject getdict() {
+        if(PyModule_Check(m_ptr)) {
+            return new PydObject(PyModule_GetDict(m_ptr));
+        }else{
+            throw new Exception("tried to call getdict on non module");
+        }
+    }
 }
 

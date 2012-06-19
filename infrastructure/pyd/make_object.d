@@ -24,9 +24,9 @@ SOFTWARE.
  * This module contains some useful type conversion functions. There are two
  * interesting operations involved here:
  *
- * PyObject* -> D type
+ * PyObject* -> D type // d_type
  *
- * D type -> PyObject*
+ * D type -> PyObject* // _py
  *
  * The former is handled by d_type, the latter by _py. The py function is
  * provided as a convenience to directly convert a D type into an instance of
@@ -306,7 +306,7 @@ T d_type(T) (PyObject* o) {
     static if (is(PyObject* : T)) {
         return o;
     } else static if (is(PydObject : T)) {
-        return new PydObject(o, true);
+        return new PydObject(cast(PyObject_BorrowedRef*) o);
     } else static if (is(T == void)) {
         if (o != Py_None) could_not_convert!(T)(o);
         // the heck?

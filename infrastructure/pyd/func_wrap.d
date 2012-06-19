@@ -168,7 +168,9 @@ ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
     }
     T t;
     foreach(i, arg; t) {
-        t[i] = d_type!(typeof(arg))(PyTuple_GetItem(args, i));
+        auto pi = OwnPyRef(PyTuple_GetItem(args, i));
+        t[i] = d_type!(typeof(arg))(pi);
+        Py_DECREF(pi);
     }
     return dg(t);
 }
