@@ -25,16 +25,14 @@ module pyd.pydobject;
 import python;
 import pyd.exception;
 import pyd.make_object;
-//import std.string;
+import std.string: toStringz;
 
 char* zc(string s) {
     if(s.length && s[$-1] == 0) return s.dup.ptr;
     return ((cast(char[])s) ~ "\0").ptr;
 }
 
-const(char)* zcc(string s) {
-    return (s.length && s[$-1] == 0 || s.ptr && (s.ptr + s.length) && *(s.ptr+s.length) == 0) ?  s.ptr : (s ~ "\0").ptr;
-}
+alias toStringz zcc;
 
 /**
  * Wrapper class for a Python/C API PyObject.

@@ -39,6 +39,7 @@ version (Tango) {
     import std.c.stdio;
     import std.c.time;
     import std.c.string;
+    import std.string: toStringz;
 //}
 
 
@@ -4392,7 +4393,7 @@ PyObject* m_PyExc_FutureWarning;
 
 PyObject *eval()(string code) {
     PyObject *pyGlobals = PyEval_GetGlobals(); /* borrowed ref */
-    PyObject *res = PyRun_String((code ~ "\0").dup.ptr, Py_eval_input,
+    PyObject *res = PyRun_String(toStringz(code), Py_eval_input,
         pyGlobals, pyGlobals
     ); /* New ref, or NULL on error. */
     if (res == null) {
@@ -4410,7 +4411,8 @@ PyObject* m_builtins, m_types, m_weakref;
 typeof(Ptr) lazy_sys(alias Ptr, string name) () {
     if (Ptr is null) {
         PyObject* sys_modules = PyImport_GetModuleDict();
-        Ptr = cast(typeof(Ptr)) PyDict_GetItemString(sys_modules, (name ~ "\0").dup.ptr);
+        Ptr = cast(typeof(Ptr)) PyDict_GetItemString(sys_modules, 
+                toStringz(name));
     }
     assert (Ptr !is null, "python.d couldn't load " ~ name ~ " attribute!");
     return Ptr;
@@ -4420,9 +4422,9 @@ alias lazy_sys!(m_builtins, "__builtin__") builtins;
 alias lazy_sys!(m_types, "types") types;
 alias lazy_sys!(m_weakref, "weakref") weakref;
 
-typeof(Ptr) lazy_load(alias from, alias Ptr, string name) () {
+@property typeof(Ptr) lazy_load(alias from, alias Ptr, string name) () {
     if (Ptr is null) {
-        Ptr = cast(typeof(Ptr)) PyObject_GetAttrString(from(), (name ~ "\0").dup.ptr);
+        Ptr = cast(typeof(Ptr)) PyObject_GetAttrString(from(), toStringz(name));
     }
     assert (Ptr !is null, "python.d couldn't load " ~ name ~ " attribute!");
     return Ptr;

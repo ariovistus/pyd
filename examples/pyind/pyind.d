@@ -196,8 +196,8 @@ unittest {
     assert(g.items().toString() == "[('a', 'b'), ('b', 'truck')]" ||
             g.items().toString() == "[('b', 'truck'), ('a', 'b')]");
     foreach(key, val; g) {
-        if (key.toString() == "a") assert(val.toString == "b");
-        else if (key.toString() == "b") assert(val.toString == "truck");
+        if (key.toString() == "a") assert(val.toString() == "b");
+        else if (key.toString() == "b") assert(val.toString() == "truck");
         else assert(false);
     }
     g.delItem("b");
