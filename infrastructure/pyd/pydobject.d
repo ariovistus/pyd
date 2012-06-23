@@ -379,10 +379,32 @@ public:
     }
 
     /// Equivalent to o[_key] = _value in Python.
-    void opIndexAssign(PydObject value, PydObject key) {
-        if (PyObject_SetItem(m_ptr, key.m_ptr, value.m_ptr) == -1)
-            handle_exception();
+    void opIndexAssign(T,S)(T value, S key) {
+        static if (is(T == PydObject)) {
+            alias value v;
+        }else{
+            auto v = py(value);
+        }
+        static if (is(S : int)) {
+            if (PySequence_SetItem(m_ptr, key, v.m_ptr) == -1)
+                handle_exception();
+            return;
+        }else static if (is(S : string)) {
+            if (PyMapping_SetItemString(m_ptr, zc(key), v.m_ptr) == -1)
+                handle_exception();
+            return;
+        }else static if (is(S == PydObject)) {
+            alias key k;
+        }else{
+            auto k = py(key);
+        }
+
+        static if(!(is(S : int) || is(S : string))) {
+            if (PyObject_SetItem(m_ptr, k.m_ptr, v.m_ptr) == -1)
+                handle_exception();
+        }
     }
+    /+
     /**
      * Equivalent to o['_key'] = _value in Python. Usually only makes sense for
      * mappings.
@@ -399,6 +421,7 @@ public:
         if (PySequence_SetItem(m_ptr, i, value.m_ptr) == -1)
             handle_exception();
     }
+    +/
 
     /// Equivalent to del o[_key] in Python.
     void delItem(PydObject key) {
@@ -514,24 +537,57 @@ public:
     // Arithmetic
     //------------
     ///
-    PydObject opAdd(PydObject o) {
-        return new PydObject(PyNumber_Add(m_ptr, o.m_ptr));
+    PydObject opBinary(string op, T)(T o) {
+        static if((is(T : int) || is(T == PydObject)) && op == "*") {
+            if(PySequence_Check(m_ptr)) {
+                static if(is(T == PydObject)) {
+                    int j = d_type!int(o.ptr);
+                }else{
+                    alias o j;
+                }
+                return new PydObject(PySequence_Repeat(m_ptr, j));
+            }
+        }
+        static if (!is(T == PydObject)) {
+            PydObject rhs = py(o);
+        }else{
+            alias o rhs;
+        }
+        static if(op == "+") {
+            return new PydObject(PyNumber_Add(m_ptr, rhs.m_ptr));
+        }else static if(op == "-") {
+            return new PydObject(PyNumber_Subtract(m_ptr, rhs.m_ptr));
+        }else static if(op == "*") {
+            return new PydObject(PyNumber_Multiply(m_ptr, rhs.m_ptr));
+        }else static if(op == "/") {
+            return new PydObject(PyNumber_Divide(m_ptr, rhs.m_ptr));
+        }else static if(op == "%") {
+            return new PydObject(PyNumber_Remainder(m_ptr, rhs.m_ptr));
+        }else static if(op == "^^") {
+            return new PydObject(PyNumber_Power(m_ptr, rhs.m_ptr, Py_None));
+        }else static if(op == "<<") {
+            return new PydObject(PyNumber_Lshift(m_ptr, rhs.m_ptr));
+        }else static if(op == ">>") {
+            return new PydObject(PyNumber_Rshift(m_ptr, rhs.m_ptr));
+        }else static if(op == "&") {
+            return new PydObject(PyNumber_And(m_ptr, rhs.m_ptr));
+        }else static if(op == "^") {
+            return new PydObject(PyNumber_Xor(m_ptr, rhs.m_ptr));
+        }else static if(op == "|") {
+            return new PydObject(PyNumber_Or(m_ptr, rhs.m_ptr));
+        }else static if(op == "~") {
+            return new PydObject(PySequence_Concat(m_ptr, rhs.m_ptr));
+        }else static assert(false, "operator " ~ op ~" not supported");
     }
-    ///
-    PydObject opSub(PydObject o) {
-        return new PydObject(PyNumber_Subtract(m_ptr, o.m_ptr));
-    }
-    ///
-    PydObject opMul(PydObject o) {
-        return new PydObject(PyNumber_Multiply(m_ptr, o.m_ptr));
-    }
-    /// Sequence repetition
-    PydObject opMul(int count) {
-        return new PydObject(PySequence_Repeat(m_ptr, count));
-    }
-    ///
-    PydObject opDiv(PydObject o) {
-        return new PydObject(PyNumber_Divide(m_ptr, o.m_ptr));
+
+    PydObject opUnary(string op)() {
+        static if(op == "+") {
+            return new PydObject(PyNumber_Positive(m_ptr));
+        }else static if(op == "-") {
+            return new PydObject(PyNumber_Negative(m_ptr));
+        }else static if(op == "~") {
+            return new PydObject(PyNumber_Invert(m_ptr));
+        }
     }
     ///
     PydObject floorDiv(PydObject o) {
@@ -540,149 +596,79 @@ public:
     PydObject trueDiv(PydObject o) {
         return new PydObject(PyNumber_TrueDivide(m_ptr, o.m_ptr));
     }
-    ///
-    PydObject opMod(PydObject o) {
-        return new PydObject(PyNumber_Remainder(m_ptr, o.m_ptr));
-    }
-    ///
     PydObject divmod(PydObject o) {
         return new PydObject(PyNumber_Divmod(m_ptr, o.m_ptr));
     }
-    PydObject opPow(PydObject o) {
-        return new PydObject(PyNumber_Power(m_ptr, o.m_ptr, Py_None));
-    }
-    ///
     PydObject pow(PydObject o1, PydObject o2=null) {
         return new PydObject(PyNumber_Power(m_ptr, o1.m_ptr, (o2 is null) ? Py_None : o2.m_ptr));
     }
-    ///
-    PydObject opPos() {
-        return new PydObject(PyNumber_Positive(m_ptr));
-    }
-    ///
-    PydObject opNeg() {
-        return new PydObject(PyNumber_Negative(m_ptr));
-    }
-    ///
     PydObject abs() {
         return new PydObject(PyNumber_Absolute(m_ptr));
-    }
-    ///
-    PydObject opCom() {
-        return new PydObject(PyNumber_Invert(m_ptr));
-    }
-    ///
-    PydObject opShl(PydObject o) {
-        return new PydObject(PyNumber_Lshift(m_ptr, o.m_ptr));
-    }
-    ///
-    PydObject opShr(PydObject o) {
-        return new PydObject(PyNumber_Rshift(m_ptr, o.m_ptr));
-    }
-    ///
-    PydObject opAnd(PydObject o) {
-        return new PydObject(PyNumber_And(m_ptr, o.m_ptr));
-    }
-    ///
-    PydObject opXor(PydObject o) {
-        return new PydObject(PyNumber_Xor(m_ptr, o.m_ptr));
-    }
-    ///
-    PydObject opOr(PydObject o) {
-        return new PydObject(PyNumber_Or(m_ptr, o.m_ptr));
     }
 
     //---------------------
     // In-place arithmetic
     //---------------------
-    private extern(C)
-    alias PyObject* function(PyObject*, PyObject*) op_t;
+    PydObject opOpAssign(string op, T)(T o) {
+        static if((is(T : int) || is(T == PydObject)) && op == "*") {
+            if(PySequence_Check(m_ptr)) {
+                static if(is(T == PydObject)) {
+                    int j = d_type!int(o.ptr);
+                }else{
+                    alias o j;
+                }
+                
+                PyObject* result = PySequence_InPlaceRepeat(m_ptr, j);
+                if (result is null) handle_exception();
+                Py_DECREF(m_ptr);
+                m_ptr = result;
+                return this;
+            }
+        }
+        static if (!is(T == PydObject)) {
+            PydObject rhs = py(o);
+        }else{
+            alias o rhs;
+        }
+        static if(op == "+") {
+            alias PyNumber_InPlaceAdd Op;
+        }else static if(op == "-") {
+            alias PyNumber_InPlaceSubtract Op;
+        }else static if(op == "*") {
+            alias PyNumber_InPlaceMultiply Op;
+        }else static if(op == "/") {
+            alias PyNumber_InPlaceDivide Op;
+        }else static if(op == "%") {
+            alias PyNumber_InPlaceRemainder Op;
+        }else static if(op == "^^") {
+            alias PyNumber_InPlacePower Op;
+        }else static if(op == "<<") {
+            alias PyNumber_InPlaceLshift Op;
+        }else static if(op == ">>") {
+            alias PyNumber_InPlaceRshift Op;
+        }else static if(op == "&") {
+            alias PyNumber_InPlaceAnd Op;
+        }else static if(op == "^") {
+            alias PyNumber_InPlaceXor Op;
+        }else static if(op == "|") {
+            alias PyNumber_InPlaceOr Op;
+        }else static if(op == "~") {
+            alias PySequence_InPlaceConcat Op;
+        }else static assert(false, "operator " ~ op ~" not supported");
 
-    // A useful wrapper for most of the in-place operators
-    private PydObject
-    inplace(op_t op, PydObject rhs) {
-        /+ EMN: not seeming to be working the way we want it
+        //EMN: not seeming to be working the way we want it
+        /+
         if (PyType_HasFeature(m_ptr.ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)) {
-            op(m_ptr, rhs.m_ptr);
+            Op(m_ptr, count);
             handle_exception();
         } else {
         +/
-            PyObject* result = op(m_ptr, rhs.m_ptr);
+            PyObject* result = Op(m_ptr, rhs.ptr);
             if (result is null) handle_exception();
             Py_DECREF(m_ptr);
             m_ptr = result;
-        // }
+        //}
         return this;
-    }
-    ///
-    PydObject opAddAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceAdd, o);
-    }
-    ///
-    PydObject opSubAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceSubtract, o);
-    }
-    ///
-    PydObject opMulAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceMultiply, o);
-    }
-    /// In-place sequence repetition
-    PydObject opMulAssign(int count) {
-        if (PyType_HasFeature(m_ptr.ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)) {
-            PySequence_InPlaceRepeat(m_ptr, count);
-            handle_exception();
-        } else {
-            PyObject* result = PySequence_InPlaceRepeat(m_ptr, count);
-            if (result is null) handle_exception();
-            Py_DECREF(m_ptr);
-            m_ptr = result;
-        }
-        return this;
-    }
-    ///
-    PydObject opDivAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceDivide, o);
-    }
-    ///
-    PydObject floorDivAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceFloorDivide, o);
-    }
-    ///
-    PydObject opModAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceRemainder, o);
-    }
-    ///
-    PydObject powAssign(PydObject o1, PydObject o2=null) {
-        if (PyType_HasFeature(m_ptr.ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)) {
-            PyNumber_InPlacePower(m_ptr, o1.m_ptr, (o2 is null) ? Py_None : o2.m_ptr);
-            handle_exception();
-        } else {
-            PyObject* result = PyNumber_InPlacePower(m_ptr, o1.m_ptr, (o2 is null) ? Py_None : o2.m_ptr);
-            if (result is null) handle_exception();
-            Py_DECREF(m_ptr);
-            m_ptr = result;
-        }
-        return this;
-    }
-    ///
-    PydObject opShlAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceLshift, o);
-    }
-    ///
-    PydObject opShrAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceRshift, o);
-    }
-    ///
-    PydObject opAndAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceAnd, o);
-    }
-    ///
-    PydObject opXorAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceXor, o);
-    }
-    ///
-    PydObject opOrAssign(PydObject o) {
-        return inplace(&PyNumber_InPlaceOr, o);
     }
 
     //-----------------
@@ -722,14 +708,8 @@ public:
     //------------------
 
     /// Sequence concatenation
-    PydObject opCat(PydObject o) {
-        return new PydObject(PySequence_Concat(m_ptr, o.m_ptr));
-    }
-    /// In-place sequence concatenation
-    PydObject opCatAssign(PydObject o) {
-        return inplace(&PySequence_InPlaceConcat, o);
-    }
-    ///
+    // see opBinary, opOpAssign
+
     Py_ssize_t count(PydObject v) {
         Py_ssize_t result = PySequence_Count(m_ptr, v.m_ptr);
         if (result == -1) handle_exception();
@@ -897,5 +877,21 @@ public:
             throw new Exception("tried to call getdict on non module");
         }
     }
+
+    @property auto opDispatch(string nom)() {
+        return this.getattr(nom);
+    }
+    @property void opDispatch(string nom, T)(T val) {
+        static if(is(T == PydObject)) {
+            alias val value;
+        }else{
+            auto value = py(val);
+        }
+        this.setattr(nom,value);
+    }
+    auto opDispatch(string nom, T...)(T ts) /*if(T.length > 1)*/ {
+        return this.getattr(nom).opCall(ts);
+    }
+
 }
 

@@ -60,7 +60,7 @@ static this() {
             "taco trucks are repositories for tasty mexican food", // docstring
             "tacotruck"); // module name
     auto sys = py_import("sys");
-    auto old_stderr = sys.getattr("stderr");
+    auto old_stderr = sys.stderr;
     sys.setattr("stderr", py(new ErrInterceptor()));
 }
 
@@ -72,8 +72,8 @@ string interceptStderr() {
     string errmsg;
     PyErr_Print();
     writeln(new PydObject(z));
-    auto stderr = py_import("sys").getattr("stderr");
-    auto msg = stderr.method("msg");
+    auto stderr = py_import("sys").stderr;
+    auto msg = stderr.msg.opCall();
     if(msg != new PydObject() /*None*/) {
         errmsg = msg.toDItem!string();
     }
@@ -156,16 +156,8 @@ void PyStmts(string python) {
     }
 }
 
-alias PyDef!("def func1(a): 
-    return a*2+1", int, int) func1;
 
 void main() {
-    assert(func1(1) == 3);    
-    assert(func1(2) == 5);    
-    assert(func1(3) == 7);    
-    dictTests();
-    seqTests();
-    numberTests();
     int i = PyEval!int("1+2");
     writeln(i);
     PyStmts(q"<
@@ -186,7 +178,15 @@ tacotruck.run_tacotruck()
     PyStmts(q"<print "cheezit: %x" % ~0x10000000 >");
 }
 
-void dictTests() {
+unittest {
+    alias PyDef!("def func1(a): 
+            return a*2+1", int, int) func1;
+    assert(func1(1) == 3);    
+    assert(func1(2) == 5);    
+    assert(func1(3) == 7);    
+}
+
+unittest {
     auto g = py(["a":"b"]);
     assert((g.keys()).toString() == "['a']");
     assert((g.values()).toString() == "['b']");
@@ -221,7 +221,7 @@ void dictTests() {
     assert(g.hasKey("a"));
 }
 
-void seqTests() {
+unittest {
     auto g = py(["a","b","c","e"]);
     assert("a" in g);
     assert("e" in g);
@@ -256,13 +256,22 @@ void seqTests() {
     assert(g == py(["X","Z","a","a","b","c","c","e","e"]));
     g.reverse();
     assert(g == py(["e","e","c","c","b","a","a","Z","X"]));
-
+    g = py(["a","b"]);
+    assert(g * 2 == py(["a","b","a","b"]));
+    g *= 2;
+    assert(g == py(["a","b","a","b"]));
+    g = py(["a","b"]);
+    assert(g ~ ["z"] == py(["a","b","z"]));
+    assert(g ~ py(["z"]) == py(["a","b","z"]));
+    g ~= py(["f","h"]);
+    assert(g == py(["a","b","f","h"]));
 }
 
-void numberTests() {
+unittest {
     auto n = py(1);
     n = n + py(2);
     assert(n == py(3));
+    assert(py(2) + 1 == py(3));
     n = n * py(12);
     assert(n == py(36));
     n = n / py(5);
@@ -311,4 +320,39 @@ void numberTests() {
     assert(n == py(17));
     n ^= py(11);
     assert(n == py(26));
+}
+
+unittest {
+    PyStmts(q"<class X:
+        def __init__(self):
+            self.a = "widget"
+            self.b = 515
+        def __add__(self, g):
+            return self.b + g;
+        def __getitem__(self, i):
+            return 1000 + i*2
+        def __setitem__(self, i, j):
+            self.b = 100*j + 10*i;
+        def foo(self):
+            return self.a
+        def bar(self, wongo, xx):
+            return "%s %s b %s" % (self.a, wongo, self.b)
+            >");
+    auto x = PyEval("X()");
+    assert(x.getattr("a") == py("widget"));
+    assert(x.a == py("widget"));
+    assert(x.method("foo") == py("widget"));
+    assert(x[4] == py(1008));
+    auto xb = x.b;
+    x[4] = 5;
+    assert(x.b == py(540));
+    x.b = xb;
+    // *#^$&%#*(@*&$!!!!!
+    // I long for the day..
+    //assert(x.foo != x.foo());
+    //assert(x.foo() == py("widget"));
+    assert(x.foo.opCall() == py("widget"));
+    assert(x.bar(py(9.5),1) == py("widget 9.5 b 515"));
+    assert(x.bar(9.5,1) == py("widget 9.5 b 515"));
+    assert(x + 10 == py(525));
 }

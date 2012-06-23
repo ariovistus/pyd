@@ -9,7 +9,7 @@ PYTHON_2_7 = -version=Python_2_7_Or_Later \
 	     -version=Python_2_5_Or_Later \
 	     -version=Python_2_4_Or_Later \
 	     -L-lpython2.7
-DC = dmd -m32
+DC = dmd -m32 -unittest #-property
 all: pyind
 clean:
 	rm *.o
