@@ -21,11 +21,11 @@ SOFTWARE.
 */
 module pyd.pydobject;
 
-//private import std.c.stdio;
 import python;
 import pyd.exception;
 import pyd.make_object;
 import std.string: toStringz;
+import std.exception: enforce;
 
 char* zc(string s) {
     if(s.length && s[$-1] == 0) return s.dup.ptr;
@@ -786,7 +786,7 @@ public:
     // Mapping methods
     //-----------------
     /// Same as "v in this" in Python.
-    //bool opIn_r(PydObject v) {
+    //bool opIn_r(PydObject v) 
     bool opBinaryRight(string op,T)(T v) if(op == "in" && is(T == PydObject)){
         int result = PySequence_Contains(m_ptr, v.m_ptr);
         if (result == -1) handle_exception();
@@ -795,7 +795,7 @@ public:
     /// Same as opIn_r
     bool hasKey(PydObject key) { return this.opBinaryRight!("in",PydObject)(key); }
     /// Same as "'v' in this" in Python.
-    //bool opIn_r(char[] key) {
+    //bool opIn_r(char[] key) 
     bool opBinaryRight(string op,T)(T key) if(op == "in" && is(T == string)){
         if(PyDict_Check(m_ptr) || PyMapping_Check(m_ptr)) {
             return this.hasKey(key);
@@ -891,5 +891,12 @@ public:
         return this.getattr(nom).opCall(ts);
     }
 
+}
+
+@property PydObject None() {
+    static PydObject _None;
+    enforce(Py_IsInitialized());
+    if(!_None) _None = new PydObject();
+    return _None;
 }
 

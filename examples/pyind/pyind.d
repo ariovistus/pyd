@@ -1,186 +1,68 @@
 module pyind;
 
-/++
- + Things we want to do:
- +  * run python code in D (easily) [check]
- +  * run D code in python [?]
- +  * declare python functions and use them in D [check]
- +  * access and manipulate python globals in D [check]
- +  * wrap D classes/structs and use them in python or D [check]
- +  * use python class instances in D [why?]
- +  * wrap D ranges and iterators or whatever and iterate through them in python [why?]
- +  * wrap python iterators as D input ranges [why?]
- +  * do things with inheritance [why??!??]
- +/  
-import std.algorithm: findSplit;
-import std.string: strip;
 import std.stdio;
 import pyd.pyd;
-import python;
+import pyd.embedded;
+import python: Py_Initialize;
 
-/++
- + PyErr_Print() prints error messages to stderr.
- + But I want it in the message in a string so I can stuff it in an Exception.
- + So here is glue. The type gets wrapped and an instance is assigned to 
- + sys.stderr. Then sys.stderr gets unwrapped and we manipulate it within D.
- + Cute? (yeah, we could just use StringIO) (or handle_exception)
- +/
-class ErrInterceptor {
-    string _msg;
-    void write(string s) {
-        writefln("gotted: %s",s);
-        _msg ~= s;
-    }
-    void clear() {
-        _msg = "";
-    }
-    string msg(){
-        return _msg;
-    }
+
+void knock() {
+    writeln("knock! knock! knock!");
+    writeln("BAM! BAM! BAM!");
 }
 
-PydObject py_import(string name) {
-    return new PydObject(PyImport_ImportModule(zcc(name)));
-}
-
-void run_tacotruck() {
-    writeln("choof choof choof");
+class Y {
+    void query() {
+        writeln("Are you a BRAIN SPECIALIST?");
+    }
 }
 
 static this() {
     Py_Initialize();
-    add_module("d_pydef");
-    def!("tacotruck", run_tacotruck)("running taco trucks is important"); 
-    add_module("tacotruck");
-    auto m = py_import("tacotruck");
-    wrap_class!(ErrInterceptor, 
-            Def!(ErrInterceptor.write),
-            Def!(ErrInterceptor.clear),
-            Def!(ErrInterceptor.msg))(
-            "taco trucks are repositories for tasty mexican food", // docstring
-            "tacotruck"); // module name
-    auto sys = py_import("sys");
-    auto old_stderr = sys.stderr;
-    sys.setattr("stderr", py(new ErrInterceptor()));
+    def!("office", knock)("a brain specialist works here"); 
+    add_module("office");
+    wrap_class!(Y, Def!(Y.query))("","office");
+    ErrInterceptor.wrap_class("office");
+    ErrInterceptor.replaceStderr();
 }
-
-string interceptStderr() {
-    auto z = PyErr_Occurred();
-    if(!z) {
-        return "";
-    }
-    string errmsg;
-    PyErr_Print();
-    writeln(new PydObject(z));
-    auto stderr = py_import("sys").stderr;
-    auto msg = stderr.msg.opCall();
-    if(msg != new PydObject() /*None*/) {
-        errmsg = msg.toDItem!string();
-    }
-    PyErr_Clear();
-    stderr.method("clear");
-    return errmsg;
-}
-
-/++
- + Take a python function and wrap it so we can call it from D!
- + Note that type is really the only thing that need be static here, but hey.
- + We are stuffing the function in module d_pydef. Could probably go elsewhere.
- +/
-R PyDef(string python, R, Args...)(Args args) {
-    enum afterdef = findSplit(python, "def")[2];
-    enum ereparen = findSplit(afterdef, "(")[0];
-    enum name = strip(ereparen) ~ "\0";
-    static PydObject m, func, locals; 
-    static Exception exc;
-    static string errmsg;
-    static bool once = true;
-    if(once) {
-        once = false;
-        m = py_import("d_pydef");
-        locals = m.getdict();
-        if("__builtins__" !in locals) {
-            auto builtins = new PydObject(PyEval_GetBuiltins());
-            locals["__builtins__"] = builtins;
-        }
-        auto pres = PyRun_String(
-                    zcc(python), 
-                    Py_file_input, locals.ptr, locals.ptr);
-        if(pres) {
-            auto res = new PydObject(pres);
-            func = m.getattr(name);
-        }else{
-            errmsg = interceptStderr();
-        }
-    }
-    if(!func) {
-        throw new Exception(errmsg);
-    }
-    return func(args).toDItem!R();
-}
-
-T PyEval(T = PydObject)(string python) {
-    auto m = py_import("d_pydef");
-    auto locals = m.getdict();
-    if("__builtins__" !in locals) {
-        auto builtins = new PydObject(PyEval_GetBuiltins());
-        locals["__builtins__"] = builtins;
-    }
-    auto pres = PyRun_String(
-            zcc(python), 
-            Py_eval_input, locals.ptr, locals.ptr);
-    if(pres) {
-        auto res = new PydObject(pres);
-        return d_type!T(res.ptr);
-    }else{
-        throw new Exception(interceptStderr());
-    }
-}
-
-void PyStmts(string python) {
-    auto m = py_import("d_pydef");
-    auto locals = m.getdict();
-    if("__builtins__" !in locals) {
-        auto builtins = new PydObject(PyEval_GetBuiltins());
-        locals["__builtins__"] = builtins;
-    }
-    auto pres = PyRun_String(
-            zcc(python), 
-            Py_file_input, locals.ptr, locals.ptr);
-    if(pres) {
-        Py_DECREF(pres);
-    }else{
-        auto z = interceptStderr();
-        writefln("z: %s", z);
-        throw new Exception(z);
-    }
-}
-
 
 void main() {
-    int i = PyEval!int("1+2");
+    // simple expressions can be evaluated
+    int i = PyEval!int("1+2", "office");
     writeln(i);
+
+    // functions can be defined in D and invoked in Python (see above)
+    PyStmts(q"<
+knock()
+>", "office");
+
+    // functions can be defined in Python and invoked in D
+    alias PyDef!("def holler(a): 
+            return ' '.join(['Doctor!']*a)","office", string, int) call_out;
+    writeln(call_out(1));
+    writeln(call_out(5));
+
+    // classes can be defined in D and used in Python
+
+    auto y = PyEval("Y()","office");
+    y.method("query");
+
+    // classes can be defined in Python and used in D
     PyStmts(q"<
 class X:
     def __init__(self):
-        self._a = "loogie sniffers"
-    def a(self):
-        print self._a
-        >");
-    auto x = PyEval("X()");
-    x.method("a");
-    PyStmts(q"<
-print 'hi there!'
-print 'I am a taco!'
-import tacotruck
-tacotruck.run_tacotruck()
->");
-    PyStmts(q"<print "cheezit: %x" % ~0x10000000 >");
+        self.resolution = "It will have to come OUT!"
+    def what(self):
+        return "All the.. BITS of it!"
+        >", "office");
+    auto x = PyEval("X()","office");
+    writeln(x.resolution);
+    writeln(x.method("what"));
 }
 
 unittest {
     alias PyDef!("def func1(a): 
-            return a*2+1", int, int) func1;
+            return a*2+1","office", int, int) func1;
     assert(func1(1) == 3);    
     assert(func1(2) == 5);    
     assert(func1(3) == 7);    
@@ -286,7 +168,7 @@ unittest {
     assert(n == py(2));
     n = py(3) ^^ py(4);
     assert(n == py(81));
-    // holy guacamole! I didn't know python's pow() did this!
+    // holy guacamole! I didn't know Python's pow() did this!
     n = py(13).pow(py(3), py(5));
     assert(n == (py(13) ^^ py(3)) % py(5));
     assert(n == py(2));
@@ -337,8 +219,8 @@ unittest {
             return self.a
         def bar(self, wongo, xx):
             return "%s %s b %s" % (self.a, wongo, self.b)
-            >");
-    auto x = PyEval("X()");
+            >", "office");
+    auto x = PyEval("X()","office");
     assert(x.getattr("a") == py("widget"));
     assert(x.a == py("widget"));
     assert(x.method("foo") == py("widget"));

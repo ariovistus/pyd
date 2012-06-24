@@ -37,11 +37,11 @@ import pyd.lib_abstract :
  * If this exception is never caught, it will be handled by exception_catcher
  * (below) and passed right back into Python as though nothing happened.
  */
-void handle_exception() {
+void handle_exception(string file = __FILE__, size_t line = __LINE__) {
     PyObject* type, value, traceback;
     if (PyErr_Occurred() !is null) {
         PyErr_Fetch(&type, &value, &traceback);
-        throw new PythonException(type, value, traceback);
+        throw new PythonException(type, value, traceback,file,line);
     }
 }
 
@@ -102,8 +102,8 @@ class PythonException : Exception {
 protected:
     PyObject* m_type, m_value, m_trace;
 public:
-    this(PyObject* type, PyObject* value, PyObject* traceback) {
-        super(.toString(PyString_AsString(value)));
+    this(PyObject* type, PyObject* value, PyObject* traceback, string file = __FILE__, size_t line = __LINE__) {
+        super(.toString(PyString_AsString(value)), file, line);
         m_type = type;
         m_value = value;
         m_trace = traceback;

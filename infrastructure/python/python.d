@@ -619,18 +619,22 @@ extern (C) {
   }
 
   void Py_DECREF()(PyObject *op) {
-    // version(PY_REF_DEBUG) _Py_RefTotal++
+      // version(PY_REF_DEBUG) _Py_RefTotal++
       --op.ob_refcnt;
     
-    // EMN: this is a horrible idea because it takes forever to figure out 
-    //      what's going on if this is being called from within the garbage 
-    //      collector.
+      // EMN: this is a horrible idea because it takes forever to figure out 
+      //      what's going on if this is being called from within the garbage 
+      //      collector.
       assert (op.ob_refcnt >= 0);
-    if(op.ob_refcnt != 0) {
-        // version(PY_REF_DEBUG) _Py_NegativeRefcount(__FILE__, __LINE__, cast(PyObject*)op);
-    }else {
-      op.ob_type.tp_dealloc(op);
-    }
+      if(op.ob_refcnt != 0) {
+          // version(PY_REF_DEBUG) _Py_NegativeRefcount(__FILE__, __LINE__, cast(PyObject*)op);
+      }else {
+      debug {
+        import std.stdio;
+        writefln("tp_dealloc: %s", op.ob_type.tp_dealloc);
+      }
+        op.ob_type.tp_dealloc(op);
+      }
   }
 
   void Py_XDECREF()(PyObject* op)

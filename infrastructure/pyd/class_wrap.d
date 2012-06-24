@@ -177,8 +177,11 @@ template wrapped_methods(T) {
     /// The generic dealloc method.
     extern(C)
     void wrapped_dealloc(PyObject* self) {
+            import std.c.stdio;
+            printf("wrapped_dealloc: self is self\n");
         exception_catcher(delegate void() {
-            //writefln("wrapped_dealloc: T is %s", typeid(T));
+            import std.stdio;
+            writefln("wrapped_dealloc: T is %s", typeid(T));
             WrapPyObject_SetObj!(T)(self, cast(T)null);
             self.ob_type.tp_free(self);
         });
