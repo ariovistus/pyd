@@ -89,12 +89,12 @@ template OverloadShim() {
     // If this is actually an instance of a Python subclass, return the
     // PyObject associated with the object. Otherwise, return null.
     PyObject* __pyd_get_pyobj() {
-        PyObject** _pyobj = cast(void*)this in wrapped_gc_objects;
+        auto range = wrapped_gc_objects.equalRange(cast(void*) this);
         PyTypeObject** _pytype = this.classinfo in wrapped_classes;
-        if (_pyobj is null || _pytype is null || (*_pyobj).ob_type != *_pytype) {
-            return *_pyobj;
-        } else {
+        if (range.empty || _pytype is null || range.front.py.ob_type != *_pytype) {
             return null;
+        } else {
+            return range.front.py;
         }
     }
     template __pyd_abstract_call(fn_t) {

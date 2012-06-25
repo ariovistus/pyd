@@ -51,9 +51,9 @@ knock()
     PyStmts(q"<
 class X:
     def __init__(self):
-        self.resolution = "It will have to come OUT!"
+        self.resolution = "NO!"
     def what(self):
-        return "All the.. BITS of it!"
+        return "Yes, yes I am!"
         >", "office");
     auto x = PyEval("X()","office");
     writeln(x.resolution);

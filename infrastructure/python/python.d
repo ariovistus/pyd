@@ -629,10 +629,6 @@ extern (C) {
       if(op.ob_refcnt != 0) {
           // version(PY_REF_DEBUG) _Py_NegativeRefcount(__FILE__, __LINE__, cast(PyObject*)op);
       }else {
-      debug {
-        import std.stdio;
-        writefln("tp_dealloc: %s", op.ob_type.tp_dealloc);
-      }
         op.ob_type.tp_dealloc(op);
       }
   }

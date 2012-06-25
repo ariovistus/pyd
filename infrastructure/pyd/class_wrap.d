@@ -25,6 +25,8 @@ import python;
 
 import meta.Util: Replace;
 import std.string: format;
+import std.typecons: Tuple;
+import meta.multi_index;
 import pyd.ctor_wrap;
 import pyd.def;
 import pyd.dg_convert;
@@ -121,11 +123,28 @@ template wrapped_class_type(T) {
     };
 }
 
-// A mappnig of all class references that are being held by Python.
-PyObject*[void*] wrapped_gc_objects;
+// A mapping of all class references that are being held by Python.
+alias Tuple!(void*,"d",PyObject*,"py") D2Py;
+alias MultiIndexContainer!(D2Py, IndexedBy!(HashedUnique!("a.d")), 
+        MallocAllocator, MutableView) WrappedObjectMap;
+WrappedObjectMap wrapped_gc_objects;
+
+static this() {
+    wrapped_gc_objects = new WrappedObjectMap();
+}
+
+template Dt2Py(dg_t) {
+    alias Tuple!(dg_t,"d",PyObject*,"py") Dt2Py;
+}
+
 // A mapping of all GC references that are being held by Python.
 template wrapped_gc_references(dg_t) {
-    PyObject*[dg_t] wrapped_gc_references;
+    alias MultiIndexContainer!(Dt2Py!dg_t, IndexedBy!(HashedUnique!("a.d")), 
+            MallocAllocator, MutableView) WrappedReferenceMap;
+    WrappedReferenceMap wrapped_gc_references;
+    static this() {
+        wrapped_gc_references = new WrappedReferenceMap();
+    }
 }
 
 /**
@@ -177,14 +196,20 @@ template wrapped_methods(T) {
     /// The generic dealloc method.
     extern(C)
     void wrapped_dealloc(PyObject* self) {
-            import std.c.stdio;
-            printf("wrapped_dealloc: self is self\n");
-        exception_catcher(delegate void() {
-            import std.stdio;
-            writefln("wrapped_dealloc: T is %s", typeid(T));
-            WrapPyObject_SetObj!(T)(self, cast(T)null);
-            self.ob_type.tp_free(self);
-        });
+        // EMN: the *&%^^%! generic dealloc method is triggering a call to
+        //  *&^%*%(! malloc for that delegate during a @(*$76*&! 
+        //  garbage collection
+        //  Solution: don't use a *&%%^^! delegate in a destructor!
+        static struct StackDelegate{
+            PyObject* x;
+            void dg() {
+                WrapPyObject_SetObj!(T)(x, cast(T)null);
+                x.ob_type.tp_free(x);
+            }
+        }
+        StackDelegate x;
+        x.x = self;
+        exception_catcher(&x.dg);
     }
 }
 
@@ -738,33 +763,33 @@ void docstrings(T=void)(Docstring[] docs...) {
 
 // If the passed D reference has an existing Python object, return a borrowed
 // reference to it. Otherwise, return null.
-PyObject* get_existing_reference(T) (T t) {
+PyObject_BorrowedRef* get_existing_reference(T) (T t) {
     static if (is(T == class)) {
-        PyObject** obj_p = cast(void*)t in wrapped_gc_objects;
-        if (obj_p) return *obj_p;
-        else return null;
+        auto range = wrapped_gc_objects.equalRange(cast(void*) t);
+        if(range.empty) return null;
+        return cast(PyObject_BorrowedRef*) range.front.py;
     } else {
-        PyObject** obj_p = t in wrapped_gc_references!(T);
-        if (obj_p) return *obj_p;
-        else return null;
+        auto range = wrapped_gc_references!(T).equalRange(t);
+        if(range.empty) return null;
+        return cast(PyObject_BorrowedRef*) range.front.py;
     }
 }
 
 // Drop the passed D reference from the pool of held references.
 void drop_reference(T) (T t) {
     static if (is(T == class)) {
-        wrapped_gc_objects.remove(cast(void*)t);
+        wrapped_gc_objects.removeKey(cast(void*)t);
     } else {
-        wrapped_gc_references!(T).remove(t);
+        wrapped_gc_references!(T).removeKey(t);
     }
 }
 
 // Add the passed D reference to the pool of held references.
 void add_reference(T) (T t, PyObject* o) {
     static if (is(T == class)) {
-        wrapped_gc_objects[cast(void*)t] = o;
+        wrapped_gc_objects.insert(D2Py(cast(void*)t, o));
     } else {
-        wrapped_gc_references!(T)[t] = o;
+        wrapped_gc_references!(T).insert(Dt2Py!T(t, o));
     }
 }
 
@@ -780,10 +805,9 @@ PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) {
     //alias wrapped_class_type!(T) type;
     if (is_wrapped!(T)) {
         // If this object is already wrapped, get the existing object.
-        PyObject* obj_p = get_existing_reference(t);
+        PyObject_BorrowedRef* obj_p = get_existing_reference(t);
         if (obj_p) {
-            Py_INCREF(obj_p);
-            return obj_p;
+            return OwnPyRef(obj_p);
         }
         // Otherwise, allocate a new object
         PyObject* obj = type.tp_new(type, null, null);
