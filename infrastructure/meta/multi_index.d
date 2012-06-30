@@ -845,10 +845,10 @@ struct MallocAllocator{
 import std.traits: isIterable, isNarrowString, ForeachType, Unqual;
 // stolen from phobos and modified.
 // when phobos gets real allocators, this hopefully will go away.
-ForeachType!Range[] allocatedArray(Allocator,Range)(Range r)
+Unqual!(ForeachType!Range)[] allocatedArray(Allocator,Range)(Range r)
 if (isIterable!Range && !isNarrowString!Range)
 {
-    alias ForeachType!Range E;
+    alias Unqual!(ForeachType!Range) E;
     static if (hasLength!Range)
     {
         if(r.length == 0) return null;
@@ -3724,7 +3724,7 @@ template Hashed(bool allowDuplicates = false, alias KeyFromValue="a",
             NodeMixin;
 
         enum IndexCtorMixin = Replace!(q{
-            index!$N .hashes.length = primes[0];
+            index!$N .hashes = Allocator.allocate!(ThisNode*)(primes[0])[0 .. primes[0]];
             index!$N .load_factor = 0.80;
         }, "$N", N);
 
@@ -4140,7 +4140,7 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                 return cast(size_t) load;
             }
 
-            @property size_t capacity(){
+            @property size_t capacity() {
                 return hashes.length;
             }
 
@@ -4411,10 +4411,12 @@ version(OldWay){
     }
 }
 
+/// _
 template HashedUnique(alias KeyFromValue="a", 
         alias Hash="??", alias Eq="a==b"){
     alias Hashed!(false, KeyFromValue, Hash, Eq) HashedUnique;
 }
+/// _
 template HashedNonUnique(alias KeyFromValue="a", 
         alias Hash="??", alias Eq="a==b"){
     alias Hashed!(true, KeyFromValue, Hash, Eq) HashedNonUnique;
@@ -4495,8 +4497,8 @@ to the same index more than once.
 
 struct SignalOnChange(L...) {
     struct Inner(IndexedBy){
-        // by some forward referencing error or other, (see error11.d)
-        // I can't seem to get a hold of inner in ContainerArgs, but
+        // by some forward referencing error or other, (issue 6475)
+        // I can't seem to get a hold of inner in, but
         // typeof(exposeType()) seems to work. Desparate times require
         // desparate measures, I guess
         static exposeType(){
@@ -4729,83 +4731,227 @@ struct MNode(ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
 struct ConstView{}
 struct MutableView{}
 
-auto CheckArgs(X...)() {
-        size_t numIndexedBy = 0, ixIndexedBy = -1;
-        size_t numSignalOnChanged = 0, ixSignalOnChanged = -1;
-        size_t numViews = 0, ixView = -1;
-        size_t numAllocators = 0, ixAllocator = -1;
-        foreach(i,x; X){
-            // todo: find a way to test if x is an instatiation of template IndexedBy
-            static if(x.stringof.startsWith("IndexedBy") &&
-                    __traits(compiles, x.List)) {
-                numIndexedBy++;
-                assert(x.List.length > 0, "MultiIndexContainer requires"
-                        " at least one index");
-                ixIndexedBy = i;
-            }else static if(x.stringof.startsWith("SignalOnChange") &&
-                    true) {
-                numSignalOnChanged++;
-                ixSignalOnChanged = i;
-            }else static if(is(x == MutableView) || is(x == ConstView)) {
-                numViews++;
-                ixView = i;
-            }else static if(IsAllocator!(x)) {
-                numAllocators++;
-                ixAllocator = i;
-            }else{
-                assert(false, Format!(
-                            "Invalid argument passed to MultiIndexContainer"
-                            " specification (index %s): %s", i, x.stringof));
-            }
+template IsIndexedBy(alias x) {
+    // test x.stringof in case we have a bare Sequenced!() or somesuch
+    enum bool IsIndexedBy = __traits(compiles, x.stringof) &&
+        x.stringof.startsWith("IndexedBy") &&
+        __traits(compiles, x.List);
+}
+
+template IsIndex(alias x) {
+    enum bool IsIndex = __traits(hasMember, x, "Inner");
+}
+
+int IndexedByCount(X...)() {
+    int r = 0;
+    foreach(i,x; X){
+        static if(__traits(compiles,IsIndexedBy!x) && IsIndexedBy!x) {
+            r++;
         }
-        assert(numIndexedBy == 1, "MultiIndexContainer requires an"
-                " IndexedBy specification"); 
-        assert(numSignalOnChanged <= 1, "Multiple SignalOnChange "
-                "specifications are not allowed");
-        assert(numViews <= 1, "Multiple Constness Views "
-                "are not allowed");
-        assert(numAllocators <= 1, "Multiple Allocators are not allowed");
-
-        return [ixIndexedBy, ixSignalOnChanged, ixView, ixAllocator];
+    }
+    return r;
 }
-struct ContainerArgs(X...){
-
-    enum ixs = CheckArgs!(X)();
-
-    alias X[ixs[0]] IndexedBy;
-
-    static if(ixs[1] == -1){
-        alias SignalOnChange!().Inner!(IndexedBy) Signals;
-    }else{
-        alias typeof(X[ixs[1]].Inner!(IndexedBy).exposeType()) Signals;
-        // @@@BUG@@@ following gives forward reference error
-        // actually, this seems to have been fixed
-        //alias X[ixs[1]] Signals0;
-        //alias Signals0.Inner!(IndexedBy) Signals;
+/// erm. returns list of nonindeces in IndexedBy
+size_t[] IndexedByAllIndeces(X)() {
+    size_t[] res = [];
+    foreach(i,x; X.List){
+        static if(!IsIndex!(x)) {
+            res ~= i;
+        }
     }
+    return res;
+}
 
-    static if(ixs[2] ==  -1) {
-        alias ConstView ConstnessView;
-    }else{
-        alias X[ixs[2]] ConstnessView;
-    }
-
-    static if(ixs[3] == -1) {
-        alias GCAllocator Allocator;
+template FindIndexedBy(Args...) {
+    static if(IsIndexedBy!(Args[0])) {
+        alias Args[0] FindIndexedBy;
     }else {
-        alias X[ixs[3]] Allocator;
+        alias FindIndexedBy!(Args[1 .. $]) FindIndexedBy;
     }
 }
+
+template IsSignalOnChange(alias X) {
+    enum bool IsSignalOnChange = __traits(compiles, X.stringof) && 
+        X.stringof.startsWith("SignalOnChange");
+}
+
+int SignalOnChangeCount(Args...)() {
+    int r = 0;
+    foreach(i,x; Args){
+        static if(__traits(compiles,IsSignalOnChange!x) && IsSignalOnChange!x) {
+            r++;
+        }
+    }
+    return r;
+}
+
+template FindSignalOnChange(Args...) {
+    static if(Args.length == 0) {
+        alias SignalOnChange!() FindSignalOnChange;
+    }else static if(IsSignalOnChange!(Args[0])) {
+        alias Args[0] FindSignalOnChange;
+    }else {
+        alias FindSignalOnChange!(Args[1 .. $]) FindSignalOnChange;
+    }
+}
+
+template IsConstnessView(alias T) {
+    enum bool IsConstnessView = is(T == MutableView) || is(T == ConstView);
+}
+
+int ConstnessViewCount(Args...)() {
+    int r = 0;
+    foreach(i,x; Args){
+        static if(__traits(compiles,IsConstnessView!x) && IsConstnessView!x) {
+            r++;
+        }
+    }
+    return r;
+}
+
+template FindConstnessView(Args...) {
+    static if(Args.length == 0) {
+        alias ConstView FindConstnessView;
+    }else static if(IsConstnessView!(Args[0])) {
+        alias Args[0] FindConstnessView;
+    }else {
+        alias FindConstnessView!(Args[1 .. $]) FindConstnessView;
+    }
+}
+
+int AllocatorCount(Args...)() {
+    int r = 0;
+    foreach(i,x; Args){
+        static if(IsAllocator!x) {
+            r++;
+        }
+    }
+    return r;
+}
+
+template FindAllocator(Args...) {
+    static if(Args.length == 0) {
+        alias GCAllocator FindAllocator;
+    }else static if(IsAllocator!(Args[0])) {
+        alias Args[0] FindAllocator;
+    }else {
+        alias FindAllocator!(Args[1 .. $]) FindAllocator;
+    }
+}
+
+size_t[] indexGarbage(Args...)() {
+    size_t[] res = [];
+    foreach(i,x; Args){
+        static if(!(__traits(compiles,IsIndexedBy!x) && IsIndexedBy!x) &&
+                !(__traits(compiles,IsSignalOnChange!x) && IsSignalOnChange!x) &&
+                !(__traits(compiles,IsConstnessView!x) && IsConstnessView!x) &&
+                !(__traits(compiles,IsAllocator!x) && IsAllocator!x)) {
+            res ~= i;
+        }
+    }
+    return res;
+}
+
+// error sinks 
+
+class MultiIndexContainer(Value, Args...)
+if(IndexedByCount!(Args)() != 1) {
+    static assert (IndexedByCount!(Args)() > 0, "MultiIndexContainer requires indeces to be wrapped with IndexedBy!(..)");
+    static assert (IndexedByCount!(Args)() < 2, "MultiIndexContainer takes exactly one IndexedBy!(..)");
+}
+
+class MultiIndexContainer(Value, Args...)
+if(FindIndexedBy!Args .List.length == 0) {
+    static assert(false, "MultiIndexContainer requires at least one index");
+}
+
+class MultiIndexContainer(Value, Args...)
+if(IndexedByAllIndeces!(FindIndexedBy!Args)().length != 0) {
+    import std.conv;
+    alias FindIndexedBy!Args IndexedBy;
+    enum lst = IndexedByAllIndeces!(IndexedBy)();
+    pragma(msg, "IndexedBy contains non-index at indeces");
+    mixin template Frch(size_t i) {
+        static if(i < lst.length) {
+            static if(__traits(compiles, IndexedBy.List[lst[i]].stringof)) {
+                pragma(msg, to!string(lst[i]) ~ ": " ~ IndexedBy.List[lst[i]].stringof);
+            }else{
+                pragma(msg, to!string(lst[i]));
+            }
+            mixin Frch!(i+1);
+        }
+    }
+    mixin Frch!(0);
+    static assert(false);
+    // @@@ PHOBOS ISSUE 8320 @@@
+    /+
+    static assert (false, 
+            Format!(/*"IndexedBy contains non-index at indeces*/" %s", 
+                IndexedByAllIndeces!(FindIndexedBy!Args)()));
++/
+}
+
+class MultiIndexContainer(Value, Args...)
+if(SignalOnChangeCount!(Args)() > 1) {
+    static assert(false, "Multiple SignalOnChange specifications are not allowed");
+}
+
+class MultiIndexContainer(Value, Args...)
+if(ConstnessViewCount!(Args)() > 1) {
+    static assert(false, "Multiple Constness Views are not allowed");
+}
+
+class MultiIndexContainer(Value, Args...)
+if(AllocatorCount!(Args)() > 1) {
+    static assert(false, "Multiple allocators are not allowed");
+}
+
+class MultiIndexContainer(Value, Args...)
+if(indexGarbage!(Args)().length != 0) {
+    import std.conv;
+    enum lst = indexGarbage!(Args)();
+    pragma(msg, "MultiIndexContainer unknown arguments at");
+    mixin template Frch(size_t i) {
+        static if(i < lst.length) {
+            static if(__traits(compiles, Args[lst[i]].stringof)) {
+                pragma(msg, to!string(lst[i]) ~ ": " ~ Args[lst[i]].stringof);
+            }else{
+                pragma(msg, to!string(lst[i]));
+            }
+            mixin Frch!(i+1);
+        }
+    }
+    mixin Frch!(0);
+    static assert(false);
+    // @@@ PHOBOS ISSUE 8320 @@@
+    /+
+    static assert (false, 
+            Format!(/*"IndexedBy contains non-index at indeces*/" %s", 
+                IndexedByAllIndeces!(FindIndexedBy!Args)()));
++/
+}
+
+// end error sinks
 
 /++ 
 The container
 +/
-class MultiIndexContainer(Value, Args...) {
+class MultiIndexContainer(Value, Args...) 
+if(IndexedByCount!(Args)() == 1 &&
+   FindIndexedBy!Args .List.length != 0 &&
+   IndexedByAllIndeces!(FindIndexedBy!Args)().length == 0 &&
+   SignalOnChangeCount!(Args)() <= 1 &&
+   ConstnessViewCount!(Args)() <= 1 &&
+   AllocatorCount!(Args)() <= 1 &&
+   indexGarbage!(Args)().length == 0) {
 
-    alias ContainerArgs!(Args).IndexedBy IndexedBy;
-    alias ContainerArgs!(Args).Signals NormSignals;
-    alias ContainerArgs!(Args).ConstnessView ConstnessView;
-    alias ContainerArgs!(Args).Allocator Allocator;
+    alias FindIndexedBy!Args IndexedBy;
+    // @@@ DMD ISSUE 6475 @@@ following gives forward reference error
+    //alias FindSignalOnChange!Args .Inner!(IndexedBy) NormSignals;
+    alias typeof(FindSignalOnChange!Args .Inner!(IndexedBy).exposeType()) NormSignals;
+    alias FindConstnessView!Args ConstnessView;
+    alias FindAllocator!Args Allocator;
+
     static if(is(ConstnessView == ConstView)){
         alias const(Value) ValueView;
     }else static if(is(ConstnessView == MutableView)){
