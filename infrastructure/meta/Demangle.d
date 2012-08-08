@@ -14,6 +14,7 @@ module meta.Demangle;
  and a 'Consumed' metafunction, which returns an integer, the number of characters which
  are used.
 */
+import std.algorithm;
 
 /*****************************************
  * How should the name be displayed?
@@ -62,9 +63,19 @@ template demangleType(string str, MangledNameType wantQualifiedNames = MangledNa
         enum string demangleType = demangleFunctionOrDelegate!(str[1..$], "function ", wantQualifiedNames);
     else static if (str[0]=='P') // only after we've dealt with function pointers
         enum string demangleType = demangleType!(str[1..$], wantQualifiedNames) ~ "*";
-    else static if (str[0]=='F')
+    else static if(str[0]=='y'){
+        enum string demangleType = "immutable(" ~ demangleType!(str[1..$], wantQualifiedNames) ~ ")";
+    }else static if(str[0]=='x'){
+        enum string demangleType = "const(" ~ demangleType!(str[1..$], wantQualifiedNames) ~ ")";
+    }else static if(str[0]=='O'){
+        enum string demangleType = "shared(" ~ demangleType!(str[1..$], wantQualifiedNames) ~ ")";
+    }else static if(str.length > 1 && str[0 .. 2]=="Ng"){
+        enum string demangleType = "inout(" ~ demangleType!(str[2..$], wantQualifiedNames) ~ ")";
+    }else static if (str[0]=='F')
         enum string demangleType = demangleFunctionOrDelegate!(str, "", wantQualifiedNames);
-    else enum string demangleType = demangleBasicType!(str);
+    else static if(str[0] == 'B') {
+        static assert(0, "type tuple not handled yet");
+    }else enum string demangleType = demangleBasicType!(str);
 }
 
 // split these off because they're numerous and simple
@@ -108,23 +119,31 @@ template demangleBasicType(string str)
 template demangleTypeConsumed(string str)
 {
     static if (str[0]=='A')
-        const int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+        enum int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
     else static if (str[0]=='H')
-        const int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$])
+        enum int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$])
             + demangleTypeConsumed!(str[1+demangleTypeConsumed!(str[1..$])..$]);
     else static if (str[0]=='G')
-        const int demangleTypeConsumed = 1 + countLeadingDigits!(str[1..$])
+        enum int demangleTypeConsumed = 1 + countLeadingDigits!(str[1..$])
             + demangleTypeConsumed!( str[1+countLeadingDigits!(str[1..$])..$] );
     else static if (str.length>2 && (str[0]=='P' || str[0]=='D') && isMangledFunction!(( str[1] )) )
-        const int demangleTypeConsumed = 2 + demangleParamListAndRetValConsumed!(str[2..$]);
+        enum int demangleTypeConsumed = 2 + demangleParamListAndRetValConsumed!(str[2..$]);
     else static if (str[0]=='P') // only after we've dealt with function pointers
-        const int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+        enum int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
     else static if (str[0]=='C' || str[0]=='S' || str[0]=='E' || str[0]=='T')
-        const int demangleTypeConsumed = 1 + getQualifiedNameConsumed!(str[1..$]);
-    else static if (str[0]=='F' && str.length>1)
-        const int demangleTypeConsumed = 1 + demangleParamListAndRetValConsumed!(str[1..$]);
+        enum int demangleTypeConsumed = 1 + getQualifiedNameConsumed!(str[1..$]);
+    else static if(str[0] == 'y' && str.length>1) {
+        enum int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+    }else static if(str[0] == 'O' && str.length>1) {
+        enum int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+    }else static if(str[0] == 'x' && str.length>1) {
+        enum int demangleTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+    }else static if(str.length>2 && str[0 .. 2] == "Ng" ) {
+        enum int demangleTypeConsumed = 2 + demangleTypeConsumed!(str[2..$]);
+    }else static if (str[0]=='F' && str.length>1)
+        enum int demangleTypeConsumed = 1 + demangleParamListAndRetValConsumed!(str[1..$]);
     else // it's a Basic Type
-        const int demangleTypeConsumed = 1;
+        enum int demangleTypeConsumed = 1;
 }
 
 // --------------------------------------------
@@ -134,8 +153,8 @@ template demangleTypeConsumed(string str)
 template countLeadingDigits(string str)
 {
     static if (str.length>0 && beginsWithDigit!( str))
-        const int countLeadingDigits = 1 + countLeadingDigits!( str[1..$]);
-    else const int countLeadingDigits = 0;
+        enum int countLeadingDigits = 1 + countLeadingDigits!( str[1..$]);
+    else enum int countLeadingDigits = 0;
 }
 
 // --------------------------------------------
@@ -178,6 +197,8 @@ template pretty_Dname(string str, int dotnameconsumed, MangledNameType wantQuali
     }
 }
 
+// DFunction(_D7testdll3barFiZAya, dotnameconsumed=12, paramlistconsumed=4)
+
 // Deal with the case where an Lname contains an embedded ("__D") function.
 // Split into a seperate function because it's so complicated.
 template pretty_Dfunction(string str, int dotnameconsumed, int paramlistconsumed,
@@ -194,17 +215,19 @@ template pretty_Dfunction(string str, int dotnameconsumed, int paramlistconsumed
         enum string pretty_Dfunction = getQualifiedName!(str[2..2+dotnameconsumed], wantQualifiedNames)
             ~ getQualifiedName!(str[3 + dotnameconsumed + paramlistconsumed .. $], wantQualifiedNames, ".");
     } else { // symbol name
-        static if (3 + dotnameconsumed + paramlistconsumed == str.length)
+        static if (3 + dotnameconsumed + paramlistconsumed == str.length) {
             enum string pretty_Dfunction = getQualifiedName!(str[2..2+dotnameconsumed], wantQualifiedNames);
-        else enum string pretty_Dfunction = getQualifiedName!(
+        } else {
+            enum string pretty_Dfunction = getQualifiedName!(
             str[3 + dotnameconsumed + paramlistconsumed .. $], wantQualifiedNames);
+        }
     }
  }
 
 // for an Lname that begins with "_D"
 template get_DnameConsumed(string str)
 {
-    const int get_DnameConsumed = 2 + getQualifiedNameConsumed!(str[2..$])
+    enum int get_DnameConsumed = 2 + getQualifiedNameConsumed!(str[2..$])
         + demangleTypeConsumed!(str[2+getQualifedNameConsumed!(str[2..$])..$]);
 }
 
@@ -233,15 +256,15 @@ template prettyLname(string str, MangledNameType wantQualifiedNames)
 template getLnameConsumed(string str)
 {
     static if (str.length==0)
-        const int getLnameConsumed=0;
+        enum int getLnameConsumed=0;
     else static if (str.length <= (9+1) || !beginsWithDigit!(str[1..$]) )
-        const int getLnameConsumed = 1 + str[0]-'0';
+        enum int getLnameConsumed = 1 + str[0]-'0';
     else static if (str.length <= (99+2) || !beginsWithDigit!( str[2..$]) )
-        const int getLnameConsumed = (str[0]-'0')*10 + str[1]-'0' + 2;
+        enum int getLnameConsumed = (str[0]-'0')*10 + str[1]-'0' + 2;
     else static if (str.length <= (999+3) || !beginsWithDigit!( str[3..$]) )
-        const int getLnameConsumed = (str[0]-'0')*100 + (str[1]-'0')*10 + str[2]-'0' + 3;
+        enum int getLnameConsumed = (str[0]-'0')*100 + (str[1]-'0')*10 + str[2]-'0' + 3;
     else
-        const int getLnameConsumed = (str[0]-'0')*1000 + (str[1]-'0')*100 + (str[2]-'0')*10 + (str[3]-'0') + 4;
+        enum int getLnameConsumed = (str[0]-'0')*1000 + (str[1]-'0')*100 + (str[2]-'0')*10 + (str[3]-'0') + 4;
 }
 
 template getQualifiedName(string str, MangledNameType wantQualifiedNames, string dotstr = "")
@@ -272,13 +295,13 @@ template getQualifiedNameConsumed (string str)
 {
     static if ( str.length>1 &&  beginsWithDigit!(str) ) {
         static if (getLnameConsumed!(str) < str.length && beginsWithDigit!( str[getLnameConsumed!(str)..$])) {
-            const int getQualifiedNameConsumed = getLnameConsumed!(str)
+            enum int getQualifiedNameConsumed = getLnameConsumed!(str)
                 + getQualifiedNameConsumed!(str[getLnameConsumed!(str) .. $]);
         } else {
-            const int getQualifiedNameConsumed = getLnameConsumed!(str);
+            enum int getQualifiedNameConsumed = getLnameConsumed!(str);
         }
     } /*else static if (str.length>1 && str[0]=='_' && str[1]=='D') {
-        const int getQualifiedNameConsumed = get_DnameConsumed!(str)
+        enum int getQualifiedNameConsumed = get_DnameConsumed!(str)
             + getQualifiedNameConsumed!(str[1+get_DnameConsumed!(str)..$]);
     }*/ else static assert(0);
 }
@@ -291,11 +314,41 @@ template getQualifiedNameConsumed (string str)
 */
 template demangleFunctionOrDelegate(string str, string funcOrDelegStr, MangledNameType wantQualifiedNames)
 {
-    enum string demangleFunctionOrDelegate = demangleExtern!(( str[0] ))
-        ~ demangleReturnValue!(str[1..$], wantQualifiedNames)
+    enum fe = funcAttrsConsumed!(str[1 .. $]);
+    enum string funcRest = str[1+fe..$];
+    enum e = demangleParamListAndRetValConsumed!(funcRest);
+    enum string funcAttrs = demangleFuncAttrs!(str[1 .. 1+fe], wantQualifiedNames);
+    enum string demangleFunctionOrDelegate = funcAttrs ~ demangleExtern!(( str[0] ))
+        ~ demangleReturnValue!(funcRest, wantQualifiedNames)
         ~ " " ~ funcOrDelegStr ~ "("
-        ~ demangleParamList!(str[1..1+demangleParamListAndRetValConsumed!(str[1..$])], wantQualifiedNames)
+        ~ demangleParamList!(funcRest[0..demangleParamListAndRetValConsumed!(funcRest)], wantQualifiedNames)
         ~ ")";
+}
+
+template demangleFuncAttrs(string str, MangledNameType wantQualifiedNames) {
+    static if(str.startsWith("Na")) {
+        enum string demangleFuncAttrs = "pure " ~ demangleFuncAttrs!(str[2..$], wantQualifiedNames);
+    }else static if(str.startsWith("Nb")) {
+        enum string demangleFuncAttrs = "nothrow " ~ demangleFuncAttrs!(str[2..$], wantQualifiedNames);
+    }else static if(str.startsWith("Nc")) {
+        enum string demangleFuncAttrs = "ref " ~ demangleFuncAttrs!(str[2..$], wantQualifiedNames);
+    }else static if(str.startsWith("Nd")) {
+        enum string demangleFuncAttrs = "@property " ~ demangleFuncAttrs!(str[2..$], wantQualifiedNames);
+    }else static if(str.startsWith("Ne")) {
+        enum string demangleFuncAttrs = "@trusted " ~ demangleFuncAttrs!(str[2..$], wantQualifiedNames);
+    }else static if(str.startsWith("Nf")) {
+        enum string demangleFuncAttrs = "@safe " ~ demangleFuncAttrs!(str[2..$], wantQualifiedNames);
+    }else{
+        enum string demangleFuncAttrs = "";
+    }
+}
+
+template funcAttrsConsumed(string str) {
+    static if(str.length > 1 && str[0] == 'N' && 'a' <= str[1] && str[1] <= 'f') {
+        enum int funcAttrsConsumed = 2 + funcAttrsConsumed!(str[2..$]);
+    }else {
+        enum int funcAttrsConsumed = 0;
+    }
 }
 
 // Special case: types that are in function parameters
@@ -315,14 +368,14 @@ template demangleFunctionParamType(string str, MangledNameType wantQualifiedName
 template demangleFunctionParamTypeConsumed(string str)
 {
     static if (str[0]=='K' || str[0]=='J' || str[0]=='L')
-        const int demangleFunctionParamTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
-    else const int demangleFunctionParamTypeConsumed = demangleTypeConsumed!(str);
+        enum int demangleFunctionParamTypeConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+    else enum int demangleFunctionParamTypeConsumed = demangleTypeConsumed!(str);
 }
 
 // Return true if c indicates a function. As well as 'F', it can be extern(Pascal), (C), (C++) or (Windows).
 template isMangledFunction(char c)
 {
-    const bool isMangledFunction = (c=='F' || c=='U' || c=='W' || c=='V' || c=='R');
+    enum bool isMangledFunction = (c=='F' || c=='U' || c=='W' || c=='V' || c=='R');
 }
 
 template demangleExtern(char c)
@@ -365,9 +418,9 @@ template demangleParamListAndRetValConsumed(string str)
 {
     static assert (str.length>0, "Demangle error(ParamList): No return value found");
     static if (str[0]=='Z' || str[0]=='Y' || str[0]=='X')
-        const int demangleParamListAndRetValConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+        enum int demangleParamListAndRetValConsumed = 1 + demangleTypeConsumed!(str[1..$]);
     else {
-        const int demangleParamListAndRetValConsumed = demangleFunctionParamTypeConsumed!(str)
+        enum int demangleParamListAndRetValConsumed = demangleFunctionParamTypeConsumed!(str)
             + demangleParamListAndRetValConsumed!(str[demangleFunctionParamTypeConsumed!(str)..$]);
     }
 }
@@ -377,12 +430,45 @@ template demangleParamListAndRetValConsumed(string str)
 
 template templateValueArgConsumed(string str)
 {
-    static if (str[0]=='n') const int templateValueArgConsumed = 1;
-    else static if (beginsWithDigit!(str)) const int templateValueArgConsumed = countLeadingDigits!(str);
-    else static if (str[0]=='N') const int templateValueArgConsumed = 1 + countLeadingDigits!(str[1..$]);
-    else static if (str[0]=='e') const int templateValueArgConsumed = 1 + 20;
-    else static if (str[0]=='c') const int templateValueArgConsumed = 1 + 40;
+    static if (str[0]=='n') enum int templateValueArgConsumed = 1;
+    else static if (beginsWithDigit!(str)) enum int templateValueArgConsumed = countLeadingDigits!(str);
+    else static if (str[0]=='N') enum int templateValueArgConsumed = 1 + countLeadingDigits!(str[1..$]);
+    else static if (str[0]=='e') enum int templateValueArgConsumed = 1 + hexFloatConsumed!(str[1..$]);
+    else static if (str[0]=='c') {
+        enum int i1 = 1 + hexFloatConsumed!(str[1 .. $]);
+        enum int templateValueArgConsumed = i1 + 1 + hexFloatConsumed!(str[i1+1 .. $]);
+    }
     else static assert(0, "Unknown character in template value argument");
+}
+
+template hexFloatConsumed(string str) {
+    static if(str.startsWith("NAN") || str[1 .. $].startsWith("INF")) {
+        enum int hexFloatConsumed = 3;
+    }else static if(str.startsWith("NINF")) {
+        enum int hexFloatConsumed = 4;
+    }else{ 
+        static if(str.startsWith("N")) {
+            enum hx_c = 1;
+        }else {
+            enum hx_c = 0;
+        }
+        enum string hxbase = str[hx_c .. $];
+        enum hx_c1 = countUntil!("!(std.ascii.isHexDigit(a) && (std.ascii.isDigit(a) || std.ascii.isUpper(a)))")(hxbase);
+        static if(hx_c1 < hxbase.length && hxbase[hx_c1] == 'P') {
+            enum string hxexp = hxbase[hx_c1+1 .. $];
+            static if(hxexp.startsWith("N")) {
+                enum hx_c2 = 1;
+            }else {
+                enum hx_c2 = 0;
+            }
+            enum string hxexp2 = hxexp[hx_c2 .. $];
+            enum hx_c3 = countUntil!("!std.ascii.isDigit(a)")(hxexp2);
+            enum int hexFloatConsumed = hx_c + hx_c1 + hx_c2 + hx_c3 + 1;
+        }else {
+            enum int hexFloatConsumed = hx_c + hx_c1;
+        }
+
+    }
 }
 
 // pretty-print a template value argument.
@@ -392,8 +478,10 @@ template prettyValueArg(string str)
     else static if (beginsWithDigit!(str)) enum string prettyValueArg = str;
     else static if ( str[0]=='N') enum string prettyValueArg = "-" ~ str[1..$];
     else static if ( str[0]=='e') enum string prettyValueArg = "0x" ~ str[1..$];
-    else static if ( str[0]=='c') enum string prettyValueArg = "0x" ~ str[1..22] ~ " + 0x" ~ str[21..41] ~ "i";
-    else enum string prettyValueArg = "Value arg {" ~ str[0..$] ~ "}";
+    else static if ( str[0]=='c') {
+        enum g = findSplit(str[1 .. $], "c");
+        enum string prettyValueArg = "0x" ~ g[0] ~ " + 0x" ~ g[2] ~ "i";
+    } else enum string prettyValueArg = "Value arg {" ~ str[0..$] ~ "}";
 }
 
 // Pretty-print a template argument
@@ -413,12 +501,15 @@ template prettyTemplateArg(string str, MangledNameType wantQualifiedNames)
 template templateArgConsumed(string str)
 {
     static if (str[0]=='S') // symbol name
-        const int templateArgConsumed = 1 + getLnameConsumed!(str[1..$]);
+        enum int templateArgConsumed = 1 + getLnameConsumed!(str[1..$]);
     else static if (str[0]=='V') // value
-        const int templateArgConsumed = 1 + demangleTypeConsumed!(str[1..$]) +
+    {
+        enum e = 1 + demangleTypeConsumed!(str[1..$]);
+        enum int templateArgConsumed = 1 + demangleTypeConsumed!(str[1..$]) +
             templateValueArgConsumed!(str[1+demangleTypeConsumed!(str[1..$])..$]);
+    }
     else static if (str[0]=='T') // type
-        const int templateArgConsumed = 1 + demangleTypeConsumed!(str[1..$]);
+        enum int templateArgConsumed = 1 + demangleTypeConsumed!(str[1..$]);
     else static assert(0, "Unrecognised template argument type: {" ~ str ~ "}");
 }
 
@@ -438,9 +529,9 @@ template templateArgListConsumed(string str)
 {
     static assert(str.length>0, "No Z found at end of template argument list");
     static if (str[0]=='Z')
-        const int templateArgListConsumed = 1;
+        enum int templateArgListConsumed = 1;
     else
-        const int templateArgListConsumed = templateArgConsumed!(str)
+        enum int templateArgListConsumed = templateArgConsumed!(str)
             + templateArgListConsumed!(str[templateArgConsumed!(str)..$]);
 }
 
@@ -454,8 +545,8 @@ private {
 template beginsWithDigit(string s)
 {
   static if (s[0]>='0' && s[0]<='9')
-    const bool beginsWithDigit = true;
-  else const bool beginsWithDigit = false;
+    enum bool beginsWithDigit = true;
+  else enum bool beginsWithDigit = false;
 }
 }
 
@@ -479,6 +570,8 @@ char[dchar] SomeFunc5(lazy int delegate()[] z...);
 extern (Windows) {
     alias void function (double, long) WinFunc;
 }
+
+import core.vararg;
 extern (Pascal) {
     alias short[wchar] delegate (bool, ...) PascFunc;
 }
@@ -487,6 +580,26 @@ extern (C) {
 }
 extern (C++) {
     alias cfloat function (wchar) CPPFunc;
+}
+
+inout(int) inoutFunc(inout int i) {
+    return i+1;
+}
+
+int pureFunc(int i) pure {
+    return i+1;
+}
+int purenothrowFunc(int i) pure nothrow {
+    return i+1;
+}
+int trustedFunc(int i) @trusted {
+    return i+1;
+}
+int safeFunc(int i) @safe {
+    return i+1;
+}
+ref int refFunc(int i) {
+    return i+1;
 }
 
 interface SomeInterface {}
@@ -500,6 +613,12 @@ static assert( demangleType!((WinFunc).mangleof)== "extern (Windows) void functi
 static assert( demangleType!((PascFunc).mangleof) == "extern (Pascal) short[wchar] delegate (bool, ...)");
 static assert( demangleType!((CFunc).mangleof) == "extern (C) dchar delegate ()");
 static assert( demangleType!((CPPFunc).mangleof) == "extern (C++) cfloat function (wchar)");
+static assert(demangleType!((&inoutFunc).mangleof) == "inout(int) function (inout(int))");
+static assert(demangleType!((&pureFunc).mangleof) == "pure int function (int)");
+static assert(demangleType!((&purenothrowFunc).mangleof) == "pure nothrow int function (int)");
+static assert(demangleType!((&trustedFunc).mangleof) == "@trusted int function (int)");
+static assert(demangleType!((&safeFunc).mangleof) == "@safe int function (int)");
+static assert(demangleType!((&refFunc).mangleof) == "ref int function (int)");
 // Interfaces are mangled as classes
 static assert( demangleType!(SomeInterface.mangleof) == "class " ~ THISFILE ~ ".SomeInterface");
 
@@ -508,7 +627,11 @@ template ComplexTemplate(real a, creal b)
     class ComplexTemplate {}
 }
 
-static assert( demangleType!((ComplexTemplate!(1.23, 4.56+3.2i)).mangleof) == "class " ~ THISFILE ~ ".ComplexTemplate!(double = 0xa4703d0ad7a3709dff3f, cdouble = 0x85eb51b81e85eb910140c + 0xcdcccccccccccccc0040i).ComplexTemplate");
+int ComplexFunction(real a, creal b)(int i) {
+    return i+1;
+}
+
+//static assert( demangleType!((ComplexTemplate!(1.23, 4.56+3.2i)).mangleof) == "class " ~ THISFILE ~ ".ComplexTemplate!(double = 0xa4703d0ad7a3709dff3f, cdouble = 0x85eb51b81e85eb910140c + 0xcdcccccccccccccc0040i).ComplexTemplate");
 
 }
 }

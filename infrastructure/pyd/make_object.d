@@ -70,6 +70,7 @@ package template isAA(T) {
 }
 
 class to_conversion_wrapper(dg_t) {
+    pragma(msg, ParameterTypeTuple!dg_t);
     alias ParameterTypeTuple!(dg_t)[0] T;
     alias ReturnType!(dg_t) Intermediate;
     dg_t dg;
@@ -108,6 +109,8 @@ void d_to_python(dg_t) (dg_t dg) {
         to_converter_registry!(ParameterTypeTuple!(dg_t)[0]).dg = dg;
     } else {
         auto o = new to_conversion_wrapper!(dg_t)(dg);
+        pragma(msg, typeof(o.dg).stringof);
+        pragma(msg, (typeof(o).T).stringof);
         to_converter_registry!(typeof(o).T).dg = &o.opCall;
     }
 }

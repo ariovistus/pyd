@@ -22,6 +22,7 @@ SOFTWARE.
 module pyd.func_wrap;
 
 import python;
+import std.exception: enforce;
 
 import pyd.class_wrap;
 import pyd.dg_convert;
@@ -32,9 +33,6 @@ import pyd.lib_abstract :
     ParameterTypeTuple,
     ReturnType
 ;
-
-//import meta.Default;
-//import meta.Nameof;
 
 //import std.string;
 //import std.traits;
@@ -118,7 +116,11 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t, uint MIN_ARGS) (PyObject* 
     foreach(i, arg; t) {
         const uint argNum = i+1;
         if (i < argCount) {
-            t[i] = d_type!(typeof(arg))(PyTuple_GetItem(args, i));
+            auto bpobj =  PyTuple_GetItem(args, i);
+            enforce(bpobj != null);
+            auto  pobj = OwnPyRef(bpobj);
+            t[i] = d_type!(typeof(arg))(pobj);
+            Py_DECREF(pobj);
         }
         static if (argNum >= MIN_ARGS && argNum <= MAX_ARGS) {
             if (argNum == argCount) {

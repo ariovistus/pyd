@@ -24,53 +24,34 @@ SOFTWARE.
 // the ability to switch between Phobos and Tango arbitrarily.
 module pyd.lib_abstract;
 
-version (Pyd_with_Tango) {
-    import tango.stdc.string : strlen;
-    import tango.text.convert.Integer : qadut;
-    char[] toString(char* s) {
-        return s[0 .. strlen(s)];
-    }
-    char[] toString(uint i) {
-        char[64] tmp;
-        return qadut(tmp, i);
-    }
+string objToStr(Object o) {
+    return o.toString();
+}
+public import meta.Nameof : symbolnameof, prettytypeof, prettynameof;
 
-    public import tango.util.meta.Nameof : symbolnameof, prettytypeof, prettynameof;
-    public import meta.Default : minArgs, ParameterTypeTuple, ReturnType;
-    char[] objToStr(Object o) {
-        return o.toUtf8();
-    }
-} else {
-    string objToStr(Object o) {
-        return o.toString();
-    }
-    public import meta.Nameof : symbolnameof, prettytypeof, prettynameof;
+import std.conv;
+alias to!string toString;
+public import std.traits : ParameterTypeTuple, ReturnType;
 
-    //public import std.string : toString;
-    import std.conv;
-    alias to!string toString;
-    public import std.traits : ParameterTypeTuple, ReturnType;
-    //public import std.bind : minArgs = minNumArgs;
-    template minNumArgs_impl(alias fn, fnT) {
-        alias ParameterTypeTuple!(fnT) Params;
-        Params params;// = void;
+template minNumArgs_impl(alias fn, fnT) {
+    alias ParameterTypeTuple!(fnT) Params;
+    Params params;// = void;
 
-        template loop(int i = 0) {
-                static assert (i <= Params.length);
+    template loop(int i = 0) {
+        static assert (i <= Params.length);
 
-                static if (is(typeof(fn(params[0..i])))) {
-                        enum int res = i;
-                } else {
-                        alias loop!(i+1).res res;
-                }
+        static if (is(typeof(fn(params[0..i])))) {
+            enum int res = i;
+        } else {
+            alias loop!(i+1).res res;
         }
+    }
 
-        alias loop!().res res;
-    }
-    /**
-        Finds the minimal number of arguments a given function needs to be provided
-    */
-    template minArgs(alias fn, fnT = typeof(&fn)) {
-        enum int minArgs = minNumArgs_impl!(fn, fnT).res;
-    }
+    alias loop!().res res;
+}
+/**
+  Finds the minimal number of arguments a given function needs to be provided
+ */
+template minArgs(alias fn, fnT = typeof(&fn)) {
+    enum int minArgs = minNumArgs_impl!(fn, fnT).res;
 }

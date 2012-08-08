@@ -47,8 +47,6 @@ import pyd.lib_abstract :
     minArgs,
     objToStr ;
 
-//import meta.Default;
-
 PyTypeObject*[ClassInfo] wrapped_classes;
 template shim_class(T) {
     PyTypeObject* shim_class;
@@ -127,10 +125,14 @@ template wrapped_class_type(T) {
 alias Tuple!(void*,"d",PyObject*,"py") D2Py;
 alias MultiIndexContainer!(D2Py, IndexedBy!(HashedUnique!("a.d")), 
         MallocAllocator, MutableView) WrappedObjectMap;
-WrappedObjectMap wrapped_gc_objects;
 
-static this() {
-    wrapped_gc_objects = new WrappedObjectMap();
+WrappedObjectMap _wrapped_gc_objects = null;
+
+// would initialize in static this, but static this apparently isn't run
+// in shared libs
+@property wrapped_gc_objects() {
+    if(!_wrapped_gc_objects) _wrapped_gc_objects = new WrappedObjectMap();
+    return _wrapped_gc_objects;
 }
 
 template Dt2Py(dg_t) {
@@ -141,9 +143,12 @@ template Dt2Py(dg_t) {
 template wrapped_gc_references(dg_t) {
     alias MultiIndexContainer!(Dt2Py!dg_t, IndexedBy!(HashedUnique!("a.d")), 
             MallocAllocator, MutableView) WrappedReferenceMap;
-    WrappedReferenceMap wrapped_gc_references;
-    static this() {
-        wrapped_gc_references = new WrappedReferenceMap();
+    WrappedReferenceMap _wrapped_gc_references;
+
+    @property wrapped_gc_objects() {
+        if(!_wrapped_gc_references) 
+            _wrapped_gc_references = new WrappedReferenceMap();
+        return _wrapped_gc_references;
     }
 }
 

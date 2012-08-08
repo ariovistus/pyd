@@ -28,8 +28,6 @@ import pyd.lib_abstract :
     symbolnameof,
     minArgs
 ;
-//import meta.Default;
-//import meta.Nameof;
 
 private PyMethodDef module_global_methods[] = [
     { null, null, 0, null }

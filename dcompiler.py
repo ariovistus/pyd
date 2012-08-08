@@ -50,8 +50,9 @@ _stFiles = [
 ]
 
 _metaFiles = [
-    'Default.d',
     'Demangle.d',
+    'multi_index.d',
+    'replace.d',
     'Nameof.d',
     'Util.d',
 ]

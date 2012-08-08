@@ -17,7 +17,8 @@
  * Copyright: Copyright (C) 2005-2006 Don Clugston
  */
 module meta.Nameof;
-private import meta.Demangle;
+
+import meta.Demangle;
 
 private {
     // --------------------------------------------
