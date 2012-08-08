@@ -1,0 +1,20 @@
+--- multi_index.d	2012-06-25 11:11:39.801685222 -0500
++++ ../../../mercurial/multi_index/src/multi_index.d	2012-06-25 10:56:20.680049917 -0500
+@@ -772,7 +772,7 @@
+ 
+ 
+  */
+-module multi_index;
++module meta.multi_index;
+ 
+ /**
+  * TODO:
+@@ -799,7 +799,7 @@
+ import std.algorithm: find, swap, copy, fill, max, startsWith, moveAll;
+ import std.traits: isImplicitlyConvertible, isDynamicArray;
+ import std.metastrings: Format, toStringNow;
+-import replace: Replace;
++import meta.replace: Replace;
+ import std.typetuple: TypeTuple, staticMap, NoDuplicates, staticIndexOf;
+ import std.functional: unaryFun, binaryFun;
+ import std.string: format;
