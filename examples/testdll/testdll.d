@@ -37,7 +37,7 @@ class Foo {
         writefln("Foo.foo(): i = %s", m_i);
     }
     int length() { return 10; }
-    int opSlice(int i1, int i2) {
+    int opSlice(size_t i1, size_t i2) {
         writeln(i1, " ", i2);
         return 12;
     }
@@ -174,8 +174,8 @@ mixin _wrap_class!(
 
 extern(C) void PydMain() {
     pragma(msg, "testdll.PydMain");
-    d_to_python(delegate int(A a) { return a.i; });
-    python_to_d(delegate A(int i) { A a; a.i = i; return a; });
+    //d_to_python(delegate int(A a) { return a.i; });
+    //python_to_d(delegate A(int i) { A a; a.i = i; return a; });
 
     def!(foo);
     // Python does not support function overloading. This allows us to wrap

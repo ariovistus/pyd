@@ -148,7 +148,7 @@ template wrapped_gc_references(dg_t) {
             MallocAllocator, MutableView) WrappedReferenceMap;
     WrappedReferenceMap _wrapped_gc_references;
 
-    @property wrapped_gc_objects() {
+    @property wrapped_gc_references() {
         if(!_wrapped_gc_references) 
             _wrapped_gc_references = new WrappedReferenceMap();
         return _wrapped_gc_references;

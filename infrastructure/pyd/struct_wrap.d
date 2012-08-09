@@ -77,11 +77,11 @@ template _Member(string realname, string name, string docstring) {
         pragma(msg, "struct.member: " ~ name);
         static PyGetSetDef empty = {null, null, null, null, null};
         alias wrapped_prop_list!(T) list;
-        list[length-1].name = (name ~ "\0").ptr;
-        list[length-1].get = &wrapped_member!(T, realname).get;
-        list[length-1].set = &wrapped_member!(T, realname).set;
-        list[length-1].doc = (docstring~"\0").ptr;
-        list[length-1].closure = null;
+        list[$-1].name = (name ~ "\0").dup.ptr;
+        list[$-1].get = &wrapped_member!(T, realname).get;
+        list[$-1].set = &wrapped_member!(T, realname).set;
+        list[$-1].doc = (docstring~"\0").dup.ptr;
+        list[$-1].closure = null;
         list ~= empty;
         wrapped_class_type!(T).tp_getset = list.ptr;
     }
