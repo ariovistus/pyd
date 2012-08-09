@@ -109,8 +109,8 @@ void d_to_python(dg_t) (dg_t dg) {
         to_converter_registry!(ParameterTypeTuple!(dg_t)[0]).dg = dg;
     } else {
         auto o = new to_conversion_wrapper!(dg_t)(dg);
-        pragma(msg, typeof(o.dg).stringof);
-        pragma(msg, (typeof(o).T).stringof);
+        //pragma(msg, typeof(o.dg).stringof);
+        //pragma(msg, (typeof(o).T).stringof);
         to_converter_registry!(typeof(o).T).dg = &o.opCall;
     }
 }

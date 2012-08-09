@@ -12,7 +12,7 @@ PYTHON_2_7 = -version=Python_2_7_Or_Later \
 DC = dmd -m32 -unittest -property -debug
 all: pyind
 clean:
-	rm *.o
-	rm pyind
+	rm -f *.o
+	rm -f pyind
 pyind: pyind.d
 	$(DC) $(PYTHON_2_7) $(PYTHON_HEADER) $(PYD_FILES) $(META_FILES) $^ -of$@

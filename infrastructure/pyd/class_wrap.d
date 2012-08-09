@@ -24,6 +24,9 @@ module pyd.class_wrap;
 import python;
 
 import meta.Util: Replace;
+import std.traits;
+import std.metastrings;
+import std.typetuple;
 import std.string: format;
 import std.typecons: Tuple;
 import meta.multi_index;
@@ -229,37 +232,84 @@ template wrapped_repr(T, alias fn) {
     }
 }
 
+private template ID(A){ alias A ID; }
+
+template IsProperty(alias T) {
+    enum bool IsProperty = 
+        (functionAttributes!(T) & FunctionAttribute.property);
+}
+private template FilterProperties(T...) {
+    // where's my std.typetuple.Filter gone?
+    static if(T.length == 0) {
+        alias TypeTuple!() FilterProperties;
+    }else static if(IsProperty!(T[0])) {
+        alias TypeTuple!(T[0], FilterProperties!(T[1 ..$])) FilterProperties;
+    }else {
+        alias TypeTuple!(FilterProperties!(T[1 ..$])) FilterProperties;
+    }
+}
+
+private template FilterGetters(T...) {
+    static if(T.length == 0) {
+        alias TypeTuple!() FilterGetters;
+    }else static if(is(ParameterTypeTuple!(T[0]) == TypeTuple!()) && !is(ReturnType!(T[0]) == void)) {
+        alias TypeTuple!(T[0], FilterGetters!(T[1 ..$])) FilterGetters;
+    }else {
+        alias TypeTuple!(FilterGetters!(T[1 ..$])) FilterGetters;
+    }
+}
+
+private template FilterSetters(RT,T...) {
+    static if(T.length == 0) {
+        alias TypeTuple!() FilterSetters;
+    }else static if(ParameterTypeTuple!(T[0]).length == 1 && is(ParameterTypeTuple!(T[0])[0] == RT)) {
+        alias TypeTuple!(T[0], FilterSetters!(RT,T[1 ..$])) FilterSetters;
+    }else {
+        alias TypeTuple!(FilterSetters!(RT,T[1 ..$])) FilterSetters;
+    }
+}
+
 // This template gets an alias to a property and derives the types of the
 // getter form and the setter form. It requires that the getter form return the
 // same type that the setter form accepts.
-template property_parts(alias p) {
-    // This may be either the getter or the setter
-    alias typeof(&p) p_t;
-    alias ParameterTypeTuple!(p_t) Info;
-    // This means it's the getter
-    static if (Info.length == 0) {
-        alias p_t getter_type;
-        // The setter may return void, or it may return the newly set attribute.
-        alias typeof(p(ReturnType!(p_t).init)) function(ReturnType!(p_t)) setter_type;
-    // This means it's the setter
-    } else {
-        alias p_t setter_type;
-        alias Info[0] function() getter_type;
+struct property_parts(alias p, bool RO) {
+    alias ID!(__traits(parent, p)) Parent;
+    enum nom = __traits(identifier, p);
+    alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
+    alias FilterGetters!(Overloads) Getters;
+    static assert(Getters.length != 0, Format!("can't find property %s.%s getter", Parent.stringof, nom));
+    static assert(Getters.length == 1, 
+            Format!("can't handle property overloads of %s.%s getter (types %s)", 
+                Parent.stringof, nom, staticMap!(ReturnType,Getters).stringof));
+    alias Getters[0] GetterFn;
+    alias typeof(&GetterFn) getter_type;
+    static assert(!IsProperty!(GetterFn), 
+            Format!("%s.%s: can't handle d properties", Parent.stringof, nom));
+    static if(!RO) {
+        alias FilterSetters!(ReturnType!getter_type, Overloads) Setters;
+        static assert(Setters.length != 0, Format!("can't find property %s.%s setter", Parent.stringof, nom));
+        static assert(Setters.length == 1, 
+                Format!("can't handle property overloads of %s.%s setter (return types %s)", 
+                    Parent.stringof, nom, staticMap!(ReturnType,Getters).stringof));
+        alias Setters[0] SetterFn;
+        alias typeof(&SetterFn) setter_type;
+    static assert(!IsProperty!(Setters[0]), 
+            Format!("%s.%s: can't handle d properties", Parent.stringof, nom));
     }
 }
 
 ///
-template wrapped_get(T, alias Fn) {
+template wrapped_get(T, Parts) {
     /// A generic wrapper around a "getter" property.
     extern(C)
     PyObject* func(PyObject* self, void* closure) {
         // method_wrap already catches exceptions
-        return method_wrap!(T, Fn, property_parts!(Fn).getter_type).func(self, null);
+        return method_wrap!(T, Parts.GetterFn, Parts.getter_type).func(self, null);
     }
 }
 
 ///
-template wrapped_set(T, alias Fn) {
+template wrapped_set(T, Parts) {
     /// A generic wrapper around a "setter" property.
     extern(C)
     int func(PyObject* self, PyObject* value, void* closure) {
@@ -268,7 +318,7 @@ template wrapped_set(T, alias Fn) {
         scope(exit) Py_DECREF(temp_tuple);
         Py_INCREF(value);
         PyTuple_SetItem(temp_tuple, 0, value);
-        PyObject* res = method_wrap!(T, Fn, property_parts!(Fn).setter_type).func(self, temp_tuple);
+        PyObject* res = method_wrap!(T, Parts.SetterFn, Parts.setter_type).func(self, temp_tuple);
         // If we get something back, we need to DECREF it.
         if (res) Py_DECREF(res);
         // If we don't, propagate the exception
@@ -451,8 +501,11 @@ struct Property(alias fn, bool RO, string docstring) {
     mixin _Property!(fn, symbolnameof!(fn), symbolnameof!(fn), RO, docstring);
 }
 template _Property(alias fn, string _realname, string name, bool RO, string docstring) {
-    alias property_parts!(fn).getter_type get_t;
-    alias property_parts!(fn).setter_type set_t;
+    alias property_parts!(fn, RO) parts;
+    alias parts.getter_type get_t;
+    static if(!RO) {
+        alias parts.setter_type set_t;
+    }
     enum realname = _realname;
     enum funcname = name;
     enum bool readonly = RO;
@@ -462,10 +515,10 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
         static PyGetSetDef empty = { null, null, null, null, null };
         wrapped_prop_list!(T)[$-1].name = (name ~ "\0").dup.ptr;
         wrapped_prop_list!(T)[$-1].get =
-            &wrapped_get!(T, fn).func;
+            &wrapped_get!(T, parts).func;
         static if (!RO) {
             wrapped_prop_list!(T)[$-1].set =
-                &wrapped_set!(T, fn).func;
+                &wrapped_set!(T, parts).func;
         }
         wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").dup.ptr;
         wrapped_prop_list!(T)[$-1].closure = null;

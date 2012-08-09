@@ -15,13 +15,29 @@ class Y {
     void query() {
         writeln("Are you a BRAIN SPECIALIST?");
     }
+
+    string _status;
+    void brain_status(string s) {
+        _status = s;
+    }
+    string brain_status() {
+        return _status;
+    }
+
+    string resolution() {
+        return "Well, let's have a look at it, shall we Mr. Gumby?";
+    }
 }
 
 static this() {
     Py_Initialize();
     def!("office", knock)("a brain specialist works here"); 
     add_module("office");
-    wrap_class!(Y, Def!(Y.query))("","office");
+    wrap_class!(Y, 
+        Def!(Y.query),
+        Property!(Y.brain_status),
+        Property!(Y.resolution, true),
+    )("","office");
     ErrInterceptor.wrap_class("office");
     ErrInterceptor.replaceStderr();
 }
@@ -58,6 +74,15 @@ class X:
     auto x = PyEval("X()","office");
     writeln(x.resolution);
     writeln(x.method("what"));
+
+    // properties totally work
+
+    PyStmts(q"<
+y = Y();
+y.brain_status = "HURTS";
+print "MY BRAIN %s" % y.brain_status;
+print y.resolution
+>","office");
 }
 
 unittest {
