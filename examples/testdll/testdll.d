@@ -174,7 +174,7 @@ mixin _wrap_class!(
 
 extern(C) void PydMain() {
     pragma(msg, "testdll.PydMain");
-    //d_to_python(delegate int(A a) { return a.i; });
+    d_to_python(delegate int(A a) { return a.i; });
     //python_to_d(delegate A(int i) { A a; a.i = i; return a; });
 
     def!(foo);

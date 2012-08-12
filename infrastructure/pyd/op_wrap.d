@@ -185,7 +185,7 @@ template opindexassign_sequence_pyfunc(T) {
 template opindex_mapping_pyfunc(T) {
     alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!(T.opIndex) Info;
-    const uint ARGS = Info.length;
+    enum uint ARGS = Info.length;
 
     // Multiple arguments are converted into tuples, and thus become a standard
     // wrapped member function call. A single argument is passed directly.
@@ -219,7 +219,7 @@ template opindex_mapping_pyfunc(T) {
 template opindexassign_mapping_pyfunc(T) {
     alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!(T.opIndexAssign) Info;
-    const uint ARGS = Info.length;
+    enum uint ARGS = Info.length;
 
     static if (ARGS > 2) {
         extern(C)
@@ -339,9 +339,9 @@ template length_wrap(T) {
         is(typeof(&T.length)) &&
         is(typeof(T.length()) : index_t)
     ) {
-        const lenfunc_t length_wrap = &length_pyfunc!(T).func;
+        enum lenfunc_t length_wrap = &length_pyfunc!(T).func;
     } else {
-        const lenfunc_t length_wrap = null;
+        enum lenfunc_t length_wrap = null;
     }
 }
 
@@ -351,9 +351,9 @@ template opIndex_sequence_wrap(T) {
         ParameterTypeTuple!(T.opIndex).length == 1 &&
         is(ParameterTypeTuple!(T.opIndex)[0] : index_t)
     ) {
-        const idxargfunc opIndex_sequence_wrap = &opindex_sequence_pyfunc!(T).func;
+        enum idxargfunc opIndex_sequence_wrap = &opindex_sequence_pyfunc!(T).func;
     } else {
-        const idxargfunc opIndex_sequence_wrap = null;
+        enum idxargfunc opIndex_sequence_wrap = null;
     }
 }
 
@@ -363,9 +363,9 @@ template opIndexAssign_sequence_wrap(T) {
         ParameterTypeTuple!(T.opIndexAssign).length == 2 &&
         is(ParameterTypeTuple!(T.opIndexAssign)[1] : index_t)
     ) {
-        const idxobjargproc opIndexAssign_sequence_wrap = &opindexassign_sequence_pyfunc!(T).func;
+        enum idxobjargproc opIndexAssign_sequence_wrap = &opindexassign_sequence_pyfunc!(T).func;
     } else {
-        const idxobjargproc opIndexAssign_sequence_wrap = null;
+        enum idxobjargproc opIndexAssign_sequence_wrap = null;
     }
 }
 
@@ -375,9 +375,9 @@ template opIndex_mapping_wrap(T) {
         (ParameterTypeTuple!(T.opIndex).length > 1 ||
         !is(ParameterTypeTuple!(T.opIndex)[0] : index_t))
     ) {
-        const binaryfunc opIndex_mapping_wrap = &opindex_mapping_pyfunc!(T).func;
+        enum binaryfunc opIndex_mapping_wrap = &opindex_mapping_pyfunc!(T).func;
     } else {
-        const binaryfunc opIndex_mapping_wrap = null;
+        enum binaryfunc opIndex_mapping_wrap = null;
     }
 }
 
@@ -387,9 +387,9 @@ template opIndexAssign_mapping_wrap(T) {
         (ParameterTypeTuple!(T.opIndex).length > 2 ||
         !is(ParameterTypeTuple!(T.opIndex)[1] : index_t))
     ) {
-        const objobjargproc opIndexAssign_mapping_wrap = &opindexassign_mapping_pyfunc!(T).func;
+        enum objobjargproc opIndexAssign_mapping_wrap = &opindexassign_mapping_pyfunc!(T).func;
     } else {
-        const objobjargproc opIndexAssign_mapping_wrap = null;
+        enum objobjargproc opIndexAssign_mapping_wrap = null;
     }
 }
 
@@ -400,9 +400,9 @@ template opSlice_wrap(T) {
         is(ParameterTypeTuple!(T.opSlice)[0] : index_t) &&
         is(ParameterTypeTuple!(T.opSlice)[1] : index_t)
     ) {
-        const idxidxargfunc opSlice_wrap = &opslice_pyfunc!(T).func;
+        enum idxidxargfunc opSlice_wrap = &opslice_pyfunc!(T).func;
     } else {
-        const idxidxargfunc opSlice_wrap = null;
+        enum idxidxargfunc opSlice_wrap = null;
     }
 }
 
@@ -413,256 +413,256 @@ template opSliceAssign_wrap(T) {
         is(ParameterTypeTuple!(T.opSlice)[1] : index_t) &&
         is(ParameterTypeTuple!(T.opSlice)[2] : index_t)
     ) {
-        const idxidxobjargproc opSliceAssign_wrap = &opsliceassign_pyfunc!(T).func;
+        enum idxidxobjargproc opSliceAssign_wrap = &opsliceassign_pyfunc!(T).func;
     } else {
-        const idxidxobjargproc opSliceAssign_wrap = null;
+        enum idxidxobjargproc opSliceAssign_wrap = null;
     }
 }
 
 template opAdd_wrap(T) {
     static if (is(typeof(&T.opAdd))) {
-        const binaryfunc opAdd_wrap = &opfunc_binary_wrap!(T, T.opAdd).func;
+        enum binaryfunc opAdd_wrap = &opfunc_binary_wrap!(T, T.opAdd).func;
     } else {
-        const binaryfunc opAdd_wrap = null;
+        enum binaryfunc opAdd_wrap = null;
     }
 }
 
 template opSub_wrap(T) {
     static if (is(typeof(&T.opSub))) {
-        const binaryfunc opSub_wrap = &opfunc_binary_wrap!(T, T.opSub).func;
+        enum binaryfunc opSub_wrap = &opfunc_binary_wrap!(T, T.opSub).func;
     } else {
-        const binaryfunc opSub_wrap = null;
+        enum binaryfunc opSub_wrap = null;
     }
 }
 
 
 template opMul_wrap(T) {
     static if (is(typeof(&T.opMul))) {
-        const binaryfunc opMul_wrap = &opfunc_binary_wrap!(T, T.opMul).func;
+        enum binaryfunc opMul_wrap = &opfunc_binary_wrap!(T, T.opMul).func;
     } else {
-        const binaryfunc opMul_wrap = null;
+        enum binaryfunc opMul_wrap = null;
     }
 }
 
 
 template opDiv_wrap(T) {
     static if (is(typeof(&T.opDiv))) {
-        const binaryfunc opDiv_wrap = &opfunc_binary_wrap!(T, T.opDiv).func;
+        enum binaryfunc opDiv_wrap = &opfunc_binary_wrap!(T, T.opDiv).func;
     } else {
-        const binaryfunc opDiv_wrap = null;
+        enum binaryfunc opDiv_wrap = null;
     }
 }
 
 
 template opMod_wrap(T) {
     static if (is(typeof(&T.opMod))) {
-        const binaryfunc opMod_wrap = &opfunc_binary_wrap!(T, T.opMod).func;
+        enum binaryfunc opMod_wrap = &opfunc_binary_wrap!(T, T.opMod).func;
     } else {
-        const binaryfunc opMod_wrap = null;
+        enum binaryfunc opMod_wrap = null;
     }
 }
 
 
 template opAnd_wrap(T) {
     static if (is(typeof(&T.opAnd))) {
-        const binaryfunc opAnd_wrap = &opfunc_binary_wrap!(T, T.opAnd).func;
+        enum binaryfunc opAnd_wrap = &opfunc_binary_wrap!(T, T.opAnd).func;
     } else {
-        const binaryfunc opAnd_wrap = null;
+        enum binaryfunc opAnd_wrap = null;
     }
 }
 
 
 template opOr_wrap(T) {
     static if (is(typeof(&T.opOr))) {
-        const binaryfunc opOr_wrap = &opfunc_binary_wrap!(T, T.opOr).func;
+        enum binaryfunc opOr_wrap = &opfunc_binary_wrap!(T, T.opOr).func;
     } else {
-        const binaryfunc opOr_wrap = null;
+        enum binaryfunc opOr_wrap = null;
     }
 }
 
 
 template opXor_wrap(T) {
     static if (is(typeof(&T.opXor))) {
-        const binaryfunc opXor_wrap = &opfunc_binary_wrap!(T, T.opXor).func;
+        enum binaryfunc opXor_wrap = &opfunc_binary_wrap!(T, T.opXor).func;
     } else {
-        const binaryfunc opXor_wrap = null;
+        enum binaryfunc opXor_wrap = null;
     }
 }
 
 
 template opShl_wrap(T) {
     static if (is(typeof(&T.opShl))) {
-        const binaryfunc opShl_wrap = &opfunc_binary_wrap!(T, T.opShl).func;
+        enum binaryfunc opShl_wrap = &opfunc_binary_wrap!(T, T.opShl).func;
     } else {
-        const binaryfunc opShl_wrap = null;
+        enum binaryfunc opShl_wrap = null;
     }
 }
 
 
 template opShr_wrap(T) {
     static if (is(typeof(&T.opShr))) {
-        const binaryfunc opShr_wrap = &opfunc_binary_wrap!(T, T.opShr).func;
+        enum binaryfunc opShr_wrap = &opfunc_binary_wrap!(T, T.opShr).func;
     } else {
-        const binaryfunc opShr_wrap = null;
+        enum binaryfunc opShr_wrap = null;
     }
 }
 
 
 template opUShr_wrap(T) {
     static if (is(typeof(&T.opUShr))) {
-        const binaryfunc opUShr_wrap = &opfunc_binary_wrap!(T, T.opUShr).func;
+        enum binaryfunc opUShr_wrap = &opfunc_binary_wrap!(T, T.opUShr).func;
     } else {
-        const binaryfunc opUShr_wrap = null;
+        enum binaryfunc opUShr_wrap = null;
     }
 }
 
 
 template opCat_wrap(T) {
     static if (is(typeof(&T.opCat))) {
-        const binaryfunc opCat_wrap = &opfunc_binary_wrap!(T, T.opCat).func;
+        enum binaryfunc opCat_wrap = &opfunc_binary_wrap!(T, T.opCat).func;
     } else {
-        const binaryfunc opCat_wrap = null;
+        enum binaryfunc opCat_wrap = null;
     }
 }
 
 
 template opAddAssign_wrap(T) {
     static if (is(typeof(&T.opAddAssign))) {
-        const binaryfunc opAddAssign_wrap = &opfunc_binary_wrap!(T, T.opAddAssign).func;
+        enum binaryfunc opAddAssign_wrap = &opfunc_binary_wrap!(T, T.opAddAssign).func;
     } else {
-        const binaryfunc opAddAssign_wrap = null;
+        enum binaryfunc opAddAssign_wrap = null;
     }
 }
 
 
 template opSubAssign_wrap(T) {
     static if (is(typeof(&T.opSubAssign))) {
-        const binaryfunc opSubAssign_wrap = &opfunc_binary_wrap!(T, T.opSubAssign).func;
+        enum binaryfunc opSubAssign_wrap = &opfunc_binary_wrap!(T, T.opSubAssign).func;
     } else {
-        const binaryfunc opSubAssign_wrap = null;
+        enum binaryfunc opSubAssign_wrap = null;
     }
 }
 
 
 template opMulAssign_wrap(T) {
     static if (is(typeof(&T.opMulAssign))) {
-        const binaryfunc opMulAssign_wrap = &opfunc_binary_wrap!(T, T.opMulAssign).func;
+        enum binaryfunc opMulAssign_wrap = &opfunc_binary_wrap!(T, T.opMulAssign).func;
     } else {
-        const binaryfunc opMulAssign_wrap = null;
+        enum binaryfunc opMulAssign_wrap = null;
     }
 }
 
 
 template opDivAssign_wrap(T) {
     static if (is(typeof(&T.opDivAssign))) {
-        const binaryfunc opDivAssign_wrap = &opfunc_binary_wrap!(T, T.opDivAssign).func;
+        enum binaryfunc opDivAssign_wrap = &opfunc_binary_wrap!(T, T.opDivAssign).func;
     } else {
-        const binaryfunc opDivAssign_wrap = null;
+        enum binaryfunc opDivAssign_wrap = null;
     }
 }
 
 
 template opModAssign_wrap(T) {
     static if (is(typeof(&T.opModAssign))) {
-        const binaryfunc opModAssign_wrap = &opfunc_binary_wrap!(T, T.opModAssign).func;
+        enum binaryfunc opModAssign_wrap = &opfunc_binary_wrap!(T, T.opModAssign).func;
     } else {
-        const binaryfunc opModAssign_wrap = null;
+        enum binaryfunc opModAssign_wrap = null;
     }
 }
 
 
 template opAndAssign_wrap(T) {
     static if (is(typeof(&T.opAndAssign))) {
-        const binaryfunc opAndAssign_wrap = &opfunc_binary_wrap!(T, T.opAndAssign).func;
+        enum binaryfunc opAndAssign_wrap = &opfunc_binary_wrap!(T, T.opAndAssign).func;
     } else {
-        const binaryfunc opAndAssign_wrap = null;
+        enum binaryfunc opAndAssign_wrap = null;
     }
 }
 
 
 template opOrAssign_wrap(T) {
     static if (is(typeof(&T.opOrAssign))) {
-        const binaryfunc opOrAssign_wrap = &opfunc_binary_wrap!(T, T.opOrAssign).func;
+        enum binaryfunc opOrAssign_wrap = &opfunc_binary_wrap!(T, T.opOrAssign).func;
     } else {
-        const binaryfunc opOrAssign_wrap = null;
+        enum binaryfunc opOrAssign_wrap = null;
     }
 }
 
 
 template opXorAssign_wrap(T) {
     static if (is(typeof(&T.opXorAssign))) {
-        const binaryfunc opXorAssign_wrap = &opfunc_binary_wrap!(T, T.opXorAssign).func;
+        enum binaryfunc opXorAssign_wrap = &opfunc_binary_wrap!(T, T.opXorAssign).func;
     } else {
-        const binaryfunc opXorAssign_wrap = null;
+        enum binaryfunc opXorAssign_wrap = null;
     }
 }
 
 
 template opShlAssign_wrap(T) {
     static if (is(typeof(&T.opShlAssign))) {
-        const binaryfunc opShlAssign_wrap = &opfunc_binary_wrap!(T, T.opShlAssign).func;
+        enum binaryfunc opShlAssign_wrap = &opfunc_binary_wrap!(T, T.opShlAssign).func;
     } else {
-        const binaryfunc opShlAssign_wrap = null;
+        enum binaryfunc opShlAssign_wrap = null;
     }
 }
 
 
 template opShrAssign_wrap(T) {
     static if (is(typeof(&T.opShrAssign))) {
-        const binaryfunc opShrAssign_wrap = &opfunc_binary_wrap!(T, T.opShrAssign).func;
+        enum binaryfunc opShrAssign_wrap = &opfunc_binary_wrap!(T, T.opShrAssign).func;
     } else {
-        const binaryfunc opShrAssign_wrap = null;
+        enum binaryfunc opShrAssign_wrap = null;
     }
 }
 
 
 template opUShrAssign_wrap(T) {
     static if (is(typeof(&T.opUShrAssign))) {
-        const binaryfunc opUShrAssign_wrap = &opfunc_binary_wrap!(T, T.opUShrAssign).func;
+        enum binaryfunc opUShrAssign_wrap = &opfunc_binary_wrap!(T, T.opUShrAssign).func;
     } else {
-        const binaryfunc opUShrAssign_wrap = null;
+        enum binaryfunc opUShrAssign_wrap = null;
     }
 }
 
 
 template opCatAssign_wrap(T) {
     static if (is(typeof(&T.opCatAssign))) {
-        const binaryfunc opCatAssign_wrap = &opfunc_binary_wrap!(T, T.opCatAssign).func;
+        enum binaryfunc opCatAssign_wrap = &opfunc_binary_wrap!(T, T.opCatAssign).func;
     } else {
-        const binaryfunc opCatAssign_wrap = null;
+        enum binaryfunc opCatAssign_wrap = null;
     }
 }
 
 
 template opIn_wrap(T) {
     static if (is(typeof(&T.opIn_r))) {
-        const objobjproc opIn_wrap = &opin_wrap.func;
+        enum objobjproc opIn_wrap = &opin_wrap.func;
     } else {
-        const objobjproc opIn_wrap = null;
+        enum objobjproc opIn_wrap = null;
     }
 }
 
 template opNeg_wrap(T) {
     static if (is(typeof(&T.opNeg))) {
-        const unaryfunc opNeg_wrap = &opfunc_unary_wrap!(T, T.opNeg).func;
+        enum unaryfunc opNeg_wrap = &opfunc_unary_wrap!(T, T.opNeg).func;
     } else {
-        const unaryfunc opNeg_wrap = null;
+        enum unaryfunc opNeg_wrap = null;
     }
 }
 
 template opPos_wrap(T) {
     static if (is(typeof(&T.opPos))) {
-        const unaryfunc opPos_wrap = &opfunc_unary_wrap!(T, T.opPos).func;
+        enum unaryfunc opPos_wrap = &opfunc_unary_wrap!(T, T.opPos).func;
     } else {
-        const unaryfunc opPos_wrap = null;
+        enum unaryfunc opPos_wrap = null;
     }
 }
 
 template opCom_wrap(T) {
     static if (is(typeof(&T.opCom))) {
-        const unaryfunc opCom_wrap = &opfunc_unary_wrap!(T, T.opCom).func;
+        enum unaryfunc opCom_wrap = &opfunc_unary_wrap!(T, T.opCom).func;
     } else {
-        const unaryfunc opCom_wrap = null;
+        enum unaryfunc opCom_wrap = null;
     }
 }
 

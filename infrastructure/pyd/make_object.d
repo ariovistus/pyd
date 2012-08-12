@@ -51,7 +51,7 @@ import pyd.lib_abstract :
 ;
 
 package template isArray(T) {
-    const bool isArray = is(typeof(T.init[0])[] == T);
+    enum bool isArray = is(typeof(T.init[0])[] == T);
 }
 
 // This relies on the fact that, for a static array type T,
@@ -62,15 +62,18 @@ package template isArray(T) {
 // say "!is(typeof(T.init) == T)"; however, this template has the advantage of
 // being easily fixable should this behavior for static arrays change.
 package template isStaticArray(T) {
-    const bool isStaticArray = is(typeof(T.init)[(T).sizeof / typeof(T.init).sizeof] == T);
+    enum bool isStaticArray = is(typeof(T.init)[(T).sizeof / typeof(T.init).sizeof] == T);
 }
 
 package template isAA(T) {
-    const bool isAA = is(typeof(T.init.values[0])[typeof(T.init.keys[0])] == T);
+    enum bool isAA = is(typeof(T.init.values[0])[typeof(T.init.keys[0])] == T);
 }
 
 class to_conversion_wrapper(dg_t) {
-    pragma(msg, ParameterTypeTuple!dg_t);
+    pragma(msg, "to_conv_wrap params: ", ParameterTypeTuple!dg_t);
+    alias ParameterTypeTuple!(dg_t) Ts;
+    pragma(msg, "to_conv_wrap param1: ", Ts[0]);
+    pragma(msg, "to_conv_wrap param1: ", ParameterTypeTuple!(dg_t)[0]);
     alias ParameterTypeTuple!(dg_t)[0] T;
     alias ReturnType!(dg_t) Intermediate;
     dg_t dg;
@@ -105,12 +108,14 @@ template from_converter_registry(To) {
 }
 
 void d_to_python(dg_t) (dg_t dg) {
+    pragma(msg, "dg type: ", dg_t);
+    pragma(msg, "dg rtype: ", ReturnType!(dg_t));
     static if (is(dg_t == delegate) && is(ReturnType!(dg_t) == PyObject*)) {
         to_converter_registry!(ParameterTypeTuple!(dg_t)[0]).dg = dg;
     } else {
         auto o = new to_conversion_wrapper!(dg_t)(dg);
-        //pragma(msg, typeof(o.dg).stringof);
-        //pragma(msg, (typeof(o).T).stringof);
+        pragma(msg, "o.dg type: ",typeof(o.dg).stringof);
+        pragma(msg, "o.dg.T type: ",(typeof(o).T).stringof);
         to_converter_registry!(typeof(o).T).dg = &o.opCall;
     }
 }
