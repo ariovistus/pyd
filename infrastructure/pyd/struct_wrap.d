@@ -25,9 +25,6 @@ import python;
 
 import pyd.class_wrap;
 import pyd.exception;
-version(Pyd_with_StackThreads) {
-    import pyd.iteration;
-}
 import pyd.make_object;
 import pyd.lib_abstract :
     symbolnameof

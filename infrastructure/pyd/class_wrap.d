@@ -35,9 +35,6 @@ import pyd.def;
 import pyd.dg_convert;
 import pyd.exception;
 import pyd.func_wrap;
-version (Pyd_with_StackThreads) {
-    import pyd.iteration;
-}
 import pyd.make_object;
 import pyd.make_wrapper;
 import pyd.op_wrap;
@@ -49,6 +46,8 @@ import pyd.lib_abstract :
     ReturnType,
     minArgs,
     objToStr ;
+
+version(Pyd_with_StackThreads) static assert(0, "sorry - stackthreads are gone");
 
 PyTypeObject*[ClassInfo] wrapped_classes;
 template shim_class(T) {
@@ -612,53 +611,6 @@ struct Init(C ...) {
     }
 }
 
-// Iteration wrapping support requires StackThreads
-version(Pyd_with_StackThreads) {
-
-/**
-Allows selection of alternate opApply overloads. iter_t should be
-the type of the delegate in the opApply function that the user wants
-to be the default.
-*/
-struct Iter(iter_t) {
-    enum bool needs_shim = false;
-    alias iter_t iterator_t;
-    static void call(T) () {
-        PydStackContext_Ready();
-        // This strange bit of hackery is needed since we operate on pointer-
-        // to-struct types, rather than just struct types.
-        static if (is(T S : S*) && is(S == struct)) {
-            wrapped_class_type!(T).tp_iter = &wrapped_iter!(T, S.opApply, int function(iter_t)).iter;
-        } else {
-            wrapped_class_type!(T).tp_iter = &wrapped_iter!(T, T.opApply, int function(iter_t)).iter;
-        }
-    }
-}
-
-/**
-Exposes alternate iteration methods, originally intended for use with
-D's delegate-as-iterator features, as methods returning a Python
-iterator.
-*/
-struct AltIter(alias fn, string name = symbolnameof!(fn), iter_t = ParameterTypeTuple!(fn)[0]) {
-    enum bool needs_shim = false;
-    static void call(T) () {
-        static PyMethodDef empty = { null, null, 0, null };
-        alias wrapped_method_list!(T) list;
-        PydStackContext_Ready();
-        list[$-1].ml_name = name ~ "\0";
-        list[$-1].ml_meth = cast(PyCFunction)&wrapped_iter!(T, fn, int function(iter_t)).iter;
-        list[$-1].ml_flags = METH_VARARGS;
-        list[$-1].ml_doc = "";//(docstring ~ "\0").ptr;
-        list ~= empty;
-        // It's possible that appending the empty item invalidated the
-        // pointer in the type struct, so we renew it here.
-        wrapped_class_type!(T).tp_methods = list;
-    }
-}
-
-} /*Pyd_with_StackThreads*/
-
 void wrap_class(T, Params...) (string docstring="", string modulename="") {
     _wrap_class!(T, symbolnameof!(T), Params).wrap_class(docstring, modulename);
 }
@@ -746,15 +698,6 @@ void wrap_class(string docstring="", string modulename="") {
     }
 
     // Standard operator overloads
-    // opApply
-    version(Pyd_with_StackThreads) {
-        static if (is(typeof(&T.opApply))) {
-            if (type.tp_iter is null) {
-                PydStackContext_Ready();
-                type.tp_iter = &wrapped_iter!(T, T.opApply).iter;
-            }
-        }
-    }
     // opCmp
     static if (is(typeof(&T.opCmp))) {
         type.tp_compare = &pyd.op_wrap.opcmp_wrap!(T).func;
