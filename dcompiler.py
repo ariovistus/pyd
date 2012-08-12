@@ -42,13 +42,6 @@ _pydFiles = [
     'struct_wrap.d',
 ]
 
-_stFiles = [
-    'coroutine.d',
-    'stackcontext.d',
-    'stackthread.d',
-    'tls.d',
-]
-
 _metaFiles = [
     'Demangle.d',
     'multi_index.d',
@@ -195,17 +188,6 @@ class DCompiler(cc.CCompiler):
             mainFilename = os.path.join(infra_output_dir, 'pydmain.d')
             make_pydmain(mainFilename, name)
             sources.append((mainFilename, 'infra'))
-        # And StackThreads
-        if self._st_support and with_st:
-            for file in _stFiles:
-                filePath = os.path.join(_infraDir, 'st', file)
-                if not os.path.isfile(filePath):
-                    raise DistutilsPlatformError("Required StackThreads source"
-                        " file '%s' is missing." % filePath
-                    )
-                sources.append((filePath, 'infra'))
-            # Add the version conditional for st
-            macros.append(('Pyd_with_StackThreads', 'version'))
         # And meta
         if with_meta:
             for file in _metaFiles:

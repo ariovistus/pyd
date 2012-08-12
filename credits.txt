@@ -10,5 +10,3 @@ Kirk McDonald
 meta:
 Tomasz Stachowiak, Don Clugston, Kirk McDonald
 
-StackThreads:
-Mikola Lysenko, Daniel Keep, Lars Ivar Igesund
