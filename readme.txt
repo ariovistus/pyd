@@ -26,8 +26,8 @@ This is not required, however:
   * On Linux, only the GDC compiler is supported. If it is not found on the
     PATH, CeleriD will check the GDC_BIN environment variable.
 
-Examples of using Pyd may be found in the "examples" directory. The full
-documentation may be found on Pyd's website:
+Examples of using Pyd may be found in the "examples" directory. For full
+documentation, check the wiki: 
 
-http://pyd.dsource.org
+https://bitbucket.org/ariovistus/pyd/wiki/Home
 
