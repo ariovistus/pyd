@@ -9,13 +9,24 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
 ))
 sys.path.append(os.path.abspath(libDir))
 print sys.path
-import hello
-import hello2
+use = "1" 
+if use == "1":
+    import hello
+elif use == "2":
+    import hello2
+elif use == 'both':
+    import hello
+    import hello2
 
 
 try:
-    hello.hello()
-    hello2.hello()
+    if use == '1':
+        hello.hello()
+    elif use == '2':
+        hello2.hello()
+    elif use == 'both':
+        hello.hello()
+        hello2.hello()
 except Exception, e:
     print e
     print e.__dict__
