@@ -85,8 +85,17 @@ print y.resolution
 }
 
 unittest {
-    alias PyDef!("def func1(a): 
-            return a*2+1","office", int, int) func1;
+    assert(d_type!int(_py(15)) == 15);
+    assert(d_type!float(_py(1.0f)) == 1.0f);
+    import std.complex;
+    assert(d_type!(Complex!double)(_py(complex(2.0,3.0))) == complex(2.0,3.0));
+    import std.typecons;
+    assert(d_type!(Tuple!(int,double))(_py(tuple(2,3.0))) == tuple(2,3.0));
+    assert(d_type!(Tuple!(int, "a",double, "b"))(_py(Tuple!(int, "a", double, "b")(2,3.0))) == Tuple!(int,"a",double,"b")(2,3.0));
+}
+unittest {
+    alias PyDef!(q"<def func1(a): 
+            return a*2+1>","office", int, int) func1;
     assert(func1(1) == 3);    
     assert(func1(2) == 5);    
     assert(func1(3) == 7);    
@@ -187,7 +196,7 @@ unittest {
     n = py(36).trueDiv(py(5));
     assert(n == py(7.2)); // *twitch*
     n = (py(37).divmod(py(5)));
-    assert(n.toString() == "(7, 2)");
+    assert(n.toString() == "(7, 2)" || n.toString() == "(7L, 2L)");
     n = py(37) % py(5);
     assert(n == py(2));
     n = py(3) ^^ py(4);

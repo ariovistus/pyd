@@ -36,8 +36,10 @@ module pyd.make_object;
 
 import python;
 
-//import std.string;
-//import std.stdio;
+import std.complex;
+import std.traits;
+import std.typecons: Tuple, tuple, isTuple;
+import std.metastrings;
 
 import pyd.pydobject;
 import pyd.class_wrap;
@@ -70,10 +72,6 @@ package template isAA(T) {
 }
 
 class to_conversion_wrapper(dg_t) {
-    pragma(msg, "to_conv_wrap params: ", ParameterTypeTuple!dg_t);
-    alias ParameterTypeTuple!(dg_t) Ts;
-    pragma(msg, "to_conv_wrap param1: ", Ts[0]);
-    pragma(msg, "to_conv_wrap param1: ", ParameterTypeTuple!(dg_t)[0]);
     alias ParameterTypeTuple!(dg_t)[0] T;
     alias ReturnType!(dg_t) Intermediate;
     dg_t dg;
@@ -108,14 +106,10 @@ template from_converter_registry(To) {
 }
 
 void d_to_python(dg_t) (dg_t dg) {
-    pragma(msg, "dg type: ", dg_t);
-    pragma(msg, "dg rtype: ", ReturnType!(dg_t));
     static if (is(dg_t == delegate) && is(ReturnType!(dg_t) == PyObject*)) {
         to_converter_registry!(ParameterTypeTuple!(dg_t)[0]).dg = dg;
     } else {
         auto o = new to_conversion_wrapper!(dg_t)(dg);
-        pragma(msg, "o.dg type: ",typeof(o.dg).stringof);
-        pragma(msg, "o.dg.T type: ",(typeof(o).T).stringof);
         to_converter_registry!(typeof(o).T).dg = &o.opCall;
     }
 }
@@ -145,19 +139,31 @@ PyObject* _py(T) (T t) {
             return Py_None;
         }
     }
-    static if (is(T : bool)) {
+    static if (isBoolean!T) {
         PyObject* temp = (t) ? Py_True : Py_False;
         Py_INCREF(temp);
         return temp;
+    } else static if(isIntegral!T) {
+        static if(isUnsigned!T) {
+            return PyLong_FromUnsignedLongLong(t);
+        }else static if(isSigned!T) {
+            return PyLong_FromLongLong(t);
+        }
     } else static if (is(T : C_long)) {
         return PyInt_FromLong(t);
     } else static if (is(T : C_longlong)) {
         return PyLong_FromLongLong(t);
-    } else static if (is(T : double)) {
+    } else static if (isFloatingPoint!T) {
         return PyFloat_FromDouble(t);
-    } else static if (is(T : idouble)) {
-        return PyComplex_FromDoubles(0.0, t.im);
-    } else static if (is(T : cdouble)) {
+    } else static if( isTuple!T) {
+        T.Types tuple;
+        foreach(i, _t; T.Types) {
+            tuple[i] = t[i];
+        }
+        return PyTuple_FromItems(tuple);
+    } else static if (  is(T == Complex!float) || 
+                        is(T == Complex!double) || 
+                        is(T == Complex!real)) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if (is(T : string)) {
         return PyString_FromString((t ~ "\0").ptr);
@@ -300,26 +306,33 @@ class PydConversionException : Exception {
  * the given D type.
  */
 T d_type(T) (PyObject* o) {
-    // This ordering is very important. If the check for bool came first,
-    // then all integral types would be converted to bools (they would be
-    // 0 or 1), because bool can be implicitly converted to any integral
-    // type.
-    //
-    // This also means that:
-    //  (1) Conversion to PydObject will construct an object and return that.
-    //  (2) Any integral type smaller than a C_long (which is usually just
-    //      an int, meaning short and byte) will use the bool conversion.
-    //  (3) Conversion to a float shouldn't work.
+    // This ordering is somewhat important. The checks for Tuple and Complex
+    // must be before the check for general structs.
+
     static if (is(PyObject* : T)) {
         return o;
     } else static if (is(PydObject : T)) {
         return new PydObject(cast(PyObject_BorrowedRef*) o);
-    } else static if (is(T == void)) {
-        if (o != Py_None) could_not_convert!(T)(o);
-        // the heck?
-        //Py_INCREF(Py_None);
-        //return Py_None;
-        return;
+    } else static if (isTuple!T) {
+        T.Types tuple;
+        if(!PyTuple_Check(o)) could_not_convert!T(o);
+        auto len = PyTuple_Size(o);
+        if(len != T.Types.length) could_not_convert!T(o);
+        foreach(i,_t; T.Types) {
+            auto obj =  OwnPyRef(PyTuple_GetItem(o, i));
+            tuple[i] = d_type!_t(obj);
+            Py_DECREF(obj);
+        }
+        return T(tuple);
+    } else static if (  is(T == Complex!float) || 
+                        is(T == Complex!double) || 
+                        is(T == Complex!real)) {
+        double real_ = PyComplex_RealAsDouble(o);
+        handle_exception();
+        double imag = PyComplex_ImagAsDouble(o);
+        handle_exception();
+        alias typeof(T.init.re) T2;
+        return complex!(T2,T2)(real_, imag);
     } else static if (is(T == class)) {
         // We can only convert to a class if it has been wrapped, and of course
         // we can only convert the object if it is the wrapped type.
@@ -416,27 +429,31 @@ T d_type(T) (PyObject* o) {
             item = PyIter_Next(iter);
         }
         return array;
-    } else static if (is(cdouble : T)) {
-        double real_ = PyComplex_RealAsDouble(o);
-        handle_exception();
-        double imag = PyComplex_ImagAsDouble(o);
-        handle_exception();
-        return real_ + imag * 1i;
-    } else static if (is(double : T)) {
+    } else static if (isFloatingPoint!T) {
         double res = PyFloat_AsDouble(o);
         handle_exception();
-        return res;
-    } else static if (is(C_longlong : T)) {
+        return cast(T) res;
+    } else static if(isIntegral!T) {
         if (!PyNumber_Check(o)) could_not_convert!(T)(o);
-        C_longlong res = PyLong_AsLongLong(o);
-        handle_exception();
-        return res;
-    } else static if (is(C_long : T)) {
-        if (!PyNumber_Check(o)) could_not_convert!(T)(o);
-        C_long res = PyInt_AsLong(o);
-        handle_exception();
-        return res;
-    } else static if (is(bool : T)) {
+        static if(isUnsigned!T) {
+            static assert(T.sizeof <= C_ulonglong.sizeof);
+            C_ulonglong res = PyLong_AsUnsignedLongLong(o);
+            handle_exception();
+            // no overflow from python to C_ulonglong,
+            // overflow from C_ulonglong to T?
+            if(T.max < res) could_not_convert!T(o); 
+            return cast(T) res;
+        }else static if(isSigned!T) {
+            static assert(T.sizeof <= C_longlong.sizeof);
+            C_longlong res = PyLong_AsLongLong(o);
+            handle_exception();
+            // no overflow from python to C_longlong,
+            // overflow from C_longlong to T?
+            if(T.min > res) could_not_convert!T(o); 
+            if(T.max < res) could_not_convert!T(o); 
+            return cast(T) res;
+        }
+    } else static if (isBoolean!T) {
         if (!PyNumber_Check(o)) could_not_convert!(T)(o);
         int res = PyObject_IsTrue(o);
         handle_exception();

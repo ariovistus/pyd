@@ -1370,6 +1370,10 @@ extern (C) {
   C_longlong PyLong_AsLongLong(PyObject *);
   C_ulonglong PyLong_AsUnsignedLongLong(PyObject *);
   C_ulonglong PyLong_AsUnsignedLongLongMask(PyObject *);
+  version(Python_2_7_Or_Later) {
+      C_long PyLong_AsLongAndOverflow(PyObject*, int*);
+      C_longlong PyLong_AsLongLongAndOverflow(PyObject*, int*);
+  }
 
   double PyLong_AsDouble(PyObject *);
   PyObject * PyLong_FromVoidPtr(void *);
