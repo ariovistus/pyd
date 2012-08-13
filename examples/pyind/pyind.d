@@ -30,7 +30,6 @@ class Y {
 }
 
 static this() {
-    Py_Initialize();
     def!("office", knock)("a brain specialist works here"); 
     add_module("office");
     wrap_class!(Y, 

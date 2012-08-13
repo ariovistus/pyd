@@ -206,9 +206,8 @@ PyObject* _py(T) (T t) {
         PydWrappedFunc_Ready!(T)();
         return WrapPyObject_FromObject(t);
     } else static if (is(T : PydObject)) {
-        PyObject* temp = t.ptr();
-        Py_INCREF(temp);
-        return temp;
+        PyObject_BorrowedRef* temp = t.ptr();
+        return OwnPyRef(temp);
     // The function expects to be passed a borrowed reference and return an
     // owned reference. Thus, if passed a PyObject*, this will increment the
     // reference count.

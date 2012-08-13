@@ -39,6 +39,10 @@ import pyd.pyd;
 import std.algorithm: findSplit;
 import std.string: strip;
 
+shared static this() {
+    Py_Initialize();
+}
+
 /++
  + Fetch a python module object.
  +/
@@ -62,13 +66,15 @@ R PyDef( string python, string modl, R, Args...)(Args args) {
         once = false;
         auto m = py_import(modl);
         auto locals = m.getdict();
+        auto locals_ptr = OwnPyRef(m.getdict().ptr);
         if("__builtins__" !in locals) {
             auto builtins = new PydObject(PyEval_GetBuiltins());
             locals["__builtins__"] = builtins;
         }
         auto pres = PyRun_String(
                     zcc(python), 
-                    Py_file_input, locals.ptr, locals.ptr);
+                    Py_file_input, locals_ptr, locals_ptr);
+        scope(exit) Py_DECREF(locals_ptr);
         if(pres) {
             auto res = new PydObject(pres);
             func = m.getattr(name);
@@ -88,16 +94,18 @@ R PyDef( string python, string modl, R, Args...)(Args args) {
 T PyEval(T = PydObject)(string python, string modl) {
     auto m = py_import(modl);
     auto locals = m.getdict();
+    auto locals_ptr = OwnPyRef(m.getdict().ptr);
     if("__builtins__" !in locals) {
         auto builtins = new PydObject(PyEval_GetBuiltins());
         locals["__builtins__"] = builtins;
     }
     auto pres = PyRun_String(
             zcc(python), 
-            Py_eval_input, locals.ptr, locals.ptr);
+            Py_eval_input, locals_ptr, locals_ptr);
+    scope(exit) Py_DECREF(locals_ptr);
     if(pres) {
         auto res = new PydObject(pres);
-        return d_type!T(res.ptr);
+        return res.toDItem!T();
     }else{
         throw new Exception(ErrInterceptor.interceptStderr());
     }
@@ -109,13 +117,15 @@ T PyEval(T = PydObject)(string python, string modl) {
 void PyStmts(string python, string modl) {
     auto m = py_import(modl);
     auto locals = m.getdict();
+    auto locals_ptr = OwnPyRef(locals.ptr);
     if("__builtins__" !in locals) {
         auto builtins = new PydObject(PyEval_GetBuiltins());
         locals["__builtins__"] = builtins;
     }
     auto pres = PyRun_String(
             zcc(python), 
-            Py_file_input, locals.ptr, locals.ptr);
+            Py_file_input, locals_ptr, locals_ptr);
+    scope(exit) Py_DECREF(locals_ptr);
     if(pres) {
         Py_DECREF(pres);
     }else{

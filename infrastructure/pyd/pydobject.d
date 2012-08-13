@@ -84,7 +84,7 @@ public:
     /**
      * Returns a borrowed reference to the PyObject.
      */
-    @property PyObject* ptr() { return m_ptr; }
+    @property PyObject_BorrowedRef* ptr() { return cast(PyObject_BorrowedRef*) m_ptr; }
     
     /*
      * Prints PyObject to a C FILE* object.
@@ -539,7 +539,7 @@ public:
         static if((is(T : int) || is(T == PydObject)) && op == "*") {
             if(PySequence_Check(m_ptr)) {
                 static if(is(T == PydObject)) {
-                    int j = d_type!int(o.ptr);
+                    int j = d_type!int(o.m_ptr);
                 }else{
                     alias o j;
                 }
@@ -611,7 +611,7 @@ public:
         static if((is(T : int) || is(T == PydObject)) && op == "*") {
             if(PySequence_Check(m_ptr)) {
                 static if(is(T == PydObject)) {
-                    int j = d_type!int(o.ptr);
+                    int j = d_type!int(o.m_ptr);
                 }else{
                     alias o j;
                 }
@@ -661,7 +661,7 @@ public:
             handle_exception();
         } else {
         +/
-            PyObject* result = Op(m_ptr, rhs.ptr);
+            PyObject* result = Op(m_ptr, rhs.m_ptr);
             if (result is null) handle_exception();
             Py_DECREF(m_ptr);
             m_ptr = result;
@@ -744,7 +744,7 @@ public:
     // Added by list:
     void insert(int i, PydObject item) { 
         if(PyList_Check(m_ptr)) {
-            if(PyList_Insert(m_ptr, i, item.ptr) == -1) {
+            if(PyList_Insert(m_ptr, i, item.m_ptr) == -1) {
                 handle_exception();
             }
         }else{
@@ -754,7 +754,7 @@ public:
     // Added by list:
     void append(PydObject item) { 
         if(PyList_Check(m_ptr)) {
-            if(PyList_Append(m_ptr, item.ptr) == -1) {
+            if(PyList_Append(m_ptr, item.m_ptr) == -1) {
                 handle_exception();
             }
         }else{
@@ -860,7 +860,7 @@ public:
     // Added by dict
     void merge(PydObject o, bool override_=true) { 
         if(PyDict_Check(m_ptr)) {
-            PyDict_Merge(m_ptr,o.ptr,override_);
+            PyDict_Merge(m_ptr,o.m_ptr,override_);
         }else{
             throw new Exception("tried to call copy on non-dict");
         }
