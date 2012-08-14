@@ -23,8 +23,8 @@ This is not required, however:
 
   * On Windows, only the DMD compiler is supported. If it is not found on the
     PATH, CeleriD will check the DMD_BIN environment variable.
-  * On Linux, only the GDC compiler is supported. If it is not found on the
-    PATH, CeleriD will check the GDC_BIN environment variable.
+  * On Linux, currently the LDC compiler is supported. If it is not found on the
+    PATH, CeleriD will check the LDC_BIN environment variable.
 
 Examples of using Pyd may be found in the "examples" directory. For full
 documentation, check the wiki: 

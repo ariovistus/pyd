@@ -537,7 +537,8 @@ class LDCDCompiler(DCompiler):
         'linker_exe'   : ['gcc'],
     }
 
-    _env_var = 'GDC_BIN'
+    # this is not a env! (but it isn't GDC)
+    _env_var = 'LDC_BIN'
 
     def _initialize(self):
         # _compileOpts
