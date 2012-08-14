@@ -23,7 +23,7 @@ module pyd.class_wrap;
 
 import python;
 
-import meta.Util: Replace;
+import meta.replace;
 import std.traits;
 import std.metastrings;
 import std.typetuple;
