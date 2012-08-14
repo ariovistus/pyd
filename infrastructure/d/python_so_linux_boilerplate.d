@@ -14,12 +14,8 @@ extern(C) {
     }
 
     void _fini() {
-        synchronized{
-            if(!_d_isHalting){
-                import std.c.stdio;
-                printf("rt_term() %x;\n", &rt_term);
-                rt_term();
-            }
+        if(!_d_isHalting){
+            rt_term();
         }
     }
 

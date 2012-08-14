@@ -313,6 +313,9 @@ T d_type(T) (PyObject* o) {
         return o;
     } else static if (is(PydObject : T)) {
         return new PydObject(cast(PyObject_BorrowedRef*) o);
+    } else static if (is(T == void)) {
+        if (o != Py_None) could_not_convert!(T)(o);
+        return;
     } else static if (isTuple!T) {
         T.Types tuple;
         if(!PyTuple_Check(o)) could_not_convert!T(o);
