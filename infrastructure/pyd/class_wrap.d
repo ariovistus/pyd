@@ -23,9 +23,10 @@ module pyd.class_wrap;
 
 import python;
 
-import meta.replace;
+import meta.replace: Replace;
 import std.traits;
 import std.metastrings;
+import util.typelist: Filter;
 import std.typetuple;
 import std.string: format;
 import std.typecons: Tuple;
@@ -237,34 +238,16 @@ template IsProperty(alias T) {
     enum bool IsProperty = 
         (functionAttributes!(T) & FunctionAttribute.property);
 }
-private template FilterProperties(T...) {
-    // where's my std.typetuple.Filter gone?
-    static if(T.length == 0) {
-        alias TypeTuple!() FilterProperties;
-    }else static if(IsProperty!(T[0])) {
-        alias TypeTuple!(T[0], FilterProperties!(T[1 ..$])) FilterProperties;
-    }else {
-        alias TypeTuple!(FilterProperties!(T[1 ..$])) FilterProperties;
-    }
+
+template IsGetter(alias T) {
+    enum bool IsGetter = ParameterTypeTuple!T .length == 0 && 
+        !is(ReturnType!T == void);
 }
 
-private template FilterGetters(T...) {
-    static if(T.length == 0) {
-        alias TypeTuple!() FilterGetters;
-    }else static if(is(ParameterTypeTuple!(T[0]) == TypeTuple!()) && !is(ReturnType!(T[0]) == void)) {
-        alias TypeTuple!(T[0], FilterGetters!(T[1 ..$])) FilterGetters;
-    }else {
-        alias TypeTuple!(FilterGetters!(T[1 ..$])) FilterGetters;
-    }
-}
-
-private template FilterSetters(RT,T...) {
-    static if(T.length == 0) {
-        alias TypeTuple!() FilterSetters;
-    }else static if(ParameterTypeTuple!(T[0]).length == 1 && is(ParameterTypeTuple!(T[0])[0] == RT)) {
-        alias TypeTuple!(T[0], FilterSetters!(RT,T[1 ..$])) FilterSetters;
-    }else {
-        alias TypeTuple!(FilterSetters!(RT,T[1 ..$])) FilterSetters;
+template IsSetter(RT) {
+    template IsSetter(alias T) {
+        enum bool IsSetter = ParameterTypeTuple!T .length == 1 && 
+                is(ParameterTypeTuple!(T)[0] == RT);
     }
 }
 
@@ -275,7 +258,7 @@ struct property_parts(alias p, bool RO) {
     alias ID!(__traits(parent, p)) Parent;
     enum nom = __traits(identifier, p);
     alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
-    alias FilterGetters!(Overloads) Getters;
+    alias Filter!(IsGetter,Overloads) Getters;
     static assert(Getters.length != 0, Format!("can't find property %s.%s getter", Parent.stringof, nom));
     static assert(Getters.length == 1, 
             Format!("can't handle property overloads of %s.%s getter (types %s)", 
@@ -285,7 +268,7 @@ struct property_parts(alias p, bool RO) {
     static assert(!IsProperty!(GetterFn), 
             Format!("%s.%s: can't handle d properties", Parent.stringof, nom));
     static if(!RO) {
-        alias FilterSetters!(ReturnType!getter_type, Overloads) Setters;
+        alias Filter!(IsSetter!(ReturnType!getter_type), Overloads) Setters;
         static assert(Setters.length != 0, Format!("can't find property %s.%s setter", Parent.stringof, nom));
         static assert(Setters.length == 1, 
                 Format!("can't handle property overloads of %s.%s setter (return types %s)", 

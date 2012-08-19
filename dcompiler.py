@@ -47,7 +47,10 @@ _metaFiles = [
     'multi_index.d',
     'replace.d',
     'Nameof.d',
-    'Util.d',
+]
+
+_utilFiles = [
+    'typelist.d',
 ]
 
 _pyVerXDotY = '.'.join(str(v) for v in sys.version_info[:2]) # e.g., '2.4'
@@ -175,6 +178,13 @@ class DCompiler(cc.CCompiler):
                 filePath = os.path.join(_infraDir, 'pyd', file)
                 if not os.path.isfile(filePath):
                     raise DistutilsPlatformError("Required Pyd source file '%s' is"
+                        " missing." % filePath
+                    )
+                sources.append((filePath, 'infra'))
+            for file in _utilFiles:
+                filePath = os.path.join(_infraDir, 'util', file)
+                if not os.path.isfile(filePath):
+                    raise DistutilsPlatformError("Required util source file '%s' is"
                         " missing." % filePath
                     )
                 sources.append((filePath, 'infra'))
