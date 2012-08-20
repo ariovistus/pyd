@@ -52,25 +52,6 @@ import pyd.lib_abstract :
     ReturnType
 ;
 
-package template isArray(T) {
-    enum bool isArray = is(typeof(T.init[0])[] == T);
-}
-
-// This relies on the fact that, for a static array type T,
-//      typeof(T.init) != T
-// But, rather, T.init is the type it is an array of. (For the dynamic array
-// template above, this type is extracted with typeof(T.init[0])).
-// Because this is only true for static arrays, it would work just as well to
-// say "!is(typeof(T.init) == T)"; however, this template has the advantage of
-// being easily fixable should this behavior for static arrays change.
-package template isStaticArray(T) {
-    enum bool isStaticArray = is(typeof(T.init)[(T).sizeof / typeof(T.init).sizeof] == T);
-}
-
-package template isAA(T) {
-    enum bool isAA = is(typeof(T.init.values[0])[typeof(T.init.keys[0])] == T);
-}
-
 class to_conversion_wrapper(dg_t) {
     alias ParameterTypeTuple!(dg_t)[0] T;
     alias ReturnType!(dg_t) Intermediate;
@@ -170,7 +151,7 @@ PyObject* _py(T) (T t) {
     } else static if (is(T : wstring)) {
         return PyUnicode_FromWideChar(t, t.length);
     // Converts any array (static or dynamic) to a Python list
-    } else static if (isArray!(T) || isStaticArray!(T)) {
+    } else static if (isArray!(T)) {
         PyObject* lst = PyList_New(t.length);
         PyObject* temp;
         if (lst is null) return null;
@@ -185,7 +166,7 @@ PyObject* _py(T) (T t) {
         }
         return lst;
     // Converts any associative array to a Python dict
-    } else static if (isAA!(T)) {
+    } else static if (isAssociativeArray!(T)) {
         PyObject* dict = PyDict_New();
         PyObject* ktemp, vtemp;
         int result;
