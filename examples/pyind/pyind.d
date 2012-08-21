@@ -56,6 +56,10 @@ class Bizzy {
     override int opCmp(Object p) {
         return 10;
     }
+
+    double opIndex(int i) {
+        return i*4.4;
+    }
 }
 
 static this() {
@@ -76,6 +80,7 @@ static this() {
             OpAssign!("+"),
             OpAssign!("%"),
             OpAssign!("^^"),
+            OpIndex!(),
             OpCompare!(),
     )("","office");
     ErrInterceptor.wrap_class("office");

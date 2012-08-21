@@ -57,12 +57,6 @@ void PydWrappedFunc_Ready(T)() {
 }
 
 void setWrongArgsError(Py_ssize_t gotArgs, uint minArgs, uint maxArgs, string funcName="") {
-    string str;
-    if (funcName == "") {
-        str ~= "function takes ";
-    } else {
-        str ~= funcName ~ "() takes ";
-    }
 
     string argStr(int args) {
         string temp = toString(args) ~ " argument";
@@ -71,6 +65,7 @@ void setWrongArgsError(Py_ssize_t gotArgs, uint minArgs, uint maxArgs, string fu
         }
         return temp;
     }
+    string str = (funcName == ""?"function":funcName~"()") ~ "takes";
 
     if (minArgs == maxArgs) {
         if (minArgs == 0) {

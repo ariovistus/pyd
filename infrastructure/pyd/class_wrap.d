@@ -842,7 +842,45 @@ struct OpCompare(_rhs_t = Guess) {
         // bah
         enum shim = "";
     }
+}
 
+struct OpIndex(index_t...) {
+    enum bool needs_shim = false;
+    template Inner(C) {
+        static if(!__traits(hasMember, C, "opIndex")) {
+            static assert(0, C.stringof ~ " has no index operator overloads");
+        }
+        static if(is(typeof(C.init.opIndex) == function)) {
+            alias TypeTuple!(__traits(getOverloads, C, "opIndex")) Overloads;
+            static if(index_t.length == 0 && Overloads.length > 1) {
+                static assert(0, Format!("Cannot choose between %s",Overloads));
+            }else static if(index_t.length == 0) {
+                alias Overloads[0] FN;
+            }else{
+                template IsDesiredOverload(alias fn) {
+                    enum bool IsDesiredOverload = is(ParameterTypeTuple!fn == index_t);
+                }
+                alias Filter!(IsDesiredOverload, Overloads) Overloads1;
+                static assert(Overloads1.length == 1, 
+                        Format!("Cannot choose between %s",Overloads1));
+                alias Overloads1[0] FN;
+            }
+        }else static if(is(typeof(C.init.opIndex!(index_t)) == function)) {
+            alias C.opIndex!(index_t) FN;
+        }else{
+            static assert(0, Format!("cannot get a handle on %s.opIndex",C));
+        }
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = "type.tp_as_mapping.mp_subscript";
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &opindex_wrap!(T, Inner!T.FN).func;");
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
 }
 
 template param1(C) { 

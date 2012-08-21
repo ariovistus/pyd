@@ -376,6 +376,39 @@ template opindex_mapping_pyfunc(T) {
     }
 }
 
+template opindex_wrap(T, alias fn) {
+    alias wrapped_class_object!(T) wrap_object;
+    alias ParameterTypeTuple!fn Params;
+
+    // Multiple arguments are converted into tuples, and thus become a standard
+    // wrapped member function call. A single argument is passed directly.
+    static if (Params.length == 1) {
+        alias Params[0] KeyT;
+        extern(C)
+        PyObject* func(PyObject* self, PyObject* key) {
+            return exception_catcher(delegate PyObject*() {
+                return _py((cast(wrap_object*)self).d_obj.opIndex(d_type!KeyT(key)));
+            });
+        }
+    } else {
+        alias method_wrap!(T, fn, typeof(&fn)) opindex_methodT;
+        extern(C)
+        PyObject* func(PyObject* self, PyObject* key) {
+            Py_ssize_t args;
+            if (!PyTuple_CheckExact(key)) {
+                args = 1;
+            } else {
+                args = PySequence_Length(key);
+            }
+            if (Params.length != args) {
+                setWrongArgsError(args, Params.length, Params.length);
+                return null;
+            }
+            return opindex_methodT.func(self, key);
+        }
+    }
+}
+
 template opindexassign_mapping_pyfunc(T) {
     alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!(T.opIndexAssign) Info;
