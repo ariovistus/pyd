@@ -491,14 +491,14 @@ template inop_wrap(T, _lop, _rop) {
     }
 }
 
-template opcmp_wrap(T) {
+template opcmp_wrap(T, alias fn) {
     alias wrapped_class_object!(T) wrap_object;
-    alias ParameterTypeTuple!(T.opCmp) Info;
+    alias ParameterTypeTuple!(fn) Info;
     alias Info[0] OtherT;
     extern(C)
     int func(PyObject* self, PyObject* other) {
         return exception_catcher(delegate int() {
-            int result = (cast(wrap_object*)self).d_obj.opCmp(d_type!(OtherT)(other));
+            int result = (cast(wrap_object*)self).d_obj.opCmp(d_type!OtherT(other));
             // The Python API reference specifies that tp_compare must return
             // -1, 0, or 1. The D spec says opCmp may return any integer value,
             // and just compares it with zero.

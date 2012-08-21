@@ -30,10 +30,6 @@ class MyClass {
         return format("%s(%s)",s,_i);
     }
 
-    int __radd__(int j) {
-        return _i+j;
-    }
-
 }
 
 extern(C) void PydMain() {
@@ -42,10 +38,9 @@ extern(C) void PydMain() {
             MyClass,
             Def!(MyClass.z, string function(string)),
             Property!(MyClass.i),
-            Def!(MyClass.__radd__),
-            //BinaryOperator!("+", int),
-            //BinaryOperator!("-", int),
-            //BinaryOperator!("*", int),
+            OpBinary!("+", int),
+            OpBinary!("-", int),
+            OpBinary!("*", int),
             Init!(void function(int)),
             )();
 }

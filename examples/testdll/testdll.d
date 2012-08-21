@@ -148,7 +148,7 @@ mixin _wrap_class!(
     "Foo",
     Init!(void delegate(int), void delegate(int, int)),
     Property!(Foo.i, "A sample property of Foo."),
-    OpBinary!("+"),
+    //OpBinary!("+"),
     Def!(Foo.foo, "A sample method of Foo."),
     Def!(Foo.a),
     Def!(Foo.b),

@@ -52,6 +52,10 @@ class Bizzy {
         else static if(op == "~") return 44;
         else static assert(0);
     }
+
+    override int opCmp(Object p) {
+        return 10;
+    }
 }
 
 static this() {
@@ -72,6 +76,7 @@ static this() {
             OpAssign!("+"),
             OpAssign!("%"),
             OpAssign!("^^"),
+            OpCompare!(),
     )("","office");
     ErrInterceptor.wrap_class("office");
     ErrInterceptor.replaceStderr();
