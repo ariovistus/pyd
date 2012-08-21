@@ -23,14 +23,16 @@ module pyd.class_wrap;
 
 import python;
 
-import meta.replace: Replace;
+import std.algorithm: countUntil;
 import std.traits;
+import std.exception: enforce;
 import std.metastrings;
-import util.typelist: Filter;
 import std.typetuple;
 import std.string: format;
 import std.typecons: Tuple;
-import meta.multi_index;
+import util.typelist: Filter, Pred;
+import util.multi_index;
+import util.replace: Replace;
 import pyd.ctor_wrap;
 import pyd.def;
 import pyd.dg_convert;
@@ -233,6 +235,7 @@ template wrapped_repr(T, alias fn) {
 }
 
 private template ID(A){ alias A ID; }
+private struct CW(A...){ alias A C; }
 
 template IsProperty(alias T) {
     enum bool IsProperty = 
@@ -594,6 +597,304 @@ struct Init(C ...) {
     }
 }
 
+enum binaryslots = [
+    "+": "type.tp_as_number.nb_add", 
+    "+=": "type.tp_as_number.nb_inplace_add", 
+    "-": "type.tp_as_number.nb_subtract", 
+    "-=": "type.tp_as_number.nb_inplace_subtract", 
+    "*": "type.tp_as_number.nb_multiply",
+    "*=": "type.tp_as_number.nb_inplace_multiply",
+    "/": "type.tp_as_number.nb_divide",
+    "/=": "type.tp_as_number.nb_inplace_divide",
+    "%": "type.tp_as_number.nb_remainder",
+    "%=": "type.tp_as_number.nb_inplace_remainder",
+    "^^": "type.tp_as_number.nb_power",
+    "^^=": "type.tp_as_number.nb_inplace_power",
+    "<<": "type.tp_as_number.nb_lshift",
+    "<<=": "type.tp_as_number.nb_inplace_lshift",
+    ">>": "type.tp_as_number.nb_rshift",
+    ">>=": "type.tp_as_number.nb_inplace_rshift",
+    "&": "type.tp_as_number.nb_and",
+    "&=": "type.tp_as_number.nb_inplace_and",
+    "^": "type.tp_as_number.nb_xor",
+    "^=": "type.tp_as_number.nb_inplace_xor",
+    "|": "type.tp_as_number.nb_or",
+    "|=": "type.tp_as_number.nb_inplace_or",
+    "~": "type.tp_as_sequence.sq_concat",
+    "~=": "type.tp_as_sequence.sq_inplace_concat",
+    "in": "type.tp_as_sequence.sq_contains",
+];
+
+bool IsPyBinary(string op) {
+    foreach(_op, slot; binaryslots) {
+        if (op[$-1] != '=' && op == _op) return true;
+    }
+    return false;
+}
+bool IsPyAsg(string op0) {
+    auto op = op0~"=";
+    foreach(_op, slot; binaryslots) {
+        if (op == _op) return true;
+    }
+    return false;
+}
+
+enum unaryslots = [
+    "+": "type.tp_as_number.nb_positive",
+    "-": "type.tp_as_number.nb_negative",
+    "~": "type.tp_as_number.nb_invert",
+];
+
+bool IsPyUnary(string op) {
+    foreach(_op, slot; unaryslots) {
+        if(op == _op) return true;
+    }
+    return false;
+}
+
+// string mixin to initialize tp_as_number or tp_as_sequence or tp_as_mapping
+// if necessary. Scope mixed in must have these variables:
+//  slot: a value from binaryslots or unaryslots
+//  type: a PyObjectType.
+string autoInitializeMethods() {
+    return q{
+        static if(countUntil(slot, "tp_as_number") != -1) {
+            if(type.tp_as_number is null) 
+                type.tp_as_number = new PyNumberMethods;
+        }else static if(countUntil(slot, "tp_as_sequence") != -1) {
+            if(type.tp_as_sequence is null) 
+                type.tp_as_sequence = new PySequenceMethods;
+        }else static if(countUntil(slot, "tp_as_mapping") != -1) {
+            if(type.tp_as_mapping is null) 
+                type.tp_as_mapping = new PyMappingMethods;
+        }
+    };
+}
+
+private struct Guess{}
+
+struct BinaryOperatorX(string _op, bool isR, rhs_t) {
+    enum op = _op;
+    enum isRight = isR;
+
+    static if(isR) enum nom = "opBinaryRight";
+    else enum nom = "opBinary";
+
+    enum bool needs_shim = false;
+
+    template Inner(C) {
+        enum fn_str1 = "C."~nom~"!(op)";
+        enum fn_str2 = "C."~nom~"!(op,rhs_t)";
+        enum string OP = op;
+        static if(!__traits(hasMember, C, nom)) {
+            static assert(0, C.stringof ~ " has no "~(isR ?"reflected ":"")~
+                    "binary operator overloads");
+        }
+        static if(is(typeof(mixin("C.init."~nom~"!(op)")) == function)) {
+            alias ParameterTypeTuple!(typeof(mixin(fn_str1)))[0] RHS_T;
+            alias ReturnType!(typeof(mixin(fn_str1))) RET_T;
+            mixin("alias " ~ fn_str1 ~ " FN;");
+            static if(!is(rhs_t == Guess))
+                static assert(is(RHS_T == rhs_t), 
+                        Format!("expected typeof(rhs) = %s, found %s", 
+                            rhs.stringof, RHS_T.stringof));
+        }else static if(is(rhs_t == Guess)) {
+            static assert(false, "Cannot determine type of rhs");
+        } else static if(is(typeof(mixin(fn_str2)) == function)) {
+            alias rhs_t RHS_T;
+            alias ReturnType!(typeof(mixin(fn_str2))) RET_T;
+            mixin("alias "~fn_str2~" FN;");
+        } else static assert(false, "Cannot get operator overload");
+    }
+
+    static void call(T)() {
+        // can't handle __op__ __rop__ pairs here
+    }
+
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
+template OpBinary(string op, rhs_t = Guess) if(IsPyBinary(op)){
+    alias BinaryOperatorX!(op, false, rhs_t) OpBinary;
+}
+
+template OpBinaryRight(string op, lhs_t = Guess) if(IsPyBinary(op)) {
+    alias BinaryOperatorX!(op, true, lhs_t) OpBinaryRight;
+}
+
+struct OpUnary(string _op) if(IsPyUnary(_op)) {
+    enum op = _op;
+    enum bool needs_shim = false;
+
+    template Inner(C) {
+        enum string OP = op;
+        static if(!__traits(hasMember, C, "opUnary")) {
+            static assert(0, C.stringof ~ " has no unary operator overloads");
+        }
+        static if(is(typeof(C.init.opUnary!(op)) == function)) {
+            alias ReturnType!(C.opUnary!(op)) RET_T;
+            alias C.opUnary!(op) FN;
+        } else static assert(false, "Cannot get operator overload");
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = unaryslots[op];
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &opfunc_unary_wrap!(T, Inner!T .FN).func;");
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
+struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
+    enum op = _op~"=";
+
+    enum bool needs_shim = false;
+
+    template Inner(C) {
+        enum string OP = op;
+        static if(!__traits(hasMember, C, "opOpAssign")) {
+            static assert(0, C.stringof ~ " has no operator assignment overloads");
+        }
+        static if(is(typeof(C.init.opOpAssign!(_op)) == function)) {
+            alias ParameterTypeTuple!(typeof(C.opOpAssign!(_op)))[0] RHS_T;
+            alias ReturnType!(typeof(C.opOpAssign!(_op))) RET_T;
+            alias C.opOpAssign!(_op) FN;
+            static if(!is(rhs_t == Guess))
+                static assert(is(RHS_T == rhs_t), 
+                        Format!("expected typeof(rhs) = %s, found %s", 
+                            rhs.stringof, RHS_T.stringof));
+        }else static if(is(rhs_t == Guess)) {
+            static assert(false, "Cannot determine type of rhs");
+        } else static if(is(typeof(C.opOpAssign!(_op,rhs_t)) == function)) {
+            alias rhs_t RHS_T;
+            alias ReturnType!(typeof(C.opOpAssign!(_op,rhs_t))) RET_T;
+            alias C.opOpAssign!(_op,rhs_t) FN;
+        } else static assert(false, "Cannot get operator assignment overload");
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = binaryslots[op];
+        mixin(autoInitializeMethods());
+        alias CW!(TypeTuple!(OpAssign)) OpAsg;
+        alias CW!(TypeTuple!()) Nop;
+        static if(op == "^^=")
+            mixin(slot ~ " = &powop_wrap!(T, OpAsg, Nop).func;");
+        else
+            mixin(slot ~ " = &binop_wrap!(T, OpAsg, Nop).func;");
+    }
+
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
+template param1(C) { 
+    template param1(T) {alias ParameterTypeTuple!(T.Inner!C .FN)[0] param1; }
+}
+
+alias Pred!q{__traits(hasMember, A,"op")} IsOp;
+alias Pred!q{A.stringof.startsWith("OpUnary!")} IsUn;
+template IsBin(T...) {
+    static if(T[0].stringof.startsWith("BinaryOperatorX!")) 
+        enum bool IsBin = !T[0].isRight;
+    else
+        enum bool IsBin = false;
+}
+template IsBinR(T...) {
+    static if(T[0].stringof.startsWith("BinaryOperatorX!")) 
+        enum IsBinR = T[0].isRight;
+    else
+        enum IsBinR = false;
+}
+
+// handle all operator overloads. Ops must only contain operator overloads.
+struct Operators(Ops...) {
+    pragma(msg, "Operators:",Ops.stringof);
+    enum bool needs_shim = false;
+
+    template BinOp(string op, T) {
+        alias Pred!(Replace!(q{A.op == "OP"},"OP",op)) IsThisOp;
+        alias Filter!(IsThisOp, Ops) Ops0;
+        alias Filter!(IsBin, Ops0) OpsL;
+        alias staticMap!(param1!T, OpsL) OpsLparams;
+        static assert(OpsL.length <= 1, 
+                Replace!("Cannot overload $T1 $OP x with types $T2", 
+                    "$OP", op, "$T1", T.stringof, "$T2",  OpsLparams.stringof));
+        alias Filter!(IsBinR, Ops0) OpsR;
+        alias staticMap!(param1, OpsR) OpsRparams;
+        static assert(OpsR.length <= 1, 
+                Replace!("Cannot overload x $OP $T1 with types $T2", 
+                    "$OP", op, "$T1", T.stringof, "$T2",  OpsRparams.stringof));
+        static assert(op[$-1] != '=' || OpsR.length == 0, 
+                "Cannot reflect assignment operator");
+
+        static void call() {
+            static if(OpsL.length + OpsR.length != 0) {
+                alias wrapped_class_type!T type;
+                enum slot = binaryslots[op];
+                mixin(autoInitializeMethods());
+                static if(op == "in") {
+                    mixin(slot ~ " = &inop_wrap!(T, CW!OpsL, CW!OpsR).func;");
+                }else static if(op == "^^" || op == "^^=") {
+                    mixin(slot ~ " = &powop_wrap!(T, CW!OpsL, CW!OpsR).func;");
+                }else {
+                    mixin(slot ~ " = &binop_wrap!(T, CW!OpsL, CW!OpsR).func;");
+                }
+            }
+        }
+
+    }
+    struct UnOp(string op, T) {
+        alias Pred!(Replace!(q{A.op == "OP"},"OP",op)) IsThisOp;
+        alias Filter!(IsUn, Filter!(IsThisOp, Ops)) Ops1;
+        static assert(Ops1.length <= 1, 
+                Replace!("Cannot have overloads of $OP$T1", 
+                    "$OP", op, "$T1", T.stringof));
+        static void call() {
+            static if(Ops1.length != 0) {
+                alias wrapped_class_type!T type;
+                alias Ops1[0] Ops1_0;
+                alias Ops1_0.Inner!T .FN fn;
+                enum slot = unaryslots[op];
+                mixin(autoInitializeMethods());
+                mixin(slot ~ " = &opfunc_unary_wrap!(T, fn).func;");
+            }
+        }
+    }
+
+    static void call(T)() {
+        alias NoDuplicates!(staticMap!(Pred!"A.op", Ops)) str_op_tuple;
+        enum binops = binaryslots.keys();
+        foreach(_op; str_op_tuple) {
+            BinOp!(_op, T).call(); // noop if op is unary
+            UnOp!(_op, T).call(); // noop if op is binary
+        }
+    }
+}
+
+/*
+Params: each param is a Type which supports the interface
+
+Param.needs_shim == false => Param.call!(T)
+or 
+Param.needs_shim == true => Param.call!(T, Shim)
+
+    performs appropriate mutations to the PyTypeObject
+
+Param.shim!(i) for i : Params[i] == Param
+
+    generates a string to be mixed in to Shim type
+
+where T is the type being wrapped, Shim is the wrapped type
+
+*/
 void wrap_class(T, Params...) (string docstring="", string modulename="") {
     _wrap_class!(T, symbolnameof!(T), Params).wrap_class(docstring, modulename);
 }
@@ -609,123 +910,126 @@ template _wrap_class(_T, string name, Params...) {
         alias pyd.make_wrapper.make_wrapper!(_T, Params).wrapper shim_class;
         //alias W.wrapper shim_class;
         alias _T T;
-//    } else static if (is(_T == interface)) {
-//        pragma(msg, "wrap_interface: " ~ name);
-//        alias make_wrapper!(_T, Params).wrapper shim_class;
-//        alias _T T;
     } else {
         pragma(msg, "wrap_struct: '" ~ name ~ "'");
         alias void shim_class;
         alias _T* T;
     }
-void wrap_class(string docstring="", string modulename="") {
-    pragma(msg, "shim.mangleof: " ~ shim_class.mangleof);
-    alias wrapped_class_type!(T) type;
-    //writefln("entering wrap_class for %s", typeid(T));
-    //pragma(msg, "wrap_class, T is " ~ prettytypeof!(T));
+    void wrap_class(string docstring="", string modulename="") {
+        pragma(msg, "shim.mangleof: " ~ shim_class.mangleof);
+        alias wrapped_class_type!(T) type;
+        //writefln("entering wrap_class for %s", typeid(T));
+        //pragma(msg, "wrap_class, T is " ~ prettytypeof!(T));
 
-    //Params params;
-    //writefln("before params: tp_init is %s", type.tp_init);
-    foreach (param; Params) {
-        static if (param.needs_shim) {
-            //mixin param.call!(T) PCall;
-            param.call!(T, shim_class)();
-        } else {
-            param.call!(T)();
+        //Params params;
+        //writefln("before params: tp_init is %s", type.tp_init);
+        foreach (param; Params) {
+            static if (param.needs_shim) {
+                //mixin param.call!(T) PCall;
+                param.call!(T, shim_class)();
+            } else {
+                param.call!(T)();
+            }
         }
-    }
-    //writefln("after params: tp_init is %s", type.tp_init);
+        //writefln("after params: tp_init is %s", type.tp_init);
 
-    assert(Pyd_Module_p(modulename) !is null, "Must initialize module before wrapping classes.");
-    string module_name = toString(python.PyModule_GetName(Pyd_Module_p(modulename)));
+        assert(Pyd_Module_p(modulename) !is null, "Must initialize module before wrapping classes.");
+        string module_name = toString(python.PyModule_GetName(Pyd_Module_p(modulename)));
 
-    //////////////////
-    // Basic values //
-    //////////////////
-    type.ob_type      = python.PyType_Type_p();
-    type.tp_basicsize = (wrapped_class_object!(T)).sizeof;
-    type.tp_doc       = (docstring ~ "\0").ptr;
-    type.tp_flags     = python.Py_TPFLAGS_DEFAULT | python.Py_TPFLAGS_BASETYPE;
-    //type.tp_repr      = &wrapped_repr!(T).repr;
-    type.tp_methods   = wrapped_method_list!(T).ptr;
-    type.tp_name      = (module_name ~ "." ~ name ~ "\0").ptr;
+        //////////////////
+        // Basic values //
+        //////////////////
+        type.ob_type      = python.PyType_Type_p();
+        type.tp_basicsize = (wrapped_class_object!(T)).sizeof;
+        type.tp_doc       = (docstring ~ "\0").ptr;
+        type.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_CHECKTYPES;
+        //type.tp_repr      = &wrapped_repr!(T).repr;
+        type.tp_methods   = wrapped_method_list!(T).ptr;
+        type.tp_name      = (module_name ~ "." ~ name ~ "\0").ptr;
 
-    /////////////////
-    // Inheritance //
-    /////////////////
-    // Inherit classes from their wrapped superclass.
-    static if (is(T B == super)) {
-        foreach (C; B) {
-            static if (is(C == class) && !is(C == Object)) {
-                if (is_wrapped!(C)) {
-                    type.tp_base = &wrapped_class_type!(C);
+        /////////////////
+        // Inheritance //
+        /////////////////
+        // Inherit classes from their wrapped superclass.
+        static if (is(T B == super)) {
+            foreach (C; B) {
+                static if (is(C == class) && !is(C == Object)) {
+                    if (is_wrapped!(C)) {
+                        type.tp_base = &wrapped_class_type!(C);
+                    }
                 }
             }
         }
-    }
 
-    ////////////////////////
-    // Operator overloads //
-    ////////////////////////
-    // Numerical operator overloads
-    if (pyd.op_wrap.wrapped_class_as_number!(T) != python.PyNumberMethods.init) {
-        type.tp_as_number = &pyd.op_wrap.wrapped_class_as_number!(T);
-    }
-    // Sequence operator overloads
-    if (pyd.op_wrap.wrapped_class_as_sequence!(T) != python.PySequenceMethods.init) {
-        type.tp_as_sequence = &pyd.op_wrap.wrapped_class_as_sequence!(T);
-    }
-    // Mapping operator overloads
-    if (pyd.op_wrap.wrapped_class_as_mapping!(T) != python.PyMappingMethods.init) {
-        type.tp_as_mapping = &pyd.op_wrap.wrapped_class_as_mapping!(T);
-    }
+        ////////////////////////
+        // Operator overloads //
+        ////////////////////////
 
-    // Standard operator overloads
-    // opCmp
-    static if (is(typeof(&T.opCmp))) {
-        type.tp_compare = &pyd.op_wrap.opcmp_wrap!(T).func;
-    }
-    // opCall
-    static if (is(typeof(&T.opCall))) {
-        type.tp_call = cast(ternaryfunc)&method_wrap!(T, T.opCall, typeof(&T.opCall)).func;
-    }
+        Operators!(Filter!(IsOp, Params)).call!T();
 
-    //////////////////////////
-    // Constructor wrapping //
-    //////////////////////////
-    // If a ctor wasn't supplied, try the default.
-    // If the default ctor isn't available, and no ctors were supplied,
-    // then this class cannot be instantiated from Python.
-    // (Structs always use the default ctor.)
-    static if (is(typeof(new T))) {
-        if (type.tp_init is null) {
-            static if (is(T == class)) {
-                type.tp_init = &wrapped_init!(shim_class).init;
-            } else {
-                type.tp_init = &wrapped_struct_init!(T).init;
+        // its just that simple.
+        version(none) {
+            //old operator overloading. bye bye!
+            // Numerical operator overloads
+            if (pyd.op_wrap.wrapped_class_as_number!(T) != python.PyNumberMethods.init) {
+                type.tp_as_number = &pyd.op_wrap.wrapped_class_as_number!(T);
+            }
+            // Sequence operator overloads
+            if (pyd.op_wrap.wrapped_class_as_sequence!(T) != python.PySequenceMethods.init) {
+                type.tp_as_sequence = &pyd.op_wrap.wrapped_class_as_sequence!(T);
+            }
+            // Mapping operator overloads
+            if (pyd.op_wrap.wrapped_class_as_mapping!(T) != python.PyMappingMethods.init) {
+                type.tp_as_mapping = &pyd.op_wrap.wrapped_class_as_mapping!(T);
+            }
+
+            // Standard operator overloads
+            // opCmp
+            static if (is(typeof(&T.opCmp))) {
+                type.tp_compare = &pyd.op_wrap.opcmp_wrap!(T).func;
+            }
+            // opCall
+            static if (is(typeof(&T.opCall))) {
+                type.tp_call = cast(ternaryfunc)&method_wrap!(T, T.opCall, typeof(&T.opCall)).func;
             }
         }
-    }
-    //writefln("after default check: tp_init is %s", type.tp_init);
 
-    //////////////////
-    // Finalization //
-    //////////////////
-    if (PyType_Ready(&type) < 0) {
-        throw new Exception("Couldn't ready wrapped type!");
-    }
-    //writefln("after Ready: tp_init is %s", type.tp_init);
-    python.Py_INCREF(cast(PyObject*)&type);
-    python.PyModule_AddObject(Pyd_Module_p(modulename), (name~"\0").ptr, cast(PyObject*)&type);
+        //////////////////////////
+        // Constructor wrapping //
+        //////////////////////////
+        // If a ctor wasn't supplied, try the default.
+        // If the default ctor isn't available, and no ctors were supplied,
+        // then this class cannot be instantiated from Python.
+        // (Structs always use the default ctor.)
+        static if (is(typeof(new T))) {
+            if (type.tp_init is null) {
+                static if (is(T == class)) {
+                    type.tp_init = &wrapped_init!(shim_class).init;
+                } else {
+                    type.tp_init = &wrapped_struct_init!(T).init;
+                }
+            }
+        }
+        //writefln("after default check: tp_init is %s", type.tp_init);
 
-    is_wrapped!(T) = true;
-    static if (is(T == class)) {
-        is_wrapped!(shim_class) = true;
-        wrapped_classes[T.classinfo] = &type;
-        wrapped_classes[shim_class.classinfo] = &type;
+        //////////////////
+        // Finalization //
+        //////////////////
+        if (PyType_Ready(&type) < 0) {
+            throw new Exception("Couldn't ready wrapped type!");
+        }
+        //writefln("after Ready: tp_init is %s", type.tp_init);
+        python.Py_INCREF(cast(PyObject*)&type);
+        python.PyModule_AddObject(Pyd_Module_p(modulename), (name~"\0").ptr, cast(PyObject*)&type);
+
+        is_wrapped!(T) = true;
+        static if (is(T == class)) {
+            is_wrapped!(shim_class) = true;
+            wrapped_classes[T.classinfo] = &type;
+            wrapped_classes[shim_class.classinfo] = &type;
+        }
+        //writefln("leaving wrap_class for %s", typeid(T));
     }
-    //writefln("leaving wrap_class for %s", typeid(T));
-}
 }
 ////////////////
 // DOCSTRINGS //

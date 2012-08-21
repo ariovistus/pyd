@@ -44,13 +44,13 @@ _pydFiles = [
 
 _metaFiles = [
     'Demangle.d',
-    'multi_index.d',
-    'replace.d',
     'Nameof.d',
 ]
 
 _utilFiles = [
     'typelist.d',
+    'multi_index.d',
+    'replace.d',
 ]
 
 _pyVerXDotY = '.'.join(str(v) for v in sys.version_info[:2]) # e.g., '2.4'

@@ -1,4 +1,4 @@
-module meta.replace;
+module util.replace;
 import std.algorithm;
 import std.metastrings;
 

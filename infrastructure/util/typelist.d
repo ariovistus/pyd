@@ -1,5 +1,7 @@
 module util.typelist;
 
+
+import std.algorithm;
 import std.typetuple;
 
 // from std.typecons:
@@ -19,4 +21,14 @@ template Filter(alias pred, lst...)
     }
     else
         alias TypeTuple!() Filter;
+}
+
+
+// I rather like the whole algorithm("isThing(a)") shtick.
+// useful for templates too?
+template Pred(string pred) {
+    template Pred(Stuff...) {
+        alias Stuff[0] A;
+        enum Pred = mixin(pred);
+    }
 }

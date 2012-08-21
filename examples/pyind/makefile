@@ -1,9 +1,8 @@
 PYTHON_HEADER = ../../infrastructure/python/python.d
 PYD_DIR = ../../infrastructure/
-PYD_FILES = $(shell find ../../infrastructure/pyd/ -name \*.d ! -name iteration.d) \
-$(shell find ../../infrastructure/meta/ -name \*.d) 
-#../../infrastructure/st/stackcontext.d
-#$(shell find ../../infrastructure/st/ -name \*.d)
+PYD_FILES = $(shell find ../../infrastructure/pyd/ -name \*.d) \
+$(shell find ../../infrastructure/meta/ -name \*.d) \
+$(shell find ../../infrastructure/util/ -name \*.d) 
 PYTHON_2_7 = -version=Python_2_7_Or_Later \
              -version=Python_2_6_Or_Later \
 	     -version=Python_2_5_Or_Later \

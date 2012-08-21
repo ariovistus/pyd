@@ -103,6 +103,56 @@ void python_to_d(dg_t) (dg_t dg) {
     }
 }
 
+template IsComplex(DT) {
+    enum IsComplex = is(DT == Complex!float) || 
+                     is(DT == Complex!double) || 
+                     is(DT == Complex!real);
+}
+
+enum Python_Types {
+    int_,
+    long_,
+    bool_,
+    float_,
+    complex,
+    str,
+    unicode,
+    tuple,
+    list,
+    dict,
+    class_,
+    function_,
+    unknown
+}
+
+template DType_to_PyType(DT) {
+    static if(isBoolean!DT) 
+        enum Python_Types DType_to_PyType = Python_Types.bool_;
+    else static if(isIntegral!DT)
+        enum DType_to_PyType = Python_Types.long_;
+    else static if(isFloatingPoint!DT)
+        enum DType_to_PyType = Python_Types.float_;
+    else static if(IsComplex!DT)
+        enum DType_to_PyType = Python_Types.complex;
+    else static if(isTuple!DT)
+        enum DType_to_PyType = Python_Types.tuple;
+    else static if(is(DT == string) || is(DT == char[]))
+        enum DType_to_PyType = Python_Types.str;
+    else static if(is(DT == wstring) || is(DT == wchar[]))
+        enum DType_to_PyType = Python_Types.unicode;
+    else static if(isArray!DT)
+        enum DType_to_PyType = Python_Types.list;
+    else static if(isAssociativeArray!DT)
+        enum DType_to_PyType = Python_Types.dict;
+    else static if(is(DT == function))
+        enum DType_to_PyType = Python_Types.function_;
+    else static if(is(DT == class))
+        enum DType_to_PyType = Python_Types.class_;
+    else
+        enum DType_to_PyType = Python_Types.unknown;
+
+}
+
 /**
  * Returns a new (owned) reference to a Python object based on the passed
  * argument. If the passed argument is a PyObject*, this "steals" the
@@ -142,9 +192,7 @@ PyObject* _py(T) (T t) {
             tuple[i] = t[i];
         }
         return PyTuple_FromItems(tuple);
-    } else static if (  is(T == Complex!float) || 
-                        is(T == Complex!double) || 
-                        is(T == Complex!real)) {
+    } else static if (IsComplex!T) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if (is(T : string)) {
         return PyString_FromString((t ~ "\0").ptr);
@@ -308,9 +356,7 @@ T d_type(T) (PyObject* o) {
             Py_DECREF(obj);
         }
         return T(tuple);
-    } else static if (  is(T == Complex!float) || 
-                        is(T == Complex!double) || 
-                        is(T == Complex!real)) {
+    } else static if (  IsComplex!T ) {
         double real_ = PyComplex_RealAsDouble(o);
         handle_exception();
         double imag = PyComplex_ImagAsDouble(o);

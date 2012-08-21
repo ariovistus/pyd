@@ -46,6 +46,8 @@ print "Testing property wrapping:"
 print a.i
 a.i = 50
 print a.i
+print "Testing operator overloading"
+print a+a
 
 print "Testing opApply wrapping:"
 try:

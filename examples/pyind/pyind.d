@@ -29,6 +29,31 @@ class Y {
     }
 }
 
+class Bizzy {
+    int opBinary(string op)(int i) {
+        static if(op == "+") return i+1;
+        else static if(op == "*") return i+2;
+        else static if(op == "^^") return i+3;
+        else static assert(0);
+    }
+    bool opBinaryRight(string op)(int i) if(op == "in") {
+        return i > 10;
+    }
+
+    int opOpAssign(string op)(int i) {
+        static if(op == "+") return i+5;
+        else static if(op == "%") return i+6;
+        else static if(op == "^^") return i+7;
+        else static assert(0);
+    }
+
+    int opUnary(string op)() {
+        static if(op == "+") return 55;
+        else static if(op == "~") return 44;
+        else static assert(0);
+    }
+}
+
 static this() {
     def!("office", knock)("a brain specialist works here"); 
     add_module("office");
@@ -36,6 +61,17 @@ static this() {
         Def!(Y.query),
         Property!(Y.brain_status),
         Property!(Y.resolution, true),
+    )("","office");
+    wrap_class!(Bizzy,
+            OpBinary!("+"),
+            OpBinary!("*"),
+            OpBinary!("^^"),
+            OpBinaryRight!("in"),
+            OpUnary!("+"),
+            OpUnary!("~"),
+            OpAssign!("+"),
+            OpAssign!("%"),
+            OpAssign!("^^"),
     )("","office");
     ErrInterceptor.wrap_class("office");
     ErrInterceptor.replaceStderr();
@@ -93,6 +129,7 @@ unittest {
     assert(d_type!(Tuple!(int,double))(_py(tuple(2,3.0))) == tuple(2,3.0));
     assert(d_type!(Tuple!(int, "a",double, "b"))(_py(Tuple!(int, "a", double, "b")(2,3.0))) == Tuple!(int,"a",double,"b")(2,3.0));
 }
+
 unittest {
     alias PyDef!(q"<def func1(a): 
             return a*2+1>","office", int, int) func1;

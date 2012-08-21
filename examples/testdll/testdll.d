@@ -45,7 +45,11 @@ class Foo {
         writeln(x, " ", y);
         return x+y;
     }
-    Foo opAdd(Foo f) { return new Foo(m_i + f.m_i); }
+    Foo opBinary(string op)(Foo f) if(op == "+")
+    { 
+        return new Foo(m_i + f.m_i); 
+    }
+
     int opApply(int delegate(ref int, ref int) dg) {
         int result = 0;
         int j;
@@ -144,6 +148,7 @@ mixin _wrap_class!(
     "Foo",
     Init!(void delegate(int), void delegate(int, int)),
     Property!(Foo.i, "A sample property of Foo."),
+    OpBinary!("+"),
     Def!(Foo.foo, "A sample method of Foo."),
     Def!(Foo.a),
     Def!(Foo.b),

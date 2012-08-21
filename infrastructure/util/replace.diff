@@ -1,4 +1,4 @@
 1c1
 < module replace;
 ---
-> module meta.replace;
+> module util.replace;

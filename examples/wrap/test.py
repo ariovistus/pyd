@@ -8,13 +8,11 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
     '.'.join(str(v) for v in sys.version_info[:2])
 ))
 sys.path.append(os.path.abspath(libDir))
-from arraytest import Foo, get, set, test
+import wrap
 
-#set([Foo(1), Foo(2), Foo(3)])
-print ">>> get()"
-print `get()`
-print ">>> set([Foo(10), Foo(20)])"
-set(a=[Foo(10), Foo(20)])
-print ">>> get()"
-print `get()`
-
+a = wrap.MyClass(2)
+print a.z("foo")
+print a
+print type(a)
+print dir(a)
+print a+3

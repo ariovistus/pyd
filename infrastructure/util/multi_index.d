@@ -772,7 +772,7 @@ Two allocators are predefined in multi_index: $(B GCAllocator) (default), and $(
 
 
  */
-module meta.multi_index;
+module util.multi_index;
 
 /**
  * TODO:
@@ -799,7 +799,7 @@ import std.exception: enforce;
 import std.algorithm: find, swap, copy, fill, max, startsWith, moveAll;
 import std.traits: isImplicitlyConvertible, isDynamicArray;
 import std.metastrings: Format, toStringNow;
-import meta.replace: Replace;
+import util.replace: Replace;
 import std.typetuple: TypeTuple, staticMap, NoDuplicates, staticIndexOf;
 import std.functional: unaryFun, binaryFun;
 import std.string: format;

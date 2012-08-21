@@ -23,6 +23,7 @@ module pyd.op_wrap;
 
 import python;
 
+import std.algorithm: startsWith, endsWith;
 import pyd.class_wrap;
 import pyd.dg_convert;
 import pyd.func_wrap;
@@ -52,6 +53,162 @@ version(Python_2_5_Or_Later) {
     alias ssizessizeargfunc idxidxargfunc;
     alias ssizeobjargproc idxobjargproc;
     alias ssizessizeobjargproc idxidxobjargproc;
+}
+
+// both __op__ and __rop__ are present.
+// use new style operator overloading (ie check which arg is actually self).
+template op_select(T, opl, opr) {
+    alias wrapped_class_type!T wtype;
+    alias opl.Inner!T .FN oplfn;
+    alias opr.Inner!T .FN oprfn;
+    extern(C)
+    PyObject* func(PyObject* o1, PyObject* o2) {
+        return exception_catcher(delegate PyObject*() {
+                enforce(is_wrapped!(T));
+                if (PyObject_IsInstance(o1, cast(PyObject*)&wtype)) {
+                    return opfunc_binary_wrap!(T, oplfn).func(o1, o2);
+                }else if(PyObject_IsInstance(o2, cast(PyObject*)&wtype)) {
+                    return opfunc_binary_wrap!(T, oprfn).func(o2, o1);
+                }else{
+                    enforce(false, format(
+                        "unsupported operand type(s) for %s: '%s' and '%s'",
+                        opl.op, o1.ob_type.tp_name, o2.ob_type.tp_name,
+                    ));
+                }
+        });
+    }
+}
+
+// wrap a binary operator overload, handling __op__, __rop__, or 
+// __op__ and __rop__ as necessary.
+// use new style operator overloading (ie check which arg is actually self).
+// _lop.C is a tuple w length 0 or 1 containing a BinaryOperatorX instance.
+// same for _rop.C.
+template binop_wrap(T, _lop, _rop) {
+    alias _lop.C lop;
+    alias _rop.C rop;
+    alias wrapped_class_type!T wtype;
+    alias wrapped_class_object!(T) wrap_object;
+    static if(lop.length) {
+        alias lop[0] lop0;
+        alias lop0.Inner!T.FN lfn;
+        alias dg_wrapper!(T, typeof(&lfn)) get_dgl;
+        alias ParameterTypeTuple!(lfn)[0] LOtherT;
+        alias ReturnType!(lfn)[0] LRet;
+    }
+    static if(rop.length) {
+        alias rop[0] rop0;
+        alias rop0.Inner!T.FN rfn;
+        alias dg_wrapper!(T, typeof(&rfn)) get_dgr;
+        alias ParameterTypeTuple!(rfn)[0] ROtherT;
+        alias ReturnType!(rfn)[0] RRet;
+    }
+    enum mode = (lop.length?"l":"")~(rop.length?"r":"");
+    extern(C)
+    PyObject* func(PyObject* o1, PyObject* o2) {
+        return exception_catcher(delegate PyObject*() {
+                enforce(is_wrapped!(T));
+
+                static if(mode == "lr") {
+                    if (PyObject_IsInstance(o1, cast(PyObject*)&wtype)) {
+                        goto op;
+                    }else if(PyObject_IsInstance(o2, cast(PyObject*)&wtype)) {
+                        goto rop;
+                    }else{
+                        enforce(false, format(
+                            "unsupported operand type(s) for %s: '%s' and '%s'",
+                            opl.op, o1.ob_type.tp_name, o2.ob_type.tp_name,
+                        ));
+                    }
+                }
+                static if(mode.startsWith("l")) {
+op:
+                    auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    static if (is(LRet == void)) {
+                        dgl(d_type!LOtherT(o2));
+                        Py_INCREF(Py_None);
+                        return Py_None;
+                    } else {
+                        return _py(dgl(d_type!LOtherT(o2)));
+                    }
+                }
+                static if(mode.endsWith("r")) {
+rop:
+                    auto dgr = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    static if (is(RRet == void)) {
+                        dgr(d_type!ROtherT(o));
+                        Py_INCREF(Py_None);
+                        return Py_None;
+                    } else {
+                        return _py(dgr(d_type!LOtherT(o)));
+                    }
+                }
+        });
+    }
+}
+
+// pow is special. its stupid slot is a ternary function.
+template powop_wrap(T, _lop, _rop) {
+    alias _lop.C lop;
+    alias _rop.C rop;
+    alias wrapped_class_type!T wtype;
+    alias wrapped_class_object!(T) wrap_object;
+    static if(lop.length) {
+        alias lop[0] lop0;
+        alias lop0.Inner!T.FN lfn;
+        alias dg_wrapper!(T, typeof(&lfn)) get_dgl;
+        alias ParameterTypeTuple!(lfn)[0] LOtherT;
+        alias ReturnType!(lfn)[0] LRet;
+    }
+    static if(rop.length) {
+        alias rop[0] rop0;
+        alias rop0.Inner!T.FN rfn;
+        alias dg_wrapper!(T, typeof(&rfn)) get_dgr;
+        alias ParameterTypeTuple!(rfn)[0] ROtherT;
+        alias ReturnType!(rfn)[0] RRet;
+    }
+    enum mode = (lop.length?"l":"")~(rop.length?"r":"");
+    extern(C)
+    PyObject* func(PyObject* o1, PyObject* o2, PyObject* o3) {
+        return exception_catcher(delegate PyObject*() {
+                enforce(is_wrapped!(T));
+
+                static if(mode == "lr") {
+                    if (PyObject_IsInstance(o1, cast(PyObject*)&wtype)) {
+                        goto op;
+                    }else if(PyObject_IsInstance(o2, cast(PyObject*)&wtype)) {
+                        goto rop;
+                    }else{
+                        enforce(false, format(
+                            "unsupported operand type(s) for %s: '%s' and '%s'",
+                            opl.op, o1.ob_type.tp_name, o2.ob_type.tp_name,
+                        ));
+                    }
+                }
+                static if(mode.startsWith("l")) {
+op:
+                    auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    static if (is(LRet == void)) {
+                        dgl(d_type!LOtherT(o2));
+                        Py_INCREF(Py_None);
+                        return Py_None;
+                    } else {
+                        return _py(dgl(d_type!LOtherT(o2)));
+                    }
+                }
+                static if(mode.endsWith("r")) {
+rop:
+                    auto dgr = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    static if (is(RRet == void)) {
+                        dgr(d_type!ROtherT(o));
+                        Py_INCREF(Py_None);
+                        return Py_None;
+                    } else {
+                        return _py(dgr(d_type!LOtherT(o)));
+                    }
+                }
+        });
+    }
 }
 
 template wrapped_class_as_number(T) {
@@ -124,8 +281,11 @@ template wrapped_class_as_mapping(T) {
 // Implementation //
 //----------------//
 template opfunc_binary_wrap(T, alias opfn) {
+    pragma(msg, "opfn: ");
+    pragma(msg, __traits(identifier,opfn));
     alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!(opfn) Info;
+    pragma(msg, "info: ",Info);
     alias ReturnType!(opfn) Ret;
     alias dg_wrapper!(T, typeof(&opfn)) get_dg;
     extern(C)
@@ -285,18 +445,48 @@ template opsliceassign_pyfunc(T) {
     }
 }
 
-template opin_wrap(T) {
+template inop_wrap(T, _lop, _rop) {
+    alias _lop.C lop;
+    alias _rop.C rop;
     alias wrapped_class_object!(T) wrap_object;
-    alias ParameterTypeTuple!(T.opIn_r) Info;
-    alias Info[0] OtherT;
+    static if(lop.length) {
+        alias lop[0] lop0;
+        alias lop0.Inner!T.FN lfn;
+        alias dg_wrapper!(T, typeof(&lfn)) get_dgl;
+        alias ParameterTypeTuple!(lfn)[0] LOtherT;
+    }
+    static if(rop.length) {
+        alias rop[0] rop0;
+        alias rop0.Inner!T.FN rfn;
+        alias dg_wrapper!(T, typeof(&rfn)) get_dgr;
+        alias ParameterTypeTuple!(rfn)[0] ROtherT;
+    }
+    enum mode = (lop.length?"l":"")~(rop.length?"r":"");
     
     extern(C)
-    int func(PyObject* self, PyObject* val) {
+    int func(PyObject* o1, PyObject* o2) {
         return exception_catcher(delegate int() {
-            if ((cast(wrap_object*)self).d_obj.opIn_r(d_type!(OtherT)(val)))
-                return 1;
-            else
-                return 0;
+            static if(mode == "l") {
+                auto dg = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                return dg(d_type!LOtherT(o2));
+            }else static if(mode == "r") {
+                auto dg = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
+                return dg(d_type!ROtherT(o1));
+            }else{
+                alias wrapped_class_type!T wtype;
+                if (PyObject_IsInstance(o1, cast(PyObject*)&wtype)) {
+                    auto dg = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    return dg(d_type!LOtherT(o2));
+                }else if(PyObject_IsInstance(o2, cast(PyObject*)&wtype)) {
+                    auto dg = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
+                    return dg(d_type!ROtherT(o1));
+                }else{
+                    enforce(false, format(
+                        "unsupported operand type(s) for in: '%s' and '%s'",
+                        o1.ob_type.tp_name, o2.ob_type.tp_name,
+                    ));
+                }
+            }
         });
     }
 }
