@@ -455,11 +455,13 @@ template opindexassign_mapping_pyfunc(T) {
 
 template opslice_pyfunc(T) {
     alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&lfn)) get_dg;
 
     extern(C)
     PyObject* func(PyObject* self, index_t i1, index_t i2) {
         return exception_catcher(delegate PyObject*() {
-            return _py((cast(wrap_object*)self).d_obj.opSlice(i1, i2));
+            auto dg = get_dgl((cast(wrap_object*)self).d_obj, &fn);
+            return _py(dg(i1, i2));
         });
     }
 }
@@ -626,6 +628,18 @@ template opSlice_wrap(T) {
         enum idxidxargfunc opSlice_wrap = &opslice_pyfunc!(T).func;
     } else {
         enum idxidxargfunc opSlice_wrap = null;
+    }
+}
+
+template opslice_wrap(T,alias fn) {
+    alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+    extern(C)
+    PyObject* func(PyObject* self, index_t i1, index_t i2) {
+        return exception_catcher(delegate PyObject*() {
+            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            return _py(dg(i1, i2));
+        });
     }
 }
 

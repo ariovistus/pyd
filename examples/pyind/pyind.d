@@ -60,6 +60,10 @@ class Bizzy {
     double opIndex(int i) {
         return i*4.4;
     }
+
+    double[] opSlice(Py_ssize_t a, Py_ssize_t b) {
+        return [1,2,3];
+    }
 }
 
 static this() {
@@ -82,6 +86,7 @@ static this() {
             OpAssign!("^^"),
             OpIndex!(),
             OpCompare!(),
+            OpSlice!(),
     )("","office");
     ErrInterceptor.wrap_class("office");
     ErrInterceptor.replaceStderr();

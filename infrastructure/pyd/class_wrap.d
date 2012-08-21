@@ -853,7 +853,9 @@ struct OpIndex(index_t...) {
         static if(is(typeof(C.init.opIndex) == function)) {
             alias TypeTuple!(__traits(getOverloads, C, "opIndex")) Overloads;
             static if(index_t.length == 0 && Overloads.length > 1) {
-                static assert(0, Format!("Cannot choose between %s",Overloads));
+                static assert(0, 
+                        Format!("%s.opIndex: Cannot choose between %s",
+                            C.stringof,Overloads.stringof));
             }else static if(index_t.length == 0) {
                 alias Overloads[0] FN;
             }else{
@@ -862,13 +864,15 @@ struct OpIndex(index_t...) {
                 }
                 alias Filter!(IsDesiredOverload, Overloads) Overloads1;
                 static assert(Overloads1.length == 1, 
-                        Format!("Cannot choose between %s",Overloads1));
+                        Format!("%s.opIndex: Cannot choose between %s",
+                            C.stringof,Overloads1.stringof));
                 alias Overloads1[0] FN;
             }
         }else static if(is(typeof(C.init.opIndex!(index_t)) == function)) {
             alias C.opIndex!(index_t) FN;
         }else{
-            static assert(0, Format!("cannot get a handle on %s.opIndex",C));
+            static assert(0, 
+                    Format!("cannot get a handle on %s.opIndex", C.stringof));
         }
     }
     static void call(T)() {
@@ -882,6 +886,44 @@ struct OpIndex(index_t...) {
         enum shim = "";
     }
 }
+
+struct OpSlice() {
+    enum bool needs_shim = false;
+    template Inner(C) {
+        static if(!__traits(hasMember, C, "opSlice")) {
+            static assert(0, C.stringof ~ " has no slice operator overloads");
+        }
+        static if(is(typeof(C.init.opSlice) == function)) {
+            alias TypeTuple!(__traits(getOverloads, C, "opSlice")) Overloads;
+            template IsDesiredOverload(alias fn) {
+                enum bool IsDesiredOverload = is(ParameterTypeTuple!fn == 
+                        TypeTuple!(Py_ssize_t,Py_ssize_t));
+            }
+            alias Filter!(IsDesiredOverload, Overloads) Overloads1;
+            static assert(Overloads1.length != 0, 
+                    Format!("%s.opSlice: must have overload %s",
+                        C.stringof,TypeTuple!(Py_ssize_t,Py_ssize_t).stringof));
+            static assert(Overloads1.length == 1, 
+                    Format!("%s.opSlice: cannot choose between %s",
+                        C.stringof,Overloads1.stringof));
+            alias Overloads1[0] FN;
+        }else{
+            static assert(0, Format!("cannot get a handle on %s.opSlice",
+                        C.stringof));
+        }
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = "type.tp_as_sequence.sq_slice";
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &opslice_wrap!(T, Inner!T.FN).func;");
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
 
 template param1(C) { 
     template param1(T) {alias ParameterTypeTuple!(T.Inner!C .FN)[0] param1; }
