@@ -552,49 +552,44 @@ struct Repr(alias fn) {
 /**
 Wraps the constructors of the class.
 
-This template takes a series of specializations of the ctor template
-(see ctor_wrap.d), each of which describes a different constructor
-that the class supports. The default constructor need not be
+This template takes a single specialization of the ctor template
+(see ctor_wrap.d), which describes a constructor that the class 
+supports. The default constructor need not be
 specified, and will always be available if the class supports it.
 
 Bugs:
 This currently does not support having multiple constructors with
 the same number of arguments.
 */
-struct Init(C ...) {
-    alias C ctors;
+struct Init(cps ...) {
+    alias cps CtorParams;
     enum bool needs_shim = true;
-    template call(T, shim) {
-        //mixin wrapped_ctors!(param.ctors) Ctors;
-        static void call() {
-            wrapped_class_type!(T).tp_init =
-                //&Ctors.init_func;
-                &wrapped_ctors!(shim, C).init_func;
+    template Inner(T) {
+        alias TypeTuple!(__traits(getOverloads, T, "__ctor")) Overloads;
+        template IsDesired(alias ctor) {
+            alias ParameterTypeTuple!ctor ps;
+            enum bool IsDesired = is(ps == CtorParams);
         }
+        alias Filter!(IsDesird, Overloads) VOverloads;
+        static assert(VOverloads.length != 0, 
+                Format!("%s: Cannot find constructor with params %s", 
+                    T.stringof, CtorParams.stringof));
+        alias VOverloads[0] FN;
     }
-    template shim_impl(uint i, uint c=0) {
-        static if (c < ctors.length) {
-            enum shim_impl = Replace!(q{
-                this(ParameterTypeTuple!(__pyd_c$i[$c]) t) {
-                    super(t);
-                }
-                $shim_impl;
-            }, "$i",i,"$c",c,"$shim_impl",shim_impl!(i,c+1));
-        } else {
-            enum shim_impl = q{
-                static if (is(typeof(new T))) {
-                    this() { super(); }
-                }
-            };
-        }
+    static void call(T)() {
     }
     template shim(uint i) {
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
-            alias __pyd_p$i.ctors __pyd_c$i;
-            $shim_impl;
-        }, "$i", i, "$shim_impl", shim_impl!(i));
+            this(ParameterTypeTuple!(__pyd_p$i.CtorParams t) {
+                super(t);
+            }
+        }, "$i", i);
     }
+}
+
+template IsInit(T) {
+    enum bool IsInit = __traits(hasMember, T, "CtorParams");
 }
 
 enum binaryslots = [
@@ -1190,6 +1185,29 @@ struct Operators(Ops...) {
     }
 }
 
+struct Constructors(Ctors...) {
+    enum bool needs_shim = true;
+
+    static void call(T, Shim)() {
+        alias wrapped_class_type!T type;
+        static if(Ctors.length) {
+            type.tp_init = &wrapped_ctors!(Shim, Ctors).func;
+        }else {
+            // If a ctor wasn't supplied, try the default.
+            // If the default ctor isn't available, and no ctors were supplied,
+            // then this class cannot be instantiated from Python.
+            // (Structs always use the default ctor.)
+            static if (is(typeof(new T))) {
+                static if (is(T == class)) {
+                    type.tp_init = &wrapped_init!(Shim).init;
+                } else {
+                    type.tp_init = &wrapped_struct_init!(T).init;
+                }
+            }
+        }
+    }
+}
+
 /*
 Params: each param is a Type which supports the interface
 
@@ -1281,20 +1299,7 @@ template _wrap_class(_T, string name, Params...) {
         //////////////////////////
         // Constructor wrapping //
         //////////////////////////
-        // If a ctor wasn't supplied, try the default.
-        // If the default ctor isn't available, and no ctors were supplied,
-        // then this class cannot be instantiated from Python.
-        // (Structs always use the default ctor.)
-        static if (is(typeof(new T))) {
-            if (type.tp_init is null) {
-                static if (is(T == class)) {
-                    type.tp_init = &wrapped_init!(shim_class).init;
-                } else {
-                    type.tp_init = &wrapped_struct_init!(T).init;
-                }
-            }
-        }
-        //writefln("after default check: tp_init is %s", type.tp_init);
+        Constructors!(Filter!(IsInit, Params)).call!(T, shim_class)();
 
         //////////////////
         // Finalization //
@@ -1302,7 +1307,6 @@ template _wrap_class(_T, string name, Params...) {
         if (PyType_Ready(&type) < 0) {
             throw new Exception("Couldn't ready wrapped type!");
         }
-        //writefln("after Ready: tp_init is %s", type.tp_init);
         python.Py_INCREF(cast(PyObject*)&type);
         python.PyModule_AddObject(Pyd_Module_p(modulename), (name~"\0").ptr, cast(PyObject*)&type);
 
@@ -1312,7 +1316,6 @@ template _wrap_class(_T, string name, Params...) {
             wrapped_classes[T.classinfo] = &type;
             wrapped_classes[shim_class.classinfo] = &type;
         }
-        //writefln("leaving wrap_class for %s", typeid(T));
     }
 }
 ////////////////

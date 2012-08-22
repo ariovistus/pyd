@@ -72,7 +72,7 @@ template wrapped_ctors(T, C ...) {
     alias wrapped_class_object!(T) wrap_object;
 
     extern(C)
-    static int init_func(PyObject* self, PyObject* args, PyObject* kwds) {
+    static int func(PyObject* self, PyObject* args, PyObject* kwargs) {
         Py_ssize_t len = PyObject_Length(args);
 
         return exception_catcher({
@@ -86,17 +86,14 @@ template wrapped_ctors(T, C ...) {
             }
             // find another Ctor
             C c;
-            foreach(i, arg; c) {
-                alias ParameterTypeTuple!(typeof(arg)) Ctor;
-                //writefln("  init_func: i=%s, Ctor.length=%s, Ctor=%s", i, Ctor.length, typeid(typeof(arg)));
-                if (Ctor.length == len) {
-                    auto fn = &call_ctor!(T, ParameterTypeTuple!(typeof(arg)));
+            foreach(i, init; c) {
+                if (init.CtorParams.length == len) {
+                    auto fn = &call_ctor!(T, init.CtorParams);
                     if (fn is null) {
                         PyErr_SetString(PyExc_RuntimeError, "Couldn't get pointer to class ctor redirect.");
                         return -1;
                     }
                     alias typeof(fn) dg_t;
-                    //mixin applyPyTupleToDelegate!(dg_t) A;
                     T t = applyPyTupleToDelegate(fn, args);
                     if (t is null) {
                         PyErr_SetString(PyExc_RuntimeError, "Class ctor redirect didn't return a class instance!");
