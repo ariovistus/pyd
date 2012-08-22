@@ -85,6 +85,10 @@ class Bizzy {
     Py_ssize_t pylen(){
         return 401;
     }
+
+    int opCall(double d) {
+        return _m + cast(int)(1000 *d);
+    }
 }
 
 static this() {
@@ -112,6 +116,7 @@ static this() {
             OpCompare!(),
             OpSlice!(),
             OpSliceAssign!(),
+            OpCall!(double),
             Len!(Bizzy.pylen),
     )("","office");
 }
@@ -193,6 +198,7 @@ bizzy[2] = 3.3
 assert bizzy.m == 3302
 bizzy[2:3] = 4.3
 assert bizzy.m == 4323
+assert bizzy(40.5) == 44823
 }", "office");
 
 }

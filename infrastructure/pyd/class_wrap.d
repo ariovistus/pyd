@@ -1030,6 +1030,37 @@ struct OpSliceAssign(rhs_t = Guess) {
     }
 }
 
+struct OpCall(Args_t...) {
+    enum bool needs_shim = false;
+
+    template Inner(T) {
+        alias TypeTuple!(__traits(getOverloads, T, "opCall")) Overloads;
+        template IsDesiredOverload(alias fn) {
+            alias ParameterTypeTuple!fn ps;
+            enum bool IsDesiredOverload = is(ps == Args_t);
+        }
+        alias Filter!(IsDesiredOverload, Overloads) VOverloads;
+        static if(VOverloads.length == 0) {
+            static assert(0,
+                    Format!("%s.opCall: cannot find signature %s", T.stringof, 
+                        Args_t.stringof));
+        }else static if(VOverloads.length == 1){
+            alias VOverloads[0] FN;
+        }else static assert(0,
+                Format!("%s.%s: cannot choose between %s", T.stringof, nom,
+                    VOverloads.stringof));
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        alias Inner!T.FN fn;
+        type.tp_call = &opcall_wrap!(T, Inner!T.FN).func;
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
 template Len() {
     alias _Len!() Len;
 }

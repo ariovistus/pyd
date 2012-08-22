@@ -258,6 +258,32 @@ template powopasg_wrap(T, alias fn) {
     }
 }
 
+template opcall_wrap(T, alias fn) {
+    alias wrapped_class_type!T wtype;
+    alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+    alias ParameterTypeTuple!(fn)[0] OtherT;
+    alias ReturnType!(fn) Ret;
+
+    extern(C)
+    PyObject* func(PyObject* self, PyObject* args, PyObject* kwargs) {
+        return exception_catcher(delegate PyObject*() {
+            // Didn't pass a "self" parameter! Ack!
+            if (self is null) {
+                PyErr_SetString(PyExc_TypeError, "OpCall didn't get a 'self' parameter.");
+                return null;
+            }
+            T instance = (cast(wrapped_class_object!(T)*)self).d_obj;
+            if (instance is null) {
+                PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
+                return null;
+            }
+            auto dg = get_dg(instance, &fn);
+            return pyApplyToDelegate(dg, args);
+        });
+    }
+}
+
 template wrapped_class_as_number(T) {
     static PyNumberMethods wrapped_class_as_number = {
         opAdd_wrap!(T),       /*nb_add*/
