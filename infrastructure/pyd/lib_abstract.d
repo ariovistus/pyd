@@ -23,6 +23,9 @@ SOFTWARE.
 // This module abstracts out all of the uses of Phobos, Tango, and meta, easing
 // the ability to switch between Phobos and Tango arbitrarily.
 module pyd.lib_abstract;
+import std.metastrings;
+import std.algorithm;
+import std.range;
 
 string objToStr(Object o) {
     return o.toString();
@@ -32,16 +35,17 @@ public import meta.Nameof : symbolnameof, prettytypeof, prettynameof;
 import std.conv;
 alias to!string toString;
 public import std.traits : ParameterTypeTuple, ReturnType;
+import std.traits;
 
 template minNumArgs_impl(alias fn, fnT) {
     alias ParameterTypeTuple!(fnT) Params;
     Params params;// = void;
 
-    template loop(int i = 0) {
+    template loop(size_t i = 0) {
         static assert (i <= Params.length);
 
-        static if (is(typeof(fn(params[0..i])))) {
-            enum int res = i;
+        static if (__traits(compiles,fn(params[0..i].init))) {
+            enum size_t res = i;
         } else {
             alias loop!(i+1).res res;
         }
@@ -53,5 +57,49 @@ template minNumArgs_impl(alias fn, fnT) {
   Finds the minimal number of arguments a given function needs to be provided
  */
 template minArgs(alias fn, fnT = typeof(&fn)) {
-    enum int minArgs = minNumArgs_impl!(fn, fnT).res;
+    enum size_t minArgs = minNumArgs_impl!(fn, fnT).res;
+}
+
+template maxArgs(alias fn, fn_t = typeof(&fn)) {
+    alias variadicFunctionStyle!fn vstyle;
+    alias ParameterTypeTuple!fn ps;
+    enum bool hasMax = vstyle == Variadic.no;
+    enum size_t max = ps.length;
+}
+
+bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
+    if(n < minArgs!(fn,fn_t)) {
+        return false;
+    }
+    alias variadicFunctionStyle!fn vstyle;
+    alias ParameterTypeTuple!fn ps;
+    static if(vstyle == Variadic.no) {
+        if(n > ps.length) return false;
+        if(n == ps.length && n == 0) return true;
+        foreach(i,_p; ps) {
+            if(__traits(compiles, fn(ps[0 .. i+1].init)) && i+1 == n) {
+                return true;
+            }
+        }
+        return false;
+    }else static if(vstyle == Variadic.c) {
+        return true;
+    }else static if(vstyle == Variadic.d) {
+        return true;
+    }else static if(vstyle == Variadic.typesafe) {
+        return true;
+    }else static assert(0);
+}
+
+template getparams(alias fn) {
+    enum raw_str = typeof(fn).stringof;
+    enum ret_str = ReturnType!fn.stringof;
+    static assert(raw_str.startsWith(ret_str));
+    enum noret_str = raw_str[ret_str.length .. $];
+    enum open_p = countUntil(noret_str, "(");
+    static assert(open_p != -1);
+    enum close_p = countUntil(retro(noret_str), ")");
+    static assert(close_p != -1);
+    enum getparams = noret_str[open_p+1 .. $-1-close_p];
+
 }

@@ -169,9 +169,9 @@ template OverloadShim() {
     }
 }
 
-template class_decls(uint i, Params...) {
+template class_decls(uint i, T, Params...) {
     static if (i < Params.length) {
-        enum string class_decls = Params[i].shim!(i) ~ class_decls!(i+1, Params);
+        enum string class_decls = Params[i].shim!(i,T) ~ class_decls!(i+1, T, Params);
     } else {
         enum string class_decls = "";
     }
@@ -181,7 +181,7 @@ template make_wrapper(T, Params...) {
     enum string cls = 
     "class wrapper : T {\n"~
     "    mixin OverloadShim;\n"~
-    pyd.make_wrapper.class_decls!(0, Params)~"\n"~
+    pyd.make_wrapper.class_decls!(0, T, Params)~"\n"~
 //    op_shims!(0, T)~
     "}\n";
     pragma(msg, cls);

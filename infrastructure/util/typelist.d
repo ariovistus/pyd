@@ -23,6 +23,16 @@ template Filter(alias pred, lst...)
         alias TypeTuple!() Filter;
 }
 
+template Join(string delimit, T...) {
+        static if(T.length == 0) {
+            enum Join = "";
+        }else static if(T.length == 1) {
+            enum Join =  T[0];
+        }else {
+            enum Join = T[0] ~ "," ~ Join!(T[1..$]);
+        }
+}
+
 
 // I rather like the whole algorithm("isThing(a)") shtick.
 // useful for templates too?

@@ -23,20 +23,15 @@ module pyd.func_wrap;
 
 import python;
 import std.exception: enforce;
+import std.range: ElementType;
 
 import pyd.class_wrap;
 import pyd.dg_convert;
 import pyd.exception;
 import pyd.make_object;
-import pyd.lib_abstract :
-    toString,
-    ParameterTypeTuple,
-    ReturnType
-;
+import pyd.lib_abstract;
 
-//import std.string;
-//import std.traits;
-//import std.stdio;
+import std.traits;
 
 // Builds a callable Python object from a delegate or function pointer.
 void PydWrappedFunc_Ready(T)() {
@@ -85,9 +80,10 @@ void setWrongArgsError(Py_ssize_t gotArgs, uint minArgs, uint maxArgs, string fu
 }
 
 // Calls callable alias fn with PyTuple args.
-ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t, uint MIN_ARGS) (PyObject* args) {
+ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t) (PyObject* args) {
     alias ParameterTypeTuple!(fn_t) T;
-    enum uint MAX_ARGS = T.length;
+    enum size_t MIN_ARGS = minArgs!fn;
+    alias maxArgs!fn MaxArgs;
     alias ReturnType!(fn_t) RT;
 
     Py_ssize_t argCount = 0;
@@ -97,31 +93,57 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t, uint MIN_ARGS) (PyObject* 
     }
 
     // Sanity check!
-    if (argCount < MIN_ARGS || argCount > MAX_ARGS) {
-        setWrongArgsError(cast(int) argCount, MIN_ARGS, MAX_ARGS);
+    if (!supportsNArgs!(fn, fn_t)(argCount)) {
+        setWrongArgsError(cast(int) argCount, MIN_ARGS, 
+                (MaxArgs.hasMax ? MaxArgs.max:-1));
         handle_exception();
     }
 
-    static if (MIN_ARGS == 0) {
+    static if (MaxArgs.vstyle == Variadic.no && MIN_ARGS == 0) {
         if (argCount == 0) {
             return fn();
         }
-    }
-    T t;
-    foreach(i, arg; t) {
-        enum uint argNum = i+1;
-        if (i < argCount) {
-            auto bpobj =  PyTuple_GetItem(args, i);
-            enforce(bpobj != null);
-            auto  pobj = OwnPyRef(bpobj);
-            t[i] = d_type!(typeof(arg))(pobj);
-            Py_DECREF(pobj);
-        }
-        static if (argNum >= MIN_ARGS && argNum <= MAX_ARGS) {
-            if (argNum == argCount) {
-                return fn(t[0 .. argNum]);
-                break;
-            }
+    }else{
+        MaxArgs.ps t;
+        foreach(i, arg; t) {
+            enum uint argNum = i+1;
+            static if(MaxArgs.vstyle == Variadic.no) {
+                if (i < argCount) {
+                    auto bpobj =  PyTuple_GetItem(args, i);
+                    enforce(bpobj != null);
+                    auto  pobj = OwnPyRef(bpobj);
+                    t[i] = d_type!(typeof(arg))(pobj);
+                    Py_DECREF(pobj);
+                }
+                static if (argNum >= MIN_ARGS && 
+                        (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
+                    if (argNum == argCount) {
+                        return fn(t[0 .. argNum]);
+                        break;
+                    }
+                }else static assert(0);
+            }else static if(MaxArgs.vstyle == Variadic.typesafe) {
+                if (argNum < t.length) {
+                    auto bpobj =  PyTuple_GetItem(args, i);
+                    enforce(bpobj != null);
+                    auto  pobj = OwnPyRef(bpobj);
+                    t[i] = d_type!(typeof(arg))(pobj);
+                    Py_DECREF(pobj);
+                }else if(argNum == t.length) {
+                    alias Unqual!(ElementType!(typeof(t[i]))) elt_t;
+                    elt_t[] vars = new elt_t[](argCount-i);
+                    foreach(j; i .. argCount) {
+                        auto bpobj =  PyTuple_GetItem(args, j);
+                        enforce(bpobj != null);
+                        auto  pobj = OwnPyRef(bpobj);
+                        vars[j-i] = d_type!(elt_t)(pobj);
+                    }
+
+                    t[i] = cast(typeof(t[i])) vars;
+                    return fn(t);
+                    break;
+                }
+            }else static assert(0);
         }
     }
     // This should never get here.
@@ -133,7 +155,7 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t, uint MIN_ARGS) (PyObject* 
 // wraps applyPyTupleToAlias to return a PyObject*
 PyObject* pyApplyToAlias(alias fn, fn_t, uint MIN_ARGS) (PyObject* args) {
     static if (is(ReturnType!(fn_t) == void)) {
-        applyPyTupleToAlias!(fn, fn_t, MIN_ARGS)(args);
+        applyPyTupleToAlias!(fn, fn_t)(args);
         Py_INCREF(Py_None);
         return Py_None;
     } else {
@@ -153,7 +175,7 @@ ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
     }
 
     // Sanity check!
-    if (argCount != ARGS) {
+    if (!supportsNArgs!(dg,dg_t)(argCount)) {
         setWrongArgsError(argCount, ARGS, ARGS);
         handle_exception();
     }

@@ -30,7 +30,7 @@ import std.metastrings;
 import std.typetuple;
 import std.string: format;
 import std.typecons: Tuple;
-import util.typelist: Filter, Pred;
+import util.typelist: Filter, Pred, Join;
 import util.multi_index;
 import util.replace: Replace;
 import pyd.ctor_wrap;
@@ -41,14 +41,7 @@ import pyd.func_wrap;
 import pyd.make_object;
 import pyd.make_wrapper;
 import pyd.op_wrap;
-import pyd.lib_abstract :
-    symbolnameof,
-    prettytypeof,
-    toString,
-    ParameterTypeTuple,
-    ReturnType,
-    minArgs,
-    objToStr ;
+import pyd.lib_abstract;
 
 version(Pyd_with_StackThreads) static assert(0, "sorry - stackthreads are gone");
 
@@ -390,7 +383,7 @@ template _Def(alias fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARGS
         // pointer in the type struct, so we renew it here.
         wrapped_class_type!(T).tp_methods = list.ptr;
     }
-    template shim(uint i) {
+    template shim(uint i, T) {
         enum shim = Replace!(q{    
             alias Params[$i] __pyd_p$i;
             ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) {
@@ -448,7 +441,7 @@ mixin template _StaticDef(alias fn,/+ string _realname,+/ string name, fn_t, uin
         list ~= empty;
         wrapped_class_type!(T).tp_methods = list;
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         enum shim = "";
     }
 }
@@ -524,7 +517,7 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
             }, "$i", i, "$realname",_realname, "$name", name);
         }
     }
-    template shim(uint i) {
+    template shim(uint i, T) {
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
             ReturnType!(__pyd_p$i.get_t) $realname() {
@@ -544,7 +537,7 @@ struct Repr(alias fn) {
         alias wrapped_class_type!(T) type;
         type.tp_repr = &wrapped_repr!(T, fn).repr;
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         enum shim = "";
     }
 }
@@ -570,7 +563,7 @@ struct Init(cps ...) {
             alias ParameterTypeTuple!ctor ps;
             enum bool IsDesired = is(ps == CtorParams);
         }
-        alias Filter!(IsDesird, Overloads) VOverloads;
+        alias Filter!(IsDesired, Overloads) VOverloads;
         static assert(VOverloads.length != 0, 
                 Format!("%s: Cannot find constructor with params %s", 
                     T.stringof, CtorParams.stringof));
@@ -578,13 +571,15 @@ struct Init(cps ...) {
     }
     static void call(T)() {
     }
-    template shim(uint i) {
+    template shim(uint i, T) {
+        enum params = getparams!(Inner!T.FN);
+        alias ParameterIdentifierTuple!(Inner!T.FN) paramids;
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
-            this(__pyd_p$i.CtorParams t) {
-                super(t);
+            this($params) {
+                super($ids);
             }
-        }, "$i", i);
+        }, "$i", i, "$params", params, "$ids", Join!(",", paramids));
     }
 }
 
@@ -710,7 +705,7 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
         // can't handle __op__ __rop__ pairs here
     }
 
-    template shim(uint i) {
+    template shim(uint i, T) {
         // bah
         enum shim = "";
     }
@@ -744,7 +739,7 @@ struct OpUnary(string _op) if(IsPyUnary(_op)) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opfunc_unary_wrap!(T, Inner!T .FN).func;");
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -788,7 +783,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
             mixin(slot ~ " = &binopasg_wrap!(T, Inner!T.FN).func;");
     }
 
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -837,7 +832,7 @@ struct OpCompare(_rhs_t = Guess) {
         alias wrapped_class_type!T type;
         type.tp_compare = &opcmp_wrap!(T, Inner!T.FN).func;
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -880,7 +875,7 @@ struct OpIndex(index_t...) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opindex_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -932,7 +927,7 @@ struct OpIndexAssign(index_t...) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opindexassign_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -969,7 +964,7 @@ struct OpSlice() {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opslice_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -1019,7 +1014,7 @@ struct OpSliceAssign(rhs_t = Guess) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opsliceassign_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -1050,7 +1045,7 @@ struct OpCall(Args_t...) {
         alias Inner!T.FN fn;
         type.tp_call = &opcall_wrap!(T, Inner!T.FN).func;
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -1095,7 +1090,7 @@ struct _Len(fnt...) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &length_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i) {
+    template shim(uint i,T) {
         // bah
         enum shim = "";
     }
@@ -1191,7 +1186,7 @@ struct Constructors(Ctors...) {
     static void call(T, Shim)() {
         alias wrapped_class_type!T type;
         static if(Ctors.length) {
-            type.tp_init = &wrapped_ctors!(Shim, Ctors).func;
+            type.tp_init = &wrapped_ctors!(T, Shim, Ctors).func;
         }else {
             // If a ctor wasn't supplied, try the default.
             // If the default ctor isn't available, and no ctors were supplied,
@@ -1217,7 +1212,7 @@ Param.needs_shim == true => Param.call!(T, Shim)
 
     performs appropriate mutations to the PyTypeObject
 
-Param.shim!(i) for i : Params[i] == Param
+Param.shim!(i,T) for i : Params[i] == Param
 
     generates a string to be mixed in to Shim type
 
