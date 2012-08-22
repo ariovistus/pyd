@@ -2,6 +2,7 @@ module pyind;
 
 import std.stdio;
 import pyd.pyd;
+import python: Py_ssize_t;
 import pyd.embedded;
 import python: Py_Initialize;
 
@@ -30,6 +31,10 @@ class Y {
 }
 
 class Bizzy {
+    int _m;
+
+    int m() { return _m; }
+
     int opBinary(string op)(int i) {
         static if(op == "+") return i+1;
         else static if(op == "*") return i+2;
@@ -40,10 +45,14 @@ class Bizzy {
         return i > 10;
     }
 
-    int opOpAssign(string op)(int i) {
-        static if(op == "+") return i+5;
-        else static if(op == "%") return i+6;
-        else static if(op == "^^") return i+7;
+    int opBinaryRight(string op)(int i) if(op == "+") {
+        return i + 4;
+    }
+
+    void opOpAssign(string op)(int i) {
+        static if(op == "+") _m = i + 22;
+        else static if(op == "%") _m = i + 33;
+        else static if(op == "^^") _m = i + 44;
         else static assert(0);
     }
 
@@ -61,8 +70,20 @@ class Bizzy {
         return i*4.4;
     }
 
-    double[] opSlice(Py_ssize_t a, Py_ssize_t b) {
+    int[] opSlice(Py_ssize_t a, Py_ssize_t b) {
         return [1,2,3];
+    }
+
+    void opIndexAssign(double d, int i) {
+        _m = cast(int)(d*1000) + i;
+    }
+
+    void opSliceAssign(double d, Py_ssize_t a, Py_ssize_t b) {
+        _m = cast(int)(d*1000) + cast(int)(a*10 + b);
+    }
+
+    Py_ssize_t pylen(){
+        return 401;
     }
 }
 
@@ -75,21 +96,24 @@ static this() {
         Property!(Y.resolution, true),
     )("","office");
     wrap_class!(Bizzy,
+            Property!(Bizzy.m, true),
             OpBinary!("+"),
             OpBinary!("*"),
             OpBinary!("^^"),
             OpBinaryRight!("in"),
+            OpBinaryRight!("+"),
             OpUnary!("+"),
             OpUnary!("~"),
             OpAssign!("+"),
             OpAssign!("%"),
             OpAssign!("^^"),
             OpIndex!(),
+            OpIndexAssign!(),
             OpCompare!(),
             OpSlice!(),
+            OpSliceAssign!(),
+            Len!(Bizzy.pylen),
     )("","office");
-    ErrInterceptor.wrap_class("office");
-    ErrInterceptor.replaceStderr();
 }
 
 void main() {
@@ -143,6 +167,34 @@ unittest {
     import std.typecons;
     assert(d_type!(Tuple!(int,double))(_py(tuple(2,3.0))) == tuple(2,3.0));
     assert(d_type!(Tuple!(int, "a",double, "b"))(_py(Tuple!(int, "a", double, "b")(2,3.0))) == Tuple!(int,"a",double,"b")(2,3.0));
+}
+
+unittest {
+    PyStmts(q"{
+bizzy=Bizzy()
+assert bizzy+1 == 2
+assert bizzy*1 == 3
+assert bizzy**1 == 4
+assert 1+bizzy == 5
+assert 19 in bizzy
+assert 0 not in bizzy
+assert +bizzy == 55
+assert ~bizzy == 44
+assert bizzy > 1
+assert len(bizzy) == 401
+assert bizzy[1:2] == [1,2,3]
+bizzy += 2
+assert bizzy.m == 24
+bizzy %= 3
+assert bizzy.m == 36
+bizzy **= 4
+assert bizzy.m == 48
+bizzy[2] = 3.3
+assert bizzy.m == 3302
+bizzy[2:3] = 4.3
+assert bizzy.m == 4323
+}", "office");
+
 }
 
 unittest {

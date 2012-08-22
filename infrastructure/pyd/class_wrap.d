@@ -683,14 +683,17 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
     enum bool needs_shim = false;
 
     template Inner(C) {
-        enum fn_str1 = "C."~nom~"!(op)";
-        enum fn_str2 = "C."~nom~"!(op,rhs_t)";
+        enum fn_str1 = "Alias!(C."~nom~"!(op))";
+        enum fn_str2 = "Alias!(C."~nom~"!(op,rhs_t))";
         enum string OP = op;
         static if(!__traits(hasMember, C, nom)) {
             static assert(0, C.stringof ~ " has no "~(isR ?"reflected ":"")~
                     "binary operator overloads");
         }
-        static if(is(typeof(mixin("C.init."~nom~"!(op)")) == function)) {
+        template Alias(alias fn) {
+            alias fn Alias;
+        }
+        static if(is(typeof(mixin(fn_str1)) == function)) {
             alias ParameterTypeTuple!(typeof(mixin(fn_str1)))[0] RHS_T;
             alias ReturnType!(typeof(mixin(fn_str1))) RET_T;
             mixin("alias " ~ fn_str1 ~ " FN;");
@@ -699,7 +702,8 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
                         Format!("expected typeof(rhs) = %s, found %s", 
                             rhs.stringof, RHS_T.stringof));
         }else static if(is(rhs_t == Guess)) {
-            static assert(false, "Cannot determine type of rhs");
+            static assert(false, 
+                    Format!("Operator %s: Cannot determine type of rhs", op));
         } else static if(is(typeof(mixin(fn_str2)) == function)) {
             alias rhs_t RHS_T;
             alias ReturnType!(typeof(mixin(fn_str2))) RET_T;
@@ -717,7 +721,7 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
     }
 }
 
-template OpBinary(string op, rhs_t = Guess) if(IsPyBinary(op)){
+template OpBinary(string op, rhs_t = Guess) if(IsPyBinary(op) && op != "in"){
     alias BinaryOperatorX!(op, false, rhs_t) OpBinary;
 }
 
@@ -784,9 +788,9 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
         alias CW!(TypeTuple!(OpAssign)) OpAsg;
         alias CW!(TypeTuple!()) Nop;
         static if(op == "^^=")
-            mixin(slot ~ " = &powop_wrap!(T, OpAsg, Nop).func;");
+            mixin(slot ~ " = &powopasg_wrap!(T, Inner!T.FN).func;");
         else
-            mixin(slot ~ " = &binop_wrap!(T, OpAsg, Nop).func;");
+            mixin(slot ~ " = &binopasg_wrap!(T, Inner!T.FN).func;");
     }
 
     template shim(uint i) {
@@ -887,6 +891,58 @@ struct OpIndex(index_t...) {
     }
 }
 
+struct OpIndexAssign(index_t...) {
+    static assert(index_t.length != 1, 
+            "opIndexAssign must have at least 2 parameters");
+    enum bool needs_shim = false;
+    template Inner(C) {
+        static if(!__traits(hasMember, C, "opIndexAssign")) {
+            static assert(0, C.stringof ~ " has no index operator overloads");
+        }
+        static if(is(typeof(C.init.opIndex) == function)) {
+            alias TypeTuple!(__traits(getOverloads, C, "opIndexAssign")) Overloads;
+            template IsValidOverload(alias fn) {
+                enum bool IsValidOverload = ParameterTypeTuple!fn.length >= 2;
+            }
+            alias Filter!(IsValidOverload, Overloads) VOverloads;
+            static if(VOverloads.length == 0 && Overloads.length != 0)
+                static assert(0,
+                        "opIndexAssign must have at least 2 parameters");
+            static if(index_t.length == 0 && VOverloads.length > 1) {
+                static assert(0, 
+                        Format!("%s.opIndexAssign: Cannot choose between %s",
+                            C.stringof,VOverloads.stringof));
+            }else static if(index_t.length == 0) {
+                alias VOverloads[0] FN;
+            }else{
+                template IsDesiredOverload(alias fn) {
+                    enum bool IsDesiredOverload = is(ParameterTypeTuple!fn == index_t);
+                }
+                alias Filter!(IsDesiredOverload, VOverloads) Overloads1;
+                static assert(Overloads1.length == 1, 
+                        Format!("%s.opIndex: Cannot choose between %s",
+                            C.stringof,Overloads1.stringof));
+                alias Overloads1[0] FN;
+            }
+        }else static if(is(typeof(C.init.opIndexAssign!(index_t)) == function)) {
+            alias C.opIndexAssign!(index_t) FN;
+        }else{
+            static assert(0, 
+                    Format!("cannot get a handle on %s.opIndexAssign", C.stringof));
+        }
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = "type.tp_as_mapping.mp_ass_subscript";
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &opindexassign_wrap!(T, Inner!T.FN).func;");
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
 struct OpSlice() {
     enum bool needs_shim = false;
     template Inner(C) {
@@ -917,6 +973,101 @@ struct OpSlice() {
         enum slot = "type.tp_as_sequence.sq_slice";
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opslice_wrap!(T, Inner!T.FN).func;");
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
+struct OpSliceAssign(rhs_t = Guess) {
+    enum bool needs_shim = false;
+    template Inner(C) {
+        static if(!__traits(hasMember, C, "opSliceAssign")) {
+            static assert(0, C.stringof ~ " has no slice assignment operator overloads");
+        }
+        static if(is(typeof(C.init.opSliceAssign) == function)) {
+            alias TypeTuple!(__traits(getOverloads, C, "opSliceAssign")) Overloads;
+            template IsDesiredOverload(alias fn) {
+                alias ParameterTypeTuple!fn ps;
+                enum bool IsDesiredOverload = 
+                    is(ps[1..3] == TypeTuple!(Py_ssize_t,Py_ssize_t));
+            }
+            alias Filter!(IsDesiredOverload, Overloads) Overloads1;
+            static assert(Overloads1.length != 0, 
+                    Format!("%s.opSliceAssign: must have overload %s",
+                        C.stringof,TypeTuple!(Guess,Py_ssize_t,Py_ssize_t).stringof));
+            static if(is(rhs_t == Guess)) {
+                static assert(Overloads1.length == 1, 
+                        Format!("%s.opSliceAssign: cannot choose between %s",
+                            C.stringof,Overloads1.stringof));
+                alias Overloads1[0] FN;
+            }else{
+                template IsDesiredOverload2(alias fn) {
+                    alias ParameterTypeTuple!fn ps;
+                    enum bool IsDesiredOverload2 = is(ps[0] == rhs_t);
+                }
+                alias Filter!(IsDesiredOverload2, Overloads1) Overloads2;
+                static assert(Overloads2.length == 1, 
+                        Format!("%s.opSliceAssign: cannot choose between %s",
+                            C.stringof,Overloads2.stringof));
+                alias Overloads2[0] FN;
+            }
+        }else{
+            static assert(0, Format!("cannot get a handle on %s.opSlice",
+                        C.stringof));
+        }
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = "type.tp_as_sequence.sq_ass_slice";
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &opsliceassign_wrap!(T, Inner!T.FN).func;");
+    }
+    template shim(uint i) {
+        // bah
+        enum shim = "";
+    }
+}
+
+template Len() {
+    alias _Len!() Len;
+}
+
+template Len(alias fn) {
+    alias _Len!(fn) Len;
+}
+
+struct _Len(fnt...) {
+    enum bool needs_shim = false;
+    template Inner(T) {
+        static if(fnt.length == 0) {
+            enum nom = "length";
+        }else{
+            enum nom = __traits(identifier, fnt[0]);
+        }
+        alias TypeTuple!(__traits(getOverloads, T, nom)) Overloads;
+        template IsDesiredOverload(alias fn) {
+            alias ParameterTypeTuple!fn ps;
+            alias ReturnType!fn rt;
+            enum bool IsDesiredOverload = is(rt : Py_ssize_t) && ps.length == 0;
+        }
+        alias Filter!(IsDesiredOverload, Overloads) VOverloads;
+        static if(VOverloads.length == 0 && Overloads.length != 0) {
+            static assert(0,
+                    Format!("%s.%s must have signature %s", T.stringof, nom,
+                        (Py_ssize_t function()).stringof));
+        }else static if(VOverloads.length == 1){
+            alias VOverloads[0] FN;
+        }else static assert(0,
+                Format!("%s.%s: cannot choose between %s", T.stringof, nom,
+                    VOverloads.stringof));
+    }
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        enum slot = "type.tp_as_sequence.sq_length";
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &length_wrap!(T, Inner!T.FN).func;");
     }
     template shim(uint i) {
         // bah

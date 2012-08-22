@@ -53,13 +53,15 @@ PydObject py_import(string name) {
 /++
  + Take a python function and wrap it so we can call it from D!
  +/
-R PyDef( string python, string modl, R, Args...)(Args args) {
+R PyDef( string python, string modl, R, Args...)
+    (Args args, string file = __FILE__, size_t line = __LINE__) {
+
     //Note that type is really the only thing that need be static here, but hey.
     enum afterdef = findSplit(python, "def")[2];
     enum ereparen = findSplit(afterdef, "(")[0];
     enum name = strip(ereparen) ~ "\0";
     static PydObject func; 
-    static Exception exc;
+    static PythonException exc;
     static string errmsg;
     static bool once = true;
     if(once) {
@@ -79,11 +81,15 @@ R PyDef( string python, string modl, R, Args...)(Args args) {
             auto res = new PydObject(pres);
             func = m.getattr(name);
         }else{
-            errmsg = ErrInterceptor.interceptStderr();
+            try{
+                handle_exception();
+            }catch(PythonException e) {
+                exc = e;
+            }
         }
     }
     if(!func) {
-        throw new Exception(errmsg);
+        throw exc;
     }
     return func(args).toDItem!R();
 }
@@ -91,7 +97,7 @@ R PyDef( string python, string modl, R, Args...)(Args args) {
 /++
  + Evaluate a python expression once and return the result.
  +/
-T PyEval(T = PydObject)(string python, string modl) {
+T PyEval(T = PydObject)(string python, string modl, string file = __FILE__, size_t line = __LINE__) {
     auto m = py_import(modl);
     auto locals = m.getdict();
     auto locals_ptr = OwnPyRef(m.getdict().ptr);
@@ -107,14 +113,15 @@ T PyEval(T = PydObject)(string python, string modl) {
         auto res = new PydObject(pres);
         return res.toDItem!T();
     }else{
-        throw new Exception(ErrInterceptor.interceptStderr());
+        handle_exception(file,line);
+        assert(0);
     }
 }
 
 /++
  + Evaluate one or more python statements once.
  +/
-void PyStmts(string python, string modl) {
+void PyStmts(string python, string modl,string file = __FILE__, size_t line = __LINE__) {
     auto m = py_import(modl);
     auto locals = m.getdict();
     auto locals_ptr = OwnPyRef(locals.ptr);
@@ -129,8 +136,7 @@ void PyStmts(string python, string modl) {
     if(pres) {
         Py_DECREF(pres);
     }else{
-        auto z = ErrInterceptor.interceptStderr();
-        throw new Exception(z);
+        handle_exception(file,line);
     }
 }
 /++
@@ -149,9 +155,18 @@ PyEval("1 + 'a'");
 -------
  +/
 class ErrInterceptor {
+
+    PydObject old_stderr;
+
+    this(PydObject obj) {
+        old_stderr = obj;
+    }
     string _msg;
     void write(string s) {
+        import std.stdio;
+        writeln("stderr: ",s);
         _msg ~= s;
+        old_stderr.write(s);
     }
     void clear() {
         _msg = "";
@@ -162,6 +177,7 @@ class ErrInterceptor {
 
     static void wrap_class(string modl) {
         .wrap_class!(ErrInterceptor, 
+            Init!(void function(PydObject)),
             Def!(ErrInterceptor.write),
             Def!(ErrInterceptor.clear),
             Def!(ErrInterceptor.msg))(
@@ -170,11 +186,13 @@ class ErrInterceptor {
     }
     static void replaceStderr() {
         auto sys = py_import("sys");
-        sys.stderr = new ErrInterceptor();
+        sys.stderr = new ErrInterceptor(sys.stderr);
     }
     static string interceptStderr() {
         auto z = PyErr_Occurred();
         if(!z) {
+            import std.stdio;
+            writeln("no error occurred!");
             return "";
         }
         string errmsg;

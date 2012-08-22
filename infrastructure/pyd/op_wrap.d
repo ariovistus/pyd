@@ -24,6 +24,7 @@ module pyd.op_wrap;
 import python;
 
 import std.algorithm: startsWith, endsWith;
+import std.conv: to;
 import pyd.class_wrap;
 import pyd.dg_convert;
 import pyd.func_wrap;
@@ -72,7 +73,7 @@ template op_select(T, opl, opr) {
                 }else{
                     enforce(false, format(
                         "unsupported operand type(s) for %s: '%s' and '%s'",
-                        opl.op, o1.ob_type.tp_name, o2.ob_type.tp_name,
+                        opl.op, to!string(o1.ob_type.tp_name), to!string(o2.ob_type.tp_name),
                     ));
                 }
         });
@@ -94,14 +95,14 @@ template binop_wrap(T, _lop, _rop) {
         alias lop0.Inner!T.FN lfn;
         alias dg_wrapper!(T, typeof(&lfn)) get_dgl;
         alias ParameterTypeTuple!(lfn)[0] LOtherT;
-        alias ReturnType!(lfn)[0] LRet;
+        alias ReturnType!(lfn) LRet;
     }
     static if(rop.length) {
         alias rop[0] rop0;
         alias rop0.Inner!T.FN rfn;
         alias dg_wrapper!(T, typeof(&rfn)) get_dgr;
         alias ParameterTypeTuple!(rfn)[0] ROtherT;
-        alias ReturnType!(rfn)[0] RRet;
+        alias ReturnType!(rfn) RRet;
     }
     enum mode = (lop.length?"l":"")~(rop.length?"r":"");
     extern(C)
@@ -117,14 +118,22 @@ template binop_wrap(T, _lop, _rop) {
                     }else{
                         enforce(false, format(
                             "unsupported operand type(s) for %s: '%s' and '%s'",
-                            opl.op, o1.ob_type.tp_name, o2.ob_type.tp_name,
+                            lop[0].op, to!string(o1.ob_type.tp_name), 
+                            to!string(o2.ob_type.tp_name),
                         ));
                     }
                 }
                 static if(mode.startsWith("l")) {
 op:
                     auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
-                    static if (is(LRet == void)) {
+                    static if(lop[0].op.endsWith("=")) {
+                        dgl(d_type!LOtherT(o2));
+                        // why?
+                        // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
+                        // .. still don't know
+                        Py_INCREF(o1);
+                        return o1;
+                    }else static if (is(LRet == void)) {
                         dgl(d_type!LOtherT(o2));
                         Py_INCREF(Py_None);
                         return Py_None;
@@ -134,16 +143,35 @@ op:
                 }
                 static if(mode.endsWith("r")) {
 rop:
-                    auto dgr = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
                     static if (is(RRet == void)) {
-                        dgr(d_type!ROtherT(o));
+                        dgr(d_type!ROtherT(o1));
                         Py_INCREF(Py_None);
                         return Py_None;
                     } else {
-                        return _py(dgr(d_type!LOtherT(o)));
+                        return _py(dgr(d_type!LOtherT(o1)));
                     }
                 }
         });
+    }
+}
+
+template binopasg_wrap(T, alias fn) {
+    alias wrapped_class_type!T wtype;
+    alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+    alias ParameterTypeTuple!(fn)[0] OtherT;
+    alias ReturnType!(fn) Ret;
+
+    extern(C)
+    PyObject* func(PyObject* self, PyObject* o2) {
+        auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+        dg(d_type!OtherT(o2));
+        // why?
+        // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
+        // .. still don't know
+        Py_INCREF(self);
+        return self;
     }
 }
 
@@ -158,14 +186,14 @@ template powop_wrap(T, _lop, _rop) {
         alias lop0.Inner!T.FN lfn;
         alias dg_wrapper!(T, typeof(&lfn)) get_dgl;
         alias ParameterTypeTuple!(lfn)[0] LOtherT;
-        alias ReturnType!(lfn)[0] LRet;
+        alias ReturnType!(lfn) LRet;
     }
     static if(rop.length) {
         alias rop[0] rop0;
         alias rop0.Inner!T.FN rfn;
         alias dg_wrapper!(T, typeof(&rfn)) get_dgr;
         alias ParameterTypeTuple!(rfn)[0] ROtherT;
-        alias ReturnType!(rfn)[0] RRet;
+        alias ReturnType!(rfn) RRet;
     }
     enum mode = (lop.length?"l":"")~(rop.length?"r":"");
     extern(C)
@@ -198,16 +226,35 @@ op:
                 }
                 static if(mode.endsWith("r")) {
 rop:
-                    auto dgr = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
                     static if (is(RRet == void)) {
-                        dgr(d_type!ROtherT(o));
+                        dgr(d_type!ROtherT(o1));
                         Py_INCREF(Py_None);
                         return Py_None;
                     } else {
-                        return _py(dgr(d_type!LOtherT(o)));
+                        return _py(dgr(d_type!LOtherT(o1)));
                     }
                 }
         });
+    }
+}
+
+template powopasg_wrap(T, alias fn) {
+    alias wrapped_class_type!T wtype;
+    alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+    alias ParameterTypeTuple!(fn)[0] OtherT;
+    alias ReturnType!(fn) Ret;
+
+    extern(C)
+    PyObject* func(PyObject* self, PyObject* o2, PyObject* o3) {
+        auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+        dg(d_type!OtherT(o2));
+        // why?
+        // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
+        // .. still don't know
+        Py_INCREF(self);
+        return self;
     }
 }
 
@@ -379,6 +426,7 @@ template opindex_mapping_pyfunc(T) {
 template opindex_wrap(T, alias fn) {
     alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!fn Params;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
 
     // Multiple arguments are converted into tuples, and thus become a standard
     // wrapped member function call. A single argument is passed directly.
@@ -387,7 +435,8 @@ template opindex_wrap(T, alias fn) {
         extern(C)
         PyObject* func(PyObject* self, PyObject* key) {
             return exception_catcher(delegate PyObject*() {
-                return _py((cast(wrap_object*)self).d_obj.opIndex(d_type!KeyT(key)));
+                auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+                return _py(dg(d_type!KeyT(key)));
             });
         }
     } else {
@@ -405,6 +454,52 @@ template opindex_wrap(T, alias fn) {
                 return null;
             }
             return opindex_methodT.func(self, key);
+        }
+    }
+}
+
+template opindexassign_wrap(T, alias fn) {
+    alias wrapped_class_object!(T) wrap_object;
+    alias ParameterTypeTuple!(fn) Params;
+
+    static if (Params.length > 2) {
+        alias method_wrap!(T, fn, typeof(&fn)) fn_wrap;
+        extern(C)
+        int func(PyObject* self, PyObject* key, PyObject* val) {
+            Py_ssize_t args;
+            if (!PyTuple_CheckExact(key)) {
+                args = 2;
+            } else {
+                args = PySequence_Length(key) + 1;
+            }
+            if (Params.length != args) {
+                setWrongArgsError(args, Params.length, Params.length);
+                return -1;
+            }
+            // Build a new tuple with the value at the front.
+            PyObject* temp = PyTuple_New(Params.length);
+            if (temp is null) return -1;
+            scope(exit) Py_DECREF(temp);
+            PyTuple_SetItem(temp, 0, val);
+            for (int i=1; i<Params.length; ++i) {
+                Py_INCREF(PyTuple_GetItem(key, i-1));
+                PyTuple_SetItem(temp, i, PyTuple_GetItem(key, i-1));
+            }
+            fnwrap.func(self, temp);
+            return 0;
+        }
+    } else {
+        alias dg_wrapper!(T, typeof(&fn)) get_dg;
+        alias Params[0] ValT;
+        alias Params[1] KeyT;
+
+        extern(C)
+        int func(PyObject* self, PyObject* key, PyObject* val) {
+            return exception_catcher(delegate int() {
+                auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+                dg(d_type!ValT(val), d_type!KeyT(key));
+                return 0;
+            });
         }
     }
 }
@@ -481,47 +576,20 @@ template opsliceassign_pyfunc(T) {
 }
 
 template inop_wrap(T, _lop, _rop) {
-    alias _lop.C lop;
     alias _rop.C rop;
     alias wrapped_class_object!(T) wrap_object;
-    static if(lop.length) {
-        alias lop[0] lop0;
-        alias lop0.Inner!T.FN lfn;
-        alias dg_wrapper!(T, typeof(&lfn)) get_dgl;
-        alias ParameterTypeTuple!(lfn)[0] LOtherT;
-    }
     static if(rop.length) {
         alias rop[0] rop0;
         alias rop0.Inner!T.FN rfn;
         alias dg_wrapper!(T, typeof(&rfn)) get_dgr;
         alias ParameterTypeTuple!(rfn)[0] ROtherT;
     }
-    enum mode = (lop.length?"l":"")~(rop.length?"r":"");
     
     extern(C)
     int func(PyObject* o1, PyObject* o2) {
         return exception_catcher(delegate int() {
-            static if(mode == "l") {
-                auto dg = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
-                return dg(d_type!LOtherT(o2));
-            }else static if(mode == "r") {
-                auto dg = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
-                return dg(d_type!ROtherT(o1));
-            }else{
-                alias wrapped_class_type!T wtype;
-                if (PyObject_IsInstance(o1, cast(PyObject*)&wtype)) {
-                    auto dg = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
-                    return dg(d_type!LOtherT(o2));
-                }else if(PyObject_IsInstance(o2, cast(PyObject*)&wtype)) {
-                    auto dg = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
-                    return dg(d_type!ROtherT(o1));
-                }else{
-                    enforce(false, format(
-                        "unsupported operand type(s) for in: '%s' and '%s'",
-                        o1.ob_type.tp_name, o2.ob_type.tp_name,
-                    ));
-                }
-            }
+            auto dg = get_dgr((cast(wrap_object*)o1).d_obj, &rfn);
+            return dg(d_type!ROtherT(o2));
         });
     }
 }
@@ -559,14 +627,15 @@ template length_pyfunc(T) {
 //----------//
 // Dispatch //
 //----------//
-template length_wrap(T) {
-    static if (
-        is(typeof(&T.length)) &&
-        is(typeof(T.length()) : index_t)
-    ) {
-        enum lenfunc_t length_wrap = &length_pyfunc!(T).func;
-    } else {
-        enum lenfunc_t length_wrap = null;
+template length_wrap(T, alias fn) {
+    alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+    extern(C)
+    Py_ssize_t func(PyObject* self) {
+        return exception_catcher(delegate Py_ssize_t() {
+            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            return dg();
+        });
     }
 }
 
@@ -639,6 +708,22 @@ template opslice_wrap(T,alias fn) {
         return exception_catcher(delegate PyObject*() {
             auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
             return _py(dg(i1, i2));
+        });
+    }
+}
+
+template opsliceassign_wrap(T, alias fn) {
+    alias wrapped_class_object!(T) wrap_object;
+    alias ParameterTypeTuple!fn Params;
+    alias Params[0] AssignT;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+
+    extern(C)
+    int func(PyObject* self, Py_ssize_t i1, Py_ssize_t i2, PyObject* o) {
+        return exception_catcher(delegate int() {
+            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            dg(d_type!AssignT(o), i1, i2);
+            return 0;
         });
     }
 }

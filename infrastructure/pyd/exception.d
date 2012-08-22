@@ -21,6 +21,8 @@ SOFTWARE.
 */
 module pyd.exception;
 
+import std.conv;
+import std.string;
 import python;
 import pyd.lib_abstract :
     toString,
@@ -41,6 +43,7 @@ void handle_exception(string file = __FILE__, size_t line = __LINE__) {
     PyObject* type, value, traceback;
     if (PyErr_Occurred() !is null) {
         PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
         throw new PythonException(type, value, traceback,file,line);
     }
 }
@@ -50,6 +53,8 @@ T error_code(T) () {
     static if (is(T == PyObject*)) {
         return null;
     } else static if (is(T == int)) {
+        return -1;
+    } else static if (is(T == Py_ssize_t)) {
         return -1;
     } else static if (is(T == void)) {
         return;
@@ -95,6 +100,50 @@ alias exception_catcher!(PyObject*) exception_catcher_PyObjectPtr;
 alias exception_catcher!(int) exception_catcher_int;
 alias exception_catcher!(void) exception_catcher_void;
 
+
+string printSyntaxError(PyObject* type, PyObject* value, PyObject* traceback) {
+    if(value is null) return "";
+    string text;
+    auto ptext = PyObject_GetAttrString(value, "text");
+    if(ptext) {
+        auto p2text = PyString_AsString(ptext);
+        if(p2text) text = strip(to!string(p2text));
+    }
+    C_long offset;
+    auto poffset = PyObject_GetAttrString(value, "offset");
+    if(poffset) {
+        offset = PyInt_AsLong(poffset);
+    }
+    auto valtype = to!string(value.ob_type.tp_name);
+
+    string message;
+    auto pmsg = PyObject_GetAttrString(value, "msg");
+    if(pmsg) {
+        auto cmsg = PyString_AsString(pmsg);
+        if(cmsg) message = to!string(cmsg);
+    }
+    string space = "";
+    foreach(i; 0 .. offset-1) space ~= " ";
+    return format(q"{
+    %s
+    %s^
+%s: %s}", text, space,valtype, message);
+}
+
+string printGenericError(PyObject* type, PyObject* value, PyObject* traceback) {
+    if(value is null) return "";
+    auto valtype = to!string(value.ob_type.tp_name);
+
+    string message;
+    auto pmsg = PyObject_GetAttrString(value, "message");
+    if(pmsg) {
+        auto cmsg = PyString_AsString(pmsg);
+        if(cmsg) message = to!string(cmsg);
+    }
+    return format(q"{
+%s: %s}", valtype, message);
+}
+
 /**
  * This simple exception class holds a Python exception.
  */
@@ -103,7 +152,11 @@ protected:
     PyObject* m_type, m_value, m_trace;
 public:
     this(PyObject* type, PyObject* value, PyObject* traceback, string file = __FILE__, size_t line = __LINE__) {
-        super(.toString(PyString_AsString(value)), file, line);
+        if(PyObject_IsInstance(value, cast(PyObject*)PyExc_SyntaxError)) {
+            super(printSyntaxError(type, value, traceback), file, line);
+        }else{
+            super(printGenericError(type, value, traceback), file, line);
+        }
         m_type = type;
         m_value = value;
         m_trace = traceback;
