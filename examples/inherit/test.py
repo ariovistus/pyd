@@ -11,7 +11,8 @@ sys.path.append(os.path.abspath(libDir))
 
 import inherit
 
-b = inherit.Base(i=1)
+#b = inherit.Base(i=1)
+b = inherit.Base(1)
 d = inherit.Derived(2)
 
 b.foo()

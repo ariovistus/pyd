@@ -46,14 +46,14 @@ extern(C) void PydMain() {
 
     wrap_class!(
         Base,
-        Init!(void function(int)),
+        Init!(int),
         Def!(Base.foo),
         Def!(Base.bar)
     );
 
     wrap_class!(
         Derived,
-        Init!(void function(int)),
+        Init!(int),
         Def!(Derived.foo)
     );
 }

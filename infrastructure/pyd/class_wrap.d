@@ -563,7 +563,7 @@ the same number of arguments.
 */
 struct Init(cps ...) {
     alias cps CtorParams;
-    enum bool needs_shim = true;
+    enum bool needs_shim = false;
     template Inner(T) {
         alias TypeTuple!(__traits(getOverloads, T, "__ctor")) Overloads;
         template IsDesired(alias ctor) {
@@ -581,7 +581,7 @@ struct Init(cps ...) {
     template shim(uint i) {
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
-            this(ParameterTypeTuple!(__pyd_p$i.CtorParams t) {
+            this(__pyd_p$i.CtorParams t) {
                 super(t);
             }
         }, "$i", i);

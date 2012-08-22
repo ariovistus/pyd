@@ -146,7 +146,8 @@ void conv2(A a) {
 mixin _wrap_class!(
     Foo,
     "Foo",
-    Init!(void delegate(int), void delegate(int, int)),
+    Init!(int), 
+    Init!(int, int),
     Property!(Foo.i, "A sample property of Foo."),
     //OpBinary!("+"),
     Def!(Foo.foo, "A sample method of Foo."),

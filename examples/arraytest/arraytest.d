@@ -41,7 +41,7 @@ extern(C) void PydMain() {
     module_init();
     wrap_class!(
         Foo,
-        Init!(void function(int)),
+        Init!(int),
         Repr!(Foo.toString),
         Def!(Foo.bar)
     );

@@ -14,7 +14,8 @@ from arraytest import Foo, get, set, test
 print ">>> get()"
 print `get()`
 print ">>> set([Foo(10), Foo(20)])"
-set(a=[Foo(10), Foo(20)])
+#set(a=[Foo(10), Foo(20)])
+set([Foo(10), Foo(20)])
 print ">>> get()"
 print `get()`
 

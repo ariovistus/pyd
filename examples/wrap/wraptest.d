@@ -41,6 +41,6 @@ extern(C) void PydMain() {
             OpBinary!("+", int),
             OpBinary!("-", int),
             OpBinary!("*", int),
-            Init!(void function(int)),
+            Init!(int),
             )();
 }
