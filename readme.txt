@@ -1,5 +1,8 @@
 Welcome to Pyd!
 
+Pyd is currently under development, and is in the middle of API 
+changes (https://bitbucket.org/ariovistus/pyd/wiki/Changes)
+
 This package is composed of two separate parts:
 
   * CeleriD - An extension to Python's Distutils that is aware of D.

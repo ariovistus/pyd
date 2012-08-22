@@ -1128,7 +1128,6 @@ template IsBinR(T...) {
 
 // handle all operator overloads. Ops must only contain operator overloads.
 struct Operators(Ops...) {
-    pragma(msg, "Operators:",Ops.stringof);
     enum bool needs_shim = false;
 
     template BinOp(string op, T) {
@@ -1228,7 +1227,6 @@ template _wrap_class(_T, string name, Params...) {
         alias _T* T;
     }
     void wrap_class(string docstring="", string modulename="") {
-        pragma(msg, "shim.mangleof: " ~ shim_class.mangleof);
         alias wrapped_class_type!(T) type;
         //writefln("entering wrap_class for %s", typeid(T));
         //pragma(msg, "wrap_class, T is " ~ prettytypeof!(T));
@@ -1278,33 +1276,7 @@ template _wrap_class(_T, string name, Params...) {
         ////////////////////////
 
         Operators!(Filter!(IsOp, Params)).call!T();
-
         // its just that simple.
-        version(none) {
-            //old operator overloading. bye bye!
-            // Numerical operator overloads
-            if (pyd.op_wrap.wrapped_class_as_number!(T) != python.PyNumberMethods.init) {
-                type.tp_as_number = &pyd.op_wrap.wrapped_class_as_number!(T);
-            }
-            // Sequence operator overloads
-            if (pyd.op_wrap.wrapped_class_as_sequence!(T) != python.PySequenceMethods.init) {
-                type.tp_as_sequence = &pyd.op_wrap.wrapped_class_as_sequence!(T);
-            }
-            // Mapping operator overloads
-            if (pyd.op_wrap.wrapped_class_as_mapping!(T) != python.PyMappingMethods.init) {
-                type.tp_as_mapping = &pyd.op_wrap.wrapped_class_as_mapping!(T);
-            }
-
-            // Standard operator overloads
-            // opCmp
-            static if (is(typeof(&T.opCmp))) {
-                type.tp_compare = &pyd.op_wrap.opcmp_wrap!(T).func;
-            }
-            // opCall
-            static if (is(typeof(&T.opCall))) {
-                type.tp_call = cast(ternaryfunc)&method_wrap!(T, T.opCall, typeof(&T.opCall)).func;
-            }
-        }
 
         //////////////////////////
         // Constructor wrapping //
