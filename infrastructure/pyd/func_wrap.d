@@ -51,9 +51,9 @@ void PydWrappedFunc_Ready(T)() {
     }
 }
 
-void setWrongArgsError(Py_ssize_t gotArgs, uint minArgs, uint maxArgs, string funcName="") {
+void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, string funcName="") {
 
-    string argStr(int args) {
+    string argStr(size_t args) {
         string temp = toString(args) ~ " argument";
         if (args > 1) {
             temp ~= "s";
@@ -106,7 +106,7 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t) (PyObject* args) {
     }else{
         MaxArgs.ps t;
         foreach(i, arg; t) {
-            enum uint argNum = i+1;
+            enum size_t argNum = i+1;
             static if(MaxArgs.vstyle == Variadic.no) {
                 if (i < argCount) {
                     auto bpobj =  PyTuple_GetItem(args, i);
@@ -153,19 +153,19 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t) (PyObject* args) {
 }
 
 // wraps applyPyTupleToAlias to return a PyObject*
-PyObject* pyApplyToAlias(alias fn, fn_t, uint MIN_ARGS) (PyObject* args) {
+PyObject* pyApplyToAlias(alias fn, fn_t) (PyObject* args) {
     static if (is(ReturnType!(fn_t) == void)) {
         applyPyTupleToAlias!(fn, fn_t)(args);
         Py_INCREF(Py_None);
         return Py_None;
     } else {
-        return _py( applyPyTupleToAlias!(fn, fn_t, MIN_ARGS)(args) );
+        return _py( applyPyTupleToAlias!(fn, fn_t)(args) );
     }
 }
 
 ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
     alias ParameterTypeTuple!(dg_t) T;
-    enum uint ARGS = T.length;
+    enum size_t ARGS = T.length;
     alias ReturnType!(dg_t) RT;
 
     Py_ssize_t argCount = 0;
@@ -206,7 +206,7 @@ PyObject* pyApplyToDelegate(dg_t) (dg_t dg, PyObject* args) {
 }
 
 template wrapped_func_call(fn_t) {
-    enum uint ARGS = ParameterTypeTuple!(fn_t).length;
+    enum size_t ARGS = ParameterTypeTuple!(fn_t).length;
     alias ReturnType!(fn_t) RT;
     // The entry for the tp_call slot of the PydFunc types.
     // (Or: What gets called when you pass a delegate or function pointer to
@@ -227,15 +227,15 @@ template wrapped_func_call(fn_t) {
 }
 
 // Wraps a function alias with a PyCFunction.
-template function_wrap(alias real_fn, uint MIN_ARGS, fn_t=typeof(&real_fn)) {
+template function_wrap(alias real_fn, fn_t=typeof(&real_fn)) {
     alias ParameterTypeTuple!(fn_t) Info;
-    enum uint MAX_ARGS = Info.length;
+    enum size_t MAX_ARGS = Info.length;
     alias ReturnType!(fn_t) RT;
 
     extern (C)
     PyObject* func(PyObject* self, PyObject* args) {
         return exception_catcher(delegate PyObject*() {
-            return pyApplyToAlias!(real_fn, fn_t, MIN_ARGS)(args);
+            return pyApplyToAlias!(real_fn, fn_t)(args);
         });
     }
 }
@@ -243,7 +243,7 @@ template function_wrap(alias real_fn, uint MIN_ARGS, fn_t=typeof(&real_fn)) {
 // Wraps a member function alias with a PyCFunction.
 template method_wrap(C, alias real_fn, fn_t=typeof(&real_fn)) {
     alias ParameterTypeTuple!(fn_t) Info;
-    enum uint ARGS = Info.length;
+    enum size_t ARGS = Info.length;
     alias ReturnType!(fn_t) RT;
     extern(C)
     PyObject* func(PyObject* self, PyObject* args) {
@@ -313,7 +313,7 @@ class PydWrappedFunc {
     }
 
     PyObject* call(T ...) (T t) {
-        enum uint ARGS = T.length;
+        enum size_t ARGS = T.length;
         PyObject* pyt = PyTuple_FromItems(t);
         if (pyt is null) return null;
         scope(exit) Py_DECREF(pyt);

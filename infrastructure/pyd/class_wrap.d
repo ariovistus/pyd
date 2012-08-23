@@ -361,13 +361,13 @@ template Def(alias fn, string name, fn_t, uint MIN_ARGS=minArgs!(fn)/+, string d
     alias Def!(fn, /*symbolnameof!(fn),*/ name, fn_t, MIN_ARGS/+, docstring+/) Def;
 }
 +/
-template _Def(alias fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARGS=minArgs!(fn)+/, string docstring) {
+template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARGS=minArgs!(fn)+/, string docstring) {
     //static const type = ParamType.Def;
-    alias fn func;
+    alias def_selector!(_fn,fn_t).FN func;
     alias fn_t func_t;
-    enum realname = symbolnameof!(fn);//_realname;
+    enum realname = symbolnameof!(func);//_realname;
     enum funcname = name;
-    enum min_args = minArgs!(fn);
+    enum min_args = minArgs!(func);
     enum bool needs_shim = false;
 
     static void call(T) () {
@@ -375,7 +375,7 @@ template _Def(alias fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARGS
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = &method_wrap!(T, fn, fn_t).func;
+        list[$-1].ml_meth = &method_wrap!(T, func, fn_t).func;
         list[$-1].ml_flags = METH_VARARGS;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
@@ -386,9 +386,12 @@ template _Def(alias fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARGS
     template shim(uint i, T) {
         enum shim = Replace!(q{    
             alias Params[$i] __pyd_p$i;
+            pragma(msg, "taco:", __pyd_p$i.func_t);
+            pragma(msg, "taco:", ParameterTypeTuple!(__pyd_p$i.func_t));
             ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) {
                 return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func("$name", t);
             }
+            alias T.$realname $realname;
         }, "$i",i,"$realname",realname, "$name", name);
     }
 }

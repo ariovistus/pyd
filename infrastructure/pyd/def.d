@@ -23,6 +23,10 @@ module pyd.def;
 
 import python;
 
+import std.metastrings;
+import std.typetuple;
+import std.traits;
+import util.typelist;
 import pyd.func_wrap;
 import pyd.lib_abstract :
     symbolnameof,
@@ -82,21 +86,61 @@ PyObject* Pyd_Module_p(string modulename="") {
  *>>> print testdll.foo(20)
  *It's greater than 10!)
  */
-void def(alias fn, string name = symbolnameof!(fn), fn_t=typeof(&fn), uint MIN_ARGS = minArgs!(fn, fn_t)) (string docstring="") {
+void def(alias fn, string name = symbolnameof!(fn), fn_t=typeof(&fn)) 
+    (string docstring="") {
     def!("", fn, name, fn_t, MIN_ARGS)(docstring);
 }
 
-void def(string modulename, alias fn, string name = symbolnameof!(fn), fn_t=typeof(&fn), uint MIN_ARGS = minArgs!(fn, fn_t)) (string docstring) {
+void def(alias fn, fn_t=typeof(&fn)) (string docstring="") {
+    def!("", fn, symbolnameof!(fn), fn_t, MIN_ARGS)(docstring);
+}
+
+void def(string modulename, alias _fn, string name = symbolnameof!(_fn), 
+        fn_t=typeof(&_fn)) 
+    (string docstring) {
+    alias def_selector!(_fn, fn_t).FN fn;
     pragma(msg, "def: " ~ name);
     PyMethodDef empty;
     ready_module_methods(modulename);
     PyMethodDef[]* list = &module_methods[modulename];
 
     (*list)[$-1].ml_name = (name ~ "\0").dup.ptr;
-    (*list)[$-1].ml_meth = &function_wrap!(fn, MIN_ARGS, fn_t).func;
+    (*list)[$-1].ml_meth = &function_wrap!(fn, fn_t).func;
     (*list)[$-1].ml_flags = METH_VARARGS;
     (*list)[$-1].ml_doc = (docstring ~ "\0").dup.ptr;
     (*list) ~= empty;
+}
+
+template Typeof(alias fn0) {
+    alias typeof(&fn0) Typeof;
+}
+
+template def_selector(alias fn, fn_t) {
+    alias alias_selector!(fn, fn_t) als;
+    static if(als.VOverloads.length == 0 && als.Overloads.length != 0) {
+        alias staticMap!(Typeof, als.Overloads) OverloadsT;
+        static assert(0, Format!("%s not among %s", 
+                    fn_t.stringof,OverloadsT.stringof));
+    }else static if(als.VOverloads.length > 1){
+        static assert(0, Format!("%s: Cannot choose between %s", als.nom, 
+                    staticMap!(Typeof, als.VOverloads)));
+    }else{
+        alias als.VOverloads[0] FN;
+    }
+}
+
+template alias_selector(alias fn, fn_t) {
+    alias ParameterTypeTuple!fn_t ps; 
+    alias ReturnType!fn_t ret;
+    alias TypeTuple!(__traits(parent, fn))[0] Parent;
+    enum nom = __traits(identifier, fn);
+    alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
+    template IsDesired(alias f) {
+        alias ParameterTypeTuple!f fps;
+        alias ReturnType!fn fret;
+        enum bool IsDesired = is(ps == fps) && is(fret == ret);
+    }
+    alias Filter!(IsDesired, Overloads) VOverloads;
 }
 
 string pyd_module_name;

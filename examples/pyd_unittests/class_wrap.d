@@ -6,7 +6,7 @@ static this() {
     add_module("testing");
     wrap_class!(Bizzy,
             Init!(int[]),
-            //Init!(int,double),
+            Def!(Bizzy.a, int function(double)), 
             Property!(Bizzy.m, true),
             OpBinary!("+"),
             OpBinary!("*"),
@@ -40,6 +40,12 @@ class Bizzy {
         writeln("shawarma");
     }
 
+    int a(int i){
+        return i + 11;
+    }
+    int a(double d) {
+        return cast(int)( d+12);
+    }
     int opBinary(string op)(int i) {
         static if(op == "+") return i+1;
         else static if(op == "*") return i+2;
@@ -99,6 +105,7 @@ class Bizzy {
 unittest {
     PyStmts(q"{
 bizzy=Bizzy(1,2,3,4,5)
+assert bizzy.a(1.0) == 13
 assert bizzy+1 == 2
 assert bizzy*1 == 3
 assert bizzy**1 == 4
