@@ -252,16 +252,16 @@ template wrapped_func_call(fn_t) {
     }
 }
 
-// Wraps a function alias with a PyCFunction.
+// Wraps a function alias with a PyCFunctionWithKeywords.
 template function_wrap(alias real_fn, fn_t=typeof(&real_fn)) {
     alias ParameterTypeTuple!(fn_t) Info;
     enum size_t MAX_ARGS = Info.length;
     alias ReturnType!(fn_t) RT;
 
     extern (C)
-    PyObject* func(PyObject* self, PyObject* args) {
+    PyObject* func(PyObject* self, PyObject* args, PyObject* kwargs) {
         return exception_catcher(delegate PyObject*() {
-            return pyApplyToAlias!(real_fn, fn_t)(args, null);
+            return pyApplyToAlias!(real_fn, fn_t)(args, kwargs);
         });
     }
 }

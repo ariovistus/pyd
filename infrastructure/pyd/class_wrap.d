@@ -438,8 +438,8 @@ mixin template _StaticDef(alias fn,/+ string _realname,+/ string name, fn_t, str
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = &function_wrap!(func, fn_t).func;
-        list[$-1].ml_flags = METH_VARARGS | METH_STATIC;
+        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!(func, fn_t).func;
+        list[$-1].ml_flags = METH_VARARGS | METH_STATIC | METH_KEYWORDS;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
         wrapped_class_type!(T).tp_methods = list.ptr;

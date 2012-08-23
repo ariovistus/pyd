@@ -88,11 +88,15 @@ PyObject* Pyd_Module_p(string modulename="") {
  */
 void def(alias fn, string name = symbolnameof!(fn), fn_t=typeof(&fn)) 
     (string docstring="") {
-    def!("", fn, name, fn_t, MIN_ARGS)(docstring);
+    def!("", fn, name, fn_t)(docstring);
+}
+void def(string modulename, alias fn, fn_t=typeof(&fn)) 
+    (string docstring="") {
+    def!(modulename, fn, __traits(identifier,fn), fn_t)(docstring);
 }
 
 void def(alias fn, fn_t=typeof(&fn)) (string docstring="") {
-    def!("", fn, symbolnameof!(fn), fn_t, MIN_ARGS)(docstring);
+    def!("", fn, symbolnameof!(fn), fn_t)(docstring);
 }
 
 void def(string modulename, alias _fn, string name = symbolnameof!(_fn), 
@@ -105,8 +109,8 @@ void def(string modulename, alias _fn, string name = symbolnameof!(_fn),
     PyMethodDef[]* list = &module_methods[modulename];
 
     (*list)[$-1].ml_name = (name ~ "\0").dup.ptr;
-    (*list)[$-1].ml_meth = &function_wrap!(fn, fn_t).func;
-    (*list)[$-1].ml_flags = METH_VARARGS;
+    (*list)[$-1].ml_meth = cast(PyCFunction) &function_wrap!(fn, fn_t).func;
+    (*list)[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
     (*list)[$-1].ml_doc = (docstring ~ "\0").dup.ptr;
     (*list) ~= empty;
 }
