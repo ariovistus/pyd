@@ -24,13 +24,7 @@ module pyd.exception;
 import std.conv;
 import std.string;
 import python;
-import pyd.lib_abstract :
-    toString,
-    prettytypeof,
-    objToStr
-;
-//import meta.Nameof;
-//import std.string;
+import pyd.lib_abstract : prettytypeof;
 
 /**
  * This function first checks if a Python exception is set, and then (if one
@@ -86,12 +80,14 @@ T exception_catcher(T) (T delegate() dg) {
     // A D exception was raised and should be translated into a meaningful
     // Python exception.
     catch (Exception e) {
-        PyErr_SetString(PyExc_RuntimeError, ("D Exception: " ~ e.classinfo.name ~ ": " ~ e.msg ~ "\0").dup.ptr);
+        import std.stdio;
+        writefln("A exception! %s",e.toString());
+        PyErr_SetString(PyExc_RuntimeError, ("D Exception:\n" ~ e.toString() ~ "\0").ptr);
         return error_code!(T)();
     }
     // Some other D object was thrown. Deal with it.
     catch (Throwable o) {
-        PyErr_SetString(PyExc_RuntimeError, ("thrown D Object: " ~ o.classinfo.name ~ ": " ~ objToStr(o) ~ "\0").dup.ptr);
+        PyErr_SetString(PyExc_RuntimeError, ("thrown D Object: " ~ o.classinfo.name ~ ": " ~ o.toString() ~ "\0").ptr);
         return error_code!(T)();
     }
 }
@@ -99,7 +95,6 @@ T exception_catcher(T) (T delegate() dg) {
 alias exception_catcher!(PyObject*) exception_catcher_PyObjectPtr;
 alias exception_catcher!(int) exception_catcher_int;
 alias exception_catcher!(void) exception_catcher_void;
-
 
 string printSyntaxError(PyObject* type, PyObject* value, PyObject* traceback) {
     if(value is null) return "";
@@ -179,6 +174,35 @@ public:
     PyObject* traceback() {
         if (m_trace) Py_INCREF(m_trace);
         return m_trace;
+    }
+
+    @property py_message() {
+        string message;
+        PyObject* pmsg;
+        if(m_value) {
+            if(PyObject_IsInstance(m_value, cast(PyObject*)PyExc_SyntaxError)) {
+                pmsg = PyObject_GetAttrString(m_value, "msg");
+            }else{
+                pmsg = PyObject_GetAttrString(m_value, "message");
+            }
+            if(pmsg) {
+                auto cmsg = PyString_AsString(pmsg);
+                if(cmsg) message = to!string(cmsg);
+            }
+        }
+
+        return message;
+    }
+
+    @property py_offset() {
+        C_long offset = -1;
+        if(m_value) {
+            auto poffset = PyObject_GetAttrString(m_value, "offset");
+            if(poffset) {
+                offset = PyInt_AsLong(poffset);
+            }
+        }
+        return offset;
     }
 }
 

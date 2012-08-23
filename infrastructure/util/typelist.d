@@ -29,7 +29,7 @@ template Join(string delimit, T...) {
         }else static if(T.length == 1) {
             enum Join =  T[0];
         }else {
-            enum Join = T[0] ~ "," ~ Join!(T[1..$]);
+            enum Join = T[0] ~ "," ~ Join!(delimit,T[1..$]);
         }
 }
 

@@ -76,10 +76,12 @@ template wrapped_ctors(T,Shim, C ...) {
 
     extern(C)
     static int func(PyObject* self, PyObject* args, PyObject* kwargs) {
-        Py_ssize_t len = PyObject_Length(args);
+        Py_ssize_t arglen = PyObject_Length(args);
+        Py_ssize_t kwlen = kwargs is null?-1:PyObject_Length(kwargs);
+        enforce(arglen != -1);
+        Py_ssize_t len = arglen + ((kwlen == -1) ? 0:kwlen);
 
         return exception_catcher({
-            //writefln("in init_func: len=%s, T=%s, C.length=%s", len, typeid(T), C.length);
             // Default ctor
             static if (is(typeof(new T))) {
                 if (len == 0) {
@@ -89,18 +91,10 @@ template wrapped_ctors(T,Shim, C ...) {
             }
             // find another Ctor
             foreach(i, init; C) {
-                if (supportsNArgs!(init.Inner!T.FN)(len)) {
-                    //auto fn = &call_ctor!(T, ParameterTypeTuple!(init.Inner!T.FN)/*init.CtorParams*/);
+                if (supportsNArgs!(init.Inner!T.FN)(len) && 
+                    (kwlen <= 0 || hasAllNamedArgs!(init.Inner!T.FN)(arglen,kwargs))) {
                     alias call_ctor!(T, init).func fn;
-                    T t = applyPyTupleToAlias!(fn, typeof(&fn))(args);
-                    /*
-                    if (fn is null) {
-                        PyErr_SetString(PyExc_RuntimeError, "Couldn't get pointer to class ctor redirect.");
-                        return -1;
-                    }
-                    */
-                    //alias typeof(fn) dg_t;
-                    //T t = applyPyTupleToDelegate(fn, args);
+                    T t = applyPyTupleToAlias!(fn, typeof(&fn))(args, kwargs);
                     if (t is null) {
                         PyErr_SetString(PyExc_RuntimeError, "Class ctor redirect didn't return a class instance!");
                         return -1;

@@ -5,7 +5,8 @@ import std.stdio;
 static this() {
     add_module("testing");
     wrap_class!(Bizzy,
-            Init!(int[]),
+            //Init!(int[]),
+            Init!(int,double,string),
             Def!(Bizzy.a, int function(double)), 
             StaticDef!(Bizzy.b, int function(double)),
             Repr!(Bizzy.repr),
@@ -28,6 +29,12 @@ static this() {
             OpCall!(double),
             Len!(Bizzy.pylen),
     )("","testing");
+    wrap_class!(Bizzy2,
+            Init!(int[]),
+    )("","testing");
+    wrap_class!(Bizzy3,
+            Init!(int,int),
+    )("","testing");
 }
 
 class Bizzy {
@@ -35,11 +42,8 @@ class Bizzy {
 
     int m() { return _m; }
 
-    this(int[] i...) {
-        writeln("abooba",i);
-    }
-    this(int i, double d = 1.0) {
-        writeln("shawarma");
+    this(int i, double d = 1.0, string s = "hi") {
+        writefln("shawarma i=%s, d=%s, s='%s'",i,d,s);
     }
 
     int a(int i){
@@ -117,9 +121,23 @@ class Bizzy {
     }
 }
 
+class Bizzy2 {
+    this(int[] i...) {
+        writeln("abooba",i);
+    }
+}
+
+class Bizzy3{
+    this(int i, int j) {
+        writefln("broomba(%s,%s)",i,j);
+    }
+}
+
 unittest {
     PyStmts(q"{
-bizzy=Bizzy(1,2,3,4,5)
+#bizzy=Bizzy(1,2,3,4,5)
+#bizzy=Bizzy(d=7.1,i=4)
+bizzy=Bizzy(i=4)
 assert bizzy.a(1.0) == 13
 assert Bizzy.b(1.0) == 15
 assert repr(bizzy) == "bye"
@@ -145,6 +163,17 @@ assert bizzy.m == 3302
 bizzy[2:3] = 4.3
 assert bizzy.m == 4323
 assert bizzy(40.5) == 44823
+}", "testing");
+
+PyStmts(q"{
+bizzy = Bizzy2(4);
+bizzy = Bizzy2([4,5]);
+bizzy = Bizzy2(i=4);
+bizzy = Bizzy2(i=[4,5]);
+}", "testing");
+
+PyStmts(q"{
+bizzy = Bizzy3(1,2)
 }", "testing");
 
 }
