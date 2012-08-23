@@ -117,16 +117,10 @@ extern (C) {
 
   /++++ Not part of Python api!!! ++++/
   // (^&!&^*& borrowed references should be reflected in the type system.
-  // evil casting will follow.
+  // evil casting will follow (in Py_INCREF).
   struct PyObject_BorrowedRef{
   }
 
-  // see?
-  PyObject* OwnPyRef()(PyObject_BorrowedRef* bop) {
-      PyObject* op = cast(PyObject*) bop;
-      Py_INCREF(op);
-      return op;
-  }
   /++++ End Not part of Python api!!! ++++/
 
   template PyObject_VAR_HEAD() {
@@ -607,15 +601,28 @@ extern (C) {
 ///////////////////////////////////////////////////////////////////////////////
   // Python-header-file: Include/object.h:
 
-  void Py_INCREF()(PyObject *op) {
-    ++op.ob_refcnt;
+  auto Py_INCREF(T)(T op) 
+  if(is(T == PyObject*) || is(T == PyObject_BorrowedRef*))
+  {
+      static if(is(T == PyObject_BorrowedRef*)) {
+          PyObject* pop = cast(PyObject*) op;
+          ++pop.ob_refcnt;
+          return pop;
+      }else {
+          ++op.ob_refcnt;
+      }
   }
 
-  void Py_XINCREF()(PyObject *op) {
+  auto Py_XINCREF(T)(T op) {
     if (op == null) {
-      return;
+        static if(is(typeof(return) == void))
+            return;
+        else {
+            import std.exception;
+            enforce(0, "INCREF on null");
+        }
     }
-    Py_INCREF(op);
+    return Py_INCREF(op);
   }
 
   void Py_DECREF()(PyObject *op) {

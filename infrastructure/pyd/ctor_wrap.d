@@ -94,7 +94,7 @@ template wrapped_ctors(T,Shim, C ...) {
                 if (supportsNArgs!(init.Inner!T.FN)(len) && 
                     (kwlen <= 0 || hasAllNamedArgs!(init.Inner!T.FN)(arglen,kwargs))) {
                     alias call_ctor!(T, init).func fn;
-                    T t = applyPyTupleToAlias!(fn, typeof(&fn))(args, kwargs);
+                    T t = applyPyTupleToAlias!(fn)(args, kwargs);
                     if (t is null) {
                         PyErr_SetString(PyExc_RuntimeError, "Class ctor redirect didn't return a class instance!");
                         return -1;

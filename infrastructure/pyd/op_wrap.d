@@ -248,8 +248,8 @@ template opcall_wrap(T, alias fn) {
 template opfunc_unary_wrap(T, alias opfn) {
     extern(C)
     PyObject* func(PyObject* self) {
-        // method_wrap takes care of exception handling
-        return method_wrap!(T, opfn, typeof(&opfn)).func(self, null);
+        // method_dgwrap takes care of exception handling
+        return method_dgwrap!(T, opfn).func(self, null);
     }
 }
 
@@ -270,7 +270,7 @@ template opindex_wrap(T, alias fn) {
             });
         }
     } else {
-        alias method_wrap!(T, fn, typeof(&fn)) opindex_methodT;
+        alias method_dgwrap!(T, fn) opindex_methodT;
         extern(C)
         PyObject* func(PyObject* self, PyObject* key) {
             Py_ssize_t args;
@@ -293,7 +293,7 @@ template opindexassign_wrap(T, alias fn) {
     alias ParameterTypeTuple!(fn) Params;
 
     static if (Params.length > 2) {
-        alias method_wrap!(T, fn, typeof(&fn)) fn_wrap;
+        alias method_dgwrap!(T, fn) fn_wrap;
         extern(C)
         int func(PyObject* self, PyObject* key, PyObject* val) {
             Py_ssize_t args;

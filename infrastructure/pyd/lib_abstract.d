@@ -94,8 +94,10 @@ bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
 template getparams(alias fn) {
     enum raw_str = typeof(fn).stringof;
     enum ret_str = ReturnType!fn.stringof;
-    static assert(raw_str.startsWith(ret_str));
-    enum noret_str = raw_str[ret_str.length .. $];
+    enum iret = countUntil(raw_str, ret_str);
+    static assert(iret != -1);
+    static assert(countUntil(raw_str[0 .. iret], "(") == -1);
+    enum noret_str = raw_str[iret + ret_str.length .. $];
     enum open_p = countUntil(noret_str, "(");
     static assert(open_p != -1);
     enum close_p = countUntil(retro(noret_str), ")");

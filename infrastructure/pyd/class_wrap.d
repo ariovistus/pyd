@@ -222,7 +222,7 @@ template wrapped_repr(T, alias fn) {
     extern(C)
     PyObject* repr(PyObject* self) {
         return exception_catcher(delegate PyObject*() {
-            return method_wrap!(T, fn, string function()).func(self, null);
+            return method_wrap!(T, fn).func(self, null, null);
         });
     }
 }
@@ -282,7 +282,7 @@ template wrapped_get(T, Parts) {
     extern(C)
     PyObject* func(PyObject* self, void* closure) {
         // method_wrap already catches exceptions
-        return method_wrap!(T, Parts.GetterFn, Parts.getter_type).func(self, null);
+        return method_wrap!(T, Parts.GetterFn).func(self, null, null);
     }
 }
 
@@ -296,7 +296,7 @@ template wrapped_set(T, Parts) {
         scope(exit) Py_DECREF(temp_tuple);
         Py_INCREF(value);
         PyTuple_SetItem(temp_tuple, 0, value);
-        PyObject* res = method_wrap!(T, Parts.SetterFn, Parts.setter_type).func(self, temp_tuple);
+        PyObject* res = method_wrap!(T, Parts.SetterFn).func(self, temp_tuple, null);
         // If we get something back, we need to DECREF it.
         if (res) Py_DECREF(res);
         // If we don't, propagate the exception
@@ -376,8 +376,8 @@ template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, size_t MIN_A
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = &method_wrap!(T, func, fn_t).func;
-        list[$-1].ml_flags = METH_VARARGS;
+        list[$-1].ml_meth = cast(PyCFunction) &method_wrap!(T, func).func;
+        list[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
         // It's possible that appending the empty item invalidated the
@@ -387,8 +387,6 @@ template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, size_t MIN_A
     template shim(size_t i, T) {
         enum shim = Replace!(q{    
             alias Params[$i] __pyd_p$i;
-            pragma(msg, "taco:", __pyd_p$i.func_t);
-            pragma(msg, "taco:", ParameterTypeTuple!(__pyd_p$i.func_t));
             ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) {
                 return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func("$name", t);
             }
@@ -438,7 +436,7 @@ mixin template _StaticDef(alias fn,/+ string _realname,+/ string name, fn_t, str
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!(func, fn_t).func;
+        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!func.func;
         list[$-1].ml_flags = METH_VARARGS | METH_STATIC | METH_KEYWORDS;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
@@ -1381,7 +1379,7 @@ PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) {
         // If this object is already wrapped, get the existing object.
         PyObject_BorrowedRef* obj_p = get_existing_reference(t);
         if (obj_p) {
-            return OwnPyRef(obj_p);
+            return Py_INCREF(obj_p);
         }
         // Otherwise, allocate a new object
         PyObject* obj = type.tp_new(type, null, null);

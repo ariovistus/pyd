@@ -241,8 +241,7 @@ PyObject* _py(T) (T t) {
         PydWrappedFunc_Ready!(T)();
         return WrapPyObject_FromObject(t);
     } else static if (is(T : PydObject)) {
-        PyObject_BorrowedRef* temp = t.ptr();
-        return OwnPyRef(temp);
+        return Py_INCREF(t.ptr());
     // The function expects to be passed a borrowed reference and return an
     // owned reference. Thus, if passed a PyObject*, this will increment the
     // reference count.
@@ -351,7 +350,7 @@ T d_type(T) (PyObject* o) {
         auto len = PyTuple_Size(o);
         if(len != T.Types.length) could_not_convert!T(o);
         foreach(i,_t; T.Types) {
-            auto obj =  OwnPyRef(PyTuple_GetItem(o, i));
+            auto obj =  Py_XINCREF(PyTuple_GetItem(o, i));
             tuple[i] = d_type!_t(obj);
             Py_DECREF(obj);
         }

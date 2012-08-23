@@ -68,7 +68,7 @@ R PyDef( string python, string modl, R, Args...)
         once = false;
         auto m = py_import(modl);
         auto locals = m.getdict();
-        auto locals_ptr = OwnPyRef(m.getdict().ptr);
+        auto locals_ptr = Py_INCREF(m.getdict().ptr);
         if("__builtins__" !in locals) {
             auto builtins = new PydObject(PyEval_GetBuiltins());
             locals["__builtins__"] = builtins;
@@ -100,7 +100,7 @@ R PyDef( string python, string modl, R, Args...)
 T PyEval(T = PydObject)(string python, string modl, string file = __FILE__, size_t line = __LINE__) {
     auto m = py_import(modl);
     auto locals = m.getdict();
-    auto locals_ptr = OwnPyRef(m.getdict().ptr);
+    auto locals_ptr = Py_INCREF(m.getdict().ptr);
     if("__builtins__" !in locals) {
         auto builtins = new PydObject(PyEval_GetBuiltins());
         locals["__builtins__"] = builtins;
@@ -124,7 +124,7 @@ T PyEval(T = PydObject)(string python, string modl, string file = __FILE__, size
 void PyStmts(string python, string modl,string file = __FILE__, size_t line = __LINE__) {
     auto m = py_import(modl);
     auto locals = m.getdict();
-    auto locals_ptr = OwnPyRef(locals.ptr);
+    auto locals_ptr = Py_INCREF(locals.ptr);
     if("__builtins__" !in locals) {
         auto builtins = new PydObject(PyEval_GetBuiltins());
         locals["__builtins__"] = builtins;

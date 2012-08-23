@@ -109,7 +109,7 @@ void def(string modulename, alias _fn, string name = symbolnameof!(_fn),
     PyMethodDef[]* list = &module_methods[modulename];
 
     (*list)[$-1].ml_name = (name ~ "\0").dup.ptr;
-    (*list)[$-1].ml_meth = cast(PyCFunction) &function_wrap!(fn, fn_t).func;
+    (*list)[$-1].ml_meth = cast(PyCFunction) &function_wrap!fn.func;
     (*list)[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
     (*list)[$-1].ml_doc = (docstring ~ "\0").dup.ptr;
     (*list) ~= empty;

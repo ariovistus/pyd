@@ -66,7 +66,7 @@ public:
     this(PyObject_BorrowedRef* o) {
         if (o is null) handle_exception();
         // PydObject always owns its references
-        m_ptr = OwnPyRef(o);
+        m_ptr = Py_INCREF(o);
     }
 
     /// The default constructor constructs an instance of the Py_None PydObject.

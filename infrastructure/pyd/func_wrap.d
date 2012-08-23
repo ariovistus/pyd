@@ -81,12 +81,13 @@ void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, strin
 }
 
 // Calls callable alias fn with PyTuple args.
-ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t) 
+// kwargs may be null, args may not
+ReturnType!fn applyPyTupleToAlias(alias fn) 
     (PyObject* args, PyObject* kwargs) {
-    alias ParameterTypeTuple!(fn_t) T;
+    alias ParameterTypeTuple!fn T;
     enum size_t MIN_ARGS = minArgs!fn;
     alias maxArgs!fn MaxArgs;
-    alias ReturnType!(fn_t) RT;
+    alias ReturnType!fn RT;
     bool argsoverwrote = false;
 
     Py_ssize_t argCount = 0;
@@ -102,7 +103,7 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t)
     }
 
     // Sanity check!
-    if (!supportsNArgs!(fn, fn_t)(argCount)) {
+    if (!supportsNArgs!(fn)(argCount)) {
         setWrongArgsError(cast(int) argCount, MIN_ARGS, 
                 (MaxArgs.hasMax ? MaxArgs.max:-1));
         handle_exception();
@@ -119,8 +120,7 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t)
             static if(MaxArgs.vstyle == Variadic.no) {
                 if (i < argCount) {
                     auto bpobj =  PyTuple_GetItem(args, i);
-                    enforce(bpobj != null);
-                    auto  pobj = OwnPyRef(bpobj);
+                    auto  pobj = Py_XINCREF(bpobj);
                     t[i] = d_type!(typeof(arg))(pobj);
                     Py_DECREF(pobj);
                 }
@@ -132,19 +132,15 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t)
                     }
                 }
             }else static if(MaxArgs.vstyle == Variadic.typesafe) {
-                if (argNum < t.length) {
-                    auto bpobj =  PyTuple_GetItem(args, i);
-                    enforce(bpobj != null);
-                    auto  pobj = OwnPyRef(bpobj);
+                static if (argNum < t.length) {
+                    auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
                     t[i] = d_type!(typeof(arg))(pobj);
                     Py_DECREF(pobj);
-                }else if(argNum == t.length) {
+                }else static if(argNum == t.length) {
                     alias Unqual!(ElementType!(typeof(t[i]))) elt_t;
                     auto varlen = argCount-i;
                     if(varlen == 1) {
-                        auto bpobj =  PyTuple_GetItem(args, i);
-                        enforce(bpobj != null);
-                        auto  pobj = OwnPyRef(bpobj);
+                        auto  pobj = Py_XINCREF(PyTuple_GetItem(args, i));
                         if(PyList_Check(pobj)) {
                             try{
                                 t[i] = cast(typeof(t[i])) d_type!(elt_t[])(pobj);
@@ -158,9 +154,7 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t)
                     }else{
                         elt_t[] vars = new elt_t[](argCount-i);
                         foreach(j; i .. argCount) {
-                            auto bpobj =  PyTuple_GetItem(args, j);
-                            enforce(bpobj != null);
-                            auto  pobj = OwnPyRef(bpobj);
+                            auto  pobj = Py_XINCREF(PyTuple_GetItem(args, j));
                             vars[j-i] = d_type!(elt_t)(pobj);
                             Py_DECREF(pobj);
                         }
@@ -174,18 +168,17 @@ ReturnType!(fn_t) applyPyTupleToAlias(alias fn, fn_t)
     }
     // This should never get here.
     throw new Exception("applyPyTupleToAlias reached end! argCount = " ~ toString(argCount));
-    static if (!is(RT == void))
-        return ReturnType!(fn_t).init;
 }
 
 // wraps applyPyTupleToAlias to return a PyObject*
-PyObject* pyApplyToAlias(alias fn, fn_t) (PyObject* args, PyObject* kwargs) {
-    static if (is(ReturnType!(fn_t) == void)) {
-        applyPyTupleToAlias!(fn, fn_t)(args, kwargs);
+// kwargs may be null, args may not.
+PyObject* pyApplyToAlias(alias fn) (PyObject* args, PyObject* kwargs) {
+    static if (is(ReturnType!fn == void)) {
+        applyPyTupleToAlias!fn(args, kwargs);
         Py_INCREF(Py_None);
         return Py_None;
     } else {
-        return _py( applyPyTupleToAlias!(fn, fn_t)(args, kwargs) );
+        return _py( applyPyTupleToAlias!fn(args, kwargs) );
     }
 }
 
@@ -213,7 +206,7 @@ ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
     }
     T t;
     foreach(i, arg; t) {
-        auto pi = OwnPyRef(PyTuple_GetItem(args, i));
+        auto pi = Py_XINCREF(PyTuple_GetItem(args, i));
         t[i] = d_type!(typeof(arg))(pi);
         Py_DECREF(pi);
     }
@@ -253,24 +246,61 @@ template wrapped_func_call(fn_t) {
 }
 
 // Wraps a function alias with a PyCFunctionWithKeywords.
-template function_wrap(alias real_fn, fn_t=typeof(&real_fn)) {
-    alias ParameterTypeTuple!(fn_t) Info;
+template function_wrap(alias real_fn) {
+    alias ParameterTypeTuple!real_fn Info;
     enum size_t MAX_ARGS = Info.length;
-    alias ReturnType!(fn_t) RT;
+    alias ReturnType!real_fn RT;
 
     extern (C)
     PyObject* func(PyObject* self, PyObject* args, PyObject* kwargs) {
         return exception_catcher(delegate PyObject*() {
-            return pyApplyToAlias!(real_fn, fn_t)(args, kwargs);
+            return pyApplyToAlias!real_fn(args, kwargs);
         });
     }
 }
 
 // Wraps a member function alias with a PyCFunction.
-template method_wrap(C, alias real_fn, fn_t=typeof(&real_fn)) {
-    alias ParameterTypeTuple!(fn_t) Info;
+// func's args and kwargs may each be null.
+template method_wrap(C, alias real_fn) {
+    alias ParameterTypeTuple!real_fn Info;
     enum size_t ARGS = Info.length;
-    alias ReturnType!(fn_t) RT;
+    alias ReturnType!real_fn RT;
+    extern(C)
+    PyObject* func(PyObject* self, PyObject* args, PyObject* kwargs) {
+        return exception_catcher(delegate PyObject*() {
+            // Didn't pass a "self" parameter! Ack!
+            if (self is null) {
+                PyErr_SetString(PyExc_TypeError, "Wrapped method didn't get a 'self' parameter.");
+                return null;
+            }
+            C instance = (cast(wrapped_class_object!(C)*)self).d_obj;
+            if (instance is null) {
+                PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
+                return null;
+            }
+            Py_ssize_t arglen = args is null ? 0 : PyObject_Length(args);
+            enforce(arglen != -1);
+            PyObject* self_and_args = PyTuple_New(arglen+1);
+            scope(exit) {
+                Py_XDECREF(self_and_args);
+            }
+            enforce(self_and_args);
+            PyTuple_SetItem(self_and_args, 0, self);
+            Py_INCREF(self);
+            foreach(i; 0 .. arglen) {
+                auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
+                PyTuple_SetItem(self_and_args, i+1, pobj);
+            }
+            alias memberfunc_to_func!(C,real_fn).func func;
+            return pyApplyToAlias!func(self_and_args, kwargs);
+        });
+    }
+}
+
+template method_dgwrap(C, alias real_fn) {
+    alias ParameterTypeTuple!real_fn Info;
+    enum size_t ARGS = Info.length;
+    alias ReturnType!real_fn RT;
     extern(C)
     PyObject* func(PyObject* self, PyObject* args) {
         return exception_catcher(delegate PyObject*() {
@@ -284,10 +314,26 @@ template method_wrap(C, alias real_fn, fn_t=typeof(&real_fn)) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
                 return null;
             }
-            fn_to_dg!(fn_t) dg = dg_wrapper!(C, fn_t)(instance, &real_fn);
+            auto dg = dg_wrapper!(C, typeof(&real_fn))(instance, &real_fn);
             return pyApplyToDelegate(dg, args);
         });
     }
+}
+
+
+template memberfunc_to_func(T, alias memfn) {
+    alias ReturnType!memfn Ret;
+    enum params = getparams!memfn;
+    alias ParameterTypeTuple!memfn PS;
+    alias ParameterIdentifierTuple!memfn ids;
+        
+    mixin(Replace!(q{
+        Ret func(T t, $params) {
+            return t.$fn($ids);
+        }
+    }, "$params", params, "$fn", __traits(identifier, memfn), 
+       "$ids",Join!(",",ids)));
+
 }
 
 //-----------------------------------------------------------------------------
@@ -397,20 +443,15 @@ PyObject* arrangeNamedArgs(alias fn)(PyObject* args, PyObject* kwargs) {
     auto allargs = PyTuple_New(arglen+kwarglen);
 
     foreach(i; 0 .. arglen) {
-        auto bobj = PyTuple_GetItem(args, i);
-        enforce(bobj);
-        auto pobj = OwnPyRef(bobj);
+        auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
         PyTuple_SetItem(allargs, i, pobj);
-        Py_DECREF(pobj);
     }
 
     foreach(n,name; allfnnames[arglen .. arglen + kwarglen]) {
         auto key = _py(name);
         auto bval = PyDict_GetItem(kwargs, key);
-        enforce(bval);
-        auto val = OwnPyRef(bval);
+        auto val = Py_XINCREF(bval);
         PyTuple_SetItem(allargs, arglen+n, val);
-        Py_DECREF(val);
     }
     return allargs;
 }

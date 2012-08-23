@@ -37,6 +37,9 @@ static this() {
     )("","testing");
     wrap_class!(Bizzy3,
             Init!(int,int),
+            Def!(Bizzy3.a),
+            Def!(Bizzy3.b),
+            Def!(Bizzy3.c),
     )("","testing");
 }
 
@@ -148,6 +151,20 @@ class Bizzy3{
     this(int i, int j) {
         writefln("broomba(%s,%s)",i,j);
     }
+
+    int a(int i, double d) {
+        return cast(int)(100*d + 2*i);
+    }
+    int b(int i, double d = 3.2) {
+        return cast(int)(1000*d + 20*i+4);
+    }
+    int c(int[] i...) {
+        int ret = 0;
+        foreach_reverse(_i,k; i) {
+            ret += 10 ^^ (i.length-_i-1) * k;
+        }
+        return ret;
+    }
 }
 
 unittest {
@@ -206,6 +223,19 @@ assert(PyEval!int("Bizzy2.c(i=[7,5,6])","testing") == 657);
 PyStmts(q"{
 bizzy = Bizzy3(1,2)
 }", "testing");
+assert(PyEval!int("bizzy.a(7, 32.1)","testing") == 3224);
+assert(PyEval!int("bizzy.a(i=7, d=32.1)","testing") == 3224);
+assert(PyEval!int("bizzy.a(d=32.1,i=7)","testing") == 3224);
+assert(PyEval!int("bizzy.b(7, 32.1)","testing") == 32244);
+assert(PyEval!int("bizzy.b(d=32.1,i=7)","testing") == 32244);
+assert(PyEval!int("bizzy.b(i=7, d=32.1)","testing") == 32244);
+assert(PyEval!int("bizzy.b(7)","testing") == 3344);
+assert(PyEval!int("bizzy.b(i=7)","testing") == 3344);
+assert(PyEval!int("bizzy.c(7)","testing") == 7);
+assert(PyEval!int("bizzy.c(i=7)","testing") == 7);
+assert(PyEval!int("bizzy.c(i=[7])","testing") == 7);
+assert(PyEval!int("bizzy.c(7,5,6)","testing") == 756);
+assert(PyEval!int("bizzy.c(i=[7,5,6])","testing") == 756);
 
 }
 
