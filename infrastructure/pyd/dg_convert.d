@@ -27,11 +27,7 @@ SOFTWARE.
  */
 module pyd.dg_convert;
 
-import pyd.lib_abstract :
-    ParameterTypeTuple,
-    ReturnType
-;
-//import std.traits;
+import std.traits;
 
 template fn_to_dgT(Fn) {
     alias ParameterTypeTuple!(Fn) T;
@@ -47,31 +43,21 @@ template fn_to_dg(Fn) {
     alias fn_to_dgT!(Fn).type fn_to_dg;
 }
 
-// Breaking out the old hack again for GDC support...
-struct dg_struct {
-    void* ptr;
-    void* funcptr;
-}
-
-union dg_hack(T) {
-    dg_struct fake_dg;
-    T real_dg;
-}
-
 /**
  * This template function converts a pointer to a member function into a
  * delegate.
  */
-fn_to_dg!(Fn) dg_wrapper(T, Fn) (T t, Fn fn) {
-    //fn_to_dg!(Fn) dg;
-    //dg.ptr = t;
-    //dg.funcptr = fn;
+auto dg_wrapper(T, Fn) (T t, Fn fn) {
+    fn_to_dg!(Fn) dg;
+    dg.ptr = cast(void*) t;
+    static if(variadicFunctionStyle!fn == Variadic.typesafe) {
+        // trying to stuff a Ret function(P[]...) into a Ret function(P[])
+        // it'll totally work!
+        dg.funcptr = cast(typeof(dg.funcptr)) fn;
+    }else{
+        dg.funcptr = fn;
+    }
 
-    //return dg;
-
-    dg_hack!(fn_to_dg!(Fn)) dg;
-    dg.fake_dg.ptr = cast(void*)t;
-    dg.fake_dg.funcptr = fn;
-    return dg.real_dg;
+    return dg;
 }
 

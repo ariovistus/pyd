@@ -329,7 +329,8 @@ template memberfunc_to_func(T, alias memfn) {
         
     mixin(Replace!(q{
         Ret func(T t, $params) {
-            return t.$fn($ids);
+            auto dg = dg_wrapper(t, &memfn);
+            return dg($ids);
         }
     }, "$params", params, "$fn", __traits(identifier, memfn), 
        "$ids",Join!(",",ids)));

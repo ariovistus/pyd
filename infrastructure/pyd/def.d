@@ -88,19 +88,11 @@ PyObject* Pyd_Module_p(string modulename="") {
  */
 void def(alias fn, string name = symbolnameof!(fn), fn_t=typeof(&fn)) 
     (string docstring="") {
-    def!("", fn, name, fn_t)(docstring);
-}
-void def(string modulename, alias fn, fn_t=typeof(&fn)) 
-    (string docstring="") {
-    def!(modulename, fn, __traits(identifier,fn), fn_t)(docstring);
+    def!("", fn, fn_t, name)(docstring);
 }
 
-void def(alias fn, fn_t=typeof(&fn)) (string docstring="") {
-    def!("", fn, symbolnameof!(fn), fn_t)(docstring);
-}
-
-void def(string modulename, alias _fn, string name = symbolnameof!(_fn), 
-        fn_t=typeof(&_fn)) 
+void def(string modulename, alias _fn, fn_t=typeof(&_fn), 
+        string name = symbolnameof!(_fn)) 
     (string docstring) {
     alias def_selector!(_fn, fn_t).FN fn;
     pragma(msg, "def: " ~ name);

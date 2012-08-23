@@ -26,6 +26,10 @@ SOFTWARE.
  */
 module pyd.pyd;
 
+import std.compiler;
+static assert(version_major == 2 && version_minor >= 60, 
+        "pyd requires FE 2.060 or later");
+
 public {
     import pyd.class_wrap;
     import pyd.def;
