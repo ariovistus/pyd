@@ -357,13 +357,14 @@ struct Def(alias fn, string name, fn_t, string docstring) {
     mixin _Def!(fn, /*symbolnameof!(fn),*/ name, fn_t/+, minArgs!(fn)+/, docstring);
 }
 /+
-template Def(alias fn, string name, fn_t, uint MIN_ARGS=minArgs!(fn)/+, string docstring=""+/) {
+template Def(alias fn, string name, fn_t, size_t MIN_ARGS=minArgs!(fn)/+, string docstring=""+/) {
     alias Def!(fn, /*symbolnameof!(fn),*/ name, fn_t, MIN_ARGS/+, docstring+/) Def;
 }
 +/
-template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARGS=minArgs!(fn)+/, string docstring) {
+template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, size_t MIN_ARGS=minArgs!(fn)+/, string docstring) {
     //static const type = ParamType.Def;
     alias def_selector!(_fn,fn_t).FN func;
+    static assert(!__traits(isStaticFunction, func)); // TODO
     alias fn_t func_t;
     enum realname = symbolnameof!(func);//_realname;
     enum funcname = name;
@@ -383,7 +384,7 @@ template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARG
         // pointer in the type struct, so we renew it here.
         wrapped_class_type!(T).tp_methods = list.ptr;
     }
-    template shim(uint i, T) {
+    template shim(size_t i, T) {
         enum shim = Replace!(q{    
             alias Params[$i] __pyd_p$i;
             pragma(msg, "taco:", __pyd_p$i.func_t);
@@ -400,51 +401,50 @@ template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, uint MIN_ARG
 Wraps a static member function of the class. Identical to pyd.def.def
 */
 struct StaticDef(alias fn) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), typeof(&fn), minArgs!(fn), "");
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), typeof(&fn), "");
 }
 struct StaticDef(alias fn, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), typeof(&fn), minArgs!(fn), docstring);
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), typeof(&fn), docstring);
 }
-struct StaticDef(alias _fn, string name, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, typeof(&fn), minArgs!(fn), docstring);
+struct StaticDef(alias fn, string name, string docstring) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, typeof(&fn), docstring);
 }
-struct StaticDef(alias _fn, string name, fn_t, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, minArgs!(fn), docstring);
+struct StaticDef(alias fn, string name, fn_t, string docstring) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, docstring);
 }
-struct StaticDef(alias _fn, fn_t) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), fn_t, minArgs!(fn), "");
+struct StaticDef(alias fn, fn_t) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), fn_t, "");
 }
-struct StaticDef(alias _fn, fn_t, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), fn_t, minArgs!(fn), docstring);
+struct StaticDef(alias fn, fn_t, string docstring) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), fn_t, docstring);
 }
-struct StaticDef(alias _fn, string name, fn_t) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, minArgs!(fn), "");
+struct StaticDef(alias fn, string name, fn_t) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, "");
 }
-struct StaticDef(alias _fn, string name, fn_t, uint MIN_ARGS) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, MIN_ARGS, "");
+struct StaticDef(alias fn, string name, fn_t) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, "");
 }
-struct StaticDef(alias _fn, string name, fn_t, uint MIN_ARGS, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, MIN_ARGS, docstring);
+struct StaticDef(alias fn, string name, fn_t, string docstring) {
+    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, docstring);
 }
-mixin template _StaticDef(alias fn,/+ string _realname,+/ string name, fn_t, uint MIN_ARGS, string docstring) {
-    //static const type = ParamType.StaticDef;
-    alias fn func;
+mixin template _StaticDef(alias fn,/+ string _realname,+/ string name, fn_t, string docstring) {
+    alias def_selector!(fn,fn_t).FN func;
+    static assert(__traits(isStaticFunction, func)); // TODO
     alias fn_t func_t;
     enum funcname = name;
-    enum min_args = MIN_ARGS;
     enum bool needs_shim = false;
     static void call(T) () {
         pragma(msg, "class.static_def: " ~ name);
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = &function_wrap!(fn, MIN_ARGS, fn_t).func;
+        list[$-1].ml_meth = &function_wrap!(func, fn_t).func;
         list[$-1].ml_flags = METH_VARARGS | METH_STATIC;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
-        wrapped_class_type!(T).tp_methods = list;
+        wrapped_class_type!(T).tp_methods = list.ptr;
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         enum shim = "";
     }
 }
@@ -509,7 +509,7 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
         wrapped_class_type!(T).tp_getset =
             wrapped_prop_list!(T).ptr;
     }
-    template shim_setter(uint i) {
+    template shim_setter(size_t i) {
         static if (RO) {
             enum shim_setter = "";
         } else {
@@ -520,7 +520,7 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
             }, "$i", i, "$realname",_realname, "$name", name);
         }
     }
-    template shim(uint i, T) {
+    template shim(size_t i, T) {
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
             ReturnType!(__pyd_p$i.get_t) $realname() {
@@ -534,13 +534,14 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
 /**
 Wraps a method as the class's __repr__ in Python.
 */
-struct Repr(alias fn) {
+struct Repr(alias _fn) {
+    alias def_selector!(_fn, string function()).FN fn;
     enum bool needs_shim = false;
     static void call(T)() {
         alias wrapped_class_type!(T) type;
         type.tp_repr = &wrapped_repr!(T, fn).repr;
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         enum shim = "";
     }
 }
@@ -574,7 +575,7 @@ struct Init(cps ...) {
     }
     static void call(T)() {
     }
-    template shim(uint i, T) {
+    template shim(size_t i, T) {
         enum params = getparams!(Inner!T.FN);
         alias ParameterIdentifierTuple!(Inner!T.FN) paramids;
         enum shim = Replace!(q{
@@ -708,7 +709,7 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
         // can't handle __op__ __rop__ pairs here
     }
 
-    template shim(uint i, T) {
+    template shim(size_t i, T) {
         // bah
         enum shim = "";
     }
@@ -742,7 +743,7 @@ struct OpUnary(string _op) if(IsPyUnary(_op)) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opfunc_unary_wrap!(T, Inner!T .FN).func;");
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -786,7 +787,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
             mixin(slot ~ " = &binopasg_wrap!(T, Inner!T.FN).func;");
     }
 
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -835,7 +836,7 @@ struct OpCompare(_rhs_t = Guess) {
         alias wrapped_class_type!T type;
         type.tp_compare = &opcmp_wrap!(T, Inner!T.FN).func;
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -878,7 +879,7 @@ struct OpIndex(index_t...) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opindex_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -930,7 +931,7 @@ struct OpIndexAssign(index_t...) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opindexassign_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -967,7 +968,7 @@ struct OpSlice() {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opslice_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -1017,7 +1018,7 @@ struct OpSliceAssign(rhs_t = Guess) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opsliceassign_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -1048,7 +1049,7 @@ struct OpCall(Args_t...) {
         alias Inner!T.FN fn;
         type.tp_call = &opcall_wrap!(T, Inner!T.FN).func;
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }
@@ -1093,7 +1094,7 @@ struct _Len(fnt...) {
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &length_wrap!(T, Inner!T.FN).func;");
     }
-    template shim(uint i,T) {
+    template shim(size_t i,T) {
         // bah
         enum shim = "";
     }

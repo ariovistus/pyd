@@ -7,6 +7,8 @@ static this() {
     wrap_class!(Bizzy,
             Init!(int[]),
             Def!(Bizzy.a, int function(double)), 
+            StaticDef!(Bizzy.b, int function(double)),
+            Repr!(Bizzy.repr),
             Property!(Bizzy.m, true),
             OpBinary!("+"),
             OpBinary!("*"),
@@ -45,6 +47,19 @@ class Bizzy {
     }
     int a(double d) {
         return cast(int)( d+12);
+    }
+    static int b(int i){
+        return i + 13;
+    }
+    static int b(double d) {
+        return cast(int)( d+14);
+    }
+
+    string repr(int i) {
+        return "hi";
+    }
+    string repr() {
+        return "bye";
     }
     int opBinary(string op)(int i) {
         static if(op == "+") return i+1;
@@ -106,6 +121,8 @@ unittest {
     PyStmts(q"{
 bizzy=Bizzy(1,2,3,4,5)
 assert bizzy.a(1.0) == 13
+assert Bizzy.b(1.0) == 15
+assert repr(bizzy) == "bye"
 assert bizzy+1 == 2
 assert bizzy*1 == 3
 assert bizzy**1 == 4
