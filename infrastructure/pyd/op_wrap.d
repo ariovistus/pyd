@@ -24,18 +24,13 @@ module pyd.op_wrap;
 import python;
 
 import std.algorithm: startsWith, endsWith;
+import std.traits;
 import std.conv: to;
 import pyd.class_wrap;
 import pyd.dg_convert;
 import pyd.func_wrap;
 import pyd.exception;
 import pyd.make_object;
-import pyd.lib_abstract :
-    prettytypeof,
-    symbolnameof,
-    ParameterTypeTuple,
-    ReturnType
-;
 
 // wrap a binary operator overload, handling __op__, __rop__, or 
 // __op__ and __rop__ as necessary.

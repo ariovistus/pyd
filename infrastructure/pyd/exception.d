@@ -24,7 +24,7 @@ module pyd.exception;
 import std.conv;
 import std.string;
 import python;
-import pyd.lib_abstract : prettytypeof;
+import meta.Nameof : prettytypeof;
 
 /**
  * This function first checks if a Python exception is set, and then (if one

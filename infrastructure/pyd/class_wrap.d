@@ -310,18 +310,6 @@ template wrapped_set(T, Parts) {
 // CLASS WRAPPING INTERFACE //
 //////////////////////////////
 
-/+
-/**
- * This struct wraps a D class. Its member functions are the primary way of
- * wrapping the specific parts of the class.
- */
-struct wrapped_class(T, char[] classname = symbolnameof!(T)) {
-    static if (is(T == class)) pragma(msg, "wrapped_class: " ~ classname);
-    static const char[] _name = classname;
-    static bool _private = false;
-    alias T wrapped_type;
-+/
-
 //enum ParamType { Def, StaticDef, Property, Init, Parent, Hide, Iter, AltIter }
 struct DoNothing {
     static void call(T) () {}
@@ -336,37 +324,31 @@ fn_t = The type of the function. It is only useful to specify this
        if more than one function has the same name as this one.
 */
 struct Def(alias fn) {
-    mixin _Def!(fn, symbolnameof!(fn), typeof(&fn), "");
+    mixin _Def!(fn, __traits(identifier,fn), typeof(&fn), "");
 }
 struct Def(alias fn, string docstring) {
-    mixin _Def!(fn, /*symbolnameof!(fn),*/ symbolnameof!(fn), typeof(&fn)/+, minArgs!(fn)+/, docstring);
+    mixin _Def!(fn, __traits(identifier,fn), typeof(&fn), docstring);
 }
 struct Def(alias fn, string name, string docstring) {
-    mixin _Def!(fn, /*symbolnameof!(fn),*/ name, typeof(&fn)/+, minArgs!(fn)+/, docstring);
+    mixin _Def!(fn, name, typeof(&fn), docstring);
 }
 struct Def(alias fn, string name, fn_t) {
-    mixin _Def!(fn, /*symbolnameof!(fn),*/ name, fn_t/+, minArgs!(fn)+/, "");
+    mixin _Def!(fn, name, fn_t, "");
 }
 struct Def(alias fn, fn_t) {
-    mixin _Def!(fn, /*symbolnameof!(fn),*/ symbolnameof!(fn), fn_t/+, minArgs!(fn)+/, "");
+    mixin _Def!(fn, __traits(identifier,fn), fn_t, "");
 }
 struct Def(alias fn, fn_t, string docstring) {
-    mixin _Def!(fn, /*symbolnameof!(fn),*/ symbolnameof!(fn), fn_t/+, minArgs!(fn)+/, docstring);
+    mixin _Def!(fn, __traits(identifier,fn), fn_t, docstring);
 }
 struct Def(alias fn, string name, fn_t, string docstring) {
-    mixin _Def!(fn, /*symbolnameof!(fn),*/ name, fn_t/+, minArgs!(fn)+/, docstring);
+    mixin _Def!(fn, name, fn_t, docstring);
 }
-/+
-template Def(alias fn, string name, fn_t, size_t MIN_ARGS=minArgs!(fn)/+, string docstring=""+/) {
-    alias Def!(fn, /*symbolnameof!(fn),*/ name, fn_t, MIN_ARGS/+, docstring+/) Def;
-}
-+/
-template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, size_t MIN_ARGS=minArgs!(fn)+/, string docstring) {
-    //static const type = ParamType.Def;
+template _Def(alias _fn, string name, fn_t, string docstring) {
     alias def_selector!(_fn,fn_t).FN func;
     static assert(!__traits(isStaticFunction, func)); // TODO
     alias fn_t func_t;
-    enum realname = symbolnameof!(func);//_realname;
+    enum realname = __traits(identifier,func);//_realname;
     enum funcname = name;
     enum min_args = minArgs!(func);
     enum bool needs_shim = false;
@@ -399,33 +381,33 @@ template _Def(alias _fn, /*string _realname,*/ string name, fn_t/+, size_t MIN_A
 Wraps a static member function of the class. Identical to pyd.def.def
 */
 struct StaticDef(alias fn) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), typeof(&fn), "");
+    mixin _StaticDef!(fn, __traits(identifier,fn), typeof(&fn), "");
 }
 struct StaticDef(alias fn, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), typeof(&fn), docstring);
+    mixin _StaticDef!(fn, __traits(identifier,fn), typeof(&fn), docstring);
 }
 struct StaticDef(alias fn, string name, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, typeof(&fn), docstring);
+    mixin _StaticDef!(fn, name, typeof(&fn), docstring);
 }
 struct StaticDef(alias fn, string name, fn_t, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, docstring);
+    mixin _StaticDef!(fn, name, fn_t, docstring);
 }
 struct StaticDef(alias fn, fn_t) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), fn_t, "");
+    mixin _StaticDef!(fn, __traits(identifier,fn), fn_t, "");
 }
 struct StaticDef(alias fn, fn_t, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ symbolnameof!(fn), fn_t, docstring);
+    mixin _StaticDef!(fn, __traits(identifier,fn), fn_t, docstring);
 }
 struct StaticDef(alias fn, string name, fn_t) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, "");
+    mixin _StaticDef!(fn, name, fn_t, "");
 }
 struct StaticDef(alias fn, string name, fn_t) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, "");
+    mixin _StaticDef!(fn, name, fn_t, "");
 }
 struct StaticDef(alias fn, string name, fn_t, string docstring) {
-    mixin _StaticDef!(fn,/+ symbolnameof!(fn),+/ name, fn_t, docstring);
+    mixin _StaticDef!(fn, name, fn_t, docstring);
 }
-mixin template _StaticDef(alias fn,/+ string _realname,+/ string name, fn_t, string docstring) {
+mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
     alias def_selector!(fn,fn_t).FN func;
     static assert(__traits(isStaticFunction, func)); // TODO
     alias fn_t func_t;
@@ -455,29 +437,29 @@ fn = The property to wrap.
 name = The name of the property as it will appear in Python.
 RO = Whether this is a read-only property.
 */
-//template Property(alias fn, char[] name = symbolnameof!(fn), bool RO=false, char[] docstring = "") {
-//    alias Property!(fn, symbolnameof!(fn), name, RO, docstring) Property;
+//template Property(alias fn, char[] name = __traits(identifier,fn), bool RO=false, char[] docstring = "") {
+//    alias Property!(fn, __traits(identifier,fn), name, RO, docstring) Property;
 //}
 struct Property(alias fn) {
-    mixin _Property!(fn, symbolnameof!(fn), symbolnameof!(fn), false, "");
+    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), false, "");
 }
 struct Property(alias fn, string docstring) {
-    mixin _Property!(fn, symbolnameof!(fn), symbolnameof!(fn), false, docstring);
+    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), false, docstring);
 }
 struct Property(alias fn, string name, string docstring) {
-    mixin _Property!(fn, symbolnameof!(fn), name, false, docstring);
+    mixin _Property!(fn, __traits(identifier,fn), name, false, docstring);
 }
 struct Property(alias fn, string name, bool RO) {
-    mixin _Property!(fn, symbolnameof!(fn), name, RO, "");
+    mixin _Property!(fn, __traits(identifier,fn), name, RO, "");
 }
 struct Property(alias fn, string name, bool RO, string docstring) {
-    mixin _Property!(fn, symbolnameof!(fn), name, RO, docstring);
+    mixin _Property!(fn, __traits(identifier,fn), name, RO, docstring);
 }
 struct Property(alias fn, bool RO) {
-    mixin _Property!(fn, symbolnameof!(fn), symbolnameof!(fn), RO, "");
+    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), RO, "");
 }
 struct Property(alias fn, bool RO, string docstring) {
-    mixin _Property!(fn, symbolnameof!(fn), symbolnameof!(fn), RO, docstring);
+    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), RO, docstring);
 }
 template _Property(alias fn, string _realname, string name, bool RO, string docstring) {
     alias property_parts!(fn, RO) parts;
@@ -1222,14 +1204,8 @@ where T is the type being wrapped, Shim is the wrapped type
 
 */
 void wrap_class(T, Params...) (string docstring="", string modulename="") {
-    _wrap_class!(T, symbolnameof!(T), Params).wrap_class(docstring, modulename);
+    _wrap_class!(T, __traits(identifier,T), Params).wrap_class(docstring, modulename);
 }
-/+
-template _wrap_class(T, Params...) {
-    mixin _wrap_class!(T, symbolnameof!(T), Params);
-}
-+/
-//import std.stdio;
 template _wrap_class(_T, string name, Params...) {
     static if (is(_T == class)) {
         pragma(msg, "wrap_class: " ~ name);

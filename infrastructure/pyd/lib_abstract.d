@@ -30,7 +30,6 @@ import std.range;
 string objToStr(Object o) {
     return o.toString();
 }
-public import meta.Nameof : symbolnameof, prettytypeof, prettynameof;
 
 import std.conv;
 alias to!string toString;

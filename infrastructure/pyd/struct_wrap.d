@@ -26,9 +26,6 @@ import python;
 import pyd.class_wrap;
 import pyd.exception;
 import pyd.make_object;
-import pyd.lib_abstract :
-    symbolnameof
-;
 
 // It is intended that all of these templates accept a pointer-to-struct type
 // as a template parameter, rather than the struct type itself.

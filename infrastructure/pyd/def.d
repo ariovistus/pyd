@@ -28,10 +28,6 @@ import std.typetuple;
 import std.traits;
 import util.typelist;
 import pyd.func_wrap;
-import pyd.lib_abstract :
-    symbolnameof,
-    minArgs
-;
 
 private PyMethodDef module_global_methods[] = [
     { null, null, 0, null }
@@ -86,13 +82,13 @@ PyObject* Pyd_Module_p(string modulename="") {
  *>>> print testdll.foo(20)
  *It's greater than 10!)
  */
-void def(alias fn, string name = symbolnameof!(fn), fn_t=typeof(&fn)) 
+void def(alias fn, string name = __traits(identifier,fn), fn_t=typeof(&fn)) 
     (string docstring="") {
     def!("", fn, fn_t, name)(docstring);
 }
 
 void def(string modulename, alias _fn, fn_t=typeof(&_fn), 
-        string name = symbolnameof!(_fn)) 
+        string name = __traits(identifier,_fn)) 
     (string docstring) {
     alias def_selector!(_fn, fn_t).FN fn;
     pragma(msg, "def: " ~ name);
