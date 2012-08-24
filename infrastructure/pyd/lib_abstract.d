@@ -74,7 +74,7 @@ bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
     alias ParameterTypeTuple!fn ps;
     static if(vstyle == Variadic.no) {
         if(n > ps.length) return false;
-        if(n == ps.length && n == 0) return true;
+        if(n == 0 && __traits(compiles, fn())) return true;
         foreach(i,_p; ps) {
             if(__traits(compiles, fn(ps[0 .. i+1].init)) && i+1 == n) {
                 return true;

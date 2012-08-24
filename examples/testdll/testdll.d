@@ -149,7 +149,7 @@ mixin _wrap_class!(
     Init!(int), 
     Init!(int, int),
     Property!(Foo.i, "A sample property of Foo."),
-    //OpBinary!("+"),
+    OpBinary!("+"),
     Def!(Foo.foo, "A sample method of Foo."),
     Def!(Foo.a),
     Def!(Foo.b),
@@ -180,15 +180,15 @@ mixin _wrap_class!(
 
 extern(C) void PydMain() {
     pragma(msg, "testdll.PydMain");
-    //d_to_python(delegate int(A a) { return a.i; });
-    //python_to_d(delegate A(int i) { A a; a.i = i; return a; });
+    d_to_python(delegate int(A a) { return a.i; });
+    python_to_d(delegate A(int i) { A a; a.i = i; return a; });
 
     def!(foo);
-    // Python does not support function overloading. This allows us to wrap
+    // Python does not support function overloading. This requires us to wrap
     // an overloading function under a different name. Note that if the
-    // overload accepts a different number of minimum arguments, that number
-    // must be specified.
-    def!(foo, "foo2", void function(int), 1);
+    // overloaded function is not the lexically first, the type of the function
+    // must be specified
+    def!(foo, "foo2", void function(int));
     pragma(msg, bar.mangleof);
     def!(bar);
     // Default argument support - Now implicit!

@@ -15,6 +15,9 @@ void foo3(...) {
 void foo4(int[] i...) {
 }
 
+void foo5(int i=1, double d = 2.0) {
+}
+
 class Foo1{
     this(int i, int j) {
     }
@@ -81,6 +84,11 @@ unittest {
     assert(supportsNArgs!foo4(1));
     assert(supportsNArgs!foo4(2));
     assert(supportsNArgs!foo4(3));
+
+    assert(supportsNArgs!foo5(0));
+    assert(supportsNArgs!foo5(1));
+    assert(supportsNArgs!foo5(2));
+    assert(!supportsNArgs!foo5(3));
 
 }
 

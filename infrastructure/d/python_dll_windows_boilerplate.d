@@ -39,6 +39,7 @@ BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved)
     case DLL_THREAD_DETACH:
       // Multiple threads not supported yet
       return false;
+      default:
   }
   g_hInst=hInstance;
   return true;

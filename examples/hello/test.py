@@ -9,7 +9,7 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
 ))
 sys.path.append(os.path.abspath(libDir))
 print sys.path
-use = "1" 
+use = "both" 
 if use == "1":
     import hello
 elif use == "2":

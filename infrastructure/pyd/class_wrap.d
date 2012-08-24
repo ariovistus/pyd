@@ -658,7 +658,12 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
 
     template Inner(C) {
         enum fn_str1 = "Alias!(C."~nom~"!(op))";
-        enum fn_str2 = "Alias!(C."~nom~"!(op,rhs_t))";
+        enum fn_str2 = "C."~nom~"!(op,rhs_t)";
+        pragma(msg, fn_str2);
+        pragma(msg, C.stringof);
+        pragma(msg, op);
+        pragma(msg, rhs_t.stringof);
+        pragma(msg, is(typeof(mixin(fn_str2)) == function));
         enum string OP = op;
         static if(!__traits(hasMember, C, nom)) {
             static assert(0, C.stringof ~ " has no "~(isR ?"reflected ":"")~

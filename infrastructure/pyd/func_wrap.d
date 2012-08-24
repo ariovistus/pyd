@@ -82,8 +82,7 @@ void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, strin
 
 // Calls callable alias fn with PyTuple args.
 // kwargs may be null, args may not
-ReturnType!fn applyPyTupleToAlias(alias fn) 
-    (PyObject* args, PyObject* kwargs) {
+ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
     alias ParameterTypeTuple!fn T;
     enum size_t MIN_ARGS = minArgs!fn;
     alias maxArgs!fn MaxArgs;
@@ -113,58 +112,57 @@ ReturnType!fn applyPyTupleToAlias(alias fn)
         if (argCount == 0) {
             return fn();
         }
-    }else{
-        MaxArgs.ps t;
-        foreach(i, arg; t) {
-            enum size_t argNum = i+1;
-            static if(MaxArgs.vstyle == Variadic.no) {
-                if (i < argCount) {
-                    auto bpobj =  PyTuple_GetItem(args, i);
-                    auto  pobj = Py_XINCREF(bpobj);
-                    t[i] = d_type!(typeof(arg))(pobj);
-                    Py_DECREF(pobj);
-                }
-                static if (argNum >= MIN_ARGS && 
-                        (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
-                    if (argNum == argCount) {
-                        return fn(t[0 .. argNum]);
-                        break;
-                    }
-                }
-            }else static if(MaxArgs.vstyle == Variadic.typesafe) {
-                static if (argNum < t.length) {
-                    auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
-                    t[i] = d_type!(typeof(arg))(pobj);
-                    Py_DECREF(pobj);
-                }else static if(argNum == t.length) {
-                    alias Unqual!(ElementType!(typeof(t[i]))) elt_t;
-                    auto varlen = argCount-i;
-                    if(varlen == 1) {
-                        auto  pobj = Py_XINCREF(PyTuple_GetItem(args, i));
-                        if(PyList_Check(pobj)) {
-                            try{
-                                t[i] = cast(typeof(t[i])) d_type!(elt_t[])(pobj);
-                            }catch(PythonException e) {
-                                t[i] = cast(typeof(t[i])) [d_type!elt_t(pobj)];
-                            }
-                        }else{
-                            t[i] = cast(typeof(t[i])) [d_type!elt_t(pobj)];
-                        }
-                        Py_DECREF(pobj);
-                    }else{
-                        elt_t[] vars = new elt_t[](argCount-i);
-                        foreach(j; i .. argCount) {
-                            auto  pobj = Py_XINCREF(PyTuple_GetItem(args, j));
-                            vars[j-i] = d_type!(elt_t)(pobj);
-                            Py_DECREF(pobj);
-                        }
-                        t[i] = cast(typeof(t[i])) vars;
-                    }
-                    return fn(t);
+    }
+    MaxArgs.ps t;
+    foreach(i, arg; t) {
+        enum size_t argNum = i+1;
+        static if(MaxArgs.vstyle == Variadic.no) {
+            if (i < argCount) {
+                auto bpobj =  PyTuple_GetItem(args, i);
+                auto  pobj = Py_XINCREF(bpobj);
+                t[i] = d_type!(typeof(arg))(pobj);
+                Py_DECREF(pobj);
+            }
+            static if (argNum >= MIN_ARGS && 
+                    (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
+                if (argNum == argCount) {
+                    return fn(t[0 .. argNum]);
                     break;
                 }
-            }else static assert(0);
-        }
+            }
+        }else static if(MaxArgs.vstyle == Variadic.typesafe) {
+            static if (argNum < t.length) {
+                auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
+                t[i] = d_type!(typeof(arg))(pobj);
+                Py_DECREF(pobj);
+            }else static if(argNum == t.length) {
+                alias Unqual!(ElementType!(typeof(t[i]))) elt_t;
+                auto varlen = argCount-i;
+                if(varlen == 1) {
+                    auto  pobj = Py_XINCREF(PyTuple_GetItem(args, i));
+                    if(PyList_Check(pobj)) {
+                        try{
+                            t[i] = cast(typeof(t[i])) d_type!(elt_t[])(pobj);
+                        }catch(PythonException e) {
+                            t[i] = cast(typeof(t[i])) [d_type!elt_t(pobj)];
+                        }
+                    }else{
+                        t[i] = cast(typeof(t[i])) [d_type!elt_t(pobj)];
+                    }
+                    Py_DECREF(pobj);
+                }else{
+                    elt_t[] vars = new elt_t[](argCount-i);
+                    foreach(j; i .. argCount) {
+                        auto  pobj = Py_XINCREF(PyTuple_GetItem(args, j));
+                        vars[j-i] = d_type!(elt_t)(pobj);
+                        Py_DECREF(pobj);
+                    }
+                    t[i] = cast(typeof(t[i])) vars;
+                }
+                return fn(t);
+                break;
+            }
+        }else static assert(0);
     }
     // This should never get here.
     throw new Exception("applyPyTupleToAlias reached end! argCount = " ~ toString(argCount));

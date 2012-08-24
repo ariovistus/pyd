@@ -129,7 +129,7 @@ template alias_selector(alias fn, fn_t) {
     alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
     template IsDesired(alias f) {
         alias ParameterTypeTuple!f fps;
-        alias ReturnType!fn fret;
+        alias ReturnType!f fret;
         enum bool IsDesired = is(ps == fps) && is(fret == ret);
     }
     alias Filter!(IsDesired, Overloads) VOverloads;
