@@ -19,7 +19,23 @@ from distutils.errors import (
     CompileError, LibError, LinkError, UnknownFileError
 )
 
-_isPlatWin = sys.platform.lower().startswith('win')
+_isPlatCygwin = sys.platform.lower() == 'cygwin'
+
+def winpath(path_, winonly):
+    if _isPlatCygwin and winonly:
+        from subprocess import Popen, PIPE
+        stdout,_ = Popen(['cygpath', '-w', path_], stdout=PIPE).communicate()
+        return stdout.strip()
+    else:
+        return _path
+def cygpath(path_, winonly):
+    if _isPlatCygwin and winonly:
+        from subprocess import Popen, PIPE
+        stdout,_ = Popen(['cygpath', path_], stdout=PIPE).communicate()
+        return stdout.strip()
+    else:
+        return _path
+_isPlatWin = sys.platform.lower().startswith('win') or _isPlatCygwin
 
 _infraDir = os.path.join(os.path.dirname(__file__), 'infrastructure')
 
@@ -69,6 +85,7 @@ class DCompiler(cc.CCompiler):
 
     def __init__(self, *args, **kwargs):
         cc.CCompiler.__init__(self, *args, **kwargs)
+        self.winonly = False
         # Get DMD/GDC specific info
         self._initialize()
         # _binpath
@@ -151,21 +168,21 @@ class DCompiler(cc.CCompiler):
         sources = []
         for source in orig_sources:
             if os.path.abspath(source).startswith(os.getcwd()):
-                sources.append((source, 'project'))
+                sources.append((winpath(source,self.winonly), 'project'))
             else:
-                sources.append((source, 'outside'))
+                sources.append((winpath(source, self.winonly), 'outside'))
 
         # To sources, add the appropriate D header file python.d, as well as
         # any platform-specific boilerplate.
         pythonHeaderPath = os.path.join(_infraDir, 'python', 'python.d')
         # Add the python header's directory to the include path
         includePathOpts += self._includeOpts
-        includePathOpts[-1] = includePathOpts[-1] % os.path.join(_infraDir, 'python')
+        includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir, 'python'), self.winonly)
         if not os.path.isfile(pythonHeaderPath):
             raise DistutilsPlatformError('Required D translation of Python'
-                ' header files "%s" is missing.' % pythonHeaderPath
+                
             )
-        sources.append((pythonHeaderPath, 'infra'))
+        sources.append((winpath(pythonHeaderPath,self.winonly), 'infra'))
 
         # flags = (with_pyd, with_st, with_meta, with_main)
         with_pyd, with_st, with_meta, with_main = [f for f, category in macros if category == 'aux'][0]
@@ -180,24 +197,24 @@ class DCompiler(cc.CCompiler):
                     raise DistutilsPlatformError("Required Pyd source file '%s' is"
                         " missing." % filePath
                     )
-                sources.append((filePath, 'infra'))
+                sources.append((winpath(filePath,self.winonly), 'infra'))
             for file in _utilFiles:
                 filePath = os.path.join(_infraDir, 'util', file)
                 if not os.path.isfile(filePath):
                     raise DistutilsPlatformError("Required util source file '%s' is"
                         " missing." % filePath
                     )
-                sources.append((filePath, 'infra'))
+                sources.append((winpath(filePath,self.winonly), 'infra'))
         # If using PydMain, parse the template file
         if with_main:
             name = [n for n, category in macros if category == 'name'][0]
             # Store the finished pydmain.d file alongside the object files
-            infra_output_dir = os.path.join(output_dir, 'infra')
+            infra_output_dir = winpath(os.path.join(output_dir, 'infra'), self.winonly)
             if not os.path.exists(infra_output_dir):
                 os.makedirs(infra_output_dir)
             mainFilename = os.path.join(infra_output_dir, 'pydmain.d')
             make_pydmain(mainFilename, name)
-            sources.append((mainFilename, 'infra'))
+            sources.append((winpath(mainFilename,self.winonly), 'infra'))
         # And meta
         if with_meta:
             for file in _metaFiles:
@@ -206,11 +223,11 @@ class DCompiler(cc.CCompiler):
                     raise DistutilsPlatformError("Required meta source file"
                         " '%s' is missing." % filePath
                     )
-                sources.append((filePath, 'infra'))
+                sources.append((winpath(filePath,self.winonly), 'infra'))
         # Add the infraDir to the include path for pyd, st, and meta.
         if True in (with_pyd, with_st, with_meta):
             includePathOpts += self._includeOpts
-            includePathOpts[-1] = includePathOpts[-1] % os.path.join(_infraDir)
+            includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
         
         # Add DLL/SO boilerplate code file.
         if _isPlatWin:
@@ -225,7 +242,7 @@ class DCompiler(cc.CCompiler):
             raise DistutilsFileError('Required supporting code file "%s"'
                 ' is missing.' % boilerplatePath
             )
-        sources.append((boilerplatePath, 'infra'))
+        sources.append((winpath(boilerplatePath,self.winonly), 'infra'))
 
         # Extension subclass DExtension will have packed any user-supplied
         # version and debug flags into macros; we extract them and convert them
@@ -268,7 +285,7 @@ class DCompiler(cc.CCompiler):
         objFiles = []
         for source, source_type in sources:
             outOpts = outputOpts[:]
-            objFilename = os.path.splitext(source)[0] + self.obj_extension
+            objFilename = cygpath(os.path.splitext(source)[0],self.winonly) + self.obj_extension
             if source_type == 'project':
                 objName = os.path.join(output_dir, 'project', objFilename)
             elif source_type == 'outside':
@@ -277,8 +294,8 @@ class DCompiler(cc.CCompiler):
                 objName = os.path.join(output_dir, 'infra', os.path.basename(objFilename))
             if not os.path.exists(os.path.dirname(objName)):
                 os.makedirs(os.path.dirname(objName))
-            objFiles.append(objName)
-            outOpts[-1] = outOpts[-1] % _qp(objName)
+            objFiles.append(winpath(objName,self.winonly))
+            outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
             cmdElements = (
                 [binpath] + extra_preargs + compileOpts +
                 pythonVersionOpts+[ self._unicodeOpt] + optimizationOpts +
@@ -339,7 +356,7 @@ class DCompiler(cc.CCompiler):
 
         # Format the output filename option
         # (-offilename in DMD, -o filename in GDC)
-        outputOpts[-1] = outputOpts[-1] % _qp(output_filename)
+        outputOpts[-1] = outputOpts[-1] % _qp(winpath(output_filename,self.winonly))
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -404,6 +421,7 @@ class DMDDCompiler(DCompiler):
     _env_var = 'DMD_BIN'
 
     def _initialize(self):
+        self.winonly = True
         # _compileOpts
         self._compileOpts = ['-c']
         # _outputOpts
@@ -435,7 +453,7 @@ class DMDDCompiler(DCompiler):
                 defFilePath,
                 os.path.basename(output_filename)
             )
-            return [defFilePath]
+            return [winpath(defFilePath,self.winonly)]
         else:
             return []
 
@@ -461,7 +479,7 @@ class DMDDCompiler(DCompiler):
                     ' contains a .lib file appropriate for your Python version.'
                     % pythonDMDLibPath
                 )
-            pythonLibOpt = _qp(pythonDMDLibPath)
+            pythonLibOpt = _qp(winpath(pythonDMDLibPath,self.winonly))
 
             # distutils will normally request that the library 'pythonXY' be
             # linked against.  Since D requires a different .lib file from the
@@ -470,6 +488,8 @@ class DMDDCompiler(DCompiler):
             # distutils-requested pythonXY.lib.
             if 'python' + _pyVerXY in libraries:
                 libraries.remove('python' + _pyVerXY)
+            if _isPlatCygwin and 'python' + _pyVerXDotY  in libraries:
+                libraries.remove('python' + _pyVerXDotY)
             return pythonLibOpt
         else:
             return ''
