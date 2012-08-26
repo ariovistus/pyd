@@ -27,14 +27,14 @@ def winpath(path_, winonly):
         stdout,_ = Popen(['cygpath', '-w', path_], stdout=PIPE).communicate()
         return stdout.strip()
     else:
-        return _path
+        return path_
 def cygpath(path_, winonly):
     if _isPlatCygwin and winonly:
         from subprocess import Popen, PIPE
         stdout,_ = Popen(['cygpath', path_], stdout=PIPE).communicate()
         return stdout.strip()
     else:
-        return _path
+        return path_
 _isPlatWin = sys.platform.lower().startswith('win') or _isPlatCygwin
 
 _infraDir = os.path.join(os.path.dirname(__file__), 'infrastructure')
@@ -488,7 +488,7 @@ class DMDDCompiler(DCompiler):
             # distutils-requested pythonXY.lib.
             if 'python' + _pyVerXY in libraries:
                 libraries.remove('python' + _pyVerXY)
-            if _isPlatCygwin and 'python' + _pyVerXDotY  in libraries:
+            if False and _isPlatCygwin and 'python' + _pyVerXDotY  in libraries:
                 libraries.remove('python' + _pyVerXDotY)
             return pythonLibOpt
         else:
