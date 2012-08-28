@@ -24,15 +24,9 @@ module pyd.pydobject;
 import python;
 import pyd.exception;
 import pyd.make_object;
-import std.string: toStringz;
 import std.exception: enforce;
+import util.conv;
 
-char* zc(string s) {
-    if(s.length && s[$-1] == 0) return s.dup.ptr;
-    return ((cast(char[])s) ~ "\0").ptr;
-}
-
-alias toStringz zcc;
 
 /**
  * Wrapper class for a Python/C API PyObject.

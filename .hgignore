@@ -1,4 +1,5 @@
 syntax: glob
 *.pyc
 *.o
+*.x
 junk.txt
