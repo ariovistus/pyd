@@ -27,7 +27,6 @@ import std.algorithm: startsWith, endsWith;
 import std.traits;
 import std.conv: to;
 import pyd.class_wrap;
-import pyd.dg_convert;
 import pyd.func_wrap;
 import pyd.exception;
 import pyd.make_object;

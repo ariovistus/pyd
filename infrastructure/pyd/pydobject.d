@@ -887,6 +887,7 @@ public:
 
 }
 
+/// Convenience wrapper for Py_None
 @property PydObject None() {
     static PydObject _None;
     enforce(Py_IsInitialized());

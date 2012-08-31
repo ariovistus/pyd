@@ -41,7 +41,6 @@ public {
 
     // Importing these is only needed as a workaround to bug #311
     import pyd.ctor_wrap;
-    import pyd.dg_convert;
     import pyd.exception;
     import pyd.func_wrap;
 }

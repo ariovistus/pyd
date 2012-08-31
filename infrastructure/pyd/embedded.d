@@ -36,6 +36,7 @@ module pyd.embedded;
 
 import python;
 import pyd.pyd;
+import util.conv;
 import std.algorithm: findSplit;
 import std.string: strip;
 

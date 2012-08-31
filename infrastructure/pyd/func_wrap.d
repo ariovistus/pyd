@@ -24,13 +24,12 @@ module pyd.func_wrap;
 import python;
 import std.metastrings;
 import std.exception: enforce;
-import std.range: ElementType;
+import std.range;
+import std.conv;
 
 import pyd.class_wrap;
-import pyd.dg_convert;
 import pyd.exception;
 import pyd.make_object;
-import pyd.lib_abstract;
 
 import std.traits;
 
@@ -55,7 +54,7 @@ void PydWrappedFunc_Ready(T)() {
 void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, string funcName="") {
 
     string argStr(size_t args) {
-        string temp = toString(args) ~ " argument";
+        string temp = to!string(args) ~ " argument";
         if (args > 1) {
             temp ~= "s";
         }
@@ -75,7 +74,7 @@ void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, strin
     } else {
         str ~= "at most " ~ argStr(maxArgs);
     }
-    str ~= " (" ~ toString(gotArgs) ~ " given)";
+    str ~= " (" ~ to!string(gotArgs) ~ " given)";
 
     PyErr_SetString(PyExc_TypeError, (str ~ "\0").dup.ptr);
 }
@@ -165,7 +164,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
         }else static assert(0);
     }
     // This should never get here.
-    throw new Exception("applyPyTupleToAlias reached end! argCount = " ~ toString(argCount));
+    throw new Exception("applyPyTupleToAlias reached end! argCount = " ~ to!string(argCount));
 }
 
 // wraps applyPyTupleToAlias to return a PyObject*
@@ -454,3 +453,128 @@ PyObject* arrangeNamedArgs(alias fn)(PyObject* args, PyObject* kwargs) {
     }
     return allargs;
 }
+
+template minNumArgs_impl(alias fn, fnT) {
+    alias ParameterTypeTuple!(fnT) Params;
+    Params params;// = void;
+
+    template loop(size_t i = 0) {
+        static assert (i <= Params.length);
+
+        static if (__traits(compiles,fn(params[0..i].init))) {
+            enum size_t res = i;
+        } else {
+            alias loop!(i+1).res res;
+        }
+    }
+
+    alias loop!().res res;
+}
+/**
+  Finds the minimal number of arguments a given function needs to be provided
+ */
+template minArgs(alias fn, fnT = typeof(&fn)) {
+    enum size_t minArgs = minNumArgs_impl!(fn, fnT).res;
+}
+
+/**
+  Finds the maximum number of arguments a given function may be provided
+  and/or whether the function has a maximum number of arguments.
+  */
+template maxArgs(alias fn, fn_t = typeof(&fn)) {
+    alias variadicFunctionStyle!fn vstyle;
+    alias ParameterTypeTuple!fn ps;
+    enum bool hasMax = vstyle == Variadic.no;
+    enum size_t max = ps.length;
+}
+
+/**
+  Determines at runtime whether the function can be given n arguments.
+  */
+bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
+    if(n < minArgs!(fn,fn_t)) {
+        return false;
+    }
+    alias variadicFunctionStyle!fn vstyle;
+    alias ParameterTypeTuple!fn ps;
+    static if(vstyle == Variadic.no) {
+        if(n > ps.length) return false;
+        if(n == 0 && __traits(compiles, fn())) return true;
+        foreach(i,_p; ps) {
+            if(__traits(compiles, fn(ps[0 .. i+1].init)) && i+1 == n) {
+                return true;
+            }
+        }
+        return false;
+    }else static if(vstyle == Variadic.c) {
+        return true;
+    }else static if(vstyle == Variadic.d) {
+        return true;
+    }else static if(vstyle == Variadic.typesafe) {
+        return true;
+    }else static assert(0);
+}
+
+/**
+  Get the parameters of function as a string
+Example:
+---
+void foo(int i, double j=2.0) {
+}
+
+static assert(getparams!foo == "int i, double j = 2");
+---
+  */
+template getparams(alias fn) {
+    enum raw_str = typeof(fn).stringof;
+    enum ret_str = ReturnType!fn.stringof;
+    enum iret = countUntil(raw_str, ret_str);
+    static assert(iret != -1);
+    static assert(countUntil(raw_str[0 .. iret], "(") == -1);
+    enum noret_str = raw_str[iret + ret_str.length .. $];
+    enum open_p = countUntil(noret_str, "(");
+    static assert(open_p != -1);
+    enum close_p = countUntil(retro(noret_str), ")");
+    static assert(close_p != -1);
+    enum getparams = noret_str[open_p+1 .. $-1-close_p];
+
+}
+
+/*
+ * some more or less dirty hacks for converting
+ * between function and delegate types. As of DMD 0.174, the language has
+ * built-in support for hacking apart delegates like this. Hooray!
+ */
+
+template fn_to_dgT(Fn) {
+    alias ParameterTypeTuple!(Fn) T;
+    alias ReturnType!(Fn) Ret;
+
+    alias Ret delegate(T) type;
+}
+
+/**
+ * This template converts a function type into an equivalent delegate type.
+ */
+template fn_to_dg(Fn) {
+    alias fn_to_dgT!(Fn).type fn_to_dg;
+}
+
+/**
+ * This template function converts a pointer to a member function into a
+ * delegate.
+ */
+auto dg_wrapper(T, Fn) (T t, Fn fn) {
+    fn_to_dg!(Fn) dg;
+    dg.ptr = cast(void*) t;
+    static if(variadicFunctionStyle!fn == Variadic.typesafe) {
+        // trying to stuff a Ret function(P[]...) into a Ret function(P[])
+        // it'll totally work!
+        dg.funcptr = cast(typeof(dg.funcptr)) fn;
+    }else{
+        dg.funcptr = fn;
+    }
+
+    return dg;
+}
+

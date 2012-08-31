@@ -25,6 +25,7 @@ import python;
 
 import std.algorithm: countUntil;
 import std.traits;
+import std.conv;
 import std.exception: enforce;
 import std.metastrings;
 import std.typetuple;
@@ -35,13 +36,11 @@ import util.multi_index;
 import util.replace: Replace;
 import pyd.ctor_wrap;
 import pyd.def;
-import pyd.dg_convert;
 import pyd.exception;
 import pyd.func_wrap;
 import pyd.make_object;
 import pyd.make_wrapper;
 import pyd.op_wrap;
-import pyd.lib_abstract;
 
 version(Pyd_with_StackThreads) static assert(0, "sorry - stackthreads are gone");
 
@@ -317,30 +316,40 @@ struct DoNothing {
 /**
 Wraps a member function of the class.
 
+Supports default arguments, typesafe variadic arguments, and python's 
+keyword arguments.
+
 Params:
 fn = The member function to wrap.
 name = The name of the function as it will appear in Python.
 fn_t = The type of the function. It is only useful to specify this
        if more than one function has the same name as this one.
+docstring = The function's docstring.
 */
 struct Def(alias fn) {
     mixin _Def!(fn, __traits(identifier,fn), typeof(&fn), "");
 }
+/// ditto
 struct Def(alias fn, string docstring) {
     mixin _Def!(fn, __traits(identifier,fn), typeof(&fn), docstring);
 }
+/// ditto
 struct Def(alias fn, string name, string docstring) {
     mixin _Def!(fn, name, typeof(&fn), docstring);
 }
+/// ditto
 struct Def(alias fn, string name, fn_t) {
     mixin _Def!(fn, name, fn_t, "");
 }
+/// ditto
 struct Def(alias fn, fn_t) {
     mixin _Def!(fn, __traits(identifier,fn), fn_t, "");
 }
+/// ditto
 struct Def(alias fn, fn_t, string docstring) {
     mixin _Def!(fn, __traits(identifier,fn), fn_t, docstring);
 }
+/// ditto
 struct Def(alias fn, string name, fn_t, string docstring) {
     mixin _Def!(fn, name, fn_t, docstring);
 }
@@ -379,31 +388,49 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
 
 /**
 Wraps a static member function of the class. Identical to pyd.def.def
+
+Supports default arguments, typesafe variadic arguments, and python's 
+keyword arguments.
+
+Params:
+fn = The member function to wrap.
+name = The name of the function as it will appear in Python.
+fn_t = The type of the function. It is only useful to specify this
+       if more than one function has the same name as this one.
+docstring = The function's docstring.
 */
 struct StaticDef(alias fn) {
     mixin _StaticDef!(fn, __traits(identifier,fn), typeof(&fn), "");
 }
+/// ditto
 struct StaticDef(alias fn, string docstring) {
     mixin _StaticDef!(fn, __traits(identifier,fn), typeof(&fn), docstring);
 }
+/// ditto
 struct StaticDef(alias fn, string name, string docstring) {
     mixin _StaticDef!(fn, name, typeof(&fn), docstring);
 }
+/// ditto
 struct StaticDef(alias fn, string name, fn_t, string docstring) {
     mixin _StaticDef!(fn, name, fn_t, docstring);
 }
+/// ditto
 struct StaticDef(alias fn, fn_t) {
     mixin _StaticDef!(fn, __traits(identifier,fn), fn_t, "");
 }
+/// ditto
 struct StaticDef(alias fn, fn_t, string docstring) {
     mixin _StaticDef!(fn, __traits(identifier,fn), fn_t, docstring);
 }
+/// ditto
 struct StaticDef(alias fn, string name, fn_t) {
     mixin _StaticDef!(fn, name, fn_t, "");
 }
+/// ditto
 struct StaticDef(alias fn, string name, fn_t) {
     mixin _StaticDef!(fn, name, fn_t, "");
 }
+/// ditto
 struct StaticDef(alias fn, string name, fn_t, string docstring) {
     mixin _StaticDef!(fn, name, fn_t, docstring);
 }
@@ -430,34 +457,41 @@ mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
 }
 
 /**
-Wraps a property of the class.
+Wraps a property of the class. 
+
+Will automatically attempt to wrap both the get and set forms of the property,
+unless RO is specified. Does not work with @property annotated functions. Does not support a "set-only" property.
 
 Params:
-fn = The property to wrap.
+fn = The property to wrap. 
 name = The name of the property as it will appear in Python.
 RO = Whether this is a read-only property.
+docstring = The function's docstring.
 */
-//template Property(alias fn, char[] name = __traits(identifier,fn), bool RO=false, char[] docstring = "") {
-//    alias Property!(fn, __traits(identifier,fn), name, RO, docstring) Property;
-//}
 struct Property(alias fn) {
     mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), false, "");
 }
+/// ditto
 struct Property(alias fn, string docstring) {
     mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), false, docstring);
 }
+/// ditto
 struct Property(alias fn, string name, string docstring) {
     mixin _Property!(fn, __traits(identifier,fn), name, false, docstring);
 }
+/// ditto
 struct Property(alias fn, string name, bool RO) {
     mixin _Property!(fn, __traits(identifier,fn), name, RO, "");
 }
+/// ditto
 struct Property(alias fn, string name, bool RO, string docstring) {
     mixin _Property!(fn, __traits(identifier,fn), name, RO, docstring);
 }
+/// ditto
 struct Property(alias fn, bool RO) {
     mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), RO, "");
 }
+/// ditto
 struct Property(alias fn, bool RO, string docstring) {
     mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), RO, docstring);
 }
@@ -513,6 +547,9 @@ template _Property(alias fn, string _realname, string name, bool RO, string docs
 
 /**
 Wraps a method as the class's __repr__ in Python.
+
+Params:
+fn = The property to wrap. Must have the signature string function().
 */
 struct Repr(alias _fn) {
     alias def_selector!(_fn, string function()).FN fn;
@@ -533,6 +570,12 @@ This template takes a single specialization of the ctor template
 (see ctor_wrap.d), which describes a constructor that the class 
 supports. The default constructor need not be
 specified, and will always be available if the class supports it.
+
+Supports default arguments, typesafe variadic arguments, and python's 
+keyword arguments.
+
+Params:
+    cps = Parameter list of the constructor to be wrapped.
 
 Bugs:
 This currently does not support having multiple constructors with
@@ -700,14 +743,45 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
     }
 }
 
+/**
+Wrap a binary operator overload. 
+
+Example:
+---
+class Foo{
+    int _j;
+    int opBinary(string op)(int i) if(op == "+"){
+        return i+_j;
+    }
+    int opBinaryRight(string op)(int i) if(op == "+"){
+        return i+_j;
+    }
+}
+
+class_wrap!(Foo,
+    OpBinary!("+"),
+    OpBinaryRight!("+"));
+---
+
+Params:
+    op = Operator to wrap
+    rhs_t = (optional) Type of opBinary's parameter for disambiguation if 
+    there are multiple overloads. 
+Bugs:
+    Issue 8602 prevents disambiguation for case X opBinary(string op, T)(T t);
+  */
 template OpBinary(string op, rhs_t = Guess) if(IsPyBinary(op) && op != "in"){
     alias BinaryOperatorX!(op, false, rhs_t) OpBinary;
 }
 
+/// ditto
 template OpBinaryRight(string op, lhs_t = Guess) if(IsPyBinary(op)) {
     alias BinaryOperatorX!(op, true, lhs_t) OpBinaryRight;
 }
 
+/**
+  Wrap a unary operator overload.
+*/
 struct OpUnary(string _op) if(IsPyUnary(_op)) {
     enum op = _op;
     enum bool needs_shim = false;
@@ -734,6 +808,26 @@ struct OpUnary(string _op) if(IsPyUnary(_op)) {
     }
 }
 
+/**
+  Wrap an operator assignment overload.
+
+Example:
+---
+class Foo{
+    int _j;
+    void opOpAssign(string op)(int i) if(op == "+"){
+        _j = i;
+    }
+}
+
+class_wrap!(Foo,
+    OpAssign!("+"));
+---
+Params:
+    op = Base operator to wrap
+    rhs_t = (optional) Type of opOpAssign's parameter for disambiguation if 
+    there are multiple overloads. 
+*/
 struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
     enum op = _op~"=";
 
@@ -780,6 +874,13 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
 
 // struct types could probably take any parameter type
 // class types must take Object
+/**
+  Wrap opCmp.
+
+Params:
+    rhs_t = (optional) Type of opCmp's parameter for disambiguation if there
+    are multiple overloads (for classes it will always be Object).
+  */
 struct OpCompare(_rhs_t = Guess) {
     enum bool needs_shim = false;
 
@@ -827,6 +928,13 @@ struct OpCompare(_rhs_t = Guess) {
     }
 }
 
+/**
+  Wrap opIndex, opIndexAssign.
+
+Params:
+    index_t = (optional) Types of opIndex's parameters for disambiguation if
+    there are multiple overloads.
+*/
 struct OpIndex(index_t...) {
     enum bool needs_shim = false;
     template Inner(C) {
@@ -870,6 +978,7 @@ struct OpIndex(index_t...) {
     }
 }
 
+/// ditto
 struct OpIndexAssign(index_t...) {
     static assert(index_t.length != 1, 
             "opIndexAssign must have at least 2 parameters");
@@ -922,6 +1031,15 @@ struct OpIndexAssign(index_t...) {
     }
 }
 
+/**
+  Wrap opSlice.
+
+  Requires signature 
+---
+Foo.opSlice(Py_ssize_t, Py_ssize_t);
+---
+ This is a limitation of the C/Python API.
+  */
 struct OpSlice() {
     enum bool needs_shim = false;
     template Inner(C) {
@@ -959,6 +1077,15 @@ struct OpSlice() {
     }
 }
 
+/**
+  Wrap opSliceAssign.
+
+  Requires signature 
+---
+Foo.opSliceAssign(Value,Py_ssize_t, Py_ssize_t);
+---
+ This is a limitation of the C/Python API.
+  */
 struct OpSliceAssign(rhs_t = Guess) {
     enum bool needs_shim = false;
     template Inner(C) {
@@ -1009,6 +1136,9 @@ struct OpSliceAssign(rhs_t = Guess) {
     }
 }
 
+/**
+  wrap opCall. The parameter types of opCall must be specified.
+*/
 struct OpCall(Args_t...) {
     enum bool needs_shim = false;
 
@@ -1040,10 +1170,21 @@ struct OpCall(Args_t...) {
     }
 }
 
+/**
+  Wraps Foo.length or another function as pythons __len__ function. Do not
+  pass a @property annotated function.
+
+  Requires signature 
+---
+Py_ssize_t length();
+---
+  This is a limitation of the C/Python API.
+  */
 template Len() {
     alias _Len!() Len;
 }
 
+/// ditto
 template Len(alias fn) {
     alias _Len!(fn) Len;
 }
@@ -1208,6 +1349,14 @@ Param.shim!(i,T) for i : Params[i] == Param
 where T is the type being wrapped, Shim is the wrapped type
 
 */
+
+/**
+  Wrap a class.
+
+Params:
+    T = The class being wrapped.
+    Params = Definitions of members of T to be wrapped.
+  */
 void wrap_class(T, Params...) (string docstring="", string modulename="") {
     _wrap_class!(T, __traits(identifier,T), Params).wrap_class(docstring, modulename);
 }
@@ -1240,7 +1389,7 @@ template _wrap_class(_T, string name, Params...) {
         //writefln("after params: tp_init is %s", type.tp_init);
 
         assert(Pyd_Module_p(modulename) !is null, "Must initialize module before wrapping classes.");
-        string module_name = toString(python.PyModule_GetName(Pyd_Module_p(modulename)));
+        string module_name = to!string(python.PyModule_GetName(Pyd_Module_p(modulename)));
 
         //////////////////
         // Basic values //
@@ -1296,9 +1445,9 @@ template _wrap_class(_T, string name, Params...) {
         }
     }
 }
-////////////////
+//-/////////////
 // DOCSTRINGS //
-////////////////
+//-/////////////
 
 struct Docstring {
     string name, doc;
@@ -1310,9 +1459,9 @@ void docstrings(T=void)(Docstring[] docs...) {
     }
 }
 
-///////////////////////
+//-////////////////////
 // PYD API FUNCTIONS //
-///////////////////////
+//-////////////////////
 
 // If the passed D reference has an existing Python object, return a borrowed
 // reference to it. Otherwise, return null.
@@ -1368,7 +1517,7 @@ PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) {
         WrapPyObject_SetObj(obj, t);
         return obj;
     } else {
-        PyErr_SetString(PyExc_RuntimeError, ("Type " ~ objToStr(typeid(T)) ~ " is not wrapped by Pyd.").ptr);
+        PyErr_SetString(PyExc_RuntimeError, ("Type " ~ typeid(T).toString() ~ " is not wrapped by Pyd.").ptr);
         return null;
     }
 }
@@ -1381,7 +1530,7 @@ T WrapPyObject_AsObject(T) (PyObject* _self) {
     alias wrapped_class_type!(T) type;
     wrapped_object* self = cast(wrapped_object*)_self;
     if (!is_wrapped!(T)) {
-        throw new Exception(format("Error extracting D object: Type %s is not wrapped.",objToStr(typeid(T))));
+        throw new Exception(format("Error extracting D object: Type %s is not wrapped.",typeid(T).toString()));
     }
     if (self is null) {
         throw new Exception("Error extracting D object: 'self' was null!");
@@ -1391,7 +1540,7 @@ T WrapPyObject_AsObject(T) (PyObject* _self) {
             throw new Exception("Error extracting D object: Reference was not castable to Object!");
         }
         if (cast(T)cast(Object)(self.d_obj) is null) {
-            throw new Exception(format("Error extracting D object: Object was not castable to type %s.",objToStr(typeid(T))));
+            throw new Exception(format("Error extracting D object: Object was not castable to type %s.",typeid(T).toString()));
         }
     }
     return self.d_obj;

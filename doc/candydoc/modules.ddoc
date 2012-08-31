@@ -1,0 +1,12 @@
+MODULES = 
+	$(MODULE pyd.class_wrap)
+	$(MODULE pyd.def)
+	$(MODULE pyd.embedded)
+	$(MODULE pyd.exception)
+	$(MODULE pyd.func_wrap)
+	$(MODULE pyd.make_object)
+	$(MODULE pyd.pyd)
+	$(MODULE pyd.pydobject)
+	$(MODULE pyd.struct_wrap)
+	$(MODULE meta.Nameof)
+	$(MODULE python)

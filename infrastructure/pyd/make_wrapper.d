@@ -24,14 +24,9 @@ module pyd.make_wrapper;
 import python;
 
 import pyd.class_wrap;
-import pyd.dg_convert;
 import pyd.exception;
 import pyd.func_wrap;
-import pyd.lib_abstract :
-    ReturnType,
-    ParameterTypeTuple,
-    toString
-;
+import std.traits;
 
 template T(A ...) {
     alias A T;

@@ -1,6 +1,6 @@
 
 import pyd.pyd, pyd.embedded;
-import pyd.lib_abstract;
+import pyd.func_wrap;
 import core.vararg;
 
 void foo0() {

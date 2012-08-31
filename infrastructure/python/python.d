@@ -10,6 +10,12 @@ XXX:
 
 */
 
+/**
+Contains all relevant definitions from python/Include
+
+When issue 7758 is resolved, we will have this module split into
+separate files to match python/Include (and all defs will show up in ddoc)
+*/
 module python;
 
 // here's what we like

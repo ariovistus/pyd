@@ -51,42 +51,47 @@ PyObject* Pyd_Module_p(string modulename="") {
 }
 
 /**
- * Wraps a D function, making it callable from Python.
- *
- * Params:
- *      name = The name of the function as it will appear in Python.
- *      fn   = The function to wrap.
- *      MIN_ARGS = The minimum number of arguments this function can accept.
- *                 For use with functions with default arguments. Defaults to
- *                 the maximum number of arguments this function supports.
- *      fn_t = The function type of the function to wrap. This must be
- *             specified if more than one function shares the same name,
- *             otherwise the first one defined lexically will be used.
- *
- * Examples:
- *$(D_CODE import pyd.pyd;
- *string foo(int i) {
- *    if (i > 10) {
- *        return "It's greater than 10!";
- *    } else {
- *        return "It's less than 10!";
- *    }
- *}
- *extern (C)
- *export void inittestdll() {
- *    _def!("foo", foo);
- *    module_init("testdll");
- *})
- * And in Python:
- *$(D_CODE >>> import testdll
- *>>> print testdll.foo(20)
- *It's greater than 10!)
+Wraps a D function, making it callable from Python.
+
+Supports default arguments, typesafe variadic arguments, and python's 
+keyword arguments.
+ 
+Params:
+
+modulename = The name of the python module in which the wrapped function 
+            resides.
+fn   = The function to wrap.
+name = The name of the function as it will appear in Python.
+fn_t = The function type of the function to wrap. This must be
+            specified if more than one function shares the same name,
+            otherwise the first one defined lexically will be used.
+docstring = The function's docstring. Note that this is a regular function 
+            argument!
+
+ Examples:
+$(D_CODE import pyd.pyd;
+string foo(int i) {
+    if (i > 10) {
+        return "It's greater than 10!";
+    } else {
+        return "It's less than 10!";
+    }
+}
+extern (C)
+export void inittestdll() {
+    _def!("foo", foo);
+    module_init("testdll");
+})
+ And in Python:
+$(D_CODE >>> import testdll
+>>> print testdll.foo(20)
+It's greater than 10!)
  */
 void def(alias fn, string name = __traits(identifier,fn), fn_t=typeof(&fn)) 
     (string docstring="") {
     def!("", fn, fn_t, name)(docstring);
 }
-
+/// ditto
 void def(string modulename, alias _fn, fn_t=typeof(&_fn), 
         string name = __traits(identifier,_fn)) 
     (string docstring) {

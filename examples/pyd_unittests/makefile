@@ -11,11 +11,11 @@ PYTHON_2_7 = -version=Python_2_7_Or_Later \
 	     -L-lpython2.7
 DC = dmd -m64 -unittest -property -debug
 
-all: pydobject.x make_object.x embedded.x lib_abstract.x class_wrap.x def.x
+all: pydobject.x make_object.x embedded.x func_wrap.x class_wrap.x def.x
 	./pydobject.x
 	./make_object.x
 	./embedded.x
-	./lib_abstract.x
+	./func_wrap.x
 	./class_wrap.x
 	./def.x
 

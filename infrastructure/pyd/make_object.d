@@ -20,18 +20,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-/**
- * This module contains some useful type conversion functions. There are two
- * interesting operations involved here:
- *
- * PyObject* -> D type // d_type
- *
- * D type -> PyObject* // _py
- *
- * The former is handled by d_type, the latter by _py. The py function is
- * provided as a convenience to directly convert a D type into an instance of
- * PydObject.
- */
+/++
+  This module contains some useful type conversion functions. There are two
+  interesting operations involved here:
+ 
+  d_type_: PyObject* -> D type 
+ 
+  __py/py: D type -> PyObject*/PydObject 
+ 
+  The former is handled by d_type, the latter by _py. The py function is
+  provided as a convenience to directly convert a D type into an instance of
+  PydObject.
+ +/
 module pyd.make_object;
 
 import python;
@@ -40,17 +40,12 @@ import std.complex;
 import std.traits;
 import std.typecons: Tuple, tuple, isTuple;
 import std.metastrings;
+import std.conv;
 
 import pyd.pydobject;
 import pyd.class_wrap;
 import pyd.func_wrap;
 import pyd.exception;
-import pyd.lib_abstract :
-    objToStr,
-    toString,
-    ParameterTypeTuple,
-    ReturnType
-;
 
 class to_conversion_wrapper(dg_t) {
     alias ParameterTypeTuple!(dg_t)[0] T;
@@ -277,7 +272,7 @@ PyObject* _py(T) (T t) {
     if (to_converter_registry!(T).dg) {
         return to_converter_registry!(T).dg(t);
     }
-    PyErr_SetString(PyExc_RuntimeError, ("D conversion function _py failed with type " ~ objToStr(typeid(T))).ptr);
+    PyErr_SetString(PyExc_RuntimeError, ("D conversion function _py failed with type " ~ typeid(T).toString()).ptr);
     return null;
 }
 
@@ -419,12 +414,12 @@ T d_type(T) (PyObject* o) {
         if (result is null) handle_exception();
         version (D_Version2) {
             static if (is(string : T)) {
-                return .toString(result);
+                return to!string(result);
             } else {
-                return .toString(result).dup;
+                return to!string(result).dup;
             }
         } else {
-            return .toString(result).dup;
+            return to!string(result).dup;
         }
     } else static if (is(T E : E[])) {
         // Dynamic arrays
@@ -514,11 +509,11 @@ void could_not_convert(T) (PyObject* o) {
         if (py_type_str is null) {
             py_typename = "<unknown>";
         } else {
-            py_typename = .toString(PyString_AsString(py_type_str));
+            py_typename = to!string(PyString_AsString(py_type_str));
             Py_DECREF(py_type_str);
         }
     }
-    d_typename = objToStr(typeid(T));
+    d_typename = typeid(T).toString();
     throw new PydConversionException(
         "Couldn't convert Python type '" ~
         py_typename ~
