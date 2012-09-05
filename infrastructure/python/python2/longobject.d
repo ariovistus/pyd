@@ -58,6 +58,14 @@ void * PyLong_AsVoidPtr(PyObject*);
 
 PyObject* PyLong_FromString(char*, char**, int);
 PyObject* PyLong_FromUnicode(Py_UNICODE*, int, int);
+int _PyLong_Sign(PyObject* v);
+size_t _PyLong_NumBits(PyObject* v);
+PyObject* _PyLong_FromByteArray(
+        const(ubyte)* bytes, size_t n,
+        int little_endian, int is_signed);
+int _PyLong_AsByteArray(PyLongObject* v,
+        ubyte* bytes, size_t n,
+        int little_endian, int is_signed);
 
 version(Python_2_6_Or_Later){
     /* _PyLong_Format: Convert the long to a string object with given base,
