@@ -143,41 +143,6 @@ void conv2(A a) {
     writeln(a.i);
 }
 
-mixin _wrap_class!(
-    Foo,
-    "Foo",
-    Init!(int), 
-    Init!(int, int),
-    Property!(Foo.i, "A sample property of Foo."),
-    OpBinary!("+"),
-    Def!(Foo.foo, "A sample method of Foo."),
-    Def!(Foo.a),
-    Def!(Foo.b),
-    Def!(Foo.c),
-    Def!(Foo.d),
-    Def!(Foo.e),
-    Def!(Foo.f),
-    Def!(Foo.g),
-    Def!(Foo.h),
-    Def!(Foo.j),
-    Def!(Foo.k),
-    Def!(Foo.l),
-    Def!(Foo.m),
-    Def!(Foo.n)/*, // Maximum length
-    Def!(Foo.o),
-    Def!(Foo.p),
-    Def!(Foo.q),
-    Def!(Foo.r),
-    Def!(Foo.s),
-    Def!(Foo.t),
-    Def!(Foo.u),
-    Def!(Foo.v),
-    Def!(Foo.w),
-    Def!(Foo.x),
-    Def!(Foo.y),
-    Def!(Foo.z)*/
-) F;
-
 extern(C) void PydMain() {
     pragma(msg, "testdll.PydMain");
     d_to_python(delegate int(A a) { return a.i; });
@@ -188,7 +153,7 @@ extern(C) void PydMain() {
     // an overloading function under a different name. Note that if the
     // overloaded function is not the lexically first, the type of the function
     // must be specified
-    def!(foo, "foo2", void function(int));
+    def!(foo, PyName!"foo2", void function(int));
     pragma(msg, bar.mangleof);
     def!(bar);
     // Default argument support - Now implicit!
@@ -201,14 +166,48 @@ extern(C) void PydMain() {
     def!(conv2);
 
     module_init();
-
-    F.wrap_class("A sample class.");
+    wrap_class!(
+        Foo,
+        PyName!"Foo",
+        Docstring!"A sample class.",
+        Init!(int), 
+        Init!(int, int),
+        Property!(Foo.i, Docstring!"A sample property of Foo."),
+        OpBinary!("+"),
+        Def!(Foo.foo, Docstring!"A sample method of Foo."),
+        Def!(Foo.a),
+        Def!(Foo.b),
+        Def!(Foo.c),
+        Def!(Foo.d),
+        Def!(Foo.e),
+        Def!(Foo.f),
+        Def!(Foo.g),
+        Def!(Foo.h),
+        Def!(Foo.j),
+        Def!(Foo.k),
+        Def!(Foo.l),
+        Def!(Foo.m),
+        Def!(Foo.n)/*, // Maximum length
+        Def!(Foo.o),
+        Def!(Foo.p),
+        Def!(Foo.q),
+        Def!(Foo.r),
+        Def!(Foo.s),
+        Def!(Foo.t),
+        Def!(Foo.u),
+        Def!(Foo.v),
+        Def!(Foo.w),
+        Def!(Foo.x),
+        Def!(Foo.y),
+        Def!(Foo.z), */
+    )();
 
     wrap_struct!(
         S,
-        Def!(S.write_s, "A struct member function."),
-        Member!("i", "One sample data member of S."),
-        Member!("s", "Another sample data member of S.")
-    ) ("A sample struct.");
+        Docstring!"A sample struct.",
+        Def!(S.write_s, Docstring!"A struct member function."),
+        Member!("i", Docstring!"One sample data member of S."),
+        Member!("s", Docstring!"Another sample data member of S."),
+    )();
 }
 

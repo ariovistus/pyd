@@ -49,12 +49,12 @@ extern(C) void PydMain() {
         Init!(int),
         Def!(Base.foo),
         Def!(Base.bar)
-    );
+    )();
 
     wrap_class!(
         Derived,
         Init!(int),
         Def!(Derived.foo)
-    );
+    )();
 }
 

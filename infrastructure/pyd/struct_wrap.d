@@ -23,6 +23,7 @@ module pyd.struct_wrap;
 
 import python;
 
+import pyd.def;
 import pyd.class_wrap;
 import pyd.exception;
 import pyd.make_object;
@@ -56,24 +57,36 @@ template wrapped_member(T, string name, _M=void) {
     }
 }
 
-struct Member(string realname) {
-    mixin _Member!(realname, realname, "");
+/**
+Wrap a member variable of a class or struct.
+
+Params:
+name = The name of the member to wrap
+Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), 
+and Mode!(mode)
+pyname = The name of the member as it will appear in Python. Defaults to name
+mode = specifies whether this member is readable, writable. possible values 
+are "r", "w", "rw". Defaults to "rw".
+docstring = The function's docstring. Defaults to "".
+*/
+struct Member(string name, Options...) {
+    alias Args!("","", name, "rw",Options) args;
+    mixin _Member!(name, args.pyname, args.mode, args.docstring);
 }
-struct Member(string realname, string docstring) {
-    mixin _Member!(realname, realname, docstring);
-}
-struct Member(string realname, string name, string docstring) {
-    mixin _Member!(realname, name, docstring);
-}
-template _Member(string realname, string name, string docstring) {
+
+template _Member(string realname, string pyname, string mode, string docstring) {
     static const bool needs_shim = false;
     static void call(T) () {
-        pragma(msg, "struct.member: " ~ name);
+        pragma(msg, "struct.member: " ~ pyname);
         static PyGetSetDef empty = {null, null, null, null, null};
         alias wrapped_prop_list!(T) list;
-        list[$-1].name = (name ~ "\0").dup.ptr;
-        list[$-1].get = &wrapped_member!(T, realname).get;
-        list[$-1].set = &wrapped_member!(T, realname).set;
+        list[$-1].name = (pyname ~ "\0").dup.ptr;
+        static if(countUntil(mode, "r") != -1) {
+            list[$-1].get = &wrapped_member!(T, realname).get;
+        }
+        static if(countUntil(mode, "w") != -1) {
+            list[$-1].set = &wrapped_member!(T, realname).set;
+        }
         list[$-1].doc = (docstring~"\0").dup.ptr;
         list[$-1].closure = null;
         list ~= empty;
@@ -81,5 +94,6 @@ template _Member(string realname, string name, string docstring) {
     }
 }
 
+/// Wrap a struct.
 alias wrap_class wrap_struct;
 

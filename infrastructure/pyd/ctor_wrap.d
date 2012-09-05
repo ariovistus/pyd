@@ -35,9 +35,10 @@ template call_ctor(T, init) {
     alias ParameterIdentifierTuple!(init.Inner!T.FN) paramids;
     mixin(Replace!(q{
     T func($params) {
-        return new T($ids);
+        return new $T($ids);
     }
-    },"$params",params, "$ids", Join!(",",paramids)));
+    },"$params",params, "$ids", Join!(",",paramids), 
+    "$T", (is(T == class)?"T":"PointerTarget!T")));
 }
 
 // The default __init__ method calls the class's zero-argument constructor.

@@ -32,13 +32,14 @@ class Y {
 
 
 static this() {
-    def!("office", knock)("a brain specialist works here"); 
+    def!(knock, ModuleName!"office", Docstring!"a brain specialist works here")(); 
     add_module("office");
     wrap_class!(Y, 
         Def!(Y.query),
+        ModuleName!"office",
         Property!(Y.brain_status),
-        Property!(Y.resolution, true),
-    )("","office");
+        Property!(Y.resolution, Mode!"r"),
+    )();
 }
 
 void main() {

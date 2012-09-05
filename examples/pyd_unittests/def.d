@@ -19,9 +19,9 @@ int a3(int[] i...) {
 }
 
 static this() {
-    def!("testing", a,int function(double))(""); 
-    def!("testing", a2, int function(int,double,))(""); 
-    def!("testing", a3, int function(int[]))(""); 
+    def!(a,int function(double), ModuleName!"testing")(); 
+    def!(a2, int function(int,double,), ModuleName!"testing")(); 
+    def!(a3, int function(int[]), ModuleName!"testing")(); 
     add_module("testing");
 }
 

@@ -26,6 +26,7 @@ import std.metastrings;
 import std.exception: enforce;
 import std.range;
 import std.conv;
+import util.typelist;
 
 import pyd.class_wrap;
 import pyd.exception;

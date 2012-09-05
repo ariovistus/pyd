@@ -42,3 +42,9 @@ template Pred(string pred) {
         enum Pred = mixin(pred);
     }
 }
+
+template Not(alias Pred) {
+    template Not(Stuff...) {
+        enum Not = !Pred!(Stuff[0]);
+    }
+}

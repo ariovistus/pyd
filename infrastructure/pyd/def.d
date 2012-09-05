@@ -23,6 +23,7 @@ module pyd.def;
 
 import python;
 
+import std.algorithm: startsWith;
 import std.metastrings;
 import std.typetuple;
 import std.traits;
@@ -50,6 +51,81 @@ PyObject* Pyd_Module_p(string modulename="") {
     else return *m;
 }
 
+/// Param of def
+struct ModuleName(string _modulename) {
+    enum modulename = _modulename;
+}
+template IsModuleName(T...) {
+    enum bool IsModuleName = T[0].stringof.startsWith("ModuleName!");
+}
+
+/// Param of def, Def, StaticDef
+struct Docstring(string _doc) {
+    enum doc = _doc;
+}
+
+template IsDocstring(T...) {
+    enum bool IsDocstring = T[0].stringof.startsWith("Docstring!");
+}
+/// Param of def, Def, StaticDef
+struct PyName(string _name) {
+    enum name = _name;
+}
+template IsPyName(T...) {
+    enum bool IsPyName = T[0].stringof.startsWith("PyName!");
+}
+
+/// Param of Property, Member
+struct Mode(string _mode) {
+    enum mode = _mode;
+}
+template IsMode(T...) {
+    enum bool IsMode = T[0].stringof.startsWith("Mode!");
+}
+
+struct Args(string default_modulename,
+            string default_docstring,
+            string default_pyname,
+            string default_mode,
+            Params...) {
+    alias Filter!(IsDocstring, Params) Docstrings;
+    static if(Docstrings.length) {
+        enum docstring = Docstrings[0].doc;
+    }else{
+        enum docstring = default_docstring;
+    }
+    alias Filter!(IsPyName, Params) PyNames;
+    static if(PyNames.length) {
+        enum pyname = PyNames[0].name;
+    }else{
+        enum pyname = default_pyname;
+    }
+    alias Filter!(IsMode, Params) Modes;
+    static if(Modes.length) {
+        enum mode = Modes[0].mode;
+    }else{
+        enum mode = default_mode;
+    }
+    alias Filter!(IsModuleName, Params) ModuleNames;
+    static if(ModuleNames.length) {
+        enum modulename = ModuleNames[0].modulename;
+    }else{
+        enum modulename = default_modulename;
+    }
+
+    alias Filter!(Not!IsModuleName, 
+          Filter!(Not!IsDocstring, 
+          Filter!(Not!IsPyName,
+          Filter!(Not!IsMode,
+              Params)))) rem;
+    template IsString(T...) {
+        enum bool IsString = is(typeof(T[0]) == string);
+    }
+    static if(Filter!(IsString, rem).length) {
+        static assert(false, "string parameters must be wrapped with Docstring, Mode, etc");
+    }
+}
+
 /**
 Wraps a D function, making it callable from Python.
 
@@ -58,18 +134,19 @@ keyword arguments.
  
 Params:
 
+fn   = The function to wrap.
+Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), ModuleName!(modulename), and fn_t
 modulename = The name of the python module in which the wrapped function 
             resides.
-fn   = The function to wrap.
-name = The name of the function as it will appear in Python.
+pyname = The name of the function as it will appear in Python.
 fn_t = The function type of the function to wrap. This must be
             specified if more than one function shares the same name,
             otherwise the first one defined lexically will be used.
-docstring = The function's docstring. Note that this is a regular function 
-            argument!
+docstring = The function's docstring. 
 
- Examples:
-$(D_CODE import pyd.pyd;
+Examples:
+---
+import pyd.pyd;
 string foo(int i) {
     if (i > 10) {
         return "It's greater than 10!";
@@ -79,32 +156,34 @@ string foo(int i) {
 }
 extern (C)
 export void inittestdll() {
-    _def!("foo", foo);
-    module_init("testdll");
-})
+    def!(foo, ModuleName!"testdll");
+    add_module("testdll");
+}
+---
  And in Python:
 $(D_CODE >>> import testdll
 >>> print testdll.foo(20)
 It's greater than 10!)
  */
-void def(alias fn, string name = __traits(identifier,fn), fn_t=typeof(&fn)) 
-    (string docstring="") {
-    def!("", fn, fn_t, name)(docstring);
-}
-/// ditto
-void def(string modulename, alias _fn, fn_t=typeof(&_fn), 
-        string name = __traits(identifier,_fn)) 
-    (string docstring) {
-    alias def_selector!(_fn, fn_t).FN fn;
-    pragma(msg, "def: " ~ name);
-    PyMethodDef empty;
-    ready_module_methods(modulename);
-    PyMethodDef[]* list = &module_methods[modulename];
 
-    (*list)[$-1].ml_name = (name ~ "\0").dup.ptr;
+
+void def(alias _fn, Options...)() {
+    alias Args!("","", __traits(identifier,_fn), "",Options) args;
+    static if(args.rem.length) {
+        alias args.rem[0] fn_t;
+    }else {
+        alias typeof(&_fn) fn_t;
+    }
+    alias def_selector!(_fn, fn_t).FN fn;
+    pragma(msg, "def: " ~ args.pyname);
+    PyMethodDef empty;
+    ready_module_methods(args.modulename);
+    PyMethodDef[]* list = &module_methods[args.modulename];
+
+    (*list)[$-1].ml_name = (args.pyname ~ "\0").dup.ptr;
     (*list)[$-1].ml_meth = cast(PyCFunction) &function_wrap!fn.func;
     (*list)[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
-    (*list)[$-1].ml_doc = (docstring ~ "\0").dup.ptr;
+    (*list)[$-1].ml_doc = (args.docstring ~ "\0").dup.ptr;
     (*list) ~= empty;
 }
 
@@ -156,9 +235,9 @@ PyObject* module_init(string docstring="") {
 /**
  * Module initialization function. Should be called after the last call to def.
  */
-PyObject* add_module(string name, string docstring="") {
-    ready_module_methods(name);
-    pyd_modules[name] = cast(PyObject*) Py_InitModule3(name ~ "\0", module_methods[name].ptr, docstring ~ "\0");
-    return pyd_modules[name];
+PyObject* add_module(string modulename, string docstring="") {
+    ready_module_methods(modulename);
+    pyd_modules[modulename] = cast(PyObject*) Py_InitModule3(modulename ~ "\0", module_methods[modulename].ptr, docstring ~ "\0");
+    return pyd_modules[modulename];
 }
 

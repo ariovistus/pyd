@@ -19,6 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+/**
+  Contains utilities for wrapping D classes.
+*/
 module pyd.class_wrap;
 
 import python;
@@ -31,7 +35,7 @@ import std.metastrings;
 import std.typetuple;
 import std.string: format;
 import std.typecons: Tuple;
-import util.typelist: Filter, Pred, Join;
+import util.typelist;
 import util.multi_index;
 import util.replace: Replace;
 import pyd.ctor_wrap;
@@ -41,6 +45,7 @@ import pyd.func_wrap;
 import pyd.make_object;
 import pyd.make_wrapper;
 import pyd.op_wrap;
+import pyd.struct_wrap;
 
 version(Pyd_with_StackThreads) static assert(0, "sorry - stackthreads are gone");
 
@@ -55,7 +60,7 @@ template PydWrapObject_HEAD(T) {
     T d_obj;
 }
 
-/// The class object, a subtype of PyObject
+// The class object, a subtype of PyObject
 template wrapped_class_object(T) {
     extern(C)
     struct wrapped_class_object {
@@ -63,9 +68,9 @@ template wrapped_class_object(T) {
     }
 }
 
-///
+//
 template wrapped_class_type(T) {
-/// The type object, an instance of PyType_Type
+// The type object, an instance of PyType_Type
     static PyTypeObject wrapped_class_type = {
         1,                            /*ob_refcnt*/
         null,                         /*ob_type*/
@@ -171,13 +176,11 @@ template wrapped_prop_list(T) {
     ];
 }
 
-//////////////////////
+//-///////////////////
 // STANDARD METHODS //
-//////////////////////
+//-///////////////////
 
-//import std.stdio;
-
-/// Various wrapped methods
+// Various wrapped methods
 template wrapped_methods(T) {
     alias wrapped_class_object!(T) wrap_object;
     /// The generic "__new__" method
@@ -195,7 +198,7 @@ template wrapped_methods(T) {
         });
     }
 
-    /// The generic dealloc method.
+    // The generic dealloc method.
     extern(C)
     void wrapped_dealloc(PyObject* self) {
         // EMN: the *&%^^%! generic dealloc method is triggering a call to
@@ -217,11 +220,13 @@ template wrapped_methods(T) {
 
 template wrapped_repr(T, alias fn) {
     alias wrapped_class_object!(T) wrap_object;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
     /// The default repr method calls the class's toString.
     extern(C)
     PyObject* repr(PyObject* self) {
         return exception_catcher(delegate PyObject*() {
-            return method_wrap!(T, fn).func(self, null, null);
+            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            return _py(dg());
         });
     }
 }
@@ -231,7 +236,7 @@ private struct CW(A...){ alias A C; }
 
 template IsProperty(alias T) {
     enum bool IsProperty = 
-        (functionAttributes!(T) & FunctionAttribute.property);
+        (functionAttributes!(T) & FunctionAttribute.property) != 0;
 }
 
 template IsGetter(alias T) {
@@ -245,39 +250,77 @@ template IsSetter(RT) {
                 is(ParameterTypeTuple!(T)[0] == RT);
     }
 }
+template IsAnySetter(alias T) {
+    enum bool IsAnySetter = ParameterTypeTuple!T .length == 1;
+}
 
 // This template gets an alias to a property and derives the types of the
 // getter form and the setter form. It requires that the getter form return the
 // same type that the setter form accepts.
-struct property_parts(alias p, bool RO) {
+struct property_parts(alias p, string _mode) {
     alias ID!(__traits(parent, p)) Parent;
     enum nom = __traits(identifier, p);
     alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
-    alias Filter!(IsGetter,Overloads) Getters;
-    static assert(Getters.length != 0, Format!("can't find property %s.%s getter", Parent.stringof, nom));
-    static assert(Getters.length == 1, 
-            Format!("can't handle property overloads of %s.%s getter (types %s)", 
-                Parent.stringof, nom, staticMap!(ReturnType,Getters).stringof));
-    alias Getters[0] GetterFn;
-    alias typeof(&GetterFn) getter_type;
-    static assert(!IsProperty!(GetterFn), 
-            Format!("%s.%s: can't handle d properties", Parent.stringof, nom));
-    static if(!RO) {
-        alias Filter!(IsSetter!(ReturnType!getter_type), Overloads) Setters;
-        static assert(Setters.length != 0, Format!("can't find property %s.%s setter", Parent.stringof, nom));
-        static assert(Setters.length == 1, 
-                Format!("can't handle property overloads of %s.%s setter (return types %s)", 
-                    Parent.stringof, nom, staticMap!(ReturnType,Getters).stringof));
-        alias Setters[0] SetterFn;
-        alias typeof(&SetterFn) setter_type;
-    static assert(!IsProperty!(Setters[0]), 
-            Format!("%s.%s: can't handle d properties", Parent.stringof, nom));
+    static if(_mode == "" || countUntil(_mode, "r") != 1) {
+        alias Filter!(IsGetter,Overloads) Getters;
+        static if(_mode == "" && Getters.length == 0) {
+            enum isgproperty = false;
+            enum rmode = "";
+        }else{
+            static assert(Getters.length != 0, 
+                    Format!("can't find property %s.%s getter", 
+                        Parent.stringof, nom));
+            static assert(Getters.length == 1, 
+                    Format!("can't handle property overloads of %s.%s getter (types %s)", 
+                        Parent.stringof, nom, staticMap!(ReturnType,Getters).stringof));
+            alias Getters[0] GetterFn;
+            alias typeof(&GetterFn) getter_type;
+            enum isgproperty = IsProperty!GetterFn;
+            enum rmode = "r";
+        }
+    }else {
+        enum isgproperty = false;
+        enum rmode = "";
     }
+    //enum bool pred1 = _mode == "" || countUntil(_mode, "w") != -1;
+    static if(_mode == "" || countUntil(_mode, "w") != -1) {
+        static if(rmode == "r") {
+            alias Filter!(IsSetter!(ReturnType!getter_type), Overloads) Setters;
+        }else {
+            alias Filter!(IsAnySetter, Overloads) Setters;
+        }
+
+        //enum bool pred2 = _mode == "" && Setters.length == 0;
+        static if(_mode == "" && Setters.length == 0) {
+            enum bool issproperty = false;
+            enum string wmode = "";
+        }else{
+            static assert(Setters.length != 0, Format!("can't find property %s.%s setter", Parent.stringof, nom));
+            static assert(Setters.length == 1, 
+                Format!("can't handle property overloads of %s.%s setter %s", 
+                    Parent.stringof, nom, Setters.stringof));
+            alias Setters[0] SetterFn;
+            alias typeof(&SetterFn) setter_type;
+            static if(rmode == "r") {
+                static assert(!(IsProperty!GetterFn ^ IsProperty!(Setters[0])), 
+                        Format!("%s.%s: getter and setter must both be @property or not @property", 
+                            Parent.stringof, nom));
+            }
+            enum issproperty = IsProperty!SetterFn;
+            enum wmode = "w";
+        }
+    }else{
+        enum issproperty = false;
+        enum wmode = "";
+    }
+
+    enum mode = rmode ~ wmode;
+    enum bool isproperty = isgproperty || issproperty;
 }
 
-///
+//
 template wrapped_get(T, Parts) {
-    /// A generic wrapper around a "getter" property.
+    // A generic wrapper around a "getter" property.
     extern(C)
     PyObject* func(PyObject* self, void* closure) {
         // method_wrap already catches exceptions
@@ -285,9 +328,9 @@ template wrapped_get(T, Parts) {
     }
 }
 
-///
+//
 template wrapped_set(T, Parts) {
-    /// A generic wrapper around a "setter" property.
+    // A generic wrapper around a "setter" property.
     extern(C)
     int func(PyObject* self, PyObject* value, void* closure) {
         PyObject* temp_tuple = PyTuple_New(1);
@@ -305,14 +348,15 @@ template wrapped_set(T, Parts) {
     }
 }
 
-//////////////////////////////
+//-///////////////////////////
 // CLASS WRAPPING INTERFACE //
-//////////////////////////////
+//-///////////////////////////
 
 //enum ParamType { Def, StaticDef, Property, Init, Parent, Hide, Iter, AltIter }
 struct DoNothing {
     static void call(T) () {}
 }
+
 /**
 Wraps a member function of the class.
 
@@ -321,43 +365,29 @@ keyword arguments.
 
 Params:
 fn = The member function to wrap.
-name = The name of the function as it will appear in Python.
+Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), 
+and fn_t.
 fn_t = The type of the function. It is only useful to specify this
        if more than one function has the same name as this one.
-docstring = The function's docstring.
+pyname = The name of the function as it will appear in Python. Defaults to 
+fn's name in D
+docstring = The function's docstring. Defaults to "".
 */
-struct Def(alias fn) {
-    mixin _Def!(fn, __traits(identifier,fn), typeof(&fn), "");
+struct Def(alias fn, Options...) {
+    alias Args!("","", __traits(identifier,fn), "",Options) args;
+    static if(args.rem.length) {
+        alias args.rem[0] fn_t;
+    }else {
+        alias typeof(&fn) fn_t;
+    }
+    mixin _Def!(fn, args.pyname, fn_t, args.docstring);
 }
-/// ditto
-struct Def(alias fn, string docstring) {
-    mixin _Def!(fn, __traits(identifier,fn), typeof(&fn), docstring);
-}
-/// ditto
-struct Def(alias fn, string name, string docstring) {
-    mixin _Def!(fn, name, typeof(&fn), docstring);
-}
-/// ditto
-struct Def(alias fn, string name, fn_t) {
-    mixin _Def!(fn, name, fn_t, "");
-}
-/// ditto
-struct Def(alias fn, fn_t) {
-    mixin _Def!(fn, __traits(identifier,fn), fn_t, "");
-}
-/// ditto
-struct Def(alias fn, fn_t, string docstring) {
-    mixin _Def!(fn, __traits(identifier,fn), fn_t, docstring);
-}
-/// ditto
-struct Def(alias fn, string name, fn_t, string docstring) {
-    mixin _Def!(fn, name, fn_t, docstring);
-}
+
 template _Def(alias _fn, string name, fn_t, string docstring) {
     alias def_selector!(_fn,fn_t).FN func;
     static assert(!__traits(isStaticFunction, func)); // TODO
     alias fn_t func_t;
-    enum realname = __traits(identifier,func);//_realname;
+    enum realname = __traits(identifier,func);
     enum funcname = name;
     enum min_args = minArgs!(func);
     enum bool needs_shim = false;
@@ -387,53 +417,31 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
 }
 
 /**
-Wraps a static member function of the class. Identical to pyd.def.def
+Wraps a static member function of the class. Similar to pyd.def.def
 
 Supports default arguments, typesafe variadic arguments, and python's 
 keyword arguments.
 
 Params:
 fn = The member function to wrap.
-name = The name of the function as it will appear in Python.
+Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), 
+and fn_t
 fn_t = The type of the function. It is only useful to specify this
        if more than one function has the same name as this one.
-docstring = The function's docstring.
+pyname = The name of the function as it will appear in Python. Defaults to fn's 
+name in D.
+docstring = The function's docstring. Defaults to "".
 */
-struct StaticDef(alias fn) {
-    mixin _StaticDef!(fn, __traits(identifier,fn), typeof(&fn), "");
+struct StaticDef(alias fn, Options...) {
+    alias Args!("","", __traits(identifier,fn), "",Options) args;
+    static if(args.rem.length) {
+        alias args.rem[0] fn_t;
+    }else {
+        alias typeof(&fn) fn_t;
+    }
+    mixin _StaticDef!(fn, args.pyname, fn_t, args.docstring);
 }
-/// ditto
-struct StaticDef(alias fn, string docstring) {
-    mixin _StaticDef!(fn, __traits(identifier,fn), typeof(&fn), docstring);
-}
-/// ditto
-struct StaticDef(alias fn, string name, string docstring) {
-    mixin _StaticDef!(fn, name, typeof(&fn), docstring);
-}
-/// ditto
-struct StaticDef(alias fn, string name, fn_t, string docstring) {
-    mixin _StaticDef!(fn, name, fn_t, docstring);
-}
-/// ditto
-struct StaticDef(alias fn, fn_t) {
-    mixin _StaticDef!(fn, __traits(identifier,fn), fn_t, "");
-}
-/// ditto
-struct StaticDef(alias fn, fn_t, string docstring) {
-    mixin _StaticDef!(fn, __traits(identifier,fn), fn_t, docstring);
-}
-/// ditto
-struct StaticDef(alias fn, string name, fn_t) {
-    mixin _StaticDef!(fn, name, fn_t, "");
-}
-/// ditto
-struct StaticDef(alias fn, string name, fn_t) {
-    mixin _StaticDef!(fn, name, fn_t, "");
-}
-/// ditto
-struct StaticDef(alias fn, string name, fn_t, string docstring) {
-    mixin _StaticDef!(fn, name, fn_t, docstring);
-}
+
 mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
     alias def_selector!(fn,fn_t).FN func;
     static assert(__traits(isStaticFunction, func)); // TODO
@@ -459,94 +467,93 @@ mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
 /**
 Wraps a property of the class. 
 
-Will automatically attempt to wrap both the get and set forms of the property,
-unless RO is specified. Does not work with @property annotated functions. Does not support a "set-only" property.
-
 Params:
 fn = The property to wrap. 
-name = The name of the property as it will appear in Python.
-RO = Whether this is a read-only property.
-docstring = The function's docstring.
+Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), 
+and Mode!(mode)
+pyname = The name of the property as it will appear in Python. Defaults to 
+fn's name in D.
+mode = specifies whether this property is readable, writable. possible values 
+are "r", "w", "rw", and "" (in the latter case, automatically determine which 
+mode to use based on availability of getter and setter forms of fn). Defaults
+to "".
+docstring = The function's docstring. Defaults to "".
 */
-struct Property(alias fn) {
-    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), false, "");
+struct Property(alias fn, Options...) {
+    alias Args!("","", __traits(identifier,fn), "",Options) args;
+    static assert(args.rem.length == 0, "Propery takes no other parameter");
+    mixin _Property!(fn, args.pyname, args.mode, args.docstring);
 }
-/// ditto
-struct Property(alias fn, string docstring) {
-    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), false, docstring);
-}
-/// ditto
-struct Property(alias fn, string name, string docstring) {
-    mixin _Property!(fn, __traits(identifier,fn), name, false, docstring);
-}
-/// ditto
-struct Property(alias fn, string name, bool RO) {
-    mixin _Property!(fn, __traits(identifier,fn), name, RO, "");
-}
-/// ditto
-struct Property(alias fn, string name, bool RO, string docstring) {
-    mixin _Property!(fn, __traits(identifier,fn), name, RO, docstring);
-}
-/// ditto
-struct Property(alias fn, bool RO) {
-    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), RO, "");
-}
-/// ditto
-struct Property(alias fn, bool RO, string docstring) {
-    mixin _Property!(fn, __traits(identifier,fn), __traits(identifier,fn), RO, docstring);
-}
-template _Property(alias fn, string _realname, string name, bool RO, string docstring) {
-    alias property_parts!(fn, RO) parts;
-    alias parts.getter_type get_t;
-    static if(!RO) {
-        alias parts.setter_type set_t;
-    }
-    enum realname = _realname;
-    enum funcname = name;
-    enum bool readonly = RO;
-    enum bool needs_shim = false;
-    static void call(T) () {
-        pragma(msg, "class.prop: " ~ name);
-        static PyGetSetDef empty = { null, null, null, null, null };
-        wrapped_prop_list!(T)[$-1].name = (name ~ "\0").dup.ptr;
-        wrapped_prop_list!(T)[$-1].get =
-            &wrapped_get!(T, parts).func;
-        static if (!RO) {
-            wrapped_prop_list!(T)[$-1].set =
-                &wrapped_set!(T, parts).func;
+
+template _Property(alias fn, string pyname, string _mode, string docstring) {
+    alias property_parts!(fn, _mode) parts;
+    pragma(msg, "property: ", parts.nom);
+    static if(parts.isproperty) {
+        mixin _Member!(parts.nom, pyname, parts.mode, docstring);
+
+        template shim(size_t i, T) {
+            enum shim = "";
         }
-        wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").dup.ptr;
-        wrapped_prop_list!(T)[$-1].closure = null;
-        wrapped_prop_list!(T) ~= empty;
-        // It's possible that appending the empty item invalidated the
-        // pointer in the type struct, so we renew it here.
-        wrapped_class_type!(T).tp_getset =
-            wrapped_prop_list!(T).ptr;
-    }
-    template shim_setter(size_t i) {
-        static if (RO) {
-            enum shim_setter = "";
-        } else {
-            enum shim_setter = Replace!(q{
+    }else {
+        static if(countUntil(parts.mode,"r") != -1) {
+            alias parts.getter_type get_t;
+        }
+        static if(countUntil(parts.mode,"w") != -1) {
+            alias parts.setter_type set_t;
+        }
+        enum realname = __traits(identifier, fn);
+        enum funcname = pyname;
+        enum bool needs_shim = false;
+        static void call(T) () {
+            pragma(msg, "class.prop: " ~ pyname);
+            static PyGetSetDef empty = { null, null, null, null, null };
+            wrapped_prop_list!(T)[$-1].name = (pyname ~ "\0").dup.ptr;
+            static if (countUntil(parts.mode, "r") != -1) {
+                wrapped_prop_list!(T)[$-1].get =
+                    &wrapped_get!(T, parts).func;
+            }
+            static if (countUntil(parts.mode, "w") != -1) {
+                wrapped_prop_list!(T)[$-1].set =
+                    &wrapped_set!(T, parts).func;
+            }
+            wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").dup.ptr;
+            wrapped_prop_list!(T)[$-1].closure = null;
+            wrapped_prop_list!(T) ~= empty;
+            // It's possible that appending the empty item invalidated the
+            // pointer in the type struct, so we renew it here.
+            wrapped_class_type!(T).tp_getset =
+                wrapped_prop_list!(T).ptr;
+        }
+        template shim(size_t i, T) {
+            static if(countUntil(parts.mode, "r") != -1) {
+                enum getter = Replace!(q{
+                ReturnType!(__pyd_p$i.get_t) $realname() {
+                    return __pyd_get_overload!("$realname", __pyd_p$i.get_t).func("$name");
+                }
+                } , "$i",i,"$realname",realname, "$name", pyname);
+            }else{
+                enum getter = "";
+            }
+            static if(countUntil(parts.mode, "w") != -1) {
+                enum setter = Replace!(q{
                 ReturnType!(__pyd_p$i.set_t) $realname(ParameterTypeTuple!(__pyd_p$i.set_t) t) {
                     return __pyd_get_overload!("$realname", __pyd_p$i.set_t).func("$name", t);
                 }
-            }, "$i", i, "$realname",_realname, "$name", name);
-        }
-    }
-    template shim(size_t i, T) {
-        enum shim = Replace!(q{
-            alias Params[$i] __pyd_p$i;
-            ReturnType!(__pyd_p$i.get_t) $realname() {
-                return __pyd_get_overload!("$realname", __pyd_p$i.get_t).func("$name");
+                }, "$i", i, "$realname",realname, "$name", pyname);
+            }else {
+                enum setter = "";
             }
-            $shim_setter;
-        }, "$i",i,"$realname",_realname, "$name", name, "$shim_setter",shim_setter!(i));
+            enum shim = Replace!(q{
+                alias Params[$i] __pyd_p$i;
+                $getter
+                $setter;
+            }, "$i",i, "$getter", getter, "$setter",setter);
+        }
     }
 }
 
 /**
-Wraps a method as the class's __repr__ in Python.
+Wraps a method as the class's ___repr__ in Python.
 
 Params:
 fn = The property to wrap. Must have the signature string function().
@@ -585,7 +592,10 @@ struct Init(cps ...) {
     alias cps CtorParams;
     enum bool needs_shim = false;
     template Inner(T) {
-        alias TypeTuple!(__traits(getOverloads, T, "__ctor")) Overloads;
+        static if(isPointer!T && is(PointerTarget!T == struct)) 
+            alias PointerTarget!T BaseT;
+        else alias T BaseT;
+        alias TypeTuple!(__traits(getOverloads, BaseT, "__ctor")) Overloads;
         template IsDesired(alias ctor) {
             alias ParameterTypeTuple!ctor ps;
             enum bool IsDesired = is(ps == CtorParams);
@@ -702,11 +712,6 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
     template Inner(C) {
         enum fn_str1 = "Alias!(C."~nom~"!(op))";
         enum fn_str2 = "C."~nom~"!(op,rhs_t)";
-        pragma(msg, fn_str2);
-        pragma(msg, C.stringof);
-        pragma(msg, op);
-        pragma(msg, rhs_t.stringof);
-        pragma(msg, is(typeof(mixin(fn_str2)) == function));
         enum string OP = op;
         static if(!__traits(hasMember, C, nom)) {
             static assert(0, C.stringof ~ " has no "~(isR ?"reflected ":"")~
@@ -1171,8 +1176,7 @@ struct OpCall(Args_t...) {
 }
 
 /**
-  Wraps Foo.length or another function as pythons __len__ function. Do not
-  pass a @property annotated function.
+  Wraps Foo.length or another function as python's ___len__ function. 
 
   Requires signature 
 ---
@@ -1201,7 +1205,7 @@ struct _Len(fnt...) {
         template IsDesiredOverload(alias fn) {
             alias ParameterTypeTuple!fn ps;
             alias ReturnType!fn rt;
-            enum bool IsDesiredOverload = is(rt : Py_ssize_t) && ps.length == 0;
+            enum bool IsDesiredOverload = isImplicitlyConvertible!(rt,Py_ssize_t) && ps.length == 0;
         }
         alias Filter!(IsDesiredOverload, Overloads) VOverloads;
         static if(VOverloads.length == 0 && Overloads.length != 0) {
@@ -1355,12 +1359,22 @@ where T is the type being wrapped, Shim is the wrapped type
 
 Params:
     T = The class being wrapped.
-    Params = Definitions of members of T to be wrapped.
+    Params = Mixture of definitions of members of T to be wrapped and 
+    optional arguments. 
+    Concerning optional arguments, accepts PyName!(pyname), ModuleName!(modulename), and Docstring!(docstring).
+    pyname = The name of the class as it will appear in Python. Defaults to 
+    T's name in D
+    modulename = The name of the python module in which the wrapped class 
+            resides. Defaults to "".
+    docstring = The class's docstring. Defaults to "".
   */
-void wrap_class(T, Params...) (string docstring="", string modulename="") {
-    _wrap_class!(T, __traits(identifier,T), Params).wrap_class(docstring, modulename);
+void wrap_class(T, Params...)() {
+    alias Args!("","", __traits(identifier,T), "",Params) args;
+    _wrap_class!(T, args.pyname, args.docstring, args.modulename, args.rem).wrap_class();
 }
-template _wrap_class(_T, string name, Params...) {
+template _wrap_class(_T, string name, string docstring, string modulename, Params...) {
+    import std.conv;
+    import util.typelist;
     static if (is(_T == class)) {
         pragma(msg, "wrap_class: " ~ name);
         alias pyd.make_wrapper.make_wrapper!(_T, Params).wrapper shim_class;
@@ -1371,7 +1385,7 @@ template _wrap_class(_T, string name, Params...) {
         alias void shim_class;
         alias _T* T;
     }
-    void wrap_class(string docstring="", string modulename="") {
+    void wrap_class() {
         alias wrapped_class_type!(T) type;
         //writefln("entering wrap_class for %s", typeid(T));
         //pragma(msg, "wrap_class, T is " ~ prettytypeof!(T));
@@ -1445,19 +1459,6 @@ template _wrap_class(_T, string name, Params...) {
         }
     }
 }
-//-/////////////
-// DOCSTRINGS //
-//-/////////////
-
-struct Docstring {
-    string name, doc;
-}
-
-void docstrings(T=void)(Docstring[] docs...) {
-    static if (is(T == void)) {
-        
-    }
-}
 
 //-////////////////////
 // PYD API FUNCTIONS //
@@ -1499,7 +1500,7 @@ PyObject* WrapPyObject_FromObject(T) (T t) {
     return WrapPyObject_FromTypeAndObject(&wrapped_class_type!(T), t);
 }
 
-/**
+/*
  * Returns a new Python object of a wrapped type.
  */
 PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) {
@@ -1522,7 +1523,7 @@ PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) {
     }
 }
 
-/**
+/*
  * Returns the object contained in a Python wrapped type.
  */
 T WrapPyObject_AsObject(T) (PyObject* _self) {
@@ -1546,7 +1547,7 @@ T WrapPyObject_AsObject(T) (PyObject* _self) {
     return self.d_obj;
 }
 
-/**
+/*
  * Sets the contained object in self to t.
  */
 void WrapPyObject_SetObj(T) (PyObject* _self, T t) {

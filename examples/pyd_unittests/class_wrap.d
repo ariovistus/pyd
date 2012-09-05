@@ -5,12 +5,13 @@ import std.stdio;
 static this() {
     add_module("testing");
     wrap_class!(Bizzy,
+            ModuleName!"testing",
             //Init!(int[]),
             Init!(int,double,string),
             Def!(Bizzy.a, int function(double)), 
             StaticDef!(Bizzy.b, int function(double)),
             Repr!(Bizzy.repr),
-            Property!(Bizzy.m, true),
+            Property!(Bizzy.m, Mode!"r"),
             OpBinary!("+"),
             OpBinary!("*"),
             OpBinary!("^^"),
@@ -28,19 +29,28 @@ static this() {
             OpSliceAssign!(),
             OpCall!(double),
             Len!(Bizzy.pylen),
-    )("","testing");
+    )();
     wrap_class!(Bizzy2,
+            ModuleName!"testing",
             Init!(int[]),
             StaticDef!(Bizzy2.a),
             StaticDef!(Bizzy2.b),
             StaticDef!(Bizzy2.c),
-    )("","testing");
+    )();
     wrap_class!(Bizzy3,
+            ModuleName!"testing",
             Init!(int,int),
             Def!(Bizzy3.a),
             Def!(Bizzy3.b),
             Def!(Bizzy3.c),
-    )("","testing");
+    )();
+    wrap_class!(Bizzy4,
+            ModuleName!"testing",
+            Property!(Bizzy4.i),
+            Repr!(Bizzy4.repr),
+            Len!(),
+    )();
+
 }
 
 class Bizzy {
@@ -167,6 +177,15 @@ class Bizzy3{
     }
 }
 
+class Bizzy4 {
+    int _i = 4;
+
+    @property int i() { return _i; }
+    @property void i(int n) { _i = n; }
+    @property size_t length() { return 5; }
+    @property string repr() { return "cowabunga"; }
+}
+
 unittest {
     PyStmts(q"{
 #bizzy=Bizzy(1,2,3,4,5)
@@ -236,6 +255,17 @@ assert(PyEval!int("bizzy.c(i=7)","testing") == 7);
 assert(PyEval!int("bizzy.c(i=[7])","testing") == 7);
 assert(PyEval!int("bizzy.c(7,5,6)","testing") == 756);
 assert(PyEval!int("bizzy.c(i=[7,5,6])","testing") == 756);
+
+PyStmts(q"{
+bizzy = Bizzy4()
+}", "testing");
+assert(PyEval!int("bizzy.i","testing") == 4);
+PyStmts(q"{
+bizzy.i = 10
+}", "testing");
+assert(PyEval!int("bizzy.i","testing") == 10);
+assert(PyEval!int("len(bizzy)","testing") == 5);
+assert(PyEval!string("repr(bizzy)","testing") == "cowabunga");
 
 }
 

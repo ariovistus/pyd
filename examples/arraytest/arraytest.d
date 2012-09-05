@@ -44,5 +44,5 @@ extern(C) void PydMain() {
         Init!(int),
         Repr!(Foo.toString),
         Def!(Foo.bar)
-    );
+    )();
 }
