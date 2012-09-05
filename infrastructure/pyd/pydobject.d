@@ -833,12 +833,13 @@ public:
             return new PydObject(PyMapping_Items(m_ptr));
         }
     }
+    
     // Added by dict
     void clear() { 
         if(PyDict_Check(m_ptr)) {
             PyDict_Clear(m_ptr);
         }else{
-            throw new Exception("tried to call clear on non-dict");
+            this.method("clear");
         }
     }
 
@@ -847,16 +848,17 @@ public:
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Copy(m_ptr));
         }else{
-            throw new Exception("tried to call copy on non-dict");
+            return this.method("copy");
         }
     }
 
     // Added by dict
     void merge(PydObject o, bool override_=true) { 
         if(PyDict_Check(m_ptr)) {
-            PyDict_Merge(m_ptr,o.m_ptr,override_);
+            int res = PyDict_Merge(m_ptr,o.m_ptr,override_);
+            if(res == -1) handle_exception();
         }else{
-            throw new Exception("tried to call copy on non-dict");
+            this.method("merge", o, override_);
         }
     }
 
@@ -866,7 +868,7 @@ public:
         if(PyModule_Check(m_ptr)) {
             return new PydObject(PyModule_GetDict(m_ptr));
         }else{
-            throw new Exception("tried to call getdict on non module");
+            return this.method("getdict");
         }
     }
 

@@ -38,6 +38,10 @@ unittest {
     assert("a" in g);
     assert(g.hasKey("k"));
     assert(g.hasKey("a"));
+
+    g = py([5:7, 8:10]);
+    g.clear();
+    assert(g.length() == 0);
 }
 
 // PydObject as list
