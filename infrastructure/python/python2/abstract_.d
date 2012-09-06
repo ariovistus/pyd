@@ -81,7 +81,7 @@ int PyObject_AsWriteBuffer(PyObject* obj, void** buffer, Py_ssize_t* buffer_len)
 version(Python_2_6_Or_Later){
     /* new buffer API */
 
-    void PyObject_CheckBuffer()(PyObject* obj){
+    int PyObject_CheckBuffer()(PyObject* obj){
         return (obj.ob_type.tp_as_buffer !is null) &&
             PyType_HasFeature(obj.ob_type, Py_TPFLAGS_HAVE_NEWBUFFER) &&
             (obj.ob_type.tp_as_buffer.bf_getbuffer !is null);

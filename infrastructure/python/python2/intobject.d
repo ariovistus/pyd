@@ -30,6 +30,8 @@ PyObject* PyInt_FromLong(C_long);
 version(Python_2_5_Or_Later){
     PyObject* PyInt_FromSize_t(size_t);
     PyObject* PyInt_FromSsize_t(Py_ssize_t);
+
+    Py_ssize_t PyInt_AsSsize_t(PyObject*);
 }
 
 C_long PyInt_AsLong(PyObject*);

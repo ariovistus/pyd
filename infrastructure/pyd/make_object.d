@@ -43,6 +43,7 @@ import std.traits;
 import std.typecons: Tuple, tuple, isTuple;
 import std.metastrings;
 import std.conv;
+import std.range;
 
 import pyd.pydobject;
 import pyd.class_wrap;
@@ -423,71 +424,140 @@ T d_type(T) (PyObject* o) {
             Py_DECREF(repr);
         }
         if (result is null) handle_exception();
-        version (D_Version2) {
-            static if (is(string : T)) {
-                return to!string(result);
-            } else {
-                return to!string(result).dup;
-            }
+        static if (is(string : T)) {
+            return to!string(result);
         } else {
             return to!string(result).dup;
         }
-    } else static if (is(T E : E[])) {
+    } else static if (isArray!T) {
+        alias Unqual!(ElementType!T) E;
         // Dynamic arrays
-        PyObject* iter = PyObject_GetIter(o);
-        if (iter is null) {
-            PyErr_Clear();
-            could_not_convert!(T)(o);
-        }
-        scope(exit) Py_DECREF(iter);
-        Py_ssize_t len = PyObject_Length(o);
-        if (len == -1) {
-            PyErr_Clear();
-            could_not_convert!(T)(o);
-        }
-        T array;
-        array.length = len;
-        int i = 0;
-        PyObject* item = PyIter_Next(iter);
-        while (item) {
-            try {
-                array[i] = d_type!(E)(item);
-            } catch(PydConversionException e) {
-                Py_DECREF(item);
-                // We re-throw the original conversion exception, rather than
-                // complaining about being unable to convert to an array. The
-                // partially constructed array is left to the GC.
-                throw e;
+        version(Python_2_6_Or_Later) {
+            if(PyObject_CheckBuffer(o)) {
+                assert(0, "todo: support new buffer interface");
             }
-            ++i;
-            Py_DECREF(item);
-            item = PyIter_Next(iter);
         }
-        return array;
+        if(o.ob_type is array_array_Type) {
+            // array.array's data can be got with a single memcopy.
+            arrayobject* arr_o = cast(arrayobject*) o;
+            enforce(arr_o.ob_descr, "array.ob_descr null!");
+            char typecode = cast(char) arr_o.ob_descr.typecode;
+            switch(typecode) {
+                case 'b','h','i','l':
+                    if(!isSigned!E) 
+                        could_not_convert!T(o,
+                                format("typecode '%c' requires signed integer"
+                                    " type, not '%s'", typecode, E.stringof));
+                    break;
+                case 'B','H','I','L':
+                    if(!isUnsigned!E) 
+                        could_not_convert!T(o,
+                                format("typecode '%c' requires unsigned integer"
+                                    " type, not '%s'",typecode, E.stringof));
+                    break;
+                case 'f','d':
+                    if(!isFloatingPoint!E) 
+                        could_not_convert!T(o,
+                                format("typecode '%c' requires float, not '%s'",
+                                    typecode, E.stringof));
+                    break;
+                case 'c','u': 
+                    break;
+                default:
+                    could_not_convert!T(o, 
+                            format("unknown typecode '%c'", typecode));
+            }
+            
+            int itemsize = arr_o.ob_descr.itemsize;
+            if(itemsize != E.sizeof) 
+                could_not_convert!T(o, format("item size mismatch: %s vs %s", 
+                            itemsize, E.sizeof));
+            Py_ssize_t count = arr_o.ob_size; 
+            if(count < 0) 
+                could_not_convert!T(o, format("nonsensical array length: %s", 
+                            count));
+            static if(isDynamicArray!T) {
+                E[] array = new E[](count);
+            }else static if(isStaticArray!T){
+                if(count != T.length) could_not_convert!T(o, format("length mismatch: %s vs %s", count, T.length));
+                E[T.length] array;
+            }
+            // copy data, don't take slice
+            array[] = cast(E[]) arr_o.ob_item[0 .. count*itemsize];
+            return cast(T) array;
+        }else {
+            PyObject* iter = PyObject_GetIter(o);
+            if (iter is null) {
+                PyErr_Clear();
+                could_not_convert!(T)(o);
+            }
+            scope(exit) Py_DECREF(iter);
+            Py_ssize_t len = PyObject_Length(o);
+            if (len == -1) {
+                PyErr_Clear();
+                could_not_convert!(T)(o);
+            }
+            static if(isDynamicArray!T) {
+                E[] array = new E[](len);
+            }else static if(isStaticArray!T){
+                if(len != T.length) could_not_convert!T(o, format("length mismatch: %s vs %s", len, T.length));
+                E[T.length] array;
+            }
+            int i = 0;
+            PyObject* item = PyIter_Next(iter);
+            while (item) {
+                try {
+                    array[i] = d_type!(E)(item);
+                } catch(PydConversionException e) {
+                    Py_DECREF(item);
+                    // We re-throw the original conversion exception, rather than
+                    // complaining about being unable to convert to an array. The
+                    // partially constructed array is left to the GC.
+                    throw e;
+                }
+                ++i;
+                Py_DECREF(item);
+                item = PyIter_Next(iter);
+            }
+            return cast(T) array;
+        }
     } else static if (isFloatingPoint!T) {
         double res = PyFloat_AsDouble(o);
         handle_exception();
         return cast(T) res;
     } else static if(isIntegral!T) {
-        if (!PyNumber_Check(o)) could_not_convert!(T)(o);
-        static if(isUnsigned!T) {
-            static assert(T.sizeof <= C_ulonglong.sizeof);
-            C_ulonglong res = PyLong_AsUnsignedLongLong(o);
+        if(PyInt_Check(o)) {
+            C_long res = PyInt_AsLong(o);
             handle_exception();
-            // no overflow from python to C_ulonglong,
-            // overflow from C_ulonglong to T?
-            if(T.max < res) could_not_convert!T(o); 
-            return cast(T) res;
-        }else static if(isSigned!T) {
-            static assert(T.sizeof <= C_longlong.sizeof);
-            C_longlong res = PyLong_AsLongLong(o);
-            handle_exception();
-            // no overflow from python to C_longlong,
-            // overflow from C_longlong to T?
-            if(T.min > res) could_not_convert!T(o); 
-            if(T.max < res) could_not_convert!T(o); 
-            return cast(T) res;
-        }
+            static if(isUnsigned!T) {
+                if(res < 0) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, 0, T.max));
+                if(T.max < res) could_not_convert!T(o,format("%s out of bounds [%s, %s]", res, 0, T.max));
+                return cast(T) res;
+            }else static if(isSigned!T) {
+                if(T.min > res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
+                if(T.max < res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
+                return cast(T) res;
+            }
+        }else if(PyLong_Check(o)) {
+            static if(isUnsigned!T) {
+                static assert(T.sizeof <= C_ulonglong.sizeof);
+                C_ulonglong res = PyLong_AsUnsignedLongLong(o);
+                handle_exception();
+                // no overflow from python to C_ulonglong,
+                // overflow from C_ulonglong to T?
+                if(T.max < res) could_not_convert!T(o); 
+                return cast(T) res;
+            }else static if(isSigned!T) {
+                static assert(T.sizeof <= C_longlong.sizeof);
+                C_longlong res = PyLong_AsLongLong(o);
+                handle_exception();
+                // no overflow from python to C_longlong,
+                // overflow from C_longlong to T?
+                if(T.min > res) could_not_convert!T(o); 
+                if(T.max < res) could_not_convert!T(o); 
+                return cast(T) res;
+            }
+        }else could_not_convert!T(o);
     } else static if (isBoolean!T) {
         if (!PyNumber_Check(o)) could_not_convert!(T)(o);
         int res = PyObject_IsTrue(o);
@@ -503,10 +573,20 @@ T d_type(T) (PyObject* o) {
     assert(0);
 }
 
+@property PyTypeObject* array_array_Type() {
+    static PyTypeObject* m_type;
+    if(!m_type) {
+        PyObject* array = PyImport_ImportModule("array");
+        scope(exit) Py_XDECREF(array);
+        m_type = cast(PyTypeObject*) PyObject_GetAttrString(array, "array");
+    }
+    return m_type;
+}
+
 alias d_type!(Object) d_type_Object;
 
 private
-void could_not_convert(T) (PyObject* o) {
+void could_not_convert(T) (PyObject* o, string reason = "") {
     // Pull out the name of the type of this Python object, and the
     // name of the D type.
     string py_typename, d_typename;
@@ -525,11 +605,12 @@ void could_not_convert(T) (PyObject* o) {
         }
     }
     d_typename = typeid(T).toString();
+    string because;
+    if(reason != "") because = format(" because: %s", reason);
     throw new PydConversionException(
-        "Couldn't convert Python type '" ~
-        py_typename ~
-        "' to D type '" ~
-        d_typename ~
-        "'"
+            format("Couldn't convert Python type '%s' to D type '%s'%s",
+                py_typename,
+                d_typename,
+                because)
     );
 }

@@ -1288,6 +1288,8 @@ extern (C) {
   version(Python_2_5_Or_Later){
       PyObject *PyInt_FromSize_t(size_t);
       PyObject *PyInt_FromSsize_t(Py_ssize_t);
+
+      Py_ssize_t PyInt_AsSsize_t(PyObject*);
   }
 
   C_long PyInt_AsLong(PyObject *);
@@ -1346,7 +1348,7 @@ extern (C) {
   // &PyLong_Type is accessible via PyLong_Type_p.
 
   version(Python_2_6_Or_Later){
-      int PyLong_Check()(op){
+      int PyLong_Check()(PyObject* op){
           return PyType_FastSubclass((op).ob_type, Py_TPFLAGS_LONG_SUBCLASS);
       }
   }else{
@@ -3398,7 +3400,7 @@ PyObject* _PyLong_Copy(PyLongObject* src);
   version(Python_2_6_Or_Later){
     /* new buffer API */
 
-      void PyObject_CheckBuffer()(PyObject *obj){
+      int PyObject_CheckBuffer()(PyObject *obj){
           return (obj.ob_type.tp_as_buffer !is null) &&
               PyType_HasFeature(obj.ob_type, Py_TPFLAGS_HAVE_NEWBUFFER) &&
               (obj.ob_type.tp_as_buffer.bf_getbuffer !is null);
@@ -4638,3 +4640,19 @@ version (Windows) {
 
 alias lazy_load!(builtins, m_PyExc_ZeroDivisionError, "ZeroDivisionError") PyExc_ZeroDivisionError;
 
+// Python-header-file: Modules/arraymodule.c:
+
+struct arraydescr{
+    int typecode;
+    int itemsize;
+    PyObject* function(arrayobject*, Py_ssize_t) getitem;
+    int function(arrayobject*, Py_ssize_t, PyObject*) setitem;
+}
+
+struct arrayobject {
+    mixin PyObject_VAR_HEAD;
+    ubyte* ob_item;
+    Py_ssize_t allocated;
+    arraydescr* ob_descr;
+    PyObject* weakreflist; /* List of weak references */
+} 

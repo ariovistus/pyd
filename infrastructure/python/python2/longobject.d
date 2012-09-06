@@ -10,7 +10,7 @@ extern(C):
 __gshared PyTypeObject PyLong_Type;
 
 version(Python_2_6_Or_Later){
-    int PyLong_Check()(op){
+    int PyLong_Check()(PyObject* op){
         return PyType_FastSubclass((op).ob_type, Py_TPFLAGS_LONG_SUBCLASS);
     }
 }else{
