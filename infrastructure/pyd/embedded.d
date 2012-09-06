@@ -98,18 +98,25 @@ R PyDef( string python, string modl, R, Args...)
 /++
  + Evaluate a python expression once and return the result.
  +/
-T PyEval(T = PydObject)(string python, string modl, string file = __FILE__, size_t line = __LINE__) {
-    auto m = py_import(modl);
-    auto locals = m.getdict();
-    auto locals_ptr = Py_INCREF(m.getdict().ptr);
-    if("__builtins__" !in locals) {
-        auto builtins = new PydObject(PyEval_GetBuiltins());
-        locals["__builtins__"] = builtins;
+T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__, size_t line = __LINE__) {
+    PydObject locals = null;
+    PyObject* locals_ptr = null;
+    if(modl == "") {
+        locals = py((string[string]).init);
+        locals_ptr = Py_INCREF(locals.ptr);
+    }else {
+        auto m = py_import(modl);
+        locals = m.getdict();
+        locals_ptr = Py_INCREF(m.getdict().ptr);
+        if("__builtins__" !in locals) {
+            auto builtins = new PydObject(PyEval_GetBuiltins());
+            locals["__builtins__"] = builtins;
+        }
     }
     auto pres = PyRun_String(
             zcc(python), 
             Py_eval_input, locals_ptr, locals_ptr);
-    scope(exit) Py_DECREF(locals_ptr);
+    scope(exit) Py_XDECREF(locals_ptr);
     if(pres) {
         auto res = new PydObject(pres);
         return res.toDItem!T();

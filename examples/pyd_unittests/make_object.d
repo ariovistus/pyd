@@ -5,6 +5,16 @@ static this() {
 }
 
 unittest {
+    import std.bigint;
+    // python long -> BigInt
+    assert(PyEval!BigInt("6 ** 603") == BigInt("6") ^^ 603);
+    assert(PyEval!BigInt("-6 ** 603") == -BigInt("6") ^^ 603);
+    // BigInt -> python long
+    assert(py(BigInt("7") ^^ 47) == PyEval("7 ** 47"));
+    assert(py(-BigInt("7") ^^ 47) == PyEval("-7 ** 47"));
+}
+
+unittest {
     assert(d_type!int(_py(15)) == 15);
     assert(d_type!float(_py(1.0f)) == 1.0f);
     import std.complex;

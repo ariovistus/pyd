@@ -36,7 +36,9 @@ module pyd.make_object;
 
 import python;
 
+import std.algorithm: endsWith;
 import std.complex;
+import std.bigint;
 import std.traits;
 import std.typecons: Tuple, tuple, isTuple;
 import std.metastrings;
@@ -189,6 +191,10 @@ PyObject* _py(T) (T t) {
         return PyTuple_FromItems(tuple);
     } else static if (IsComplex!T) {
         return PyComplex_FromDoubles(t.re, t.im);
+    } else static if(is(T == std.bigint.BigInt)) {
+        import std.string: format = xformat;
+        string num_str = format("%s\0",t);
+        return PyLong_FromString(num_str.dup.ptr, null, 10);
     } else static if (is(T : string)) {
         return PyString_FromString((t ~ "\0").ptr);
     } else static if (is(T : wstring)) {
@@ -357,6 +363,11 @@ T d_type(T) (PyObject* o) {
         handle_exception();
         alias typeof(T.init.re) T2;
         return complex!(T2,T2)(real_, imag);
+    } else static if(is(T == std.bigint.BigInt)) {
+        if (!PyNumber_Check(o)) could_not_convert!(T)(o);
+        string num_str = d_type!string(o);
+        if(num_str.endsWith("L")) num_str = num_str[0..$-1];
+        return BigInt(num_str);
     } else static if (is(T == class)) {
         // We can only convert to a class if it has been wrapped, and of course
         // we can only convert the object if it is the wrapped type.
