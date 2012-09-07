@@ -1,4 +1,5 @@
 import pyd.pyd, pyd.embedded;
+import std.functional;
 import std.range;
 import std.algorithm;
 import std.exception;
@@ -89,6 +90,57 @@ unittest {
 unittest {
     assert(equal(PyEval!(PydInputRange!int)("[5,6,7,8]"), [5,6,7,8]));
     assert(equal(PyEval!(PydInputRange!int)("xrange(2, 20)"), iota(2,20)));
+}
+
+class G1(string name) {
+    int i;
+    this(int _i){ i = _i; }
+
+    override bool opEquals(Object obj) {
+        G1!name g = cast(G1!name) obj;
+        if(!g) return false;
+        return i == g.i;
+    }
+}
+
+unittest {
+
+    class Conv {
+        int opCall(G1!"joe" g) {
+            return g.i;
+        }
+    }
+
+    class Conv2 {
+        G1!"joe" opCall(int i) {
+            return new G1!"joe"(i);
+        }
+    }
+    alias unaryFun!"a.i" uConv;
+    alias uConv!(G1!"martin") mConv;
+
+    d_to_python(delegate int(G1!"fred" g){ return g.i; });
+    d_to_python(function int(G1!"steve" g){ return g.i; });
+    d_to_python(new Conv());
+    d_to_python(&mConv);
+    d_to_python((G1!"john" a) => a.i);
+
+    python_to_d(delegate G1!"steve"(int i){ return new G1!"steve"(i); });
+    python_to_d(function G1!"fred"(int i){ return new G1!"fred"(i); });
+    python_to_d(new Conv2());
+    python_to_d((int a) => new G1!"martin"(a));
+    python_to_d((int a) => new G1!"john"(a));
+
+    assert(py(new G1!"fred"(6)) == py(6));
+    assert(py(new G1!"steve"(7)) == py(7));
+    assert(py(new G1!"joe"(8)) == py(8));
+    assert(py(new G1!"martin"(9)) == py(9));
+    assert(py(new G1!"john"(10)) == py(10));
+
+    assert(d_type!(G1!"fred")(_py(20)) == new G1!"fred"(20));
+    assert(d_type!(G1!"steve")(_py(21)) == new G1!"steve"(21));
+    assert(d_type!(G1!"joe")(_py(22)) == new G1!"joe"(22));
+    assert(d_type!(G1!"martin")(_py(23)) == new G1!"martin"(23));
 }
 
 void main() {}

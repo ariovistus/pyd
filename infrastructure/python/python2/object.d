@@ -122,6 +122,9 @@ version(Python_2_6_Or_Later){
         Py_ssize_t* shape;
         Py_ssize_t* strides;
         Py_ssize_t* suboffsets;
+        version(Python_2_7_Or_Later) {
+            Py_ssize_t[2] smalltable;
+        }
         void* internal;
     };
 

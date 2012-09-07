@@ -84,6 +84,14 @@ template from_converter_registry(To) {
     To delegate(PyObject*) dg=null;
 }
 
+/**
+Extend pyd's conversion mechanism. Will be used by _py only if _py cannot 
+convert its argument by regular means.
+
+Params:
+dg = A callable which takes a D type and returns a PyObject*, or any 
+type convertible by _py.
+*/
 void d_to_python(dg_t) (dg_t dg) {
     static if (is(dg_t == delegate) && is(ReturnType!(dg_t) == PyObject*)) {
         to_converter_registry!(ParameterTypeTuple!(dg_t)[0]).dg = dg;
@@ -92,6 +100,15 @@ void d_to_python(dg_t) (dg_t dg) {
         to_converter_registry!(typeof(o).T).dg = &o.opCall;
     }
 }
+
+/**
+Extend pyd's conversion mechanims. Will be used by d_type only if d_type 
+cannot convert its argument by regular means.
+
+Params:
+dg = A callable which takes a PyObject*, or any type convertible by d_type,
+    and returns a D type.
+*/
 void python_to_d(dg_t) (dg_t dg) {
     static if (is(dg_t == delegate) && is(ParameterTypeTuple!(dg_t)[0] == PyObject*)) {
         from_converter_registry!(ReturnType!(dg_t)).dg = dg;
