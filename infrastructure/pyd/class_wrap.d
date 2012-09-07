@@ -1470,11 +1470,11 @@ PyObject_BorrowedRef* get_existing_reference(T) (T t) {
     static if (is(T == class)) {
         auto range = wrapped_gc_objects.equalRange(cast(void*) t);
         if(range.empty) return null;
-        return cast(PyObject_BorrowedRef*) range.front.py;
+        return borrowed(range.front.py);
     } else {
         auto range = wrapped_gc_references!(T).equalRange(t);
         if(range.empty) return null;
-        return cast(PyObject_BorrowedRef*) range.front.py;
+        return borrowed(range.front.py);
     }
 }
 

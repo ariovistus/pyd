@@ -31,12 +31,32 @@ struct PyObject {
     mixin PyObject_HEAD;
 }
 
-/++++ Not part of Python api!!! ++++/
-// Convention: borrowed PyObject* is cast to PyObject_BorrowedRef*.
-// Use Py_INIT to get PyObject* back.
+/+-++ Not part of Python api!!! ++++/
+/**
+Denotes a borrowed reference.
+
+Intended use: An api function Foo returning a borrowed reference will
+have return type Borrowed!PyObject* instead of PyObject*. Py_INCREF can
+be used to get the original type back.
+
+Params:
+T = Python object type (PyObject, PyTypeObject, etc)
+
+Example:
+---
+Borrowed!PyObject* borrowed = PyTuple_GetItem(tuple, 0);
+PyObject* item = Py_XINCREF(borrowed);
+---
+*/
 struct Borrowed(T) { }
 alias Borrowed!PyObject PyObject_BorrowedRef;
-/++++ End Not part of Python api!!! ++++/
+/**
+Convert a python reference to borrowed reference.
+*/
+Borrowed!T* borrowed(T)(T* obj) {
+    return cast(Borrowed!T*) obj;
+}
+/+-++ End Not part of Python api!!! ++++/
 
 template PyObject_VAR_HEAD() {
     mixin PyObject_HEAD;

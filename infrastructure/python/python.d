@@ -121,14 +121,35 @@ extern (C) {
     mixin PyObject_HEAD;
   }
 
-  /++++ Not part of Python api!!! ++++/
-  // (^&!&^*& borrowed references should be reflected in the type system.
-  // evil casting will follow (in Py_INCREF).
+  /+-++ Not part of Python api!!! ++++/
+  /**
+    Denotes a borrowed reference.
+
+    Intended use: An api function Foo returning a borrowed reference will
+    have return type Borrowed!PyObject* instead of PyObject*. Py_INCREF can
+    be used to get the original type back.
+
+    Params:
+    T = Python object type (PyObject, PyTypeObject, etc)
+
+    Example:
+    ---
+    Borrowed!PyObject* borrowed = PyTuple_GetItem(tuple, 0);
+    PyObject* item = Py_XINCREF(borrowed);
+    ---
+    */
   struct Borrowed(T) {
+  }
+
+  /**
+  Convert a python reference to borrowed reference.
+  */
+  Borrowed!T* borrowed(T)(T* obj) {
+    return cast(Borrowed!T*) obj;
   }
   alias Borrowed!PyObject PyObject_BorrowedRef;
 
-  /++++ End Not part of Python api!!! ++++/
+  /+-++ End Not part of Python api!!! ++++/
 
   template PyObject_VAR_HEAD() {
     mixin PyObject_HEAD;
@@ -2086,7 +2107,7 @@ PyObject* _PyLong_Copy(PyLongObject* src);
     return (cast(PyMethodObject*)meth).im_self;
   }
   Borrowed!PyObject* PyMethod_GET_CLASS()(PyObject* meth) {
-    return cast(Borrowed!PyObject*)(cast(PyMethodObject*)meth).im_class;
+    return borrowed((cast(PyMethodObject*)meth).im_class);
   }
 
   int PyClass_IsSubclass(PyObject *, PyObject *);

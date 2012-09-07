@@ -71,7 +71,7 @@ PyObject_BorrowedRef* PyMethod_GET_SELF()(PyObject* meth) {
     return (cast(PyMethodObject*)meth).im_self;
 }
 PyObject_BorrowedRef* PyMethod_GET_CLASS()(PyObject* meth) {
-    return cast(PyObject_BorrowedRef*)(cast(PyMethodObject*)meth).im_class;
+    return borrowed((cast(PyMethodObject*)meth).im_class);
 }
 
 int PyClass_IsSubclass(PyObject*, PyObject*);

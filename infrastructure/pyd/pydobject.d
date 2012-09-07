@@ -78,7 +78,7 @@ public:
     /**
      * Returns a borrowed reference to the PyObject.
      */
-    @property PyObject_BorrowedRef* ptr() { return cast(PyObject_BorrowedRef*) m_ptr; }
+    @property PyObject_BorrowedRef* ptr() { return borrowed(m_ptr); }
     
     /*
      * Prints PyObject to a C FILE* object.

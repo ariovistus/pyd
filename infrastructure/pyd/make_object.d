@@ -293,7 +293,7 @@ T d_type(T) (PyObject* o) {
     static if (is(PyObject* : T)) {
         return o;
     } else static if (is(PydObject : T)) {
-        return new PydObject(cast(PyObject_BorrowedRef*) o);
+        return new PydObject(borrowed(o));
     } else static if (is(T == void)) {
         if (o != Py_None) could_not_convert!(T)(o);
         return;
@@ -320,7 +320,7 @@ T d_type(T) (PyObject* o) {
         if(num_str.endsWith("L")) num_str = num_str[0..$-1];
         return BigInt(num_str);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
-        return cast(T) PydInputRange!E(cast(PyObject_BorrowedRef*) o);
+        return cast(T) PydInputRange!E(borrowed(o));
     } else static if (is(T == class)) {
         // We can only convert to a class if it has been wrapped, and of course
         // we can only convert the object if it is the wrapped type.
