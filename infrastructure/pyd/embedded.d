@@ -30,8 +30,9 @@ module pyd.embedded;
  +  * wrap D classes/structs and use them in python or D [check]
  +  * use python class instances in D [check]
  +  * wrap D ranges and iterators or whatever and iterate through them in python [why?]
- +  * wrap python iterators as D input ranges [why?]
+ +  * wrap python iterators as D input ranges [check]
  +  * do things with inheritance [why??!??]
+ +  * do things with multithreading
  +/  
 
 import python;
@@ -52,7 +53,16 @@ PydObject py_import(string name) {
 }
 
 /++
- + Take a python function and wrap it so we can call it from D!
+Wraps a python function (specified as a string) as a D function roughly of
+signature
+
+R function(Args)
+
+Params:
+python = a python function 
+modl = context in which to run expression. must be a python module name.
+R = return type of d function
+Args = argument types of d function
  +/
 R PyDef( string python, string modl, R, Args...)
     (Args args, string file = __FILE__, size_t line = __LINE__) {
@@ -67,20 +77,22 @@ R PyDef( string python, string modl, R, Args...)
     static bool once = true;
     if(once) {
         once = false;
-        auto m = py_import(modl);
-        auto locals = m.getdict();
-        auto locals_ptr = Py_INCREF(m.getdict().ptr);
-        if("__builtins__" !in locals) {
+        auto globals = py_import(modl).getdict();
+        auto globals_ptr = Py_INCREF(globals.ptr);
+        scope(exit) Py_DECREF(globals_ptr);
+        auto locals = py((string[string]).init);
+        auto locals_ptr = Py_INCREF(locals.ptr);
+        scope(exit) Py_DECREF(locals_ptr);
+        if("__builtins__" !in globals) {
             auto builtins = new PydObject(PyEval_GetBuiltins());
-            locals["__builtins__"] = builtins;
+            globals["__builtins__"] = builtins;
         }
         auto pres = PyRun_String(
                     zcc(python), 
-                    Py_file_input, locals_ptr, locals_ptr);
-        scope(exit) Py_DECREF(locals_ptr);
+                    Py_file_input, globals_ptr, locals_ptr);
         if(pres) {
             auto res = new PydObject(pres);
-            func = m.getattr(name);
+            func = locals[name];
         }else{
             try{
                 handle_exception();
@@ -96,7 +108,11 @@ R PyDef( string python, string modl, R, Args...)
 }
 
 /++
- + Evaluate a python expression once and return the result.
+Evaluate a python expression once and return the result.
+
+Params:
+python = a python expression
+modl = context in which to run expression. either a python module name, or "".
  +/
 T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__, size_t line = __LINE__) {
     PydObject locals = null;
@@ -125,7 +141,11 @@ T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__,
 }
 
 /++
- + Evaluate one or more python statements once.
+Evaluate one or more python statements once.
+
+Params:
+python = python statements
+modl = context in which to run expression. either a python module name, or "".
  +/
 void PyStmts(string python, string modl = "",string file = __FILE__, size_t line = __LINE__) {
     PydObject locals;
