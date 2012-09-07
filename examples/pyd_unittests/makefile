@@ -11,7 +11,7 @@ PYTHON_2_7 = -version=Python_2_7_Or_Later \
 	     -L-lpython2.7
 DC = dmd -m64 -unittest -property -debug
 
-all: pydobject.x make_object.x embedded.x func_wrap.x class_wrap.x def.x struct_wrap.x
+all: pydobject.x make_object.x embedded.x func_wrap.x class_wrap.x def.x struct_wrap.x buffer.x
 	./pydobject.x
 	./make_object.x
 	./embedded.x
@@ -19,6 +19,7 @@ all: pydobject.x make_object.x embedded.x func_wrap.x class_wrap.x def.x struct_
 	./class_wrap.x
 	./struct_wrap.x
 	./def.x
+	./buffer.x
 
 clean:
 	rm -f *.x
