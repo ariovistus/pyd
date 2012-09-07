@@ -23,10 +23,10 @@ PyObject* PyEval_CallMethod(PyObject* obj, Char1* methodname, Char1* format, ...
 void PyEval_SetProfile(Py_tracefunc, PyObject*);
 void PyEval_SetTrace(Py_tracefunc, PyObject*);
 
-PyObject* PyEval_GetBuiltins();
-PyObject* PyEval_GetGlobals();
-PyObject* PyEval_GetLocals();
-PyFrameObject *PyEval_GetFrame();
+Borrowed!PyObject* PyEval_GetBuiltins();
+Borrowed!PyObject* PyEval_GetGlobals();
+Borrowed!PyObject* PyEval_GetLocals();
+Borrowed!PyFrameObject* PyEval_GetFrame();
 int PyEval_GetRestricted();
 
 int PyEval_MergeCompilerFlags(PyCompilerFlags* cf);

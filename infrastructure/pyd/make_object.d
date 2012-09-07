@@ -101,56 +101,6 @@ void python_to_d(dg_t) (dg_t dg) {
     }
 }
 
-template IsComplex(DT) {
-    enum IsComplex = is(DT == Complex!float) || 
-                     is(DT == Complex!double) || 
-                     is(DT == Complex!real);
-}
-
-enum Python_Types {
-    int_,
-    long_,
-    bool_,
-    float_,
-    complex,
-    str,
-    unicode,
-    tuple,
-    list,
-    dict,
-    class_,
-    function_,
-    unknown
-}
-
-template DType_to_PyType(DT) {
-    static if(isBoolean!DT) 
-        enum Python_Types DType_to_PyType = Python_Types.bool_;
-    else static if(isIntegral!DT)
-        enum DType_to_PyType = Python_Types.long_;
-    else static if(isFloatingPoint!DT)
-        enum DType_to_PyType = Python_Types.float_;
-    else static if(IsComplex!DT)
-        enum DType_to_PyType = Python_Types.complex;
-    else static if(isTuple!DT)
-        enum DType_to_PyType = Python_Types.tuple;
-    else static if(is(DT == string) || is(DT == char[]))
-        enum DType_to_PyType = Python_Types.str;
-    else static if(is(DT == wstring) || is(DT == wchar[]))
-        enum DType_to_PyType = Python_Types.unicode;
-    else static if(isArray!DT)
-        enum DType_to_PyType = Python_Types.list;
-    else static if(isAssociativeArray!DT)
-        enum DType_to_PyType = Python_Types.dict;
-    else static if(is(DT == function))
-        enum DType_to_PyType = Python_Types.function_;
-    else static if(is(DT == class))
-        enum DType_to_PyType = Python_Types.class_;
-    else
-        enum DType_to_PyType = Python_Types.unknown;
-
-}
-
 /**
  * Returns a new (owned) reference to a Python object based on the passed
  * argument. If the passed argument is a PyObject*, this "steals" the
@@ -162,7 +112,8 @@ template DType_to_PyType(DT) {
  * RuntimeError will be raised and this function will return null.
  */
 PyObject* _py(T) (T t) {
-    static if (!is(T == PyObject*) && is(typeof(t is null))) {
+    static if (!is(T == PyObject*) && is(typeof(t is null)) &&
+            !isAssociativeArray!T && !isArray!T) {
         if (t is null) {
             Py_INCREF(Py_None);
             return Py_None;
@@ -190,7 +141,7 @@ PyObject* _py(T) (T t) {
             tuple[i] = t[i];
         }
         return PyTuple_FromItems(tuple);
-    } else static if (IsComplex!T) {
+    } else static if (is(Unqual!T _unused : Complex!F, F)) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if(is(T == std.bigint.BigInt)) {
         import std.string: format = xformat;
@@ -357,18 +308,19 @@ T d_type(T) (PyObject* o) {
             Py_DECREF(obj);
         }
         return T(tuple);
-    } else static if (  IsComplex!T ) {
+    } else static if (is(Unqual!T _unused : Complex!F, F)) {
         double real_ = PyComplex_RealAsDouble(o);
         handle_exception();
         double imag = PyComplex_ImagAsDouble(o);
         handle_exception();
-        alias typeof(T.init.re) T2;
-        return complex!(T2,T2)(real_, imag);
-    } else static if(is(T == std.bigint.BigInt)) {
+        return complex!(F,F)(real_, imag);
+    } else static if(is(Unqual!T == std.bigint.BigInt)) {
         if (!PyNumber_Check(o)) could_not_convert!(T)(o);
         string num_str = d_type!string(o);
         if(num_str.endsWith("L")) num_str = num_str[0..$-1];
         return BigInt(num_str);
+    } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
+        return cast(T) PydInputRange!E(cast(PyObject_BorrowedRef*) o);
     } else static if (is(T == class)) {
         // We can only convert to a class if it has been wrapped, and of course
         // we can only convert the object if it is the wrapped type.
@@ -431,12 +383,13 @@ T d_type(T) (PyObject* o) {
         }
     } else static if (isArray!T) {
         alias Unqual!(ElementType!T) E;
-        // Dynamic arrays
+        /*
         version(Python_2_6_Or_Later) {
             if(PyObject_CheckBuffer(o)) {
                 assert(0, "todo: support new buffer interface");
             }
         }
+        */
         if(o.ob_type is array_array_Type) {
             // array.array's data can be got with a single memcopy.
             arrayobject* arr_o = cast(arrayobject*) o;

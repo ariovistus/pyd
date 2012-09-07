@@ -103,15 +103,13 @@ T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__,
     PyObject* locals_ptr = null;
     if(modl == "") {
         locals = py((string[string]).init);
-        locals_ptr = Py_INCREF(locals.ptr);
     }else {
-        auto m = py_import(modl);
-        locals = m.getdict();
-        locals_ptr = Py_INCREF(m.getdict().ptr);
-        if("__builtins__" !in locals) {
-            auto builtins = new PydObject(PyEval_GetBuiltins());
-            locals["__builtins__"] = builtins;
-        }
+        locals = py_import(modl).getdict();
+    }
+        locals_ptr = Py_INCREF(locals.ptr);
+    if("__builtins__" !in locals) {
+        auto builtins = new PydObject(PyEval_GetBuiltins());
+        locals["__builtins__"] = builtins;
     }
     auto pres = PyRun_String(
             zcc(python), 
@@ -129,10 +127,15 @@ T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__,
 /++
  + Evaluate one or more python statements once.
  +/
-void PyStmts(string python, string modl,string file = __FILE__, size_t line = __LINE__) {
-    auto m = py_import(modl);
-    auto locals = m.getdict();
-    auto locals_ptr = Py_INCREF(locals.ptr);
+void PyStmts(string python, string modl = "",string file = __FILE__, size_t line = __LINE__) {
+    PydObject locals;
+    PyObject* locals_ptr;
+    if(modl == "") {
+        locals = py((string[string]).init);
+    }else {
+        locals = py_import(modl).getdict();
+    }
+    locals_ptr = Py_INCREF(locals.ptr);
     if("__builtins__" !in locals) {
         auto builtins = new PydObject(PyEval_GetBuiltins());
         locals["__builtins__"] = builtins;

@@ -897,3 +897,40 @@ public:
     return _None;
 }
 
+struct PydInputRange(E = PydObject) {
+    PyObject* iter;
+    PyObject* _front = null;
+    this(PyObject* obj) {
+        iter = PyObject_GetIter(obj);
+        if (iter is null) {
+            handle_exception();
+        }
+        popFront();
+    }
+    this(PyObject_BorrowedRef* bobj) {
+        PyObject* obj = Py_INCREF(bobj);
+        iter = PyObject_GetIter(obj);
+        if (iter is null) {
+            handle_exception();
+        }
+        popFront();
+    }
+    ~this() {
+        Py_XDECREF(iter);
+    }
+
+    @property front() {
+        return d_type!E(_front);
+    }
+
+    @property empty() {
+        return _front is null;
+    }
+
+    void popFront() {
+        Py_XDECREF(_front);
+        _front = PyIter_Next(iter);
+    }
+
+}
+

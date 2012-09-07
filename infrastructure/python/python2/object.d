@@ -34,7 +34,8 @@ struct PyObject {
 /++++ Not part of Python api!!! ++++/
 // Convention: borrowed PyObject* is cast to PyObject_BorrowedRef*.
 // Use Py_INIT to get PyObject* back.
-struct PyObject_BorrowedRef{}
+struct Borrowed(T) { }
+alias Borrowed!PyObject PyObject_BorrowedRef;
 /++++ End Not part of Python api!!! ++++/
 
 template PyObject_VAR_HEAD() {
