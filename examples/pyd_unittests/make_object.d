@@ -10,6 +10,27 @@ static this() {
     add_module("testing");
 }
 
+auto cantconvert(E)(lazy E e) {
+    return collectException!PydConversionException(e);
+}
+
+void displaybuffer(PydObject.BufferView buf) {
+    writefln("buf.has_simple: %x", buf.has_simple);
+    writefln("buf.has_nd: %x", buf.has_nd);
+    writefln("buf.has_strides: %x", buf.has_strides);
+    writefln("buf.has_indirect: %x", buf.has_indirect);
+    writefln("buf.c_contiguous: %x", buf.c_contiguous);
+    writefln("buf.fortran_contiguous: %x", buf.fortran_contiguous);
+    writefln("buf.buf: %x", buf.buf.ptr);
+    writefln("buf.len: %s", buf.buf.length);
+    writefln("buf.format: %s", buf.format);
+    writefln("buf.itemsize: %s", buf.itemsize);
+    writefln("buf.ndim: %s", buf.ndim);
+    writefln("buf.shape: %s", buf.shape);
+    writefln("buf.strides: %s", buf.strides);
+    writefln("buf.suboffsets: %s", buf.suboffsets);
+}
+
 
 unittest {
     import std.bigint;
@@ -27,6 +48,8 @@ unittest {
     assert(PyEval!(int[4])("a", "testing") == [44,33,22,11]);
 }
 
+// numpy unittests - numpy supports new buffer interface with PyBUF_ND,
+// PyBUF_C_CONTIGUOUS, and PyBUF_F_CONTIGUOUS. handy for testing.
 unittest {
     import std.stdio;
 
@@ -110,9 +133,14 @@ unittest {
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
+
+        assert(PyEval("f","testing").bufferview().format == "d");
+        // this won't work because f is a matrix of doubles
+        assert(cantconvert(PyEval!(float[][])("f","testing")));
     }
 }
 
+// tests on MatrixInfo utility template
 unittest {
     alias MatrixInfo!(double[][]) M1;
     static assert(M1.ndim == 2);
@@ -126,10 +154,25 @@ unittest {
     static assert(is(M2.MatrixElementType == const(double)));
 }
 
+// bytearray tests - bytearray supports the new buffer interface with
+// PyBUF_ND and PyBUF_C_CONTIGUOUS
 unittest {
-    int i;
-    //i = PyBuffer_SizeFromFormat("x");
-    //assert(i == 1);
+    PyStmts(
+            "a = bytearray('abcdefg')\n"
+            ,
+            "testing");
+    auto a = PyEval("a","testing");
+    auto b = a.bufferview();
+    assert(PyEval!(ubyte[])("a", "testing") == cast(ubyte[]) "abcdefg");
+    PyObject* a_ptr = Py_INCREF(a.ptr);
+    scope(exit) Py_DECREF(a_ptr);
+    // d_type should be calling this function
+    assert(d_type_buffer!(ubyte[])(a_ptr) == cast(ubyte[]) "abcdefg");
+    // bytearray's elements are unsigned
+    assert(cantconvert(d_type_buffer!(byte[])(a_ptr)));
+    // with char[], d_type probably isn't calling this function, but anyways
+    // char[]'s element type is dchar. Go figure.
+    assert(cantconvert(d_type_buffer!(char[])(a_ptr)));
 }
 
 unittest {
@@ -173,9 +216,6 @@ unittest {
 
     // values out of bounds are out of bounds.
 
-    auto cantconvert(E)(lazy E e) {
-        return collectException!PydConversionException(e);
-    }
     assert(cantconvert(PyEval!byte("int(300)")));
     assert(cantconvert(PyEval!ubyte("int(300)")));
     assert(cantconvert(PyEval!ubyte("int(-1)")));
