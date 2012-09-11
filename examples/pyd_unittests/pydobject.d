@@ -183,4 +183,64 @@ unittest {
     assert(x + 10 == py(525));
 }
 
+// Buffer interface
+version(Python_2_6_Or_Later) {
+    unittest {
+        auto arr = PyEval("bytearray([1,2,3])");
+        auto b = arr.bufferview();
+        import std.stdio;
+        assert(b.format == "B");
+        assert(b.itemsize == 1);
+        if(b.has_simple) {
+            assert(b.buf == [1,2,3]);
+        }
+        if(b.has_nd) {
+            assert(b.ndim == 1);
+            assert(b.shape == [3]);
+
+        }
+        if(b.has_strides) {
+            assert(b.strides == [1]);
+        }
+        if(b.has_indirect) {
+            assert(b.suboffsets == []);
+        }
+    }
+
+    unittest {
+        import std.stdio;
+
+        PydObject numpy;
+        try {
+            numpy = py_import("numpy");
+        }catch(PythonException e) {
+            writeln("If you had numpy, we could do some more unittests");
+        }
+
+        if(numpy) {
+            PyStmts(
+                    "from numpy import eye\n"
+                    "a = eye(4,k=1)\n"
+                    "testing");
+            PydObject ao = PyEval("a","testing");
+            auto b = ao.bufferview();
+            assert(b.format == "d");
+            assert(b.itemsize == 8);
+            assert(b.has_nd);
+            assert(b.ndim == 2);
+            assert(b.c_contiguous);
+            assert(b.shape == [4,4]);
+            assert(b.strides == [32, 8]);
+            assert(b.suboffsets == []);
+            // ao is
+            // 0 1 0 0
+            // 0 0 1 0
+            // 0 0 0 1
+            // 0 0 0 0
+            assert(b.item!double(1,0) == 0);
+            assert(b.item!double(0,1) == 1);
+        }
+    }
+}
+
 void main(){}

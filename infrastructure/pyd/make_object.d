@@ -36,11 +36,13 @@ module pyd.make_object;
 
 import python;
 
-import std.algorithm: endsWith;
+import std.array;
+import std.algorithm;
 import std.complex;
+import std.typetuple;
 import std.bigint;
 import std.traits;
-import std.typecons: Tuple, tuple, isTuple;
+import std.typecons;
 import std.metastrings;
 import std.conv;
 import std.range;
@@ -289,7 +291,9 @@ PydObject py(T) (T t) {
  * An exception class used by d_type.
  */
 class PydConversionException : Exception {
-    this(string msg) { super(msg); }
+    this(string msg, string file = __FILE__, size_t line = __LINE__) { 
+        super(msg, file, line); 
+    }
 }
 
 /**
@@ -398,63 +402,19 @@ T d_type(T) (PyObject* o) {
         } else {
             return to!string(result).dup;
         }
-    } else static if (isArray!T) {
-        alias Unqual!(ElementType!T) E;
-        /*
+    } else static if (isArray!T ||
+            (isPointer!T && isStaticArray!(pointerTarget!T))) {
+        static if(isPointer!T)
+            alias Unqual!(ElementType!(pointerTarget!T)) E;
+        else
+            alias Unqual!(ElementType!T) E;
         version(Python_2_6_Or_Later) {
             if(PyObject_CheckBuffer(o)) {
-                assert(0, "todo: support new buffer interface");
+                return d_type_buffer!(T)(o);
             }
         }
-        */
         if(o.ob_type is array_array_Type) {
-            // array.array's data can be got with a single memcopy.
-            arrayobject* arr_o = cast(arrayobject*) o;
-            enforce(arr_o.ob_descr, "array.ob_descr null!");
-            char typecode = cast(char) arr_o.ob_descr.typecode;
-            switch(typecode) {
-                case 'b','h','i','l':
-                    if(!isSigned!E) 
-                        could_not_convert!T(o,
-                                format("typecode '%c' requires signed integer"
-                                    " type, not '%s'", typecode, E.stringof));
-                    break;
-                case 'B','H','I','L':
-                    if(!isUnsigned!E) 
-                        could_not_convert!T(o,
-                                format("typecode '%c' requires unsigned integer"
-                                    " type, not '%s'",typecode, E.stringof));
-                    break;
-                case 'f','d':
-                    if(!isFloatingPoint!E) 
-                        could_not_convert!T(o,
-                                format("typecode '%c' requires float, not '%s'",
-                                    typecode, E.stringof));
-                    break;
-                case 'c','u': 
-                    break;
-                default:
-                    could_not_convert!T(o, 
-                            format("unknown typecode '%c'", typecode));
-            }
-            
-            int itemsize = arr_o.ob_descr.itemsize;
-            if(itemsize != E.sizeof) 
-                could_not_convert!T(o, format("item size mismatch: %s vs %s", 
-                            itemsize, E.sizeof));
-            Py_ssize_t count = arr_o.ob_size; 
-            if(count < 0) 
-                could_not_convert!T(o, format("nonsensical array length: %s", 
-                            count));
-            static if(isDynamicArray!T) {
-                E[] array = new E[](count);
-            }else static if(isStaticArray!T){
-                if(count != T.length) could_not_convert!T(o, format("length mismatch: %s vs %s", count, T.length));
-                E[T.length] array;
-            }
-            // copy data, don't take slice
-            array[] = cast(E[]) arr_o.ob_item[0 .. count*itemsize];
-            return cast(T) array;
+            return d_type_array_array!(T,E)(cast(arrayobject*) o);
         }else {
             PyObject* iter = PyObject_GetIter(o);
             if (iter is null) {
@@ -467,17 +427,21 @@ T d_type(T) (PyObject* o) {
                 PyErr_Clear();
                 could_not_convert!(T)(o);
             }
+
+            MatrixInfo!T.unqual _array;
             static if(isDynamicArray!T) {
-                E[] array = new E[](len);
+                _array = new MatrixInfo!T.unqual(len);
             }else static if(isStaticArray!T){
-                if(len != T.length) could_not_convert!T(o, format("length mismatch: %s vs %s", len, T.length));
-                E[T.length] array;
+                if(len != T.length) 
+                    could_not_convert!T(o, 
+                            format("length mismatch: %s vs %s", 
+                                len, T.length));
             }
             int i = 0;
             PyObject* item = PyIter_Next(iter);
             while (item) {
                 try {
-                    array[i] = d_type!(E)(item);
+                    _array[i] = d_type!(E)(item);
                 } catch(PydConversionException e) {
                     Py_DECREF(item);
                     // We re-throw the original conversion exception, rather than
@@ -489,7 +453,7 @@ T d_type(T) (PyObject* o) {
                 Py_DECREF(item);
                 item = PyIter_Next(iter);
             }
-            return cast(T) array;
+            return cast(T) _array;
         }
     } else static if (isFloatingPoint!T) {
         double res = PyFloat_AsDouble(o);
@@ -543,6 +507,366 @@ T d_type(T) (PyObject* o) {
     assert(0);
 }
 
+// (*^&* array doesn't implement the buffer interface, but we still
+// want it to copy fast.
+T d_type_array_array(T, E)(arrayobject* arr_o) {
+    // array.array's data can be got with a single memcopy.
+    enforce(arr_o.ob_descr, "array.ob_descr null!");
+    char typecode = cast(char) arr_o.ob_descr.typecode;
+    switch(typecode) {
+        case 'b','h','i','l':
+            if(!isSigned!E) 
+                could_not_convert!T(cast(PyObject*) arr_o,
+                        format("typecode '%c' requires signed integer"
+                            " type, not '%s'", typecode, E.stringof));
+            break;
+        case 'B','H','I','L':
+            if(!isUnsigned!E) 
+                could_not_convert!T(cast(PyObject*) arr_o,
+                        format("typecode '%c' requires unsigned integer"
+                            " type, not '%s'",typecode, E.stringof));
+            break;
+        case 'f','d':
+            if(!isFloatingPoint!E) 
+                could_not_convert!T(cast(PyObject*) arr_o,
+                        format("typecode '%c' requires float, not '%s'",
+                            typecode, E.stringof));
+            break;
+        case 'c','u': 
+            break;
+        default:
+            could_not_convert!T(cast(PyObject*) arr_o,
+                    format("unknown typecode '%c'", typecode));
+    }
+
+    int itemsize = arr_o.ob_descr.itemsize;
+    if(itemsize != E.sizeof) 
+        could_not_convert!T(cast(PyObject*) arr_o,
+                format("item size mismatch: %s vs %s", 
+                    itemsize, E.sizeof));
+    Py_ssize_t count = arr_o.ob_size; 
+    if(count < 0) 
+        could_not_convert!T(cast(PyObject*) arr_o, format("nonsensical array length: %s", 
+                    count));
+    MatrixInfo!T.unqual _array;
+    static if(isDynamicArray!T) {
+        _array = new MatrixInfo!T.unqual(count);
+    }else {
+        if(!MatrixInfo!T.check([count])) 
+            could_not_convert!T(cast(PyObject*) arr_o, 
+                    format("length mismatch: %s vs %s", count, T.length));
+    }
+    // copy data, don't take slice
+    memcpy(_array.ptr, arr_o.ob_item, count*itemsize);
+    //_array[] = cast(E[]) arr_o.ob_item[0 .. count*itemsize];
+    return cast(T) _array;
+}
+
+T d_type_buffer(T)(PyObject* o) {
+    PydObject bob = new PydObject(borrowed(o));
+    auto buf = bob.bufferview();
+    alias MatrixInfo!T.MatrixElementType ME;
+    MatrixInfo!T.unqual _array;
+    /+
+    if(buf.itemsize != ME.sizeof)
+        could_not_convert!T(o, format("item size mismatch: %s vs %s",
+                    buf.itemsize, ME.sizeof));
+    +/
+    if(!match_format_type!ME(buf.format)) {
+        could_not_convert!T(o, format("item type mismatch: '%s' vs %s",
+                    buf.format, ME.stringof));
+    }
+    if(buf.has_nd) {
+        if(!MatrixInfo!T.check(buf.shape)) 
+            could_not_convert!T(o,
+                    format("dimension mismatch: %s vs %s",
+                        buf.shape, MatrixInfo!T.dimstring));
+        if(buf.c_contiguous) {
+            // woohoo! single memcpy 
+            static if(MatrixInfo!T.isRectArray && isStaticArray!T) {
+                memcpy(_array.ptr, buf.buf.ptr, buf.buf.length);
+            }else{
+                alias MatrixInfo!T.RectArrayType RectArrayType;
+                static if(!isStaticArray!(RectArrayType)) {
+                    ubyte[] dbuf = new ubyte[](buf.buf.length);
+                    memcpy(dbuf.ptr, buf.buf.ptr, buf.buf.length);
+                }
+                size_t rectsize = ME.sizeof;
+                size_t MErectsize = 1;
+                foreach(i; MatrixInfo!T.rectArrayAt .. MatrixInfo!T.ndim) {
+                    rectsize *= buf.shape[i];
+                    MErectsize *= buf.shape[i];
+                }
+                static if(MatrixInfo!T.isRectArray) {
+                    static if(isPointer!T)
+                        _array = cast(typeof(_array)) dbuf.ptr;
+                    else {
+                        static assert(isDynamicArray!T);
+                        _array = cast(typeof(_array)) dbuf;
+                    }
+                }else{
+                    // rubbish. much pointer pointing
+                    size_t offset = 0;
+                    static if(isDynamicArray!T) {
+                        _array = new MatrixInfo!T.unqual(buf.shape[0]);
+                    }
+                    enum string xx = (MatrixInfo!T.matrixIter(
+                        "_array", "buf.shape", "_indeces",
+                        MatrixInfo!T.rectArrayAt, q{
+                    static if(isDynamicArray!(typeof($array_ixn))) {
+                        $array_ixn = new typeof($array_ixn)(buf.shape[$i+1]);
+                    }
+                    static if(is(typeof($array_ixn) == RectArrayType)) {
+                        // should be innermost loop
+                        assert(offset + rectsize <= buf.buf.length, 
+                                "uh oh: overflow!");
+                        alias typeof($array_ixn) rectarr;
+                        static if(isStaticArray!rectarr) {
+                            memcpy($array_ixn.ptr, buf.buf.ptr + offset, rectsize);
+                        }else{
+                            static assert(isDynamicArray!rectarr);
+                        
+                            $array_ixn = (cast(typeof($array_ixn.ptr))(dbuf.ptr + offset))
+                                [0 .. MErectsize];
+                        }
+                        offset += rectsize;
+                    }
+                        },
+                        ""));
+                    mixin(xx);
+                }
+            }
+        }else if(buf.fortran_contiguous) {
+            // really rubbish. no memcpy.
+            static if(isDynamicArray!T) {
+                _array = new MatrixInfo!T.unqual(buf.shape[0]);
+            }else static if(isPointer!T) {
+                ubyte[] dubuf = new ubyte[](buf.buf.length);
+                _array = cast(typeof(_array)) dubuf.ptr;
+                    
+            }
+            enum string xx = (MatrixInfo!T.matrixIter(
+                "_array", "buf.shape", "_indeces",
+                MatrixInfo!T.ndim, q{
+                static if(isDynamicArray!(typeof($array_ixn))) {
+                    $array_ixn = new typeof($array_ixn)(buf.shape[$i+1]);
+                }else static if(is(typeof($array_ixn) == ME)) {
+                    $array_ixn = buf.item!ME(cast(Py_ssize_t[]) _indeces);
+                }
+                },
+                ""));
+            mixin(xx);
+        }else {
+            // wut?
+            could_not_convert!T(o,("todo: know what todo"));
+            assert(0);
+        }
+        return cast(T) _array;
+    }else if(buf.has_simple) {
+        /*
+           static if(isDynamicArray!T) {
+           E[] array = new E[](buf.buf.length);
+           }else static if(isStaticArray!T) {
+           if(buf.buf.length != T.length) 
+           could_not_convert!T(o, 
+           format("length mismatch: %s vs %s", 
+           buf.buf.length, T.length));
+           E[T.length] array;
+           }
+           return cast(T) array;
+         */
+        assert(0, "py jingo wat we do here?");
+    }
+    return cast(T) _array;
+}
+
+/// Check T against format
+/// See_Also:
+/// <a href='http://docs.python.org/library/struct.html#struct-format-strings'>
+/// Struct Format Strings </a>
+bool match_format_type(S)(string format) {
+    alias Unqual!S T;
+    enforce(format.length > 0);
+
+    bool native_size = false;
+    switch(format[0]) {
+        case '@':
+            // this (*&^& function is not defined
+            //PyBuffer_SizeFromFormat()
+            native_size = true;
+        case '=','<','>','!':
+            format = format[1 .. $];
+        default:
+            break;
+    }
+    // by typeishness
+    switch(format[0]) {
+        case 'x', 's', 'p': 
+            // don't support these
+            enforce(false, "unsupported format: " ~ format); 
+        case 'c': 
+            break;
+        case 'b', 'h','i','l','q': 
+            if(!isSigned!S) return false;
+            break;
+        case 'B', 'H', 'I', 'L','Q': 
+            if(!isUnsigned!S) return false;
+            break;
+        case 'f','d':
+            if(!isFloatingPoint!S) return false;
+            break;
+        case '?': 
+            if(!isBoolean!S) return false;
+        default:
+            enforce(false, "unknown format: " ~ format); 
+    }
+
+    // by sizeishness
+    if(native_size) {
+        // grr
+        assert(0, "todo");
+    }else{
+        switch(format[0]) {
+            case 'c','b','B','?':
+                return (S.sizeof == 1);
+            case 'h','H':
+                return (S.sizeof == 2);
+            case 'i','I','l','L','f':
+                return (S.sizeof == 4);
+            case 'q','Q','d':
+                return (S.sizeof == 8);
+            default:
+                enforce(false, "unknown format: " ~ format); 
+                assert(0); // seriously, d?
+                
+        }
+    }
+}
+
+/**
+  Some reflective information about multidimensional arrays
+
+  Handles dynamic arrays, static arrays, and pointers to static arrays.
+*/
+template MatrixInfo(T) if(isArray!T || 
+        (isPointer!T && isStaticArray!(pointerTarget!T))) {
+    template _dim_list(T, dimi...) {
+        static if(isDynamicArray!T) {
+            alias _dim_list!(ElementType!T, dimi,-1) next;
+            alias next.list list;
+            alias next.elt elt;
+            alias next.unqual[] unqual;
+        }else static if(isStaticArray!T) {
+            alias _dim_list!(ElementType!T, dimi, cast(Py_ssize_t) T.length) next;
+            alias next.list list;
+            alias next.elt elt;
+            alias next.unqual[T.length] unqual;
+        }else {
+            alias dimi list;
+            alias T elt;
+            alias Unqual!T unqual;
+        }
+    }
+
+    string tuple2string(T...)() {
+        string s = "[";
+        foreach(i, t; T) {
+            if(t == -1) s ~= "*";
+            else s ~= to!string(t);
+            if(i == T.length-1) {
+                s ~= "]";
+            }else{
+                s ~= ",";
+            }
+        }
+        return s;
+    }
+
+    bool check(Py_ssize_t[] shape) {
+        if (shape.length != dim_list.length) return false;
+        foreach(i, d; dim_list) {
+            if(dim_list[i] == -1) continue;
+            if(d != shape[i]) return false;
+        }
+        return true;
+    }
+
+    string matrixIter(string arr_name, string shape_name, 
+            string index_name,
+            size_t ndim, 
+            string pre_code, string post_code) {
+        string s_begin = "{\n";
+        string s_end = "}\n";
+        static if(isPointer!T) {
+            string s_ixn = "(*" ~ arr_name ~ ")";
+        }else{
+            string s_ixn = arr_name;
+        }
+
+        s_begin ~= "size_t[" ~ to!string(ndim) ~ "] " ~ index_name ~ ";\n";
+        foreach(i; 0 .. ndim) {
+            string s_i = to!string(i);
+            s_ixn ~= "["~ index_name ~ "[" ~ s_i ~ "]]";
+            string index = index_name~ "[" ~ s_i ~ "]";
+            string shape_i = shape_name ~ "[" ~ s_i ~ "]";
+            s_begin ~= "for("~index~" = 0;" ~index ~ " < " ~ shape_i ~ 
+                "; " ~ index ~ "++) {";
+            s_end ~= "}\n";
+
+            string pre_code_i = replace(pre_code, "$array_ixn", s_ixn);
+            pre_code_i = replace(pre_code_i, "$i", s_i);
+            s_begin ~= pre_code_i;
+            string post_code_i = replace(post_code, "$array_ixn", s_ixn);
+            post_code_i = replace(post_code_i, "$i", s_i);
+            s_end ~= post_code_i;
+        }
+        return s_begin ~ s_end;
+    }
+
+    static if(isPointer!T && isStaticArray!(pointerTarget!T)) {
+        alias _dim_list!(pointerTarget!T) _dim;
+        /// T, with all nonmutable qualifiers stripped away.
+        alias _dim.unqual* unqual;
+    }else{
+        alias _dim_list!T _dim;
+        alias _dim.unqual unqual;
+    }
+    /// tuple of dimensions of T.
+    /// dim_list[0] will be the dimension nearest? from the MatrixElementType
+    /// i.e. for double[1][2][3], dim_list == (1, 2, 3).
+    /// Lists -1 for dynamic arrays,
+    alias _dim.list dim_list;
+    /// number of dimensions of this matrix
+    enum ndim = dim_list.length;
+    /// T is a RectArray if:
+    /// * it is any multidimensional static array (or a pointer to)
+    /// * it is a 1 dimensional dynamic array
+    enum bool isRectArray = staticIndexOf!(-1, dim_list) == -1 || dim_list.length == 1;
+    //(1,2,3) -> rectArrayAt == 0 
+    //(-1,2,3) -> rectArrayAt == 1 == 3 - 2 == len - max(indexof_rev, 1)
+    //(-1,-1,1) -> rectArrayAt == 2 == 3 - 1 == len - max(indexof_rev,1)
+    //(-1,-1,-1) -> rectArrayAt == 2 == 3 - 1 == len - max(indexof_rev,1)
+    //(2,2,-1) -> rectArrayAt == 2
+    enum size_t indexof_rev = staticIndexOf!(-1, Reverse!dim_list);
+    /// Highest dimension where it and all subsequent dimensions form a
+    /// RectArray.
+    enum size_t rectArrayAt = isRectArray ? 0 : dim_list.length - max(indexof_rev, 1);
+    template _rect_type(S, size_t i) {
+        static if(i == rectArrayAt) {
+            alias S _rect_type;
+        } else {
+            alias _rect_type!(ElementType!S, i+1) _rect_type;
+        }
+    }
+    /// unqualified highest dimension subtype of T forming RectArray
+    alias _rect_type!(unqual, 0) RectArrayType;
+    /// Pretty string of dimension list for T
+    enum string dimstring = tuple2string!(dim_list)();
+    /// Matrix element type of T
+    /// E.g. immutable(double) for T=immutable(double[4][4])
+    alias _dim.elt MatrixElementType;
+}
+
 @property PyTypeObject* array_array_Type() {
     static PyTypeObject* m_type;
     if(!m_type) {
@@ -556,7 +880,8 @@ T d_type(T) (PyObject* o) {
 alias d_type!(Object) d_type_Object;
 
 private
-void could_not_convert(T) (PyObject* o, string reason = "") {
+void could_not_convert(T) (PyObject* o, string reason = "", 
+        string file = __FILE__, size_t line = __LINE__) {
     // Pull out the name of the type of this Python object, and the
     // name of the D type.
     string py_typename, d_typename;
@@ -581,6 +906,7 @@ void could_not_convert(T) (PyObject* o, string reason = "") {
             format("Couldn't convert Python type '%s' to D type '%s'%s",
                 py_typename,
                 d_typename,
-                because)
+                because),
+            file, line
     );
 }

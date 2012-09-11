@@ -25,6 +25,7 @@ import python;
 import pyd.exception;
 import pyd.make_object;
 import std.exception: enforce;
+import std.conv;
 import util.conv;
 
 
@@ -73,6 +74,170 @@ public:
     ~this() {
         if (m_ptr) Py_DECREF(m_ptr);
         m_ptr = null;
+    }
+
+    version(Python_2_6_Or_Later) {
+/**
+  exposes a lowish-level wrapper of the new-style buffer interface
+
+See_also: 
+http://docs.python.org/c-api/buffer.html
+ */
+        class BufferView {
+            Py_buffer buffer;
+            bool has_simple = false;
+            bool has_nd = false;
+            bool has_strides = false;
+            bool has_indirect = false;
+            bool c_contiguous = false;
+            bool fortran_contiguous = false;
+
+            private @property m_ptr() {
+                return this.outer.m_ptr;
+            }
+
+            /**
+              construct buffer view. Probe for capabilities this object supports.
+              */
+            this() {
+                enforce(PyObject_CheckBuffer(m_ptr));
+
+                // probe buffer for capabilities
+                if(PyObject_GetBuffer(m_ptr, &buffer, PyBUF_SIMPLE) == 0) {
+                    has_simple = true;
+                }else{
+                    PyErr_Clear();
+                }
+                if(PyObject_GetBuffer(m_ptr, &buffer, 
+                            PyBUF_STRIDES|PyBUF_C_CONTIGUOUS) == 0) {
+                    has_nd = true;
+                    has_strides = true;
+                    c_contiguous = true;
+                }else{
+                    PyErr_Clear();
+                    if(PyObject_GetBuffer(m_ptr, &buffer, 
+                                PyBUF_STRIDES|PyBUF_F_CONTIGUOUS) == 0) {
+                        has_nd = true;
+                        has_strides = true;
+                        fortran_contiguous = true;
+                    }else{
+                        PyErr_Clear();
+                        if(PyObject_GetBuffer(m_ptr, &buffer, 
+                                    PyBUF_STRIDES) == 0) {
+                            has_nd = true;
+                            has_strides = true;
+                        }else{
+                            PyErr_Clear();
+                            if(PyObject_GetBuffer(m_ptr, &buffer, 
+                                        PyBUF_ND) == 0) {
+                                has_nd = true;
+                            }else{
+                                PyErr_Clear();
+                            }
+                        }
+                    }
+                }
+                if(has_strides) {
+                    if(PyObject_GetBuffer(m_ptr, &buffer, PyBUF_INDIRECT) == 0) {
+                        has_indirect = true;
+                    }else{
+                        PyErr_Clear();
+                    }
+                }
+
+                int flags = PyBUF_FORMAT |
+                    (has_nd ? PyBUF_ND : 0) |
+                    (has_strides ? PyBUF_STRIDES : 0) |
+                    (c_contiguous ? PyBUF_C_CONTIGUOUS : 0) |
+                    (fortran_contiguous ? PyBUF_F_CONTIGUOUS : 0) |
+                    (has_indirect ? PyBUF_INDIRECT : 0);
+                if(PyObject_GetBuffer(m_ptr, &buffer, flags) != 0) {
+                    handle_exception();
+                }
+            }
+
+            /** 
+              Construct buffer view. Don't probe for capabilities; assume
+              object supports capabilities implied by flags.
+              */
+            this(int flags) {
+                enforce(PyObject_CheckBuffer(m_ptr));
+                has_simple = true;
+                has_nd = (PyBUF_ND | flags) == PyBUF_ND;
+                has_strides = (PyBUF_STRIDES | flags) == PyBUF_STRIDES;
+                c_contiguous = (PyBUF_C_CONTIGUOUS | flags) == PyBUF_C_CONTIGUOUS;
+                fortran_contiguous = (PyBUF_F_CONTIGUOUS | flags) == PyBUF_F_CONTIGUOUS;
+                has_indirect = (PyBUF_INDIRECT | flags) == PyBUF_INDIRECT;
+
+                if(PyObject_GetBuffer(m_ptr, &buffer, flags) != 0) {
+                    handle_exception();
+                }
+            }
+
+            @property ubyte[] buf() {
+                enforce(has_simple);
+                enforce(buffer.len >= 0);
+                return (cast(ubyte*) buffer.buf)[0 .. buffer.len];
+            }
+
+            @property bool readonly() {
+                return cast(bool) buffer.readonly;
+            }
+
+            @property string format() {
+                return to!string(buffer.format);
+            }
+
+            @property int ndim() {
+                if(!has_nd) return 0;
+                return buffer.ndim;
+            }
+
+            @property Py_ssize_t[] shape() {
+                if(!has_nd || !buffer.shape) return [];
+                return buffer.shape[0 .. ndim];
+            }
+
+            @property Py_ssize_t[] strides() {
+                if(!has_strides || !buffer.strides) return [];
+                return buffer.strides[0 .. ndim];
+            }
+            @property Py_ssize_t[] suboffsets() {
+                if(!has_indirect || !buffer.suboffsets) return [];
+                return buffer.suboffsets[0 .. ndim];
+            }
+
+            @property itemsize() {
+                return buffer.itemsize;
+            }
+
+            T item(T)(Py_ssize_t[] indeces...) {
+                if(has_strides) enforce(indeces.length == ndim);
+                else enforce(indeces.length == 1);
+                enforce(itemsize == T.sizeof);
+                if(has_strides) {
+                    void* ptr = buffer.buf;
+                    foreach(i, index; indeces) {
+                        ptr += strides[i] * index;
+                        if(has_indirect && suboffsets != [] && 
+                                suboffsets[i] >= 0) {
+                            ptr += suboffsets[i];
+                        }
+                    }
+                    return *cast(T*) ptr;
+                }else {
+                    return (cast(T*) buffer.buf)[indeces[0]];
+                }
+            }
+        }
+
+
+        BufferView bufferview() {
+            return new this.BufferView();
+        }
+        BufferView bufferview(int flags) {
+            return new this.BufferView(flags);
+        }
     }
 
     /**

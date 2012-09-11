@@ -28,6 +28,111 @@ unittest {
 }
 
 unittest {
+    import std.stdio;
+
+    PydObject numpy;
+    try {
+        numpy = py_import("numpy");
+    }catch(PythonException e) {
+        writeln("If you had numpy, we could do some more unittests");
+    }
+
+    if(numpy) {
+        PyStmts(
+                "from numpy import eye, ndarray\n"
+                "a = eye(4,k=1)\n"
+                "b = eye(3,4)\n"
+                "f = ndarray(shape=[3,4], buffer=b, order='F')\n"
+                ,
+                "testing");
+        assert(PyEval!(double[][])("a","testing") == 
+                [[0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1],
+                 [0, 0, 0, 0]]);
+        assert(PyEval!(double[4][4])("a","testing") == 
+                [[0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1],
+                 [0, 0, 0, 0]]);
+        assert(PyEval!(double[][4])("a","testing") == 
+                [[0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1],
+                 [0, 0, 0, 0]]);
+        assert(PyEval!(double[4][])("a","testing") == 
+                [[0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1],
+                 [0, 0, 0, 0]]);
+        assert(*PyEval!(double[4][4]*)("a","testing") == 
+                [[0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1],
+                 [0, 0, 0, 0]]);
+        assert(PyEval!(double[][])("b","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0]]);
+        assert(PyEval!(double[4][3])("b","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0]]);
+        assert(PyEval!(double[][3])("b","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0]]);
+        assert(PyEval!(double[4][])("b","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0]]);
+        assert(*PyEval!(double[4][3]*)("b","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0]]);
+        assert(PyEval!(double[][])("f","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 0, 0, 1],
+                 [0, 1, 0, 0]]);
+        assert(PyEval!(double[4][3])("f","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 0, 0, 1],
+                 [0, 1, 0, 0]]);
+        assert(PyEval!(double[][3])("f","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 0, 0, 1],
+                 [0, 1, 0, 0]]);
+        assert(PyEval!(double[4][])("f","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 0, 0, 1],
+                 [0, 1, 0, 0]]);
+        assert(*PyEval!(double[4][3]*)("f","testing") == 
+                [[1, 0, 0, 0],
+                 [0, 0, 0, 1],
+                 [0, 1, 0, 0]]);
+    }
+}
+
+unittest {
+    alias MatrixInfo!(double[][]) M1;
+    static assert(M1.ndim == 2);
+    static assert(M1.dimstring == "[*,*]");
+    static assert(is(M1.unqual == double[][]));
+    static assert(is(M1.MatrixElementType == double));
+    alias MatrixInfo!(const(double[4][5])) M2;
+    static assert(M2.ndim == 2);
+    static assert(M2.dimstring == "[5,4]");
+    static assert(is(M2.unqual == double[4][5]));
+    static assert(is(M2.MatrixElementType == const(double)));
+}
+
+unittest {
+    int i;
+    //i = PyBuffer_SizeFromFormat("x");
+    //assert(i == 1);
+}
+
+unittest {
     assert(d_type!int(_py(15)) == 15);
     assert(d_type!float(_py(1.0f)) == 1.0f);
     import std.complex;
