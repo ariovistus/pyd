@@ -226,7 +226,7 @@ template wrapped_repr(T, alias fn) {
     PyObject* repr(PyObject* self) {
         return exception_catcher(delegate PyObject*() {
             auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-            return _py(dg());
+            return d_to_python(dg());
         });
     }
 }

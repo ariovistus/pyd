@@ -44,40 +44,40 @@ static this() {
 
 void main() {
     // simple expressions can be evaluated
-    int i = PyEval!int("1+2", "office");
+    int i = py_eval!int("1+2", "office");
     writeln(i);
 
     // functions can be defined in D and invoked in Python (see above)
-    PyStmts(q"<
+    py_stmts(q"<
 knock()
 >", "office");
 
     // functions can be defined in Python and invoked in D
-    alias PyDef!("def holler(a): 
+    alias py_def!("def holler(a): 
             return ' '.join(['Doctor!']*a)","office", string, int) call_out;
     writeln(call_out(1));
     writeln(call_out(5));
 
     // classes can be defined in D and used in Python
 
-    auto y = PyEval("Y()","office");
+    auto y = py_eval("Y()","office");
     y.method("query");
 
     // classes can be defined in Python and used in D
-    PyStmts(q"<
+    py_stmts(q"<
 class X:
     def __init__(self):
         self.resolution = "NO!"
     def what(self):
         return "Yes, yes I am!"
         >", "office");
-    auto x = PyEval("X()","office");
+    auto x = py_eval("X()","office");
     writeln(x.resolution);
     writeln(x.method("what"));
 
     // properties totally work
 
-    PyStmts(q"<
+    py_stmts(q"<
 y = Y();
 y.brain_status = "HURTS";
 print "MY BRAIN %s" % y.brain_status;

@@ -29,7 +29,7 @@ static this() {
 
 
 unittest {
-    PyStmts(q"{
+    py_stmts(q"{
 foo1 = Foo1(2,3,4);
 assert foo1.i == 2
             }","testing");

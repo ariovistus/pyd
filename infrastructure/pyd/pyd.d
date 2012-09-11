@@ -22,7 +22,7 @@ SOFTWARE.
 
 /**
  * This module simply publicly imports all of the other components of the Pyd
- * package, making them all available from a single point.
+ * package (except pyd.embedded), making them all available from a single point.
  */
 module pyd.pyd;
 

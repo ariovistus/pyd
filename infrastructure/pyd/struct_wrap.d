@@ -19,6 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+/**
+  Contains utilities for wrapping D structs.
+  */
 module pyd.struct_wrap;
 
 import python;
@@ -43,7 +47,7 @@ template wrapped_member(T, string name, _M=void) {
     PyObject* get(PyObject* self, void* closure) {
         return exception_catcher(delegate PyObject*() {
             T t = (cast(obj*)self).d_obj;
-            mixin("return _py(t."~name~");");
+            mixin("return d_to_python(t."~name~");");
         });
     }
 
@@ -51,7 +55,7 @@ template wrapped_member(T, string name, _M=void) {
     int set(PyObject* self, PyObject* value, void* closure) {
         return exception_catcher(delegate int() {
             T t = (cast(obj*)self).d_obj;
-            mixin("t."~name~" = d_type!(M)(value);");
+            mixin("t."~name~" = python_to_d!(M)(value);");
             return 0;
         });
     }

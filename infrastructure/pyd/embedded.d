@@ -19,6 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+/// Contains utilities for embedding python in D.
+///
+/// Importing this module will call Py_Initialize.
 module pyd.embedded;
 
 /+
@@ -64,7 +68,7 @@ modl = context in which to run expression. must be a python module name.
 R = return type of d function
 Args = argument types of d function
  +/
-R PyDef( string python, string modl, R, Args...)
+R py_def( string python, string modl, R, Args...)
     (Args args, string file = __FILE__, size_t line = __LINE__) {
 
     //Note that type is really the only thing that need be static here, but hey.
@@ -104,7 +108,7 @@ R PyDef( string python, string modl, R, Args...)
     if(!func) {
         throw exc;
     }
-    return func(args).toDItem!R();
+    return func(args).to_d!R();
 }
 
 /++
@@ -114,7 +118,7 @@ Params:
 python = a python expression
 modl = context in which to run expression. either a python module name, or "".
  +/
-T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__, size_t line = __LINE__) {
+T py_eval(T = PydObject)(string python, string modl = "", string file = __FILE__, size_t line = __LINE__) {
     PydObject locals = null;
     PyObject* locals_ptr = null;
     if(modl == "") {
@@ -133,7 +137,7 @@ T PyEval(T = PydObject)(string python, string modl = "", string file = __FILE__,
     scope(exit) Py_XDECREF(locals_ptr);
     if(pres) {
         auto res = new PydObject(pres);
-        return res.toDItem!T();
+        return res.to_d!T();
     }else{
         handle_exception(file,line);
         assert(0);
@@ -147,7 +151,7 @@ Params:
 python = python statements
 modl = context in which to run expression. either a python module name, or "".
  +/
-void PyStmts(string python, string modl = "",string file = __FILE__, size_t line = __LINE__) {
+void py_stmts(string python, string modl = "",string file = __FILE__, size_t line = __LINE__) {
     PydObject locals;
     PyObject* locals_ptr;
     if(modl == "") {

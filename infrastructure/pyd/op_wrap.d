@@ -78,29 +78,29 @@ template binop_wrap(T, _lop, _rop) {
 op:
                     auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
                     static if(lop[0].op.endsWith("=")) {
-                        dgl(d_type!LOtherT(o2));
+                        dgl(python_to_d!LOtherT(o2));
                         // why?
                         // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
                         // .. still don't know
                         Py_INCREF(o1);
                         return o1;
                     }else static if (is(LRet == void)) {
-                        dgl(d_type!LOtherT(o2));
+                        dgl(python_to_d!LOtherT(o2));
                         Py_INCREF(Py_None);
                         return Py_None;
                     } else {
-                        return _py(dgl(d_type!LOtherT(o2)));
+                        return d_to_python(dgl(python_to_d!LOtherT(o2)));
                     }
                 }
                 static if(mode.endsWith("r")) {
 rop:
                     auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
                     static if (is(RRet == void)) {
-                        dgr(d_type!ROtherT(o1));
+                        dgr(python_to_d!ROtherT(o1));
                         Py_INCREF(Py_None);
                         return Py_None;
                     } else {
-                        return _py(dgr(d_type!LOtherT(o1)));
+                        return d_to_python(dgr(python_to_d!LOtherT(o1)));
                     }
                 }
         });
@@ -117,7 +117,7 @@ template binopasg_wrap(T, alias fn) {
     extern(C)
     PyObject* func(PyObject* self, PyObject* o2) {
         auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-        dg(d_type!OtherT(o2));
+        dg(python_to_d!OtherT(o2));
         // why?
         // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
         // .. still don't know
@@ -168,22 +168,22 @@ template powop_wrap(T, _lop, _rop) {
 op:
                     auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
                     static if (is(LRet == void)) {
-                        dgl(d_type!LOtherT(o2));
+                        dgl(python_to_d!LOtherT(o2));
                         Py_INCREF(Py_None);
                         return Py_None;
                     } else {
-                        return _py(dgl(d_type!LOtherT(o2)));
+                        return d_to_python(dgl(python_to_d!LOtherT(o2)));
                     }
                 }
                 static if(mode.endsWith("r")) {
 rop:
                     auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
                     static if (is(RRet == void)) {
-                        dgr(d_type!ROtherT(o1));
+                        dgr(python_to_d!ROtherT(o1));
                         Py_INCREF(Py_None);
                         return Py_None;
                     } else {
-                        return _py(dgr(d_type!LOtherT(o1)));
+                        return d_to_python(dgr(python_to_d!LOtherT(o1)));
                     }
                 }
         });
@@ -200,7 +200,7 @@ template powopasg_wrap(T, alias fn) {
     extern(C)
     PyObject* func(PyObject* self, PyObject* o2, PyObject* o3) {
         auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-        dg(d_type!OtherT(o2));
+        dg(python_to_d!OtherT(o2));
         // why?
         // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
         // .. still don't know
@@ -260,7 +260,7 @@ template opindex_wrap(T, alias fn) {
         PyObject* func(PyObject* self, PyObject* key) {
             return exception_catcher(delegate PyObject*() {
                 auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-                return _py(dg(d_type!KeyT(key)));
+                return d_to_python(dg(python_to_d!KeyT(key)));
             });
         }
     } else {
@@ -321,7 +321,7 @@ template opindexassign_wrap(T, alias fn) {
         int func(PyObject* self, PyObject* key, PyObject* val) {
             return exception_catcher(delegate int() {
                 auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-                dg(d_type!ValT(val), d_type!KeyT(key));
+                dg(python_to_d!ValT(val), python_to_d!KeyT(key));
                 return 0;
             });
         }
@@ -342,7 +342,7 @@ template inop_wrap(T, _lop, _rop) {
     int func(PyObject* o1, PyObject* o2) {
         return exception_catcher(delegate int() {
             auto dg = get_dgr((cast(wrap_object*)o1).d_obj, &rfn);
-            return dg(d_type!ROtherT(o2));
+            return dg(python_to_d!ROtherT(o2));
         });
     }
 }
@@ -354,7 +354,7 @@ template opcmp_wrap(T, alias fn) {
     extern(C)
     int func(PyObject* self, PyObject* other) {
         return exception_catcher(delegate int() {
-            int result = (cast(wrap_object*)self).d_obj.opCmp(d_type!OtherT(other));
+            int result = (cast(wrap_object*)self).d_obj.opCmp(python_to_d!OtherT(other));
             // The Python API reference specifies that tp_compare must return
             // -1, 0, or 1. The D spec says opCmp may return any integer value,
             // and just compares it with zero.
@@ -388,7 +388,7 @@ template opslice_wrap(T,alias fn) {
     PyObject* func(PyObject* self, Py_ssize_t i1, Py_ssize_t i2) {
         return exception_catcher(delegate PyObject*() {
             auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-            return _py(dg(i1, i2));
+            return d_to_python(dg(i1, i2));
         });
     }
 }
@@ -403,7 +403,7 @@ template opsliceassign_wrap(T, alias fn) {
     int func(PyObject* self, Py_ssize_t i1, Py_ssize_t i2, PyObject* o) {
         return exception_catcher(delegate int() {
             auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
-            dg(d_type!AssignT(o), i1, i2);
+            dg(python_to_d!AssignT(o), i1, i2);
             return 0;
         });
     }

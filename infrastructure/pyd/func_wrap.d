@@ -19,6 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+/**
+  Mostly internal utilities.
+  */
 module pyd.func_wrap;
 
 import python;
@@ -120,7 +124,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
             if (i < argCount) {
                 auto bpobj =  PyTuple_GetItem(args, i);
                 auto  pobj = Py_XINCREF(bpobj);
-                t[i] = d_type!(typeof(arg))(pobj);
+                t[i] = python_to_d!(typeof(arg))(pobj);
                 Py_DECREF(pobj);
             }
             static if (argNum >= MIN_ARGS && 
@@ -133,7 +137,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
         }else static if(MaxArgs.vstyle == Variadic.typesafe) {
             static if (argNum < t.length) {
                 auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
-                t[i] = d_type!(typeof(arg))(pobj);
+                t[i] = python_to_d!(typeof(arg))(pobj);
                 Py_DECREF(pobj);
             }else static if(argNum == t.length) {
                 alias Unqual!(ElementType!(typeof(t[i]))) elt_t;
@@ -142,19 +146,19 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
                     auto  pobj = Py_XINCREF(PyTuple_GetItem(args, i));
                     if(PyList_Check(pobj)) {
                         try{
-                            t[i] = cast(typeof(t[i])) d_type!(elt_t[])(pobj);
+                            t[i] = cast(typeof(t[i])) python_to_d!(elt_t[])(pobj);
                         }catch(PythonException e) {
-                            t[i] = cast(typeof(t[i])) [d_type!elt_t(pobj)];
+                            t[i] = cast(typeof(t[i])) [python_to_d!elt_t(pobj)];
                         }
                     }else{
-                        t[i] = cast(typeof(t[i])) [d_type!elt_t(pobj)];
+                        t[i] = cast(typeof(t[i])) [python_to_d!elt_t(pobj)];
                     }
                     Py_DECREF(pobj);
                 }else{
                     elt_t[] vars = new elt_t[](argCount-i);
                     foreach(j; i .. argCount) {
                         auto  pobj = Py_XINCREF(PyTuple_GetItem(args, j));
-                        vars[j-i] = d_type!(elt_t)(pobj);
+                        vars[j-i] = python_to_d!(elt_t)(pobj);
                         Py_DECREF(pobj);
                     }
                     t[i] = cast(typeof(t[i])) vars;
@@ -176,7 +180,7 @@ PyObject* pyApplyToAlias(alias fn) (PyObject* args, PyObject* kwargs) {
         Py_INCREF(Py_None);
         return Py_None;
     } else {
-        return _py( applyPyTupleToAlias!fn(args, kwargs) );
+        return d_to_python( applyPyTupleToAlias!fn(args, kwargs) );
     }
 }
 
@@ -205,7 +209,7 @@ ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
     T t;
     foreach(i, arg; t) {
         auto pi = Py_XINCREF(PyTuple_GetItem(args, i));
-        t[i] = d_type!(typeof(arg))(pi);
+        t[i] = python_to_d!(typeof(arg))(pi);
         Py_DECREF(pi);
     }
     return dg(t);
@@ -218,7 +222,7 @@ PyObject* pyApplyToDelegate(dg_t) (dg_t dg, PyObject* args) {
         Py_INCREF(Py_None);
         return Py_None;
     } else {
-        return _py( applyPyTupleToDelegate(dg, args) );
+        return d_to_python( applyPyTupleToDelegate(dg, args) );
     }
 }
 
@@ -380,7 +384,7 @@ class PydWrappedFunc {
         PyObject* ret = call(t);
         if (ret is null) handle_exception();
         scope(exit) Py_DECREF(ret);
-        return d_type!(Tr)(ret);
+        return python_to_d!(Tr)(ret);
     }
 
     PyObject* call(T ...) (T t) {
@@ -405,7 +409,7 @@ FOREACH:
     foreach(i; 0 .. len) {
         auto pobj = PySequence_GetItem(keys, i);
         enforce(pobj != null);
-        string name = d_type!string(pobj);
+        string name = python_to_d!string(pobj);
         Py_DECREF(pobj);
         foreach(j,id; ids) {
             if(id == name && j >= arglen) {
@@ -447,7 +451,7 @@ PyObject* arrangeNamedArgs(alias fn)(PyObject* args, PyObject* kwargs) {
     }
 
     foreach(n,name; allfnnames[arglen .. arglen + kwarglen]) {
-        auto key = _py(name);
+        auto key = d_to_python(name);
         auto bval = PyDict_GetItem(kwargs, key);
         auto val = Py_XINCREF(bval);
         PyTuple_SetItem(allargs, arglen+n, val);

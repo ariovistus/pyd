@@ -25,7 +25,13 @@ pydfiles =  (Glob(join(infra,"meta","*.d"))   +
             Glob(join(infra,"pyd","*.d"))     +
             [join(infra,"python","python.d")])
 
-Export('infra', 'py_versions', 'py_lib', 'pydfiles', 'join')
+env27 = Environment(
+    DPATH = [infra, join(infra, "python")],
+    DVERSIONS = py_versions("2.7"),
+    DFLAGS = ['-unittest', '-property', '-debug', '-gc'],
+    DLINKFLAGS = py_lib("2.7"),
+    )
+Export('infra', 'py_versions', 'py_lib', 'pydfiles', 'join', 'env27')
 SConscript([
     join("pyind","SConscript"),
     join("pyd_unittests","SConscript"),

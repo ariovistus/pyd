@@ -187,7 +187,7 @@ class Bizzy4 {
 }
 
 unittest {
-    PyStmts(q"{
+    py_stmts(q"{
 #bizzy=Bizzy(1,2,3,4,5)
 #bizzy=Bizzy(d=7.1,i=4)
 bizzy=Bizzy(i=4)
@@ -218,54 +218,54 @@ assert bizzy.m == 4323
 assert bizzy(40.5) == 44823
 }", "testing");
 
-PyStmts(q"{
+py_stmts(q"{
 bizzy = Bizzy2(4);
 bizzy = Bizzy2([4,5]);
 bizzy = Bizzy2(i=4);
 bizzy = Bizzy2(i=[4,5]);
 }", "testing");
 
-assert(PyEval!int("Bizzy2.a(7, 32.1)","testing") == 6427);
-assert(PyEval!int("Bizzy2.a(i=7, d=32.1)","testing") == 6427);
-assert(PyEval!int("Bizzy2.a(d=32.1,i=7)","testing") == 6427);
-assert(PyEval!int("Bizzy2.b(7, 32.1)","testing") == 32173);
-assert(PyEval!int("Bizzy2.b(d=32.1,i=7)","testing") == 32173);
-assert(PyEval!int("Bizzy2.b(i=7, d=32.1)","testing") == 32173);
-assert(PyEval!int("Bizzy2.b(7)","testing") == 3273);
-assert(PyEval!int("Bizzy2.b(i=7)","testing") == 3273);
-assert(PyEval!int("Bizzy2.c(7)","testing") == 7);
-assert(PyEval!int("Bizzy2.c(i=7)","testing") == 7);
-assert(PyEval!int("Bizzy2.c(i=[7])","testing") == 7);
-assert(PyEval!int("Bizzy2.c(7,5,6)","testing") == 657);
-assert(PyEval!int("Bizzy2.c(i=[7,5,6])","testing") == 657);
+assert(py_eval!int("Bizzy2.a(7, 32.1)","testing") == 6427);
+assert(py_eval!int("Bizzy2.a(i=7, d=32.1)","testing") == 6427);
+assert(py_eval!int("Bizzy2.a(d=32.1,i=7)","testing") == 6427);
+assert(py_eval!int("Bizzy2.b(7, 32.1)","testing") == 32173);
+assert(py_eval!int("Bizzy2.b(d=32.1,i=7)","testing") == 32173);
+assert(py_eval!int("Bizzy2.b(i=7, d=32.1)","testing") == 32173);
+assert(py_eval!int("Bizzy2.b(7)","testing") == 3273);
+assert(py_eval!int("Bizzy2.b(i=7)","testing") == 3273);
+assert(py_eval!int("Bizzy2.c(7)","testing") == 7);
+assert(py_eval!int("Bizzy2.c(i=7)","testing") == 7);
+assert(py_eval!int("Bizzy2.c(i=[7])","testing") == 7);
+assert(py_eval!int("Bizzy2.c(7,5,6)","testing") == 657);
+assert(py_eval!int("Bizzy2.c(i=[7,5,6])","testing") == 657);
 
-PyStmts(q"{
+py_stmts(q"{
 bizzy = Bizzy3(1,2)
 }", "testing");
-assert(PyEval!int("bizzy.a(7, 32.1)","testing") == 3224);
-assert(PyEval!int("bizzy.a(i=7, d=32.1)","testing") == 3224);
-assert(PyEval!int("bizzy.a(d=32.1,i=7)","testing") == 3224);
-assert(PyEval!int("bizzy.b(7, 32.1)","testing") == 32244);
-assert(PyEval!int("bizzy.b(d=32.1,i=7)","testing") == 32244);
-assert(PyEval!int("bizzy.b(i=7, d=32.1)","testing") == 32244);
-assert(PyEval!int("bizzy.b(7)","testing") == 3344);
-assert(PyEval!int("bizzy.b(i=7)","testing") == 3344);
-assert(PyEval!int("bizzy.c(7)","testing") == 7);
-assert(PyEval!int("bizzy.c(i=7)","testing") == 7);
-assert(PyEval!int("bizzy.c(i=[7])","testing") == 7);
-assert(PyEval!int("bizzy.c(7,5,6)","testing") == 756);
-assert(PyEval!int("bizzy.c(i=[7,5,6])","testing") == 756);
+assert(py_eval!int("bizzy.a(7, 32.1)","testing") == 3224);
+assert(py_eval!int("bizzy.a(i=7, d=32.1)","testing") == 3224);
+assert(py_eval!int("bizzy.a(d=32.1,i=7)","testing") == 3224);
+assert(py_eval!int("bizzy.b(7, 32.1)","testing") == 32244);
+assert(py_eval!int("bizzy.b(d=32.1,i=7)","testing") == 32244);
+assert(py_eval!int("bizzy.b(i=7, d=32.1)","testing") == 32244);
+assert(py_eval!int("bizzy.b(7)","testing") == 3344);
+assert(py_eval!int("bizzy.b(i=7)","testing") == 3344);
+assert(py_eval!int("bizzy.c(7)","testing") == 7);
+assert(py_eval!int("bizzy.c(i=7)","testing") == 7);
+assert(py_eval!int("bizzy.c(i=[7])","testing") == 7);
+assert(py_eval!int("bizzy.c(7,5,6)","testing") == 756);
+assert(py_eval!int("bizzy.c(i=[7,5,6])","testing") == 756);
 
-PyStmts(q"{
+py_stmts(q"{
 bizzy = Bizzy4()
 }", "testing");
-assert(PyEval!int("bizzy.i","testing") == 4);
-PyStmts(q"{
+assert(py_eval!int("bizzy.i","testing") == 4);
+py_stmts(q"{
 bizzy.i = 10
 }", "testing");
-assert(PyEval!int("bizzy.i","testing") == 10);
-assert(PyEval!int("len(bizzy)","testing") == 5);
-assert(PyEval!string("repr(bizzy)","testing") == "cowabunga");
+assert(py_eval!int("bizzy.i","testing") == 10);
+assert(py_eval!int("len(bizzy)","testing") == 5);
+assert(py_eval!string("repr(bizzy)","testing") == "cowabunga");
 
 }
 

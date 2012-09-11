@@ -145,8 +145,8 @@ void conv2(A a) {
 
 extern(C) void PydMain() {
     pragma(msg, "testdll.PydMain");
-    d_to_python(delegate int(A a) { return a.i; });
-    python_to_d(delegate A(int i) { A a; a.i = i; return a; });
+    ex_d_to_python(delegate int(A a) { return a.i; });
+    ex_python_to_d(delegate A(int i) { A a; a.i = i; return a; });
 
     def!(foo);
     // Python does not support function overloading. This requires us to wrap

@@ -19,11 +19,11 @@ unittest {
         else if (key.toString() == "b") assert(val.toString() == "truck");
         else assert(false);
     }
-    g.delItem("b");
+    g.del_item("b");
     assert((g.items()).toString() == "[('a', 'b')]");
     auto g2 = g.copy();
     assert((g2.items()).toString() == "[('a', 'b')]");
-    g2.delItem("a");
+    g2.del_item("a");
     assert((g2.items()).toString() == "[]");
     assert((g.items()).toString() == "[('a', 'b')]");
     g2 = py(["k":"z", "a":"f"]);
@@ -36,8 +36,8 @@ unittest {
             g.items().toString() == "[('a', 'b'), ('k', 'z')]");
     assert("k" in g);
     assert("a" in g);
-    assert(g.hasKey("k"));
-    assert(g.hasKey("a"));
+    assert(g.has_key("k"));
+    assert(g.has_key("a"));
 
     g = py([5:7, 8:10]);
     g.clear();
@@ -101,9 +101,9 @@ unittest {
     assert(n == py(36));
     n = n / py(5);
     assert(n == py(7));
-    n = py(36).floorDiv(py(5));
+    n = py(36).floor_div(py(5));
     assert(n == py(7));
-    n = py(36).trueDiv(py(5));
+    n = py(36).true_div(py(5));
     assert(n == py(7.2)); // *twitch*
     n = (py(37).divmod(py(5)));
     assert(n.toString() == "(7, 2)" || n.toString() == "(7L, 2L)");
@@ -149,7 +149,7 @@ unittest {
 
 // PydObject as python object
 unittest {
-    PyStmts(q"<class X:
+    py_stmts(q"<class X:
         def __init__(self):
             self.a = "widget"
             self.b = 515
@@ -164,7 +164,7 @@ unittest {
         def bar(self, wongo, xx):
             return "%s %s b %s" % (self.a, wongo, self.b)
             >", "testing");
-    auto x = PyEval("X()","testing");
+    auto x = py_eval("X()","testing");
     assert(x.getattr("a") == py("widget"));
     assert(x.a == py("widget"));
     assert(x.method("foo") == py("widget"));
@@ -186,8 +186,8 @@ unittest {
 // Buffer interface
 version(Python_2_6_Or_Later) {
     unittest {
-        auto arr = PyEval("bytearray([1,2,3])");
-        auto b = arr.bufferview();
+        auto arr = py_eval("bytearray([1,2,3])");
+        auto b = arr.buffer_view();
         import std.stdio;
         assert(b.format == "B");
         assert(b.itemsize == 1);
@@ -218,12 +218,13 @@ version(Python_2_6_Or_Later) {
         }
 
         if(numpy) {
-            PyStmts(
+            py_stmts(
                     "from numpy import eye\n"
                     "a = eye(4,k=1)\n"
+                    ,
                     "testing");
-            PydObject ao = PyEval("a","testing");
-            auto b = ao.bufferview();
+            PydObject ao = py_eval("a","testing");
+            auto b = ao.buffer_view();
             assert(b.format == "d");
             assert(b.itemsize == 8);
             assert(b.has_nd);

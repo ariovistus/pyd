@@ -144,7 +144,7 @@ template OverloadShim() {
                         result = applyPyTupleToDelegate(dg, item);
                     } else {
                         static if (args == 1) {
-                            arg_t t = d_type!(typeof(arg_t))(item);
+                            arg_t t = python_to_d!(typeof(arg_t))(item);
                             result = dg(t);
                         } else {
                             throw new Exception("Tried to override opApply with wrong number of args...");

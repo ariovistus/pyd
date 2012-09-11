@@ -26,14 +26,14 @@ static this() {
 }
 
 unittest{
-    assert(PyEval!int("a(1.0)","testing") == 20);
-    assert(PyEval!int("a2(4,2.1)","testing") == 214);
-    assert(PyEval!int("a2(4)","testing") == 454);
-    assert(PyEval!int("a2(i=4)","testing") == 454);
-    assert(PyEval!int("a3(4)","testing") == 46);
-    assert(PyEval!int("a3(i=4)","testing") == 46);
-    assert(PyEval!int("a3(4,3)","testing") == 49);
-    assert(PyEval!int("a3(i=[4,3])","testing") == 49);
+    assert(py_eval!int("a(1.0)","testing") == 20);
+    assert(py_eval!int("a2(4,2.1)","testing") == 214);
+    assert(py_eval!int("a2(4)","testing") == 454);
+    assert(py_eval!int("a2(i=4)","testing") == 454);
+    assert(py_eval!int("a3(4)","testing") == 46);
+    assert(py_eval!int("a3(i=4)","testing") == 46);
+    assert(py_eval!int("a3(4,3)","testing") == 49);
+    assert(py_eval!int("a3(i=[4,3])","testing") == 49);
 }
 
 void main() {}

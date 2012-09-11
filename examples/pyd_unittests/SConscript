@@ -1,14 +1,9 @@
 Import('*')
-env = Environment(
-    DPATH = [infra, join(infra, "python")],
-    DVERSIONS = py_versions("2.7"),
-    DLINKFLAGS = py_lib("2.7"),
-    )
-env.Program("buffer.x",["buffer.d", ] + pydfiles)
-env.Program("class_wrap.x",["class_wrap.d", ] + pydfiles)
-env.Program("def.x",["def.d", ] + pydfiles)
-env.Program("embedded.x",["embedded.d", ] + pydfiles)
-env.Program("func_wrap.x",["func_wrap.d", ] + pydfiles)
-env.Program("make_object.x",["make_object.d", ] + pydfiles)
-env.Program("pydobject.x",["pydobject.d", ] + pydfiles)
-env.Program("struct_wrap.x",["struct_wrap.d", ] + pydfiles)
+env27.Program("buffer.x",["buffer.d", ] + pydfiles)
+env27.Program("class_wrap.x",["class_wrap.d", ] + pydfiles)
+env27.Program("def.x",["def.d", ] + pydfiles)
+env27.Program("embedded.x",["embedded.d", ] + pydfiles)
+env27.Program("func_wrap.x",["func_wrap.d", ] + pydfiles)
+env27.Program("make_object.x",["make_object.d", ] + pydfiles)
+env27.Program("pydobject.x",["pydobject.d", ] + pydfiles)
+env27.Program("struct_wrap.x",["struct_wrap.d", ] + pydfiles)

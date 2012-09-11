@@ -35,17 +35,17 @@ void displaybuffer(PydObject.BufferView buf) {
 unittest {
     import std.bigint;
     // python long -> BigInt
-    assert(PyEval!BigInt("6 ** 603") == BigInt("6") ^^ 603);
-    assert(PyEval!BigInt("-6 ** 603") == -BigInt("6") ^^ 603);
+    assert(py_eval!BigInt("6 ** 603") == BigInt("6") ^^ 603);
+    assert(py_eval!BigInt("-6 ** 603") == -BigInt("6") ^^ 603);
     // BigInt -> python long
-    assert(py(BigInt("7") ^^ 47) == PyEval("7 ** 47"));
-    assert(py(-BigInt("7") ^^ 47) == PyEval("-7 ** 47"));
+    assert(py(BigInt("7") ^^ 47) == py_eval("7 ** 47"));
+    assert(py(-BigInt("7") ^^ 47) == py_eval("-7 ** 47"));
 }
 
 unittest {
-    PyStmts(q"{from array import array; a = array('i', [44,33,22,11]);}", "testing");
-    assert(PyEval!(int[])("a", "testing") == [44,33,22,11]);
-    assert(PyEval!(int[4])("a", "testing") == [44,33,22,11]);
+    py_stmts(q"{from array import array; a = array('i', [44,33,22,11]);}", "testing");
+    assert(py_eval!(int[])("a", "testing") == [44,33,22,11]);
+    assert(py_eval!(int[4])("a", "testing") == [44,33,22,11]);
 }
 
 // numpy unittests - numpy supports new buffer interface with PyBUF_ND,
@@ -61,82 +61,82 @@ unittest {
     }
 
     if(numpy) {
-        PyStmts(
+        py_stmts(
                 "from numpy import eye, ndarray\n"
                 "a = eye(4,k=1)\n"
                 "b = eye(3,4)\n"
                 "f = ndarray(shape=[3,4], buffer=b, order='F')\n"
                 ,
                 "testing");
-        assert(PyEval!(double[][])("a","testing") == 
+        assert(py_eval!(double[][])("a","testing") == 
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(PyEval!(double[4][4])("a","testing") == 
+        assert(py_eval!(double[4][4])("a","testing") == 
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(PyEval!(double[][4])("a","testing") == 
+        assert(py_eval!(double[][4])("a","testing") == 
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(PyEval!(double[4][])("a","testing") == 
+        assert(py_eval!(double[4][])("a","testing") == 
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(*PyEval!(double[4][4]*)("a","testing") == 
+        assert(*py_eval!(double[4][4]*)("a","testing") == 
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(PyEval!(double[][])("b","testing") == 
+        assert(py_eval!(double[][])("b","testing") == 
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(PyEval!(double[4][3])("b","testing") == 
+        assert(py_eval!(double[4][3])("b","testing") == 
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(PyEval!(double[][3])("b","testing") == 
+        assert(py_eval!(double[][3])("b","testing") == 
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(PyEval!(double[4][])("b","testing") == 
+        assert(py_eval!(double[4][])("b","testing") == 
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(*PyEval!(double[4][3]*)("b","testing") == 
+        assert(*py_eval!(double[4][3]*)("b","testing") == 
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(PyEval!(double[][])("f","testing") == 
+        assert(py_eval!(double[][])("f","testing") == 
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(PyEval!(double[4][3])("f","testing") == 
+        assert(py_eval!(double[4][3])("f","testing") == 
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(PyEval!(double[][3])("f","testing") == 
+        assert(py_eval!(double[][3])("f","testing") == 
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(PyEval!(double[4][])("f","testing") == 
+        assert(py_eval!(double[4][])("f","testing") == 
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(*PyEval!(double[4][3]*)("f","testing") == 
+        assert(*py_eval!(double[4][3]*)("f","testing") == 
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
 
-        assert(PyEval("f","testing").bufferview().format == "d");
+        assert(py_eval("f","testing").buffer_view().format == "d");
         // this won't work because f is a matrix of doubles
-        assert(cantconvert(PyEval!(float[][])("f","testing")));
+        assert(cantconvert(py_eval!(float[][])("f","testing")));
     }
 }
 
@@ -157,84 +157,84 @@ unittest {
 // bytearray tests - bytearray supports the new buffer interface with
 // PyBUF_ND and PyBUF_C_CONTIGUOUS
 unittest {
-    PyStmts(
+    py_stmts(
             "a = bytearray('abcdefg')\n"
             ,
             "testing");
-    auto a = PyEval("a","testing");
-    auto b = a.bufferview();
-    assert(PyEval!(ubyte[])("a", "testing") == cast(ubyte[]) "abcdefg");
+    auto a = py_eval("a","testing");
+    auto b = a.buffer_view();
+    assert(py_eval!(ubyte[])("a", "testing") == cast(ubyte[]) "abcdefg");
     PyObject* a_ptr = Py_INCREF(a.ptr);
     scope(exit) Py_DECREF(a_ptr);
-    // d_type should be calling this function
-    assert(d_type_buffer!(ubyte[])(a_ptr) == cast(ubyte[]) "abcdefg");
+    // python_to_d should be calling this function
+    assert(python_buffer_to_d!(ubyte[])(a_ptr) == cast(ubyte[]) "abcdefg");
     // bytearray's elements are unsigned
-    assert(cantconvert(d_type_buffer!(byte[])(a_ptr)));
-    // with char[], d_type probably isn't calling this function, but anyways
+    assert(cantconvert(python_buffer_to_d!(byte[])(a_ptr)));
+    // with char[], python_to_d probably isn't calling this function, but anyways
     // char[]'s element type is dchar. Go figure.
-    assert(cantconvert(d_type_buffer!(char[])(a_ptr)));
+    assert(cantconvert(python_buffer_to_d!(char[])(a_ptr)));
 }
 
 unittest {
-    assert(d_type!int(_py(15)) == 15);
-    assert(d_type!float(_py(1.0f)) == 1.0f);
+    assert(python_to_d!int(d_to_python(15)) == 15);
+    assert(python_to_d!float(d_to_python(1.0f)) == 1.0f);
     import std.complex;
-    assert(d_type!(Complex!double)(_py(complex(2.0,3.0))) == complex(2.0,3.0));
+    assert(python_to_d!(Complex!double)(d_to_python(complex(2.0,3.0))) == complex(2.0,3.0));
     import std.typecons;
-    assert(d_type!(Tuple!(int,double))(_py(tuple(2,3.0))) == tuple(2,3.0));
-    assert(d_type!(Tuple!(int, "a",double, "b"))(_py(Tuple!(int, "a", double, "b")(2,3.0))) == Tuple!(int,"a",double,"b")(2,3.0));
+    assert(python_to_d!(Tuple!(int,double))(d_to_python(tuple(2,3.0))) == tuple(2,3.0));
+    assert(python_to_d!(Tuple!(int, "a",double, "b"))(d_to_python(Tuple!(int, "a", double, "b")(2,3.0))) == Tuple!(int,"a",double,"b")(2,3.0));
 }
 
 unittest {
-    assert(PyEval!byte("int(30)") == 30);
-    assert(PyEval!byte("long(30)") == 30);
-    assert(PyEval!byte(format("int(%s)", byte.max)) == byte.max);
-    assert(PyEval!byte(format("int(%s)", byte.min)) == byte.min);
-    assert(PyEval!byte(format("long(%s)", byte.max)) == byte.max);
-    assert(PyEval!byte(format("long(%s)", byte.min)) == byte.min);
-    assert(PyEval!ubyte("int(30)") == 30);
-    assert(PyEval!ubyte("long(30)") == 30);
-    assert(PyEval!ubyte(format("int(%s)", ubyte.max)) == ubyte.max);
-    assert(PyEval!ubyte(format("int(%s)", ubyte.min)) == ubyte.min);
-    assert(PyEval!ubyte(format("long(%s)", ubyte.max)) == ubyte.max);
-    assert(PyEval!ubyte(format("long(%s)", ubyte.min)) == ubyte.min);
-    assert(PyEval!short("int(30)") == 30);
-    assert(PyEval!short("long(30)") == 30);
-    assert(PyEval!ushort("int(30)") == 30);
-    assert(PyEval!ushort("long(30)") == 30);
-    assert(PyEval!int("int(300)") == 300);
-    assert(PyEval!int("long(300)") == 300);
-    assert(PyEval!uint("int(300)") == 300);
-    assert(PyEval!uint("long(300)") == 300);
-    assert(PyEval!long("int(30)") == 30);
-    assert(PyEval!long("long(30)") == 30);
-    assert(PyEval!ulong("int(30)") == 30);
-    assert(PyEval!ulong("long(30)") == 30);
-    assert(PyEval!long(format("long(%s)", long.max)) == long.max);
-    assert(PyEval!long(format("long(%s)", long.min)) == long.min);
-    assert(PyEval!ulong(format("long(%s)", ulong.max)) == ulong.max);
+    assert(py_eval!byte("int(30)") == 30);
+    assert(py_eval!byte("long(30)") == 30);
+    assert(py_eval!byte(format("int(%s)", byte.max)) == byte.max);
+    assert(py_eval!byte(format("int(%s)", byte.min)) == byte.min);
+    assert(py_eval!byte(format("long(%s)", byte.max)) == byte.max);
+    assert(py_eval!byte(format("long(%s)", byte.min)) == byte.min);
+    assert(py_eval!ubyte("int(30)") == 30);
+    assert(py_eval!ubyte("long(30)") == 30);
+    assert(py_eval!ubyte(format("int(%s)", ubyte.max)) == ubyte.max);
+    assert(py_eval!ubyte(format("int(%s)", ubyte.min)) == ubyte.min);
+    assert(py_eval!ubyte(format("long(%s)", ubyte.max)) == ubyte.max);
+    assert(py_eval!ubyte(format("long(%s)", ubyte.min)) == ubyte.min);
+    assert(py_eval!short("int(30)") == 30);
+    assert(py_eval!short("long(30)") == 30);
+    assert(py_eval!ushort("int(30)") == 30);
+    assert(py_eval!ushort("long(30)") == 30);
+    assert(py_eval!int("int(300)") == 300);
+    assert(py_eval!int("long(300)") == 300);
+    assert(py_eval!uint("int(300)") == 300);
+    assert(py_eval!uint("long(300)") == 300);
+    assert(py_eval!long("int(30)") == 30);
+    assert(py_eval!long("long(30)") == 30);
+    assert(py_eval!ulong("int(30)") == 30);
+    assert(py_eval!ulong("long(30)") == 30);
+    assert(py_eval!long(format("long(%s)", long.max)) == long.max);
+    assert(py_eval!long(format("long(%s)", long.min)) == long.min);
+    assert(py_eval!ulong(format("long(%s)", ulong.max)) == ulong.max);
 
     // values out of bounds are out of bounds.
 
-    assert(cantconvert(PyEval!byte("int(300)")));
-    assert(cantconvert(PyEval!ubyte("int(300)")));
-    assert(cantconvert(PyEval!ubyte("int(-1)")));
+    assert(cantconvert(py_eval!byte("int(300)")));
+    assert(cantconvert(py_eval!ubyte("int(300)")));
+    assert(cantconvert(py_eval!ubyte("int(-1)")));
 
     assert(py(cast(byte)1) == py(1));
 }
 
 unittest {
-    assert(PyEval!(int[])("[4,5,7]") == [4,5,7]);
-    assert(PyEval!(int[3])("[4,5,7]") == [4,5,7]);
-    assert(PyEval!(immutable(int)[])("[4,5,7]") == [4,5,7]);
-    assert(PyEval!(immutable(int)[3])("[4,5,7]") == [4,5,7]);
-    assert(PyEval!(immutable(int[]))("[4,5,7]") == [4,5,7]);
-    assert(PyEval!(immutable(int[3]))("[4,5,7]") == [4,5,7]);
+    assert(py_eval!(int[])("[4,5,7]") == [4,5,7]);
+    assert(py_eval!(int[3])("[4,5,7]") == [4,5,7]);
+    assert(py_eval!(immutable(int)[])("[4,5,7]") == [4,5,7]);
+    assert(py_eval!(immutable(int)[3])("[4,5,7]") == [4,5,7]);
+    assert(py_eval!(immutable(int[]))("[4,5,7]") == [4,5,7]);
+    assert(py_eval!(immutable(int[3]))("[4,5,7]") == [4,5,7]);
 }
 
 unittest {
-    assert(equal(PyEval!(PydInputRange!int)("[5,6,7,8]"), [5,6,7,8]));
-    assert(equal(PyEval!(PydInputRange!int)("xrange(2, 20)"), iota(2,20)));
+    assert(equal(py_eval!(PydInputRange!int)("[5,6,7,8]"), [5,6,7,8]));
+    assert(equal(py_eval!(PydInputRange!int)("xrange(2, 20)"), iota(2,20)));
 }
 
 class G1(string name) {
@@ -264,17 +264,17 @@ unittest {
     alias unaryFun!"a.i" uConv;
     alias uConv!(G1!"martin") mConv;
 
-    d_to_python(delegate int(G1!"fred" g){ return g.i; });
-    d_to_python(function int(G1!"steve" g){ return g.i; });
-    d_to_python(new Conv());
-    d_to_python(&mConv);
-    d_to_python((G1!"john" a) => a.i);
+    ex_d_to_python(delegate int(G1!"fred" g){ return g.i; });
+    ex_d_to_python(function int(G1!"steve" g){ return g.i; });
+    ex_d_to_python(new Conv());
+    ex_d_to_python(&mConv);
+    ex_d_to_python((G1!"john" a) => a.i);
 
-    python_to_d(delegate G1!"steve"(int i){ return new G1!"steve"(i); });
-    python_to_d(function G1!"fred"(int i){ return new G1!"fred"(i); });
-    python_to_d(new Conv2());
-    python_to_d((int a) => new G1!"martin"(a));
-    python_to_d((int a) => new G1!"john"(a));
+    ex_python_to_d(delegate G1!"steve"(int i){ return new G1!"steve"(i); });
+    ex_python_to_d(function G1!"fred"(int i){ return new G1!"fred"(i); });
+    ex_python_to_d(new Conv2());
+    ex_python_to_d((int a) => new G1!"martin"(a));
+    ex_python_to_d((int a) => new G1!"john"(a));
 
     assert(py(new G1!"fred"(6)) == py(6));
     assert(py(new G1!"steve"(7)) == py(7));
@@ -282,10 +282,10 @@ unittest {
     assert(py(new G1!"martin"(9)) == py(9));
     assert(py(new G1!"john"(10)) == py(10));
 
-    assert(d_type!(G1!"fred")(_py(20)) == new G1!"fred"(20));
-    assert(d_type!(G1!"steve")(_py(21)) == new G1!"steve"(21));
-    assert(d_type!(G1!"joe")(_py(22)) == new G1!"joe"(22));
-    assert(d_type!(G1!"martin")(_py(23)) == new G1!"martin"(23));
+    assert(python_to_d!(G1!"fred")(d_to_python(20)) == new G1!"fred"(20));
+    assert(python_to_d!(G1!"steve")(d_to_python(21)) == new G1!"steve"(21));
+    assert(python_to_d!(G1!"joe")(d_to_python(22)) == new G1!"joe"(22));
+    assert(python_to_d!(G1!"martin")(d_to_python(23)) == new G1!"martin"(23));
 }
 
 void main() {}

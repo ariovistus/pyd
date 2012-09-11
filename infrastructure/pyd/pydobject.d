@@ -19,6 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+/**
+  Contains utilities for operating on generic python objects.
+  */
 module pyd.pydobject;
 
 import python;
@@ -45,32 +49,29 @@ protected:
     PyObject* m_ptr;
 public:
     /**
-     * Wrap around a passed PyObject*.
-     * Params:
-     *      o = The PyObject to wrap.
-     *      borrowed = Whether o is a _borrowed reference. Instances
-     *                 of PydObject always own their references.
-     *                 Therefore, Py_INCREF will be called if borrowed is
-     *                 $(D_KEYWORD true).
+     * Wrap an owned PyObject*.
      */
     this(PyObject* o) {
         if (o is null) handle_exception();
         m_ptr = o;
     }
 
-    this(PyObject_BorrowedRef* o) {
+    /**
+     * Own a borrowed PyObject* and wrap it.
+     */
+    this(Borrowed!PyObject* o) {
         if (o is null) handle_exception();
         // PydObject always owns its references
         m_ptr = Py_INCREF(o);
     }
 
-    /// The default constructor constructs an instance of the Py_None PydObject.
+    /// Constructs an instance of the Py_None PydObject.
     this() { 
         m_ptr = Py_None;
         Py_INCREF(m_ptr);
     }
 
-    /// Destructor. Calls Py_DECREF on owned PyObject reference.
+    /// Destructor. Calls Py_DECREF on PyObject reference.
     ~this() {
         if (m_ptr) Py_DECREF(m_ptr);
         m_ptr = null;
@@ -81,15 +82,28 @@ public:
   exposes a lowish-level wrapper of the new-style buffer interface
 
 See_also: 
-http://docs.python.org/c-api/buffer.html
+<a href="http://docs.python.org/c-api/buffer.html">
+Buffers and MemoryView Objects </a>
  */
         class BufferView {
             Py_buffer buffer;
+            /// supports PyBUF_SIMPLE. $(BR)
+            /// should always be true.
             bool has_simple = false;
+            /// supports PyBUF_ND. $(BR)
+            /// i.e. buffer supplies ndim, shape.
             bool has_nd = false;
+            /// supports PyBUF_STRIDES. $(BR)
+            /// i.e. buffer supplies strides.
             bool has_strides = false;
+            /// supports PyBUF_INDIRECT. $(BR)
+            /// i.e. buffer supplies suboffsets.
             bool has_indirect = false;
+            /// supports PyBUF_C_CONTIGUOUS. $(BR)
+            /// buffer is row-major.
             bool c_contiguous = false;
+            /// supports PyBUF_F_CONTIGUOUS. $(BR)
+            /// buffer is column-major
             bool fortran_contiguous = false;
 
             private @property m_ptr() {
@@ -174,43 +188,61 @@ http://docs.python.org/c-api/buffer.html
                 }
             }
 
+            /**
+              Get the raw bytes of this buffer
+              */
             @property ubyte[] buf() {
                 enforce(has_simple);
                 enforce(buffer.len >= 0);
                 return (cast(ubyte*) buffer.buf)[0 .. buffer.len];
             }
 
+            /// _
             @property bool readonly() {
                 return cast(bool) buffer.readonly;
             }
+
+/**
+  Get the struct-style _format of the element type of this buffer.
+
+See_Also:
+<a href='http://docs.python.org/library/struct.html#struct-format-strings'>
+Struct Format Strings </a>
+*/
 
             @property string format() {
                 return to!string(buffer.format);
             }
 
+            /// Get number of dimensions of this buffer.
             @property int ndim() {
                 if(!has_nd) return 0;
                 return buffer.ndim;
             }
 
+            /// _
             @property Py_ssize_t[] shape() {
                 if(!has_nd || !buffer.shape) return [];
                 return buffer.shape[0 .. ndim];
             }
 
+            /// _
             @property Py_ssize_t[] strides() {
                 if(!has_strides || !buffer.strides) return [];
                 return buffer.strides[0 .. ndim];
             }
+            /// _
             @property Py_ssize_t[] suboffsets() {
                 if(!has_indirect || !buffer.suboffsets) return [];
                 return buffer.suboffsets[0 .. ndim];
             }
 
+            /// _
             @property itemsize() {
                 return buffer.itemsize;
             }
 
+            /// _
             T item(T)(Py_ssize_t[] indeces...) {
                 if(has_strides) enforce(indeces.length == ndim);
                 else enforce(indeces.length == 1);
@@ -232,10 +264,18 @@ http://docs.python.org/c-api/buffer.html
         }
 
 
-        BufferView bufferview() {
+        /**
+          Get a BufferView of this object.
+          Will fail if this does not support the new buffer interface.
+          */
+        BufferView buffer_view() {
             return new this.BufferView();
         }
-        BufferView bufferview(int flags) {
+        /**
+          Get a BufferView of this object without probing for capabilities.
+          Will fail if this does not support the new buffer interface.
+          */
+        BufferView buffer_view(int flags) {
             return new this.BufferView(flags);
         }
     }
@@ -243,7 +283,7 @@ http://docs.python.org/c-api/buffer.html
     /**
      * Returns a borrowed reference to the PyObject.
      */
-    @property PyObject_BorrowedRef* ptr() { return borrowed(m_ptr); }
+    @property Borrowed!PyObject* ptr() { return borrowed(m_ptr); }
     
     /*
      * Prints PyObject to a C FILE* object.
@@ -262,28 +302,28 @@ http://docs.python.org/c-api/buffer.html
     }
     +/
 
-    /// Same as _hasattr(this, attr_name) in Python.
+    /// Equivalent to _hasattr(this, attr_name) in Python.
     bool hasattr(string attr_name) {
         return PyObject_HasAttrString(m_ptr, zcc(attr_name)) == 1;
     }
 
-    /// Same as _hasattr(this, attr_name) in Python.
+    /// Equivalent to _hasattr(this, attr_name) in Python.
     bool hasattr(PydObject attr_name) {
         return PyObject_HasAttr(m_ptr, attr_name.m_ptr) == 1;
     }
 
-    /// Same as _getattr(this, attr_name) in Python.
+    /// Equivalent to _getattr(this, attr_name) in Python.
     PydObject getattr(string attr_name) {
         return new PydObject(PyObject_GetAttrString(m_ptr, zcc(attr_name)));
     }
 
-    /// Same as _getattr(this, attr_name) in Python.
+    /// Equivalent to _getattr(this, attr_name) in Python.
     PydObject getattr(PydObject attr_name) {
         return new PydObject(PyObject_GetAttr(m_ptr, attr_name.m_ptr));
     }
 
     /**
-     * Same as _setattr(this, attr_name, v) in Python.
+     * Equivalent to _setattr(this, attr_name, v) in Python.
      */
     void setattr(string attr_name, PydObject v) {
         if (PyObject_SetAttrString(m_ptr, zcc(attr_name), v.m_ptr) == -1)
@@ -291,7 +331,7 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     * Same as _setattr(this, attr_name, v) in Python.
+     * Equivalent to _setattr(this, attr_name, v) in Python.
      */
     void setattr(PydObject attr_name, PydObject v) {
         if (PyObject_SetAttr(m_ptr, attr_name.m_ptr, v.m_ptr) == -1)
@@ -299,7 +339,7 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     * Same as del this.attr_name in Python.
+     * Equivalent to del this.attr_name in Python.
      */
     void delattr(string attr_name) {
         if (PyObject_DelAttrString(m_ptr, zcc(attr_name)) == -1)
@@ -307,7 +347,7 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     * Same as del this.attr_name in Python.
+     * Equivalent to del this.attr_name in Python.
      */
     void delattr(PydObject attr_name) {
         if (PyObject_DelAttr(m_ptr, attr_name.m_ptr) == -1)
@@ -315,7 +355,7 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     * Exposes Python object comparison to D. Same as cmp(this, rhs) in Python.
+     * Exposes Python object comparison to D. Equivalent to cmp(this, rhs) in Python.
      */
     int opCmp(Object o) {
         PydObject rhs = cast(PydObject) o;
@@ -338,70 +378,64 @@ http://docs.python.org/c-api/buffer.html
         return res == 0;
     }
     
-    /// Same as _repr(this) in Python.
+    /// Equivalent to _repr(this) in Python.
     PydObject repr() {
         return new PydObject(PyObject_Repr(m_ptr));
     }
 
-    /// Same as _str(this) in Python.
+    /// Equivalent to _str(this) in Python.
     PydObject str() {
         return new PydObject(PyObject_Str(m_ptr));
     }
-    /// Allows use of PydObject in writef via %s
-    version (Pyd_with_Tango) {
-        char[] toUtf8() {
-            return d_type!(char[])(m_ptr);
-        }
-    } else {
-        string toString() {
-            return d_type!(string)(m_ptr);
-        }
+    /// Allows use of PydObject in writeln via %s
+    string toString() {
+        return python_to_d!(string)(m_ptr);
     }
     
-    /// Same as _unicode(this) in Python.
+    /// Equivalent to _unicode(this) in Python.
     PydObject unicode() {
         return new PydObject(PyObject_Unicode(m_ptr));
     }
 
-    /// Same as isinstance(this, cls) in Python.
-    bool isInstance(PydObject cls) {
+    /// Equivalent to isinstance(this, cls) in Python.
+    bool isinstance(PydObject cls) {
         int res = PyObject_IsInstance(m_ptr, cls.m_ptr);
         if (res == -1) handle_exception();
         return res == 1;
     }
 
-    /// Same as issubclass(this, cls) in Python. Only works if this is a class.
-    bool isSubclass(PydObject cls) {
+    /// Equivalent to issubclass(this, cls) in Python. Only works if this is a class.
+    bool issubclass(PydObject cls) {
         int res = PyObject_IsSubclass(m_ptr, cls.m_ptr);
         if (res == -1) handle_exception();
         return res == 1;
     }
 
-    /// Same as _callable(this) in Python.
+    /// Equivalent to _callable(this) in Python.
     bool callable() {
         return PyCallable_Check(m_ptr) == 1;
     }
     
     /**
-     * Calls the PydObject with the PyTuple args.
+     * Calls the PydObject with args.
      * Params:
-     *      args = Should be a PydTuple of the arguments to pass. Omit to
+     *      args = Should be a tuple of the arguments to pass. Omit to
      *             call with no arguments.
-     * Returns: Whatever the function PydObject returns.
+     * Returns: Whatever this function object returns.
      */
-    PydObject unpackCall(PydObject args=null) {
+    PydObject unpack_call(PydObject args=null) {
         return new PydObject(PyObject_CallObject(m_ptr, args is null ? null : args.m_ptr));
     }
     
     /**
      * Calls the PydObject with positional and keyword arguments.
      * Params:
-     *      args = Positional arguments. Should be a PydTuple. Pass an empty
-     *             PydTuple for no positional arguments.
-     *      kw = Keyword arguments. Should be a PydDict.
-     * Returns: Whatever the function PydObject returns.
+     *      args = Positional arguments. Should be a tuple. Pass an empty
+     *             tuple for no positional arguments.
+     *      kw = Keyword arguments. Should be a dict.
+     * Returns: Whatever this function object returns.
      */
-    PydObject unpackCall(PydObject args, PydObject kw) {
+    PydObject unpack_call(PydObject args, PydObject kw) {
         return new PydObject(PyObject_Call(m_ptr, args.m_ptr, kw.m_ptr));
     }
 
@@ -418,9 +452,14 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     *
+     * Calls the PydObject method with args.
+     * Params:
+     *      name = name of method to call
+     *      args = Should be a tuple of the arguments to pass. Omit to
+     *             call with no arguments.
+     * Returns: Whatever this object's method returns.
      */
-    PydObject methodUnpack(string name, PydObject args=null) {
+    PydObject method_unpack(string name, PydObject args=null) {
         // Get the method PydObject
         PyObject* m = PyObject_GetAttrString(m_ptr, zcc(name));
         PyObject* result;
@@ -433,7 +472,16 @@ http://docs.python.org/c-api/buffer.html
         return new PydObject(result);
     }
 
-    PydObject methodUnpack(string name, PydObject args, PydObject kw) {
+    /**
+     * Calls the PydObject method with positional and keyword arguments.
+     * Params:
+     *      name = name of method to call.
+     *      args = Positional arguments. Should be a tuple. Pass an empty
+     *             tuple for no positional arguments.
+     *      kw = Keyword arguments. Should be a dict.
+     * Returns: Whatever this object's method returns.
+     */
+    PydObject method_unpack(string name, PydObject args, PydObject kw) {
         // Get the method PydObject
         PyObject* m = PyObject_GetAttrString(m_ptr, zcc(name));
         PyObject* result;
@@ -464,23 +512,19 @@ http://docs.python.org/c-api/buffer.html
         return new PydObject(result);
     }
 
-    /// Same as _hash(this) in Python.
+    /// Equivalent to _hash(this) in Python.
     hash_t hash() {
         hash_t res = PyObject_Hash(m_ptr);
         if (res == -1) handle_exception();
         return res;
     }
 
-    T toDItem(T)() {
-        return d_type!(T)(m_ptr);
+    /// Convert this object to instance of T.
+    T to_d(T)() {
+        return python_to_d!(T)(m_ptr);
     }
 
-    /// Same as "not not this" in Python.
-    bool toBool() {
-        return d_type!(bool)(m_ptr);
-    }
-
-    /// Same as "_not this" in Python.
+    /// Equivalent to "_not this" in Python.
     bool not() {
         int res = PyObject_Not(m_ptr);
         if (res == -1) handle_exception();
@@ -488,7 +532,7 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     * Gets the _type of this PydObject. Same as _type(this) in Python.
+     * Gets the _type of this PydObject. Equivalent to _type(this) in Python.
      * Returns: The _type PydObject of this PydObject.
      */
     PydObject type() {
@@ -496,17 +540,17 @@ http://docs.python.org/c-api/buffer.html
     }
 
     /**
-     * The _length of this PydObject. Same as _len(this) in Python.
+     * The _length of this PydObject. Equivalent to _len(this) in Python.
      */
     Py_ssize_t length() {
         Py_ssize_t res = PyObject_Length(m_ptr);
         if (res == -1) handle_exception();
         return res;
     }
-    /// Same as length()
+    /// Equivalent to length()
     Py_ssize_t size() { return length(); }
 
-    /// Same as _dir(this) in Python.
+    /// Equivalent to _dir(this) in Python.
     PydObject dir() {
         return new PydObject(PyObject_Dir(m_ptr));
     }
@@ -561,27 +605,8 @@ http://docs.python.org/c-api/buffer.html
                 handle_exception();
         }
     }
-    /+
-    /**
-     * Equivalent to o['_key'] = _value in Python. Usually only makes sense for
-     * mappings.
-     */
-    void opIndexAssign(PydObject value, string key) {
-        if (PyMapping_SetItemString(m_ptr, zc(key), value.m_ptr) == -1)
-            handle_exception();
-    }
-    /**
-     * Equivalent to o[_i] = _value in Python. Usually only makes sense for
-     * sequences.
-     */
-    void opIndexAssign(PydObject value, int i) {
-        if (PySequence_SetItem(m_ptr, i, value.m_ptr) == -1)
-            handle_exception();
-    }
-    +/
-
     /// Equivalent to del o[_key] in Python.
-    void delItem(PydObject key) {
+    void del_item(PydObject key) {
         if (PyObject_DelItem(m_ptr, key.m_ptr) == -1)
             handle_exception();
     }
@@ -589,7 +614,7 @@ http://docs.python.org/c-api/buffer.html
      * Equivalent to del o['_key'] in Python. Usually only makes sense for
      * mappings.
      */
-    void delItem(string key) {
+    void del_item(string key) {
         if (PyMapping_DelItemString(m_ptr, zc(key)) == -1)
             handle_exception();
     }
@@ -597,7 +622,7 @@ http://docs.python.org/c-api/buffer.html
      * Equivalent to del o[_i] in Python. Usually only makes sense for
      * sequences.
      */
-    void delItem(int i) {
+    void del_item(int i) {
         if (PySequence_DelItem(m_ptr, i) == -1)
             handle_exception();
     }
@@ -623,13 +648,13 @@ http://docs.python.org/c-api/buffer.html
         this.opSliceAssign(v, 0, this.length());
     }
     /// Equivalent to del o[_i1:_i2] in Python.
-    void delSlice(Py_ssize_t i1, Py_ssize_t i2) {
+    void del_slice(Py_ssize_t i1, Py_ssize_t i2) {
         if (PySequence_DelSlice(m_ptr, i1, i2) == -1)
             handle_exception();
     }
     /// Equivalent to del o[:] in Python.
-    void delSlice() {
-        this.delSlice(0, this.length());
+    void del_slice() {
+        this.del_slice(0, this.length());
     }
 
     //-----------
@@ -675,7 +700,7 @@ http://docs.python.org/c-api/buffer.html
      * iterating through it is an especially bad idea.
      */
     int opApply(int delegate(ref PydObject, ref PydObject) dg) {
-        PyObject_BorrowedRef* key, value;
+        Borrowed!PyObject* key, value;
         Py_ssize_t pos = 0;
         int result = 0;
         PydObject k, v;
@@ -693,12 +718,12 @@ http://docs.python.org/c-api/buffer.html
     //------------
     // Arithmetic
     //------------
-    ///
+    /// Forwards to appropriate Python binary operator overload.
     PydObject opBinary(string op, T)(T o) {
         static if((is(T : int) || is(T == PydObject)) && op == "*") {
             if(PySequence_Check(m_ptr)) {
                 static if(is(T == PydObject)) {
-                    int j = d_type!int(o.m_ptr);
+                    int j = python_to_d!int(o.m_ptr);
                 }else{
                     alias o j;
                 }
@@ -737,6 +762,7 @@ http://docs.python.org/c-api/buffer.html
         }else static assert(false, "operator " ~ op ~" not supported");
     }
 
+    /// Forwards to appropriate Python unary operator overload.
     PydObject opUnary(string op)() {
         static if(op == "+") {
             return new PydObject(PyNumber_Positive(m_ptr));
@@ -746,31 +772,74 @@ http://docs.python.org/c-api/buffer.html
             return new PydObject(PyNumber_Invert(m_ptr));
         }
     }
-    ///
-    PydObject floorDiv(PydObject o) {
-        return new PydObject(PyNumber_FloorDivide(m_ptr, o.m_ptr));
+    /// Forwards to PyNumber_FloorDivide for numbers, and method otherwise.
+    /// See_Also:
+    /// <a href="http://docs.python.org/c-api/number.html#PyNumber_FloorDivide">
+    /// PyNumber_FloorDivide </a>
+    PydObject floor_div(PydObject o) {
+        if(PyNumber_Check(m_ptr)) {
+            return new PydObject(PyNumber_FloorDivide(m_ptr, o.m_ptr));
+        }else{
+            return this.method("floor_div", o);
+        }
     }
-    PydObject trueDiv(PydObject o) {
-        return new PydObject(PyNumber_TrueDivide(m_ptr, o.m_ptr));
+    /// Forwards to PyNumber_TrueDivide for numbers, and method otherwise.
+    /// See_Also:
+    /// <a href="http://docs.python.org/c-api/number.html#PyNumber_TrueDivide">
+    /// PyNumber_TrueDivide </a>
+    PydObject true_div(PydObject o) {
+        if(PyNumber_Check(m_ptr)) {
+            return new PydObject(PyNumber_TrueDivide(m_ptr, o.m_ptr));
+        }else{
+            return this.method("true_div", o);
+        }
     }
+    /// Equivalent to _divmod(this, o) for numbers, and this._divmod(o) 
+    /// otherwise.
+    /// See_Also:
+    /// <a href="http://docs.python.org/library/functions.html#divmod">
+    /// _divmod </a>
     PydObject divmod(PydObject o) {
-        return new PydObject(PyNumber_Divmod(m_ptr, o.m_ptr));
+        if(PyNumber_Check(m_ptr)) {
+            return new PydObject(PyNumber_Divmod(m_ptr, o.m_ptr));
+        }else{
+            return this.method("divmod", o);
+        }
     }
-    PydObject pow(PydObject o1, PydObject o2=null) {
-        return new PydObject(PyNumber_Power(m_ptr, o1.m_ptr, (o2 is null) ? Py_None : o2.m_ptr));
+    /// Equivalent to _pow(this, exp, mod) for numbers, and this._pow(exp,mod) 
+    /// otherwise.
+    /// See_Also:
+    /// <a href="http://docs.python.org/library/functions.html#pow">
+    /// _pow </a>
+    PydObject pow(PydObject exp, PydObject mod=null) {
+        if(PyNumber_Check(m_ptr)) {
+            return new PydObject(PyNumber_Power(m_ptr, exp.m_ptr, (mod is null) ? Py_None : mod.m_ptr));
+        }else{
+            return this.method("pow", exp, mod);
+        }
     }
+    /// Equivalent to _abs(this) for numbers, and this._abs() 
+    /// otherwise.
+    /// See_Also:
+    /// <a href="http://docs.python.org/library/functions.html#abs">
+    /// _abs </a>
     PydObject abs() {
-        return new PydObject(PyNumber_Absolute(m_ptr));
+        if(PyNumber_Check(m_ptr)) {
+            return new PydObject(PyNumber_Absolute(m_ptr));
+        }else{
+            return this.method("abs");
+        }
     }
 
     //---------------------
     // In-place arithmetic
     //---------------------
+    /// Forwards to appropriate python in-place operator overload.
     PydObject opOpAssign(string op, T)(T o) {
         static if((is(T : int) || is(T == PydObject)) && op == "*") {
             if(PySequence_Check(m_ptr)) {
                 static if(is(T == PydObject)) {
-                    int j = d_type!int(o.m_ptr);
+                    int j = python_to_d!int(o.m_ptr);
                 }else{
                     alias o j;
                 }
@@ -831,133 +900,112 @@ http://docs.python.org/c-api/buffer.html
     //-----------------
     // Type conversion
     //-----------------
-    ///
-    PydObject asInt() {
+    /// Converts any Python number to int.
+    PydObject as_int() {
         return new PydObject(PyNumber_Int(m_ptr));
     }
-    ///
-    PydObject asLong() {
+    /// Converts any Python number to long.
+    PydObject as_long() {
         return new PydObject(PyNumber_Long(m_ptr));
     }
-    ///
-    PydObject asFloat() {
+    /// Converts any Python number to float.
+    PydObject as_float() {
         return new PydObject(PyNumber_Float(m_ptr));
-    }
-    ///
-    C_long toLong() {
-        return d_type!(C_long)(m_ptr);
-    }
-    ///
-    C_longlong toLongLong() {
-        return d_type!(C_longlong)(m_ptr);
-    }
-    ///
-    double toDouble() {
-        return d_type!(double)(m_ptr);
-    }
-    ///
-    cdouble toComplex() {
-        return d_type!(cdouble)(m_ptr);
     }
     
     //------------------
     // Sequence methods
     //------------------
 
-    /// Sequence concatenation
+    // Sequence concatenation
     // see opBinary, opOpAssign
 
+    /// Equivalent to 'this.count(v)' in Python.
     Py_ssize_t count(PydObject v) {
-        Py_ssize_t result = PySequence_Count(m_ptr, v.m_ptr);
-        if (result == -1) handle_exception();
-        return result;
+        if(PySequence_Check(m_ptr)) {
+            Py_ssize_t result = PySequence_Count(m_ptr, v.m_ptr);
+            if (result == -1) handle_exception();
+            return result;
+        }else {
+            return this.method("count", v).to_d!Py_ssize_t();
+        }
     }
-    ///
+    /// Equivalent to 'this.index(v)' in Python
     Py_ssize_t index(PydObject v) {
-        Py_ssize_t result = PySequence_Index(m_ptr, v.m_ptr);
-        if (result == -1) handle_exception();
-        return result;
+        if(PyString_Check(m_ptr)) {
+            Py_ssize_t result = PySequence_Index(m_ptr, v.m_ptr);
+            if (result == -1) handle_exception();
+            return result;
+        }else {
+            return this.method("index", v).to_d!Py_ssize_t();
+        }
     }
     /// Converts any iterable PydObject to a list
-    PydObject asList() {
+    PydObject as_list() {
         return new PydObject(PySequence_List(m_ptr));
     }
     /// Converts any iterable PydObject to a tuple
-    PydObject asTuple() {
+    PydObject as_tuple() {
         return new PydObject(PySequence_Tuple(m_ptr));
     }
-    /+
-    wchar[] toWString() {
-        wchar[] temp;
-        if (PyUnicode_Check(m_ptr)) {
-            temp.length = PyUnicode_GetSize(m_ptr);
-            if (PyUnicode_AsWideChar(cast(PyUnicodeObject*)m_ptr, temp, temp.length) == -1)
-                handle_exception();
-            return temp;
-        } else {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot convert non-PyUnicode PydObject to wchar[].");
-            handle_exception();
-        }
-    }
-    +/
     // Added by list:
+    /// Equivalent to 'this._insert(i,item)' in python.
     void insert(int i, PydObject item) { 
         if(PyList_Check(m_ptr)) {
             if(PyList_Insert(m_ptr, i, item.m_ptr) == -1) {
                 handle_exception();
             }
         }else{
-            throw new Exception("tried to call insert on non-list");
+            this.method("insert")(i,item);
         }
     }
     // Added by list:
+    /// Equivalent to 'this._append(item)' in python.
     void append(PydObject item) { 
         if(PyList_Check(m_ptr)) {
             if(PyList_Append(m_ptr, item.m_ptr) == -1) {
                 handle_exception();
             }
         }else{
-            throw new Exception("tried to call append on non-list");
+            this.method("append", item);
         }
     }
     // Added by list:
+    /// Equivalent to 'this._sort()' in Python.
     void sort() { 
         if(PyList_Check(m_ptr)) {
             if(PyList_Sort(m_ptr) == -1) {
                 handle_exception();
             }
         }else{
-            throw new Exception("tried to call sort on non-list");
+            this.method("sort");
         }
     }
     // Added by list:
+    /// Equivalent to 'this.reverse()' in Python.
     void reverse() { 
         if(PyList_Check(m_ptr)) {
             if(PyList_Reverse(m_ptr) == -1) {
                 handle_exception();
             }
         }else{
-            assert(false); 
+            this.method("reverse");
         }
     }
 
     //-----------------
     // Mapping methods
     //-----------------
-    /// Same as "v in this" in Python.
-    //bool opIn_r(PydObject v) 
+    /// Equivalent to "v in this" in Python.
     bool opBinaryRight(string op,T)(T v) if(op == "in" && is(T == PydObject)){
         int result = PySequence_Contains(m_ptr, v.m_ptr);
         if (result == -1) handle_exception();
         return result == 1;
     }
-    /// Same as opIn_r
-    bool hasKey(PydObject key) { return this.opBinaryRight!("in",PydObject)(key); }
-    /// Same as "'v' in this" in Python.
-    //bool opIn_r(char[] key) 
+    /// ditto
     bool opBinaryRight(string op,T)(T key) if(op == "in" && is(T == string)){
         if(PyDict_Check(m_ptr) || PyMapping_Check(m_ptr)) {
-            return this.hasKey(key);
+            return this.has_key(key);
         }else{
             PydObject v = py(key);
             int result = PySequence_Contains(m_ptr, v.m_ptr);
@@ -965,41 +1013,55 @@ http://docs.python.org/c-api/buffer.html
             return result == 1;
         }
     }
-    /// Same as opIn_r
-    bool hasKey(string key) {
+    /// Equivalent to 'key in this' in Python.
+    bool has_key(string key) {
         int result = PyMapping_HasKeyString(m_ptr, zc(key));
         if (result == -1) handle_exception();
         return result == 1;
     }
-    ///
+    /// ditto
+    bool has_key(PydObject key) { 
+        return this.opBinaryRight!("in",PydObject)(key); 
+    }
+    /// Equivalent to 'this._keys()' in Python.
     PydObject keys() {
         // wtf? PyMapping_Keys fails on dicts 
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Keys(m_ptr));
-        }else{
+        }else if(PyMapping_Keys(m_ptr)) {
             return new PydObject(PyMapping_Keys(m_ptr));
+        }else{
+            return this.method("keys");
         }
     }
-    ///
+    /// Equivalent to 'this._values()' in Python.
     PydObject values() {
         // wtf? PyMapping_Values fails on dicts 
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Values(m_ptr));
-        }else{
+        }else if(PyMapping_Check(m_ptr)) {
             return new PydObject(PyMapping_Values(m_ptr));
+        }else{
+            return this.method("values");
         }
     }
-    ///
+    /// Equivalent to 'this._items()' in Python.
     PydObject items() {
         // wtf? PyMapping_Items fails on dicts 
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Items(m_ptr));
-        }else{
+        }else if(PyMapping_Check(m_ptr)) {
             return new PydObject(PyMapping_Items(m_ptr));
+        }else {
+            return this.method("items");
         }
     }
     
     // Added by dict
+    /// For dicts, wraps PyDict_Clear. Otherwise forwards to method.
+    /// See_Also:
+    /// <a href="http://docs.python.org/c-api/dict.html#PyDict_Clear">
+    /// PyDict_Clear </a>
     void clear() { 
         if(PyDict_Check(m_ptr)) {
             PyDict_Clear(m_ptr);
@@ -1009,6 +1071,10 @@ http://docs.python.org/c-api/buffer.html
     }
 
     // Added by dict
+    /// For dicts, wraps PyDict_Copy. Otherwise forwards to method.
+    /// See_Also:
+    /// <a href="http://docs.python.org/c-api/dict.html#PyDict_Copy">
+    /// PyDict_Copy </a>
     PydObject copy() { 
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Copy(m_ptr));
@@ -1018,6 +1084,10 @@ http://docs.python.org/c-api/buffer.html
     }
 
     // Added by dict
+    /// For dicts, wraps PyDict_Merge. Otherwise forwards to method.
+    /// See_Also:
+    /// <a href="http://docs.python.org/c-api/dict.html#PyDict_Merge">
+    /// PyDict_Merge </a>
     void merge(PydObject o, bool override_=true) { 
         if(PyDict_Check(m_ptr)) {
             int res = PyDict_Merge(m_ptr,o.m_ptr,override_);
@@ -1029,6 +1099,11 @@ http://docs.python.org/c-api/buffer.html
 
 
     // Added by module
+    /// For module objects, wraps PyModule_GetDict (essentially a dir()
+    /// operation in Python). Otherwise forwards to method.
+    /// See_Also:
+    /// <a href="http://docs.python.org/c-api/module.html#PyModule_GetDict">
+    /// PyModule_GetDict </a>
     PydObject getdict() {
         if(PyModule_Check(m_ptr)) {
             return new PydObject(PyModule_GetDict(m_ptr));
@@ -1037,9 +1112,11 @@ http://docs.python.org/c-api/buffer.html
         }
     }
 
+    /// Forwards to getattr
     @property auto opDispatch(string nom)() {
         return this.getattr(nom);
     }
+    /// Forwards to setattr
     @property void opDispatch(string nom, T)(T val) {
         static if(is(T == PydObject)) {
             alias val value;
@@ -1048,6 +1125,7 @@ http://docs.python.org/c-api/buffer.html
         }
         this.setattr(nom,value);
     }
+    /// Forwards to method.
     auto opDispatch(string nom, T...)(T ts) /*if(T.length > 1)*/ {
         return this.getattr(nom).opCall(ts);
     }
@@ -1062,9 +1140,15 @@ http://docs.python.org/c-api/buffer.html
     return _None;
 }
 
+/**
+Wrap a python iterator in a D input range.
+Params:
+E = element type of this range. converts elements of iterator to E.
+*/
 struct PydInputRange(E = PydObject) {
     PyObject* iter;
     PyObject* _front = null;
+    /// _
     this(PyObject* obj) {
         iter = PyObject_GetIter(obj);
         if (iter is null) {
@@ -1072,7 +1156,8 @@ struct PydInputRange(E = PydObject) {
         }
         popFront();
     }
-    this(PyObject_BorrowedRef* bobj) {
+    /// _
+    this(Borrowed!PyObject* bobj) {
         PyObject* obj = Py_INCREF(bobj);
         iter = PyObject_GetIter(obj);
         if (iter is null) {
@@ -1084,14 +1169,17 @@ struct PydInputRange(E = PydObject) {
         Py_XDECREF(iter);
     }
 
+    /// _
     @property front() {
-        return d_type!E(_front);
+        return python_to_d!E(_front);
     }
 
+    /// _
     @property empty() {
         return _front is null;
     }
 
+    /// _
     void popFront() {
         Py_XDECREF(_front);
         _front = PyIter_Next(iter);

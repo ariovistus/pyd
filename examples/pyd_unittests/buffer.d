@@ -10,11 +10,11 @@ import std.stdio;
 
 void main() {
     add_module("testing");
-    PyStmts(
+    py_stmts(
             "from numpy import eye\n"
             "a = eye(4,k=1)\n",
             "testing");
-    PydObject ao = PyEval("a","testing");
+    PydObject ao = py_eval("a","testing");
     PyObject* a = Py_INCREF(ao.ptr);
     writefln("got result of eye(4), which is of type %s:", to!string(a.ob_type.tp_name));
     writeln(ao);
