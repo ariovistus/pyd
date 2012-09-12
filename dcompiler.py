@@ -46,6 +46,7 @@ _pydFiles = [
     'ctor_wrap.d',
     'def.d',
     'exception.d',
+    'extra.d',
     'func_wrap.d',
     'iteration.d',
     'make_object.d',

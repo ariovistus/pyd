@@ -3,6 +3,7 @@ MODULES =
 	$(MODULE pyd.def)
 	$(MODULE pyd.embedded)
 	$(MODULE pyd.exception)
+	$(MODULE pyd.extra)
 	$(MODULE pyd.func_wrap)
 	$(MODULE pyd.make_object)
 	$(MODULE pyd.pyd)

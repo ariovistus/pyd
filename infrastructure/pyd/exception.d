@@ -84,8 +84,6 @@ T exception_catcher(T) (T delegate() dg) {
     // A D exception was raised and should be translated into a meaningful
     // Python exception.
     catch (Exception e) {
-        import std.stdio;
-        writefln("A exception! %s",e.toString());
         PyErr_SetString(PyExc_RuntimeError, ("D Exception:\n" ~ e.toString() ~ "\0").ptr);
         return error_code!(T)();
     }

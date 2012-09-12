@@ -59,9 +59,7 @@ PydObject py_import(string name) {
 
 /++
 Wraps a python function (specified as a string) as a D function roughly of
-signature
-
-R function(Args)
+signature func_t
 
 Params:
 python = a python function 

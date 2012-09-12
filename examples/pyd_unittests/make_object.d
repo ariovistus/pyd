@@ -46,6 +46,9 @@ unittest {
     py_stmts(q"{from array import array; a = array('i', [44,33,22,11]);}", "testing");
     assert(py_eval!(int[])("a", "testing") == [44,33,22,11]);
     assert(py_eval!(int[4])("a", "testing") == [44,33,22,11]);
+    double[] g = [5.5,4.5,3.5];
+
+    assert(python_to_d!(double[])(d_to_python_array_array(g)) == g);
 }
 
 // numpy unittests - numpy supports new buffer interface with PyBUF_ND,
@@ -139,6 +142,7 @@ unittest {
         assert(cantconvert(py_eval!(float[][])("f","testing")));
 
         auto b = py_eval!(double[][])("b","testing"); 
+        import pyd.extra;
         assert(python_to_d!(double[][])(d_to_python_numpy_ndarray(b))
                 ==
                 [[1, 0, 0, 0],

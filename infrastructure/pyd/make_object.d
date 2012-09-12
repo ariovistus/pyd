@@ -500,6 +500,8 @@ T python_to_d(T) (PyObject* o) {
 // (*^&* array doesn't implement the buffer interface, but we still
 // want it to copy fast.
 /// Convert an array.array object to a D object.
+///
+/// Used by python_to_d.
 T python_array_array_to_d(T)(PyObject* o) 
 if(isArray!T || IsStaticArrayPointer!T) {
     static if(isPointer!T)
@@ -512,30 +514,9 @@ if(isArray!T || IsStaticArrayPointer!T) {
     // array.array's data can be got with a single memcopy.
     enforce(arr_o.ob_descr, "array.ob_descr null!");
     char typecode = cast(char) arr_o.ob_descr.typecode;
-    switch(typecode) {
-        case 'b','h','i','l':
-            if(!isSigned!E) 
-                could_not_convert!T(o,
-                        format("typecode '%c' requires signed integer"
-                            " type, not '%s'", typecode, E.stringof));
-            break;
-        case 'B','H','I','L':
-            if(!isUnsigned!E) 
-                could_not_convert!T(o,
-                        format("typecode '%c' requires unsigned integer"
-                            " type, not '%s'",typecode, E.stringof));
-            break;
-        case 'f','d':
-            if(!isFloatingPoint!E) 
-                could_not_convert!T(o,
-                        format("typecode '%c' requires float, not '%s'",
-                            typecode, E.stringof));
-            break;
-        case 'c','u': 
-            break;
-        default:
-            could_not_convert!T(o,
-                    format("unknown typecode '%c'", typecode));
+    if(!match_format_type!E(""~typecode)) {
+        could_not_convert!T(o, format("item mismatch: '%s' vs %s",
+                    typecode, E.stringof));
     }
 
     int itemsize = arr_o.ob_descr.itemsize;
@@ -561,7 +542,42 @@ if(isArray!T || IsStaticArrayPointer!T) {
     return cast(T) _array;
 }
 
+/**
+  Convert a d array to a python array.array.
+  array.array does not support 8 byte integers.
+
+  Not used by d_to_python.
+  */
+PyObject* d_to_python_array_array(T)(T t) 
+if((isArray!T || IsStaticArrayPointer!T) &&
+        MatrixInfo!T.ndim == 1 &&
+        SimpleFormatType!(MatrixInfo!T.MatrixElementType).supported) {
+
+    alias MatrixInfo!T.MatrixElementType ME;
+    string format = SimpleFormatType!ME.s;
+    PyObject* pyformat = d_to_python(format);
+    PyObject* args = PyTuple_New(1);
+    PyTuple_SetItem(args, 0, pyformat);
+    scope(exit) Py_DECREF(args);
+    PyObject* obj = array_array_Type.tp_new(array_array_Type, args, null);
+    if(!obj) handle_exception();
+    arrayobject* arr_o = cast(arrayobject*) obj;
+    Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
+    size_t datalen = ME.sizeof*shape[0];
+    arr_o.ob_size = shape[0];
+    void* data = PyMem_Malloc(datalen);
+    static if(isPointer!T) {
+        memcpy(data, t, datalen);
+    }else {
+        memcpy(data, t.ptr, datalen);
+    }
+    arr_o.ob_item = cast(ubyte*) data;
+    return obj;
+}
+
 /** Convert an iterable Python object to a D object.
+  *
+  * Used by python_to_d.
   */
 T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
     static if(isPointer!T)
@@ -613,6 +629,8 @@ T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
 
 version(Python_2_6_Or_Later) {
 /// Convert a Python new-style buffer to a D object.
+///
+/// Used by python_to_d.
 T python_buffer_to_d(T)(PyObject* o) 
 if (isArray!T || IsStaticArrayPointer!T) {
     PydObject bob = new PydObject(borrowed(o));
@@ -731,53 +749,6 @@ if (isArray!T || IsStaticArrayPointer!T) {
     }
     return cast(T) _array;
 }
-
-@property PyTypeObject* numpy_ndarray_Type() {
-    static PyTypeObject* m_type;
-    static bool inited = false;
-    if(!inited) {
-        inited = true;
-        PyObject* numpy = PyImport_ImportModule("numpy");
-        if(numpy) {
-            scope(exit) Py_XDECREF(numpy);
-            m_type = cast(PyTypeObject*) PyObject_GetAttrString(numpy, "ndarray");
-        }else{
-            PyErr_Clear();
-        }
-    }
-    return m_type;
-}
-PyObject* d_to_python_numpy_ndarray(T)(T t) 
-if((isArray!T || IsStaticArrayPointer!T) &&
-        simple_gen_format_type!(MatrixInfo!T.MatrixElementType).supported) {
-    enforce(numpy_ndarray_Type, "numpy is not available"); 
-    alias MatrixInfo!T.MatrixElementType ME;
-    string format = simple_gen_format_type!ME.s;
-    Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
-    PyObject* pyshape = d_to_python(shape);
-    PyObject* pyformat = d_to_python(format);
-    PyObject* args = PyTuple_New(2);
-    scope(exit) Py_DECREF(args);
-    PyTuple_SetItem(args, 0, pyshape);
-    PyTuple_SetItem(args, 1, pyformat);
-    PyObject* ndarray = numpy_ndarray_Type.tp_new(numpy_ndarray_Type, args, null);
-    enforce(ndarray, "numpy.ndarray.__new__ returned null");
-    PydObject array = new PydObject(ndarray);
-    auto buf = array.buffer_view(PyBUF_STRIDES|PyBUF_C_CONTIGUOUS);
-    // this really should be optimized, but I am so lazy right now
-    enum xx = (MatrixInfo!T.matrixIter(
-                "t", "shape", "_indeces",
-                MatrixInfo!T.ndim, q{
-                static if(is(typeof($array_ixn) == ME)) {
-                    buf.set_item!ME($array_ixn, cast(Py_ssize_t[]) _indeces);
-                }
-                },""));
-    mixin(xx);
-    // that PydObject stole ownership
-    Py_INCREF(ndarray);
-    return ndarray;
-}
-
 }
 
 /**
@@ -894,7 +865,8 @@ bool match_format_type(T)(string format) {
     }
 }
 
-template simple_gen_format_type(T) {
+/// generate a struct format string from T
+template SimpleFormatType(T) {
     static if(isFloatingPoint!T) {
         static if(T.sizeof == 4) {
             enum s = "f";
