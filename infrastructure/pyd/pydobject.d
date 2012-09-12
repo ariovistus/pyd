@@ -177,11 +177,11 @@ Buffers and MemoryView Objects </a>
             this(int flags) {
                 enforce(PyObject_CheckBuffer(m_ptr));
                 has_simple = true;
-                has_nd = (PyBUF_ND | flags) == PyBUF_ND;
-                has_strides = (PyBUF_STRIDES | flags) == PyBUF_STRIDES;
-                c_contiguous = (PyBUF_C_CONTIGUOUS | flags) == PyBUF_C_CONTIGUOUS;
-                fortran_contiguous = (PyBUF_F_CONTIGUOUS | flags) == PyBUF_F_CONTIGUOUS;
-                has_indirect = (PyBUF_INDIRECT | flags) == PyBUF_INDIRECT;
+                has_nd = (PyBUF_ND & flags) == PyBUF_ND;
+                has_strides = (PyBUF_STRIDES & flags) == PyBUF_STRIDES;
+                c_contiguous = (PyBUF_C_CONTIGUOUS & flags) == PyBUF_C_CONTIGUOUS;
+                fortran_contiguous = (PyBUF_F_CONTIGUOUS & flags) == PyBUF_F_CONTIGUOUS;
+                has_indirect = (PyBUF_INDIRECT & flags) == PyBUF_INDIRECT;
 
                 if(PyObject_GetBuffer(m_ptr, &buffer, flags) != 0) {
                     handle_exception();
@@ -244,9 +244,19 @@ Struct Format Strings </a>
 
             /// _
             T item(T)(Py_ssize_t[] indeces...) {
+                enforce(itemsize == T.sizeof);
+                return *cast(T*) item_ptr(indeces);
+            }
+            /// _
+            void set_item(T)(T value, Py_ssize_t[] indeces...) {
+                enforce(itemsize == T.sizeof);
+                T* ptr = cast(T*) item_ptr(indeces);
+                *ptr = value;
+            }
+
+            void* item_ptr(Py_ssize_t[] indeces...) {
                 if(has_strides) enforce(indeces.length == ndim);
                 else enforce(indeces.length == 1);
-                enforce(itemsize == T.sizeof);
                 if(has_strides) {
                     void* ptr = buffer.buf;
                     foreach(i, index; indeces) {
@@ -256,9 +266,9 @@ Struct Format Strings </a>
                             ptr += suboffsets[i];
                         }
                     }
-                    return *cast(T*) ptr;
+                    return ptr;
                 }else {
-                    return (cast(T*) buffer.buf)[indeces[0]];
+                    return buffer.buf+indeces[0];
                 }
             }
         }

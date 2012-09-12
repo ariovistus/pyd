@@ -731,6 +731,53 @@ if (isArray!T || IsStaticArrayPointer!T) {
     }
     return cast(T) _array;
 }
+
+@property PyTypeObject* numpy_ndarray_Type() {
+    static PyTypeObject* m_type;
+    static bool inited = false;
+    if(!inited) {
+        inited = true;
+        PyObject* numpy = PyImport_ImportModule("numpy");
+        if(numpy) {
+            scope(exit) Py_XDECREF(numpy);
+            m_type = cast(PyTypeObject*) PyObject_GetAttrString(numpy, "ndarray");
+        }else{
+            PyErr_Clear();
+        }
+    }
+    return m_type;
+}
+PyObject* d_to_python_numpy_ndarray(T)(T t) 
+if((isArray!T || IsStaticArrayPointer!T) &&
+        simple_gen_format_type!(MatrixInfo!T.MatrixElementType).supported) {
+    enforce(numpy_ndarray_Type, "numpy is not available"); 
+    alias MatrixInfo!T.MatrixElementType ME;
+    string format = simple_gen_format_type!ME.s;
+    Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
+    PyObject* pyshape = d_to_python(shape);
+    PyObject* pyformat = d_to_python(format);
+    PyObject* args = PyTuple_New(2);
+    scope(exit) Py_DECREF(args);
+    PyTuple_SetItem(args, 0, pyshape);
+    PyTuple_SetItem(args, 1, pyformat);
+    PyObject* ndarray = numpy_ndarray_Type.tp_new(numpy_ndarray_Type, args, null);
+    enforce(ndarray, "numpy.ndarray.__new__ returned null");
+    PydObject array = new PydObject(ndarray);
+    auto buf = array.buffer_view(PyBUF_STRIDES|PyBUF_C_CONTIGUOUS);
+    // this really should be optimized, but I am so lazy right now
+    enum xx = (MatrixInfo!T.matrixIter(
+                "t", "shape", "_indeces",
+                MatrixInfo!T.ndim, q{
+                static if(is(typeof($array_ixn) == ME)) {
+                    buf.set_item!ME($array_ixn, cast(Py_ssize_t[]) _indeces);
+                }
+                },""));
+    mixin(xx);
+    // that PydObject stole ownership
+    Py_INCREF(ndarray);
+    return ndarray;
+}
+
 }
 
 /**
@@ -847,6 +894,60 @@ bool match_format_type(T)(string format) {
     }
 }
 
+template simple_gen_format_type(T) {
+    static if(isFloatingPoint!T) {
+        static if(T.sizeof == 4) {
+            enum s = "f";
+            enum supported = true;
+        }else static if(T.sizeof == 8) {
+            enum s = "d";
+            enum supported = true;
+        }else{
+            enum supported = false;
+        }
+    }else static if(isBoolean!T) {
+        enum s = "?";
+        enum supported = true;
+    }else static if(isIntegral!T) {
+        static if(isSigned!T) {
+            static if(T.sizeof == 1) {
+                enum s = "b";
+                enum supported = true;
+            }else static if(T.sizeof == 2) {
+                enum s = "h";
+                enum supported = true;
+            }else static if(T.sizeof == 4) {
+                enum s = "i";
+                enum supported = true;
+            }else static if(T.sizeof == 8) {
+                enum s = "q";
+                enum supported = true;
+            }else {
+                enum supported = false;
+                enum supported = true;
+            }
+        }else static if(isUnsigned!T) {
+            static if(T.sizeof == 1) {
+                enum s = "B";
+                enum supported = true;
+            }else static if(T.sizeof == 2) {
+                enum s = "H";
+                enum supported = true;
+            }else static if(T.sizeof == 4) {
+                enum s = "I";
+                enum supported = true;
+            }else static if(T.sizeof == 8) {
+                enum s = "Q";
+                enum supported = true;
+            }else {
+                enum supported = false;
+            }
+        }
+    }else {
+        enum supported = false;
+    }
+}
+
 /**
   Check that T is a pointer to a rectangular static array.
   */
@@ -901,6 +1002,30 @@ template MatrixInfo(T) if(isArray!T || IsStaticArrayPointer!T) {
             }else{
                 s ~= ",";
             }
+        }
+        return s;
+    }
+
+    /**
+      Build shape from t. Assumes all arrays in a dimension are initialized 
+      and of uniform length.
+      */
+    Py_ssize_t[] build_shape(T t) {
+        Py_ssize_t[] shape = new Py_ssize_t[](ndim);
+        mixin(shape_builder_mixin("t", "shape"));
+        return shape;
+    }
+
+    string shape_builder_mixin(string arr_name, string shape_name) {
+        static if(isPointer!T) {
+            string s_ixn = "(*" ~ arr_name ~ ")";
+        }else{
+            string s_ixn = arr_name;
+        }
+        string s = "";
+        foreach(i; 0 .. ndim) {
+            s ~= shape_name ~ "["~ to!string(i) ~"] = " ~ s_ixn ~ ".length;";
+            s_ixn ~= "[0]";
         }
         return s;
     }

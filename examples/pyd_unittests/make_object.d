@@ -137,6 +137,13 @@ unittest {
         assert(py_eval("f","testing").buffer_view().format == "d");
         // this won't work because f is a matrix of doubles
         assert(cantconvert(py_eval!(float[][])("f","testing")));
+
+        auto b = py_eval!(double[][])("b","testing"); 
+        assert(python_to_d!(double[][])(d_to_python_numpy_ndarray(b))
+                ==
+                [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0]]);
     }
 }
 
