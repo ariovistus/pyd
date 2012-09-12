@@ -175,6 +175,25 @@ unittest {
     assert(cantconvert(python_buffer_to_d!(char[])(a_ptr)));
 }
 
+// test arbirary ranges
+unittest{
+    auto z = iota(10);
+    alias typeof(z) Z;
+    alias py_def!(
+            "def foozit(a):\n"
+            " import itertools\n"
+            " b = list(itertools.islice(a, 0, 2))\n"
+            " return b,a"
+            ,
+            "testing", Tuple!(int[],Z) function(Z)) Foo1;
+    auto t = Foo1(z);
+    auto ix = t[0];
+    z = t[1];
+    assert(ix == [0, 1]);
+    assert(equal(z, [2,3,4,5,6,7,8,9]));
+
+}
+
 unittest {
     assert(python_to_d!int(d_to_python(15)) == 15);
     assert(python_to_d!float(d_to_python(1.0f)) == 1.0f);

@@ -1337,6 +1337,31 @@ struct Constructors(Ctors...) {
     }
 }
 
+template IsDef(string pyname) {
+    template IsDef(Params...) {
+        static if(Params[0].stringof.startsWith("Def!") && 
+                __traits(hasMember,Params[0], "funcname")) {
+            enum bool IsDef = (Params[0].funcname == pyname);
+        }else{
+            enum bool IsDef = false;
+        }
+    }
+}
+struct Iterator(Params...) {
+    alias Filter!(IsDef!"__iter__", Params) Iters;
+    alias Filter!(IsDef!"next", Params) Nexts;
+    enum bool needs_shim = false;
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        static if(Iters.length == 1 && Nexts.length == 1) {
+            // meh, we can probably ignore args and kwargs.
+            type.tp_flags |= Py_TPFLAGS_HAVE_ITER;
+            type.tp_iter = &opiter_wrap!(T, Iters[0].func).func;
+            type.tp_iternext = &opiter_wrap!(T, Nexts[0].func).func;
+        }
+    }
+}
+
 /*
 Params: each param is a Type which supports the interface
 
@@ -1441,6 +1466,12 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         // Constructor wrapping //
         //////////////////////////
         Constructors!(Filter!(IsInit, Params)).call!(T, shim_class)();
+
+        //////////////////////////
+        // Iterator wrapping    //
+        //////////////////////////
+        Iterator!(Params).call!(T)();
+    
 
         //////////////////
         // Finalization //

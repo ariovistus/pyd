@@ -54,7 +54,8 @@ knock()
 
     // functions can be defined in Python and invoked in D
     alias py_def!("def holler(a): 
-            return ' '.join(['Doctor!']*a)","office", string, int) call_out;
+            return ' '.join(['Doctor!']*a)","office", 
+            string function(int)) call_out;
     writeln(call_out(1));
     writeln(call_out(5));
 

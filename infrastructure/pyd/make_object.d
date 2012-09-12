@@ -46,8 +46,22 @@ import std.range;
 
 import pyd.pydobject;
 import pyd.class_wrap;
+import pyd.struct_wrap;
 import pyd.func_wrap;
+import pyd.def;
 import pyd.exception;
+
+
+shared static this() {
+    on_module_init(
+            {
+            add_module("pyd", "contains some wrapper utilities");
+            wrap_struct!(RangeWrapper,
+                ModuleName!"pyd",
+                Def!(RangeWrapper.iter, PyName!"__iter__"),
+                Def!(RangeWrapper.next))();
+            });
+}
 
 class to_conversion_wrapper(dg_t) {
     alias ParameterTypeTuple!(dg_t)[0] T;
@@ -163,6 +177,8 @@ PyObject* d_to_python(T) (T t) {
         import std.string: format = xformat;
         string num_str = format("%s\0",t);
         return PyLong_FromString(num_str.dup.ptr, null, 10);
+    } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
+        return Py_INCREF(t.ptr);
     } else static if (is(T : string)) {
         return PyString_FromString((t ~ "\0").ptr);
     } else static if (is(T : wstring)) {
@@ -215,7 +231,7 @@ PyObject* d_to_python(T) (T t) {
     // owned reference. Thus, if passed a PyObject*, this will increment the
     // reference count.
     } else static if (is(T : PyObject*)) {
-        Py_INCREF(t);
+        Py_XINCREF(t);
         return t;
     // Convert wrapped type to a PyObject*
     } else static if (is(T == class)) {
@@ -226,6 +242,8 @@ PyObject* d_to_python(T) (T t) {
         }
         // If it's not a wrapped type, fall through to the exception.
     // If converting a struct by value, create a copy and wrap that
+    } else static if (is(T == struct) && isInputRange!T) {
+            return d_to_python(wrap_range(t));
     } else static if (is(T == struct)) {
         if (is_wrapped!(T*)) {
             T* temp = new T;
@@ -352,10 +370,23 @@ T python_to_d(T) (PyObject* o) {
         // Otherwise, throw up an exception.
         //could_not_convert!(T)(o);
     } else static if (is(T == struct)) { // struct by value
+        // struct is wrapped
         if (is_wrapped!(T*) && PyObject_TypeCheck(o, &wrapped_class_type!(T*))) { 
             return *WrapPyObject_AsObject!(T*)(o);
-        }// else could_not_convert!(T)(o);
-    } else static if (is(typeof(*(T.init)) == struct)) { // pointer to struct   
+        }
+        // or struct is wrapped range
+        if(PyObject_IsInstance(o, 
+                    cast(PyObject*)&wrapped_class_type!(RangeWrapper*))) {
+            RangeWrapper* wrapper = WrapPyObject_AsObject!(RangeWrapper*)(o);
+            if(typeid(T) != wrapper.tid) {
+                could_not_convert!T(o, format("typeid mismatch: %s vs %s", 
+                            wrapper.tid, typeid(T)));
+            }
+            T t = *cast(T*) wrapper.range;
+            return t;
+        }
+    } else static if (isPointer!T && is(pointerTarget!T == struct)) { 
+        // pointer to struct   
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
             return WrapPyObject_AsObject!(T)(o);
         }// else could_not_convert!(T)(o);
@@ -700,6 +731,57 @@ if (isArray!T || IsStaticArrayPointer!T) {
     }
     return cast(T) _array;
 }
+}
+
+/**
+  Wrap a D input range as a python iterator object.
+
+  Does not work for types whose range members are standalone functions (i.e.
+  arrays).
+  */
+auto wrap_range(Range)(Range range) if(is(Range == struct)) {
+    import core.memory;
+    RangeWrapper wrap;
+    // the hackery! the hackery!
+    Range* keeper = cast(Range*) GC.calloc(Range.sizeof);
+    std.algorithm.move(range, *keeper);
+    wrap.range = cast(void*) keeper;
+    wrap.tid = typeid(Range);
+    wrap.empty = cast(int delegate(void*)) dg_wrapper(keeper, &Range.empty);
+    wrap.popFront = cast(void delegate(void*)) dg_wrapper(keeper, &Range.popFront);
+    auto front_dg = cast(ElementType!Range delegate(Range*)) 
+        dg_wrapper(keeper, cast(ElementType!Range function()) &Range.front);
+    wrap.front = delegate PyObject*(void* a) {
+        return d_to_python(front_dg(cast(Range*)a));
+    };
+
+    return wrap;
+}
+
+/**
+  Wrapper type wrapping a D input range as a python iterator object
+
+  Lives in reserved python module "pyd".
+  */
+struct RangeWrapper {
+    void* range;
+    void delegate(void*) popFront;
+    PyObject* delegate(void*) front;
+    int delegate(void*) empty;
+    TypeInfo tid;
+
+    RangeWrapper* iter() {
+        return &this;
+    }
+    PyObject* next() {
+        if(this.empty(range)) {
+            return null;
+        }else {
+            auto result = d_to_python(this.front(range));
+            this.popFront(range);
+            return result;
+        }
+    }
 }
 
 /// Check T against format

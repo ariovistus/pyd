@@ -227,13 +227,27 @@ string pyd_module_name;
 
 /**
  * Module initialization function. Should be called after the last call to def.
+ * For extending python.
  */
 PyObject* module_init(string docstring="") {
     //_loadPythonSupport();
     string name = pyd_module_name;
     ready_module_methods("");
     pyd_modules[""] = cast(PyObject*) Py_InitModule3(name ~ "\0", module_methods[""].ptr, docstring ~ "\0");
+    foreach(action; on_module_init_deferred_actions) {
+        action();
+    }
+    module_init_called = true;
     return pyd_modules[""];
+}
+
+/// For embedding python
+void py_init() {
+    Py_Initialize();
+    foreach(action; on_module_init_deferred_actions) {
+        action();
+    }
+    module_init_called = true;
 }
 
 /**
@@ -243,5 +257,15 @@ PyObject* add_module(string modulename, string docstring="") {
     ready_module_methods(modulename);
     pyd_modules[modulename] = cast(PyObject*) Py_InitModule3(modulename ~ "\0", module_methods[modulename].ptr, docstring ~ "\0");
     return pyd_modules[modulename];
+}
+
+bool module_init_called = false;
+void delegate()[] on_module_init_deferred_actions;
+void on_module_init(void delegate() dg) {
+    if(module_init_called) {
+        dg();
+    }else {
+        on_module_init_deferred_actions ~= dg;
+    }
 }
 

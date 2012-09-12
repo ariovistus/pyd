@@ -646,7 +646,7 @@ extern (C) {
 
   auto Py_XINCREF(T)(T op) {
     if (op == null) {
-        static if(is(typeof(return) == void))
+        static if(is(typeof(Py_INCREF!T(op)) == void))
             return;
         else {
             import std.exception;

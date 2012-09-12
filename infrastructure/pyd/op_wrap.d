@@ -247,6 +247,19 @@ template opfunc_unary_wrap(T, alias opfn) {
     }
 }
 
+template opiter_wrap(T, alias fn){
+    alias ParameterTypeTuple!fn params;
+    extern(C)
+    PyObject* func(PyObject* self) {
+        alias memberfunc_to_func!(T,fn).func func;
+        return exception_catcher(delegate PyObject*() {
+            T t = python_to_d!T(self);
+            auto dg = dg_wrapper(t, &fn);
+            return d_to_python(dg());
+        });
+    }
+}
+
 template opindex_wrap(T, alias fn) {
     alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!fn Params;

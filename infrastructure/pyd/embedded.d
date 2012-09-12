@@ -44,9 +44,10 @@ import pyd.pyd;
 import util.conv;
 import std.algorithm: findSplit;
 import std.string: strip;
+import std.traits;
 
 shared static this() {
-    Py_Initialize();
+    py_init();
 }
 
 /++
@@ -65,13 +66,13 @@ R function(Args)
 Params:
 python = a python function 
 modl = context in which to run expression. must be a python module name.
-R = return type of d function
-Args = argument types of d function
+func_t = type of d function
  +/
-R py_def( string python, string modl, R, Args...)
-    (Args args, string file = __FILE__, size_t line = __LINE__) {
-
+ReturnType!func_t py_def( string python, string modl, func_t) 
+    (ParameterTypeTuple!func_t args, string file = __FILE__, size_t line = __LINE__) {
     //Note that type is really the only thing that need be static here, but hey.
+        alias ReturnType!func_t R;
+        alias ParameterTypeTuple!func_t Args;
     enum afterdef = findSplit(python, "def")[2];
     enum ereparen = findSplit(afterdef, "(")[0];
     enum name = strip(ereparen) ~ "\0";
