@@ -600,17 +600,13 @@ Struct Format Strings </a>
             if (PySequence_SetItem(m_ptr, key, v.m_ptr) == -1)
                 handle_exception();
             return;
-        }else static if (is(S : string)) {
-            if (PyMapping_SetItemString(m_ptr, zc(key), v.m_ptr) == -1)
-                handle_exception();
-            return;
         }else static if (is(S == PydObject)) {
             alias key k;
         }else{
             auto k = py(key);
         }
 
-        static if(!(is(S : int) || is(S : string))) {
+        static if(!(is(S : int))) {
             if (PyObject_SetItem(m_ptr, k.m_ptr, v.m_ptr) == -1)
                 handle_exception();
         }
@@ -942,7 +938,7 @@ Struct Format Strings </a>
     }
     /// Equivalent to 'this.index(v)' in Python
     Py_ssize_t index(PydObject v) {
-        if(PyString_Check(m_ptr)) {
+        if(PySequence_Check(m_ptr)) {
             Py_ssize_t result = PySequence_Index(m_ptr, v.m_ptr);
             if (result == -1) handle_exception();
             return result;

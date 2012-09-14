@@ -132,11 +132,18 @@ string printGenericError(PyObject* type, PyObject* value, PyObject* traceback) {
     auto valtype = to!string(value.ob_type.tp_name);
 
     string message;
-    auto pmsg = PyObject_GetAttrString(value, "message");
-    if(pmsg) {
-        auto cmsg = PyString_AsString(pmsg);
-        if(cmsg) message = to!string(cmsg);
+    PyObject* uni = PyObject_Unicode(value);
+    if(!uni) {
+        PyErr_Clear();
+        return "";
     }
+    PyObject* str = PyUnicode_AsUTF8String(uni);
+    if(!str) {
+        PyErr_Clear();
+        return "";
+    }
+    auto cmsg = PyString_AsString(str);
+    if(cmsg) message = to!string(cmsg);
     return format(q"{
 %s: %s}", valtype, message);
 }

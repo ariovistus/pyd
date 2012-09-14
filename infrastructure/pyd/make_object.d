@@ -179,12 +179,19 @@ PyObject* d_to_python(T) (T t) {
         return PyLong_FromString(num_str.dup.ptr, null, 10);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return Py_INCREF(t.ptr);
-    } else static if (is(T : string)) {
-        return PyString_FromString((t ~ "\0").ptr);
-    } else static if (is(T : wstring)) {
-        return PyUnicode_FromWideChar(t, t.length);
-    // Converts any array (static or dynamic) to a Python list
+    } else static if(isSomeString!T) {
+        alias Unqual!(typeof(T.init[0])) C;
+        static if(is(C == char)) {
+            return PyUnicode_DecodeUTF8(t.ptr, t.length, null);
+        }else static if(is(C == wchar)) {
+            return PyUnicode_DecodeUTF16(cast(char*) t.ptr, 
+                    2*t.length, null, null);
+        }else static if(is(C == dchar)) {
+            return PyUnicode_DecodeUTF32(cast(char*) t.ptr, 
+                    4*t.length, null, null);
+        }else static assert(false, "waht is this T? " ~ T.stringof);
     } else static if (isArray!(T)) {
+        // Converts any array (static or dynamic) to a Python list
         PyObject* lst = PyList_New(t.length);
         PyObject* temp;
         if (lst is null) return null;
@@ -411,25 +418,64 @@ T python_to_d(T) (PyObject* o) {
         PyUnicode_AsWideChar(cast(PyUnicodeObject*)o, temp, temp.length);
         return temp;
     +/
-    } else static if (is(string : T) || is(char[] : T)) {
-        const(char)* result;
-        PyObject* repr;
-        // If it's a string, convert it
-        if (PyString_Check(o) || PyUnicode_Check(o)) {
-            result = PyString_AsString(o);
-        // If it's something else, convert its repr
-        } else {
-            repr = PyObject_Repr(o);
-            if (repr is null) handle_exception();
-            result = PyString_AsString(repr);
-            Py_DECREF(repr);
+    } else static if (isSomeString!T) {
+        alias Unqual!(typeof(T.init[0])) C;
+        PyObject* str;
+        if(PyString_Check(o)) {
+            static if(is(C == char)) {
+                str = o;
+            }else{
+                str = PyObject_Unicode(o);
+                if(!str) handle_exception();
+            }
+        }else if(PyUnicode_Check(o)) {
+            str = o;
+        }else {
+            str = PyObject_Repr(o);
+            if(!str) handle_exception();
+            static if(!is(C == char)) {
+                str = PyObject_Unicode(str);
+                if(!str) handle_exception();
+            }
         }
-        if (result is null) handle_exception();
-        static if (is(string : T)) {
-            return to!string(result);
-        } else {
-            return to!string(result).dup;
+        static if(is(C == char)) {
+            if(PyString_Check(str)) {
+                const(char)* res = PyString_AsString(str);
+                if(!res) handle_exception();
+                return to!T(res);
+            }
         }
+
+        if(PyUnicode_Check(str)) {
+            static if(is(C == char)) {
+                PyObject* utf8 = PyUnicode_AsUTF8String(str);
+                if(!utf8) handle_exception();
+                const(char)* res = PyString_AsString(utf8);
+                if(!res) handle_exception();
+                return to!T(res);
+            }else static if(is(C == wchar)) {
+                PyObject* utf16 = PyUnicode_AsUTF16String(str);
+                if(!utf16) handle_exception();
+                // PyUnicode_AsUTF16String puts a BOM character in front of
+                // string
+                auto ptr = cast(const(wchar)*)(PyString_AsString(utf16)+2);
+                Py_ssize_t len = PyString_Size(utf16)/2-1; 
+                wchar[] ws = new wchar[](len);
+                ws[] = ptr[0 .. len];
+                return cast(T) ws;
+            }else static if(is(C == dchar)) {
+                PyObject* utf32 = PyUnicode_AsUTF32String(str);
+                if(!utf32) handle_exception();
+                // PyUnicode_AsUTF32String puts a BOM character in front of
+                // string
+                auto ptr = cast(const(dchar)*)(PyString_AsString(utf32)+4);
+                Py_ssize_t len = PyString_Size(utf32)/4-1; 
+                dchar[] ds = new dchar[](len);
+                ds[] = ptr[0 .. len];
+                return cast(T) ds;
+            }else static assert(false, "what T is this!? " ~ T.stringof);
+        }
+        assert(0);
     } else static if (isArray!T || IsStaticArrayPointer!T) {
         static if(isPointer!T)
             alias Unqual!(ElementType!(pointerTarget!T)) E;
@@ -555,7 +601,7 @@ if((isArray!T || IsStaticArrayPointer!T) &&
 
     alias MatrixInfo!T.MatrixElementType ME;
     string format = SimpleFormatType!ME.s;
-    PyObject* pyformat = d_to_python(format);
+    PyObject* pyformat = PyString_FromStringAndSize(format.ptr, format.length);
     PyObject* args = PyTuple_New(1);
     PyTuple_SetItem(args, 0, pyformat);
     scope(exit) Py_DECREF(args);

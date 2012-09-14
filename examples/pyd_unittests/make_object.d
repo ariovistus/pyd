@@ -267,6 +267,41 @@ unittest {
     assert(equal(py_eval!(PydInputRange!int)("xrange(2, 20)"), iota(2,20)));
 }
 
+// string tests
+unittest {
+    string simple = "abc123";
+    auto si = py(simple);
+    assert(si.to_d!string() == "abc123");
+    assert(si.to_d!wstring() == "abc123"w);
+    assert(si.to_d!dstring() == "abc123"d);
+    wstring simplew = "abc123"w;
+    si = py(simplew);
+    assert(si.to_d!string() == "abc123");
+    assert(si.to_d!wstring() == "abc123"w);
+    assert(si.to_d!dstring() == "abc123"d);
+    dstring simpled = "abc123"d;
+    si = py(simpled);
+    assert(si.to_d!string() == "abc123");
+    assert(si.to_d!wstring() == "abc123"w);
+    assert(si.to_d!dstring() == "abc123"d);
+
+    string asian = "ちりめん";
+    si = py(asian);
+    assert(si.to_d!string() == "ちりめん");
+    assert(si.to_d!wstring() == "ちりめん"w);
+    assert(si.to_d!dstring() == "ちりめん"d);
+    wstring asianw = "ちりめん";
+    si = py(asianw);
+    assert(si.to_d!string() == "ちりめん");
+    assert(si.to_d!wstring() == "ちりめん"w);
+    assert(si.to_d!dstring() == "ちりめん"d);
+    dstring asiand = "ちりめん";
+    si = py(asiand);
+    assert(si.to_d!string() == "ちりめん");
+    assert(si.to_d!wstring() == "ちりめん"w);
+    assert(si.to_d!dstring() == "ちりめん"d);
+}
+
 class G1(string name) {
     int i;
     this(int _i){ i = _i; }
