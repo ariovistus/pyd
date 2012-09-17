@@ -1,4 +1,6 @@
 module deimos.python.pyarena;
+
+import deimos.python.object;
 // Python-header-file: Include/pyarena.h:
 struct PyArena;
 

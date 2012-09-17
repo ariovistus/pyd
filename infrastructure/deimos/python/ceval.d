@@ -48,7 +48,7 @@ int Py_EnterRecursiveCall()(char* where) {
 void Py_LeaveRecursiveCall()() {
     version(Python_3_0_Or_Later) {
         if(_Py_MakeEndRecCheck(PyThreadState_GET().recursion_depth))
-            PyThreadState_GET()->overflowed = 0;  
+            PyThreadState_GET().overflowed = 0;  
     }else {
         --PyThreadState_GET().recursion_depth;
     }
@@ -86,10 +86,10 @@ version(Python_3_0_Or_Later) {
         import std.array;
         return replace(q{
                 {
-                ubyte _old = PyThreadState_GET()->recursion_critical;
-                PyThreadState_GET()->recursion_critical = 1;
+                ubyte _old = PyThreadState_GET().recursion_critical;
+                PyThreadState_GET().recursion_critical = 1;
                 $inner_code;
-                PyThreadState_GET()->recursion_critical = _old; 
+                PyThreadState_GET().recursion_critical = _old; 
                 }
         }, "$inner_code", inner_code);
     }

@@ -1,5 +1,7 @@
 module deimos.python.pystrtod;
 
+import deimos.python.object;
+
 extern(C):
 // Python-header-file: Include/pystrtod.h:
 

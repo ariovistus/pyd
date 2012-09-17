@@ -1,8 +1,9 @@
-module python2.compile;
+module deimos.python.compile;
 
-import python2.code;
-import python2.node;
-import python2.pythonrun;
+import deimos.python.code;
+import deimos.python.node;
+import deimos.python.pythonrun;
+import deimos.python.pyarena;
 
 extern(C):
 // Python-header-file: Include/compile.h:
@@ -44,7 +45,7 @@ version(Python_2_5_Or_Later){
     version(Python_3_0_Or_Later) {
         PyCodeObject* PyAST_Compile()(_mod* mod, const(char)* s, 
                 PyCompilerFlags* f, PyArena* ar) {
-            return PyAST_CompileEx(mod, s, f, -1, ar)
+            return PyAST_CompileEx(mod, s, f, -1, ar);
         }
         PyCodeObject* PyAST_CompileEx(
                 _mod* mod,

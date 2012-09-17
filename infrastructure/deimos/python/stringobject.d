@@ -2,7 +2,7 @@ module deimos.python.stringobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
-import std.c.stdarg: va_list;
+import std.c.stdarg;
 
 version(Python_3_0_Or_Later) {
 }else{

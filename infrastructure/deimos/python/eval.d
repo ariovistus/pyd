@@ -1,8 +1,8 @@
-module python2.eval;
+module deimos.python.eval;
 
-import python2.pyport;
-import python2.object;
-import python2.code;
+import deimos.python.pyport;
+import deimos.python.object;
+import deimos.python.code;
 
 extern(C):
 // Python-header-file: Include/eval.h:

@@ -3,8 +3,12 @@ module deimos.python.pythonrun;
 import std.c.stdio;
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.code;
+import deimos.python.compile;
+import deimos.python.pyarena;
 import deimos.python.pystate;
 import deimos.python.node;
+import deimos.python.symtable;
 
 extern(C):
 // Python-header-file: Include/pythonrun.h:

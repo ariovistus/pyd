@@ -2,7 +2,7 @@ module deimos.python.bytesobject;
 
 import deimos.python.object;
 import deimos.python.stringobject;
-import std.c.stdarg: va_list;
+import std.c.stdarg;
 
 version(Python_3_0_Or_Later) {
     extern(C):

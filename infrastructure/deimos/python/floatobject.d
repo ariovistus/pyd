@@ -2,6 +2,8 @@ module deimos.python.floatobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.pythonrun;
+import std.c.stdio;
 
 extern(C):
 // Python-header-file: Include/floatobject.h:

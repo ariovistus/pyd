@@ -2,6 +2,8 @@ module deimos.python.dictobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.pythonrun;
+import std.c.stdio;
 
 extern(C):
 // Python-header-file: Include/dictobject.h:
@@ -11,7 +13,7 @@ enum int PyDict_MINSIZE = 8;
 struct PyDictEntry {
     version(Python_3_0_Or_Later) {
         Py_hash_t me_hash;
-    version(Python_2_5_Or_Later) {
+    }else version(Python_2_5_Or_Later) {
         Py_ssize_t me_hash;
     }else{
         C_long me_hash;
@@ -119,6 +121,6 @@ PyObject_BorrowedRef* PyDict_GetItemString(PyObject* dp, const(char)* key);
 int PyDict_SetItemString(PyObject* dp, const(char)* key, PyObject* item);
 int PyDict_DelItemString(PyObject* dp, const(char)* key);
 version(Python_2_7_Or_Later) {
-    void _PyDict_DebugMallocStats(FILE* out);
+    void _PyDict_DebugMallocStats(FILE* out_);
 }
 

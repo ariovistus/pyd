@@ -210,7 +210,7 @@ int PyIter_Check()(PyObject* obj) {
     version(Python_3_0_Or_Later) {
         return obj.ob_type.tp_iternext != null &&
             obj.ob_type.tp_iternext != &_PyObject_NextNotImplemented;
-    }else version(Python_2_7_Or_Later{
+    }else version(Python_2_7_Or_Later) {
         return PyType_HasFeature(obj.ob_type, Py_TPFLAGS_HAVE_ITER)
             && obj.ob_type.tp_iternext != null &&
             obj.ob_type.tp_iternext != &_PyObject_NextNotImplemented;
@@ -405,7 +405,7 @@ PyObject** PySequence_Fast_ITEMS()(PyObject* sf) {
 /// _
 Py_ssize_t PySequence_Count(PyObject* o, PyObject* value);
 /// _
-enum PySequence_Contains(PyObject* seq, PyObject* ob);
+int PySequence_Contains(PyObject* seq, PyObject* ob);
 /// _
 enum PY_ITERSEARCH_COUNT    = 1;
 /// _

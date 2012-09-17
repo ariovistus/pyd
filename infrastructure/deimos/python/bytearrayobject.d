@@ -15,7 +15,7 @@ version(Python_2_6_Or_Later) {
     }
 
     /* Type object */
-    alias lazy_load!(builtins, m_PyBool_Type_p, "bytearray") PyByteArray_Type_p;
+    PyTypeObject PyByteArray_Type;
     PyTypeObject PyByteArrayIter_Type;
 
     /* Type check macros */

@@ -2,8 +2,8 @@ module deimos.python.pycapsule;
 
 import deimos.python.object;
 
+version(Python_2_7_Or_Later) {
 extern(C):
-version(Python_2_7_Or_Later):
 // Python-header-file: Include/pycapsule.h:
 
 __gshared PyTypeObject PyCapsule_Type;
@@ -38,3 +38,4 @@ int PyCapsule_SetName(PyObject* capsule, const(char)* name);
 int PyCapsule_SetContext(PyObject* capsule, void* context);
 
 void* PyCapsule_Import(const(char)* name, int no_block);
+}

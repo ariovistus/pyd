@@ -1,6 +1,6 @@
 module deimos.python.unicodeobject;
 
-import std.c.stdarg: va_list;
+import std.c.stdarg;
 import std.c.string;
 import deimos.python.pyport;
 import deimos.python.object;

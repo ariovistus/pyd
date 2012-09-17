@@ -330,7 +330,17 @@ alias PyObject* function(PyTypeObject*, PyObject*, PyObject*) newfunc;
 alias PyObject* function(PyTypeObject*, Py_ssize_t) allocfunc;
 
 struct PyTypeObject {
-    mixin PyObject_VAR_HEAD;
+    version(Issue7758Fixed) {
+        mixin PyObject_VAR_HEAD;
+    }else{
+        version(Python_3_0_Or_Later) {
+            PyVarObject ob_base;
+        }else {
+            Py_ssize_t ob_refcnt;
+            PyTypeObject* ob_type;
+            Py_ssize_t ob_size; /* Number of items in variable part */
+        }
+    }
 
     Char1* tp_name;
     Py_ssize_t tp_basicsize, tp_itemsize;

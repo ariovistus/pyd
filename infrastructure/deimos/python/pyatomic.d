@@ -52,7 +52,7 @@ version(Python_3_0_Or_Later) {
     }
     auto _Py_atomic_load(ATOMIC_VAL)(ATOMIC_VAL val) {
         return _Py_atomic_load_explicit(val, 
-                _Py_memory_order._Py_memory_order_seq_cst)
+                _Py_memory_order._Py_memory_order_seq_cst);
     }
 
     /* Python-local extensions */

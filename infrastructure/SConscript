@@ -1,4 +1,6 @@
+from os.path import abspath 
 Import('*')
-env27_c = env27.Clone(DFLAGS = ["-c"], DPATH=".")
+print (env27).subst_path(infra)
+env27_c = env27.Clone(DFLAGS = ["-c", "-J"+join("infrastructure", "deimos","python")], DPATH=".")
 
-env27_c.Program("deimos/python/sysmodule.d");
+env27_c.Program("deimos/python/Python.d");
