@@ -800,8 +800,7 @@ if (isArray!T || IsStaticArrayPointer!T) {
 /**
   Wrap a D input range as a python iterator object.
 
-  Does not work for types whose range members are standalone functions (i.e.
-  arrays).
+  Does not work for UFCS ranges (e.g. arrays), classes
   */
 auto wrap_range(Range)(Range range) if(is(Range == struct)) {
     import core.memory;

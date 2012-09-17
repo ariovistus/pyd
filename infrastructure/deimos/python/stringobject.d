@@ -1,9 +1,11 @@
-module python2.stringobject;
+module deimos.python.stringobject;
 
-import python2.types;
-import python2.object;
+import deimos.python.pyport;
+import deimos.python.object;
 import std.c.stdarg: va_list;
 
+version(Python_3_0_Or_Later) {
+}else{
 extern(C):
 // Python-header-file: Include/stringobject.h:
 
@@ -12,7 +14,6 @@ struct PyStringObject {
 
     C_long ob_shash;
     int ob_sstate;
-    // DSR:XXX:LAYOUT:
     // Will the D layout for a 1-char array be the same as the C layout?  I
     // think the D array will be larger.
     char _ob_sval[1];
@@ -98,3 +99,4 @@ version(Python_2_6_Or_Later){
             Py_ssize_t format_spec_len);
 }
 
+}

@@ -19,7 +19,7 @@ def py_versions(pyversion):
 def py_lib(pyversion):
     return ["-L-lpython"+pyversion]
 
-infra = join("#..","infrastructure")
+infra = "#infrastructure"
 pydfiles =  (Glob(join(infra,"meta","*.d"))   +
             Glob(join(infra,"util","*.d"))    +
             Glob(join(infra,"pyd","*.d"))     +
@@ -33,7 +33,8 @@ env27 = Environment(
     )
 Export('infra', 'py_versions', 'py_lib', 'pydfiles', 'join', 'env27')
 SConscript([
-    join("pyind","SConscript"),
-    join("pyd_unittests","SConscript"),
+    join("examples","pyind","SConscript"),
+    join("examples", "pyd_unittests","SConscript"),
+    join("infrastructure", "SConscript"),
     ])
 

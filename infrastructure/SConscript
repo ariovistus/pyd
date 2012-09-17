@@ -1,0 +1,4 @@
+Import('*')
+env27_c = env27.Clone(DFLAGS = ["-c"], DPATH=".")
+
+env27_c.Program("deimos/python/sysmodule.d");

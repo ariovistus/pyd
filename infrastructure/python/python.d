@@ -1765,13 +1765,13 @@ PyObject* _PyLong_Copy(PyLongObject* src);
   // PyString_FromFormatV omitted
   PyObject * PyString_FromFormat(const(char)*, ...);
   Py_ssize_t PyString_Size(PyObject *);
-  char * PyString_AsString(PyObject *);
+  const(char)* PyString_AsString(PyObject *);
   /* Use only if you know it's a string */
   int PyString_CHECK_INTERNED()(PyObject* op) {
     return (cast(PyStringObject*)op).ob_sstate;
   }
   /* Macro, trading safety for speed */
-  PyStringObject* PyString_AS_STRING()(PyObject* op) {
+  const(char)* PyString_AS_STRING()(PyObject* op) {
     return (cast(PyStringObject*)op).ob_sval;
   }
   Py_ssize_t PyString_GET_SIZE()(PyObject* op) {
@@ -1942,7 +1942,7 @@ PyObject* _PyLong_Copy(PyLongObject* src);
   void PyList_SET_ITEM()(PyObject *op, Py_ssize_t i, PyObject *v) {
     (cast(PyListObject*)op).ob_item[i] = v;
   }
-  size_t PyList_GET_SIZE()(PyObject *op) {
+  Py_ssize_t PyList_GET_SIZE()(PyObject *op) {
     return (cast(PyListObject *) op).ob_size;
   }
 
