@@ -1,7 +1,5 @@
 module deimos.python.pyport;
 
-import deimos.python.fiddle;
-
 /* D long is always 64 bits, but when the Python/C API mentions long, it is of
  * course referring to the C type long, the size of which is 32 bits on both
  * X86 and X86_64 under Windows, but 32 bits on X86 and 64 bits on X86_64 under

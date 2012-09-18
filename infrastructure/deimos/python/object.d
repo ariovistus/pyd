@@ -690,12 +690,12 @@ version(Python_2_6_Or_Later){
 }
 
 auto Py_INCREF(T)(T op) 
-if(is(T == PyObject*) || is(T == PyObject_BorrowedRef*))
+if(is(T == PyObject*) || is(T _unused : Borrowed!P*, P))
 {
-    static if(is(T == PyObject_BorrowedRef*)) {
+    static if(is(T _unused : Borrowed!P*, P)) {
         PyObject* pop = cast(PyObject*) op;
         ++pop.ob_refcnt;
-        return pop;
+        return cast(P*) pop;
     }else {
         ++op.ob_refcnt;
     }
@@ -703,11 +703,11 @@ if(is(T == PyObject*) || is(T == PyObject_BorrowedRef*))
 
 auto Py_XINCREF(T)(T op) {
     if (op == null) {
-        static if(is(typeof(return) == void))
+        //static if(is(typeof(return) == void))
+        static if(is(typeof(Py_INCREF!T(op)) == void))
             return;
         else {
-            import std.exception;
-            enforce(0, "INCREF on null");
+            assert(0, "INCREF on null");
         }
     }
     return Py_INCREF(op);
@@ -740,6 +740,11 @@ void Py_XDECREF()(PyObject* op)
 void Py_IncRef(PyObject *);
 void Py_DecRef(PyObject *);
 
+__gshared PyObject _Py_NoneStruct;
+
+PyObject* Py_None()() {
+    return &_Py_NoneStruct;
+}
 /* Rich comparison opcodes */
 enum int Py_LT = 0;
 enum int Py_LE = 1;

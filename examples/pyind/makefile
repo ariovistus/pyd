@@ -8,7 +8,7 @@ PYTHON_2_7 = -version=Python_2_7_Or_Later \
 	     -version=Python_2_5_Or_Later \
 	     -version=Python_2_4_Or_Later \
 	     -L-lpython2.7
-DC = dmd -m64 -unittest -property -debug 
+DC = dmd -m64 -unittest -property -debug  
 #DC = ldmd2 -unittest -property -debug -gc
 all: pyind
 clean:
