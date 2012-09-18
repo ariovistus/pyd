@@ -21,7 +21,7 @@ SOFTWARE.
 */
 module pyd.make_wrapper;
 
-import python;
+import deimos.python.Python;
 
 import pyd.class_wrap;
 import pyd.exception;

@@ -171,18 +171,6 @@ class DCompiler(cc.CCompiler):
             else:
                 sources.append((winpath(source, self.winonly), 'outside'))
 
-        # To sources, add the appropriate D header file python.d, as well as
-        # any platform-specific boilerplate.
-        pythonHeaderPath = os.path.join(_infraDir, 'python', 'python.d')
-        # Add the python header's directory to the include path
-        includePathOpts += self._includeOpts
-        includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir, 'python'), self.winonly)
-        if not os.path.isfile(pythonHeaderPath):
-            raise DistutilsPlatformError('Required D translation of Python'
-                
-            )
-        sources.append((winpath(pythonHeaderPath,self.winonly), 'infra'))
-
         # flags = (with_pyd, with_st, with_meta, with_main)
         with_pyd, with_st, with_meta, with_main = [f for f, category in macros if category == 'aux'][0]
         # And Pyd!

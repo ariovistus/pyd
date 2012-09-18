@@ -1,5 +1,5 @@
 import pyd.pyd, pyd.embedded;
-import python: Py_ssize_t;
+import deimos.python.pyport: Py_ssize_t;
 import std.stdio;
 
 static this() {

@@ -15,4 +15,4 @@ clean:
 	rm -f *.o
 	rm -f pyind
 pyind: pyind.d
-	$(DC) $(PYTHON_2_7) $(PYTHON_HEADER) $(PYD_FILES) $^ -of$@ -I../../infrastructure/ 
+	$(DC) $(PYTHON_2_7) $(PYD_FILES) $^ -of$@ -I../../infrastructure/ 

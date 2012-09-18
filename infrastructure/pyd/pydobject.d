@@ -25,7 +25,7 @@ SOFTWARE.
   */
 module pyd.pydobject;
 
-import python;
+import deimos.python.Python;
 import pyd.exception;
 import pyd.make_object;
 import std.exception: enforce;
@@ -67,8 +67,7 @@ public:
 
     /// Constructs an instance of the Py_None PydObject.
     this() { 
-        m_ptr = Py_None;
-        Py_INCREF(m_ptr);
+        m_ptr = Py_INCREF(Py_None());
     }
 
     /// Destructor. Calls Py_DECREF on PyObject reference.
@@ -752,7 +751,7 @@ Struct Format Strings </a>
         }else static if(op == "%") {
             return new PydObject(PyNumber_Remainder(m_ptr, rhs.m_ptr));
         }else static if(op == "^^") {
-            return new PydObject(PyNumber_Power(m_ptr, rhs.m_ptr, Py_None));
+            return new PydObject(PyNumber_Power(m_ptr, rhs.m_ptr, Py_INCREF(Py_None())));
         }else static if(op == "<<") {
             return new PydObject(PyNumber_Lshift(m_ptr, rhs.m_ptr));
         }else static if(op == ">>") {
@@ -819,7 +818,7 @@ Struct Format Strings </a>
     /// _pow </a>
     PydObject pow(PydObject exp, PydObject mod=null) {
         if(PyNumber_Check(m_ptr)) {
-            return new PydObject(PyNumber_Power(m_ptr, exp.m_ptr, (mod is null) ? Py_None : mod.m_ptr));
+            return new PydObject(PyNumber_Power(m_ptr, exp.m_ptr, (mod is null) ? null : mod.m_ptr));
         }else{
             return this.method("pow", exp, mod);
         }

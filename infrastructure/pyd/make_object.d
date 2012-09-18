@@ -31,7 +31,7 @@ SOFTWARE.
  +/
 module pyd.make_object;
 
-import python;
+import deimos.python.Python;
 
 import std.array;
 import std.algorithm;
@@ -145,14 +145,11 @@ PyObject* d_to_python(T) (T t) {
     static if (!is(T == PyObject*) && is(typeof(t is null)) &&
             !isAssociativeArray!T && !isArray!T) {
         if (t is null) {
-            Py_INCREF(Py_None);
-            return Py_None;
+            return Py_INCREF(Py_None());
         }
     }
     static if (isBoolean!T) {
-        PyObject* temp = (t) ? Py_True : Py_False;
-        Py_INCREF(temp);
-        return temp;
+        return Py_INCREF(t ? Py_True : Py_False);
     } else static if(isIntegral!T) {
         static if(isUnsigned!T) {
             return PyLong_FromUnsignedLongLong(t);
@@ -261,8 +258,7 @@ PyObject* d_to_python(T) (T t) {
     } else static if (is(typeof(*t) == struct)) {
         if (is_wrapped!(T)) {
             if (t is null) {
-                Py_INCREF(Py_None);
-                return Py_None;
+                return Py_INCREF(Py_None());
             }
             return WrapPyObject_FromObject(t);
         }
@@ -338,7 +334,7 @@ T python_to_d(T) (PyObject* o) {
     } else static if (is(PydObject : T)) {
         return new PydObject(borrowed(o));
     } else static if (is(T == void)) {
-        if (o != Py_None) could_not_convert!(T)(o);
+        if (o != cast(PyObject*) Py_None()) could_not_convert!(T)(o);
         return;
     } else static if (isTuple!T) {
         T.Types tuple;
@@ -1192,3 +1188,21 @@ void could_not_convert(T) (PyObject* o, string reason = "",
             file, line
     );
 }
+
+// stuff this down here until we can figure out what to do with it.
+// Python-header-file: Modules/arraymodule.c:
+
+struct arraydescr{
+    int typecode;
+    int itemsize;
+    PyObject* function(arrayobject*, Py_ssize_t) getitem;
+    int function(arrayobject*, Py_ssize_t, PyObject*) setitem;
+}
+
+struct arrayobject {
+    mixin PyObject_VAR_HEAD;
+    ubyte* ob_item;
+    Py_ssize_t allocated;
+    arraydescr* ob_descr;
+    PyObject* weakreflist; /* List of weak references */
+} 

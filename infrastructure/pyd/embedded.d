@@ -39,7 +39,7 @@ module pyd.embedded;
  +  * do things with multithreading
  +/  
 
-import python;
+import deimos.python.Python;
 import pyd.pyd;
 import util.conv;
 import std.algorithm: findSplit;

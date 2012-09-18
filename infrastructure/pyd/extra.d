@@ -30,7 +30,7 @@ import std.traits;
 import pyd.pydobject;
 import pyd.exception;
 import pyd.make_object;
-import python;
+import deimos.python.Python;
 
 @property PyTypeObject* numpy_ndarray_Type() {
     static PyTypeObject* m_type;

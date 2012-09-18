@@ -25,7 +25,7 @@ SOFTWARE.
   */
 module pyd.def;
 
-import python;
+import deimos.python.Python;
 
 import std.algorithm: startsWith;
 import std.metastrings;

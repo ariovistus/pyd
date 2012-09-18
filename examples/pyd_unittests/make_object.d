@@ -3,7 +3,7 @@ import std.functional;
 import std.range;
 import std.algorithm;
 import std.exception;
-import python;
+import deimos.python.Python;
 import std.stdio;
 
 static this() {

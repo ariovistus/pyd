@@ -21,7 +21,7 @@ SOFTWARE.
 */
 module pyd.op_wrap;
 
-import python;
+import deimos.python.Python;
 
 import std.algorithm: startsWith, endsWith;
 import std.traits;
@@ -86,8 +86,7 @@ op:
                         return o1;
                     }else static if (is(LRet == void)) {
                         dgl(python_to_d!LOtherT(o2));
-                        Py_INCREF(Py_None);
-                        return Py_None;
+                        return Py_INCREF(Py_None());
                     } else {
                         return d_to_python(dgl(python_to_d!LOtherT(o2)));
                     }
@@ -97,8 +96,7 @@ rop:
                     auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
                     static if (is(RRet == void)) {
                         dgr(python_to_d!ROtherT(o1));
-                        Py_INCREF(Py_None);
-                        return Py_None;
+                        return Py_INCREF(Py_None());
                     } else {
                         return d_to_python(dgr(python_to_d!LOtherT(o1)));
                     }
@@ -169,8 +167,7 @@ op:
                     auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
                     static if (is(LRet == void)) {
                         dgl(python_to_d!LOtherT(o2));
-                        Py_INCREF(Py_None);
-                        return Py_None;
+                        return Py_INCREF(Py_None());
                     } else {
                         return d_to_python(dgl(python_to_d!LOtherT(o2)));
                     }
@@ -180,8 +177,7 @@ rop:
                     auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
                     static if (is(RRet == void)) {
                         dgr(python_to_d!ROtherT(o1));
-                        Py_INCREF(Py_None);
-                        return Py_None;
+                        return Py_INCREF(Py_None());
                     } else {
                         return d_to_python(dgr(python_to_d!LOtherT(o1)));
                     }

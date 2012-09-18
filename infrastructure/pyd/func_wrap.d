@@ -25,7 +25,7 @@ SOFTWARE.
   */
 module pyd.func_wrap;
 
-import python;
+import deimos.python.Python;
 import std.metastrings;
 import std.exception: enforce;
 import std.range;
@@ -177,8 +177,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
 PyObject* pyApplyToAlias(alias fn) (PyObject* args, PyObject* kwargs) {
     static if (is(ReturnType!fn == void)) {
         applyPyTupleToAlias!fn(args, kwargs);
-        Py_INCREF(Py_None);
-        return Py_None;
+        return Py_INCREF(Py_None());
     } else {
         return d_to_python( applyPyTupleToAlias!fn(args, kwargs) );
     }
@@ -219,8 +218,7 @@ ReturnType!(dg_t) applyPyTupleToDelegate(dg_t) (dg_t dg, PyObject* args) {
 PyObject* pyApplyToDelegate(dg_t) (dg_t dg, PyObject* args) {
     static if (is(ReturnType!(dg_t) == void)) {
         applyPyTupleToDelegate(dg, args);
-        Py_INCREF(Py_None);
-        return Py_None;
+        return Py_INCREF(Py_None());
     } else {
         return d_to_python( applyPyTupleToDelegate(dg, args) );
     }

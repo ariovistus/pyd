@@ -23,7 +23,7 @@ module pyd.ctor_wrap;
 
 import std.traits;
 import util.typelist: Join;
-import python;
+import deimos.python.Python;
 import pyd.class_wrap;
 import pyd.exception;
 import pyd.func_wrap;

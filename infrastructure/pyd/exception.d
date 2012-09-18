@@ -27,7 +27,7 @@ module pyd.exception;
 
 import std.conv;
 import std.string;
-import python;
+import deimos.python.Python;
 import meta.Nameof : prettytypeof;
 
 /**

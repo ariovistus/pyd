@@ -25,7 +25,7 @@ SOFTWARE.
 */
 module pyd.class_wrap;
 
-import python;
+import deimos.python.Python;
 
 import std.algorithm: countUntil;
 import std.traits;
@@ -1428,12 +1428,12 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         //writefln("after params: tp_init is %s", type.tp_init);
 
         assert(Pyd_Module_p(modulename) !is null, "Must initialize module before wrapping classes.");
-        string module_name = to!string(python.PyModule_GetName(Pyd_Module_p(modulename)));
+        string module_name = to!string(PyModule_GetName(Pyd_Module_p(modulename)));
 
         //////////////////
         // Basic values //
         //////////////////
-        type.ob_type      = python.PyType_Type_p();
+        type.ob_type      = &PyType_Type;
         type.tp_basicsize = (wrapped_class_object!(T)).sizeof;
         type.tp_doc       = (docstring ~ "\0").ptr;
         type.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_CHECKTYPES;
@@ -1479,8 +1479,8 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         if (PyType_Ready(&type) < 0) {
             throw new Exception("Couldn't ready wrapped type!");
         }
-        python.Py_INCREF(cast(PyObject*)&type);
-        python.PyModule_AddObject(Pyd_Module_p(modulename), (name~"\0").ptr, cast(PyObject*)&type);
+        Py_INCREF(cast(PyObject*)&type);
+        PyModule_AddObject(Pyd_Module_p(modulename), (name~"\0").ptr, cast(PyObject*)&type);
 
         is_wrapped!(T) = true;
         static if (is(T == class)) {

@@ -1,5 +1,4 @@
 
-PYTHON_HEADER = ../../infrastructure/python/python.d
 PYD_DIR = ../../infrastructure/
 PYD_FILES = $(shell find ../../infrastructure/pyd/ -name \*.d) \
 $(shell find ../../infrastructure/meta/ -name \*.d) \
@@ -26,5 +25,5 @@ clean:
 	rm -f *.o
 
 %.x: %.d
-	$(DC) $(PYTHON_2_7) $(PYTHON_HEADER) $(PYD_FILES) $^ -of$@
+	$(DC) $(PYTHON_2_7) $(PYD_FILES) $^ -of$@ -I$(PYD_DIR)
 

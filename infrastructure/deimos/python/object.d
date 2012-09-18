@@ -745,6 +745,7 @@ void Py_DecRef(PyObject *);
 
 __gshared PyObject _Py_NoneStruct;
 
+// issue 8683 gets in the way of this being a property
 Borrowed!PyObject* Py_None()() {
     return borrowed(&_Py_NoneStruct);
 }

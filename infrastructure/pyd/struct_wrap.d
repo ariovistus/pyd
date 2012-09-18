@@ -25,7 +25,7 @@ SOFTWARE.
   */
 module pyd.struct_wrap;
 
-import python;
+import deimos.python.Python;
 
 import pyd.def;
 import pyd.class_wrap;

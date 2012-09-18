@@ -5,7 +5,7 @@ import std.conv;
 import std.c.stdio;
 import std.algorithm;
 import std.exception;
-import python;
+import deimos.python.Python;
 import std.stdio;
 
 void main() {
