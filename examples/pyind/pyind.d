@@ -2,11 +2,7 @@ module pyind;
 
 import std.stdio;
 import pyd.pyd;
-//import deimos.python.unicodeobject;
 import deimos.python.Python: Py_ssize_t, Py_Initialize;
-import deimos.python.pyport;
-
-//import python: Py_ssize_t,Py_Initialize;
 import pyd.embedded;
 
 
@@ -46,8 +42,6 @@ static this() {
 }
 
 void main() {
-    import deimos.python.object;
-    Py_XINCREF(Py_None());
     // simple expressions can be evaluated
     int i = py_eval!int("1+2", "office");
     writeln(i);

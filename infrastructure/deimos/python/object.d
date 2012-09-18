@@ -473,11 +473,11 @@ version(Python_3_0_Or_Later) {
 
 // D translation of C macro:
 int PyType_Check()(PyObject* op) {
-    return PyObject_TypeCheck(op, PyType_Type_p);
+    return PyObject_TypeCheck(op, &PyType_Type);
 }
 // D translation of C macro:
 int PyType_CheckExact()(PyObject* op) {
-    return op.ob_type == PyType_Type_p;
+    return op.ob_type == &PyType_Type;
 }
 
 int PyType_Ready(PyTypeObject*);
@@ -720,7 +720,10 @@ void Py_DECREF()(PyObject *op) {
     // EMN: this is a horrible idea because it takes forever to figure out 
     //      what's going on if this is being called from within the garbage 
     //      collector.
-    assert (op.ob_refcnt >= 0);
+    
+    // EMN: if we do keep it, don't change the assert! 
+    // assert(0) or assert(condition) mess up linking somehow.
+    if(op.ob_refcnt < 0) assert (0, "refcount negative");
     if(op.ob_refcnt != 0) {
         // version(PY_REF_DEBUG) _Py_NegativeRefcount(__FILE__, __LINE__, cast(PyObject*)op);
     }else {
@@ -742,8 +745,8 @@ void Py_DecRef(PyObject *);
 
 __gshared PyObject _Py_NoneStruct;
 
-PyObject* Py_None()() {
-    return &_Py_NoneStruct;
+Borrowed!PyObject* Py_None()() {
+    return borrowed(&_Py_NoneStruct);
 }
 /* Rich comparison opcodes */
 enum int Py_LT = 0;
