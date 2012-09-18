@@ -1,4 +1,4 @@
-module deimos.python.longobject;
+module deimos.python.longintrepr;
 
 import deimos.python.pyport;
 import deimos.python.object;

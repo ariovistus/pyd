@@ -1,6 +1,5 @@
 module deimos.python.cStringIO;
 
-import util.conv;
 import deimos.python.pyport;
 import deimos.python.object;
 
@@ -9,12 +8,12 @@ version(Python_3_0_Or_Later) {
 extern(C):
 // Python-header-file: Include/cStringIO.h:
 
-PycStringIO_CAPI *PycStringIO = null;
+PycStringIO_CAPI* PycStringIO = null;
 
-PycStringIO_CAPI *PycString_IMPORT()() {
+PycStringIO_CAPI* PycString_IMPORT()() {
     if (PycStringIO == null) {
         PycStringIO = cast(PycStringIO_CAPI *)
-            PyCObject_Import(zc("cStringIO"), zc("cStringIO_CAPI"));
+            PyCObject_Import(cast(char*) "cStringIO\0".ptr, cast(char*) "cStringIO_CAPI\0".ptr);
     }
     return PycStringIO;
 }

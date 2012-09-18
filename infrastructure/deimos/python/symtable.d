@@ -4,6 +4,7 @@ import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.compile;
 import deimos.python.ast;
+import deimos.python.node;
 
 extern(C):
 
@@ -99,7 +100,7 @@ version(Python_2_5_Or_Later) {
             char*, 
             int, 
             int);
-    symtable* PyNode_CompileSymtable(_node*, const(char)*);
+    symtable* PyNode_CompileSymtable(node*, const(char)*);
     void PySymtable_Free(symtable*);
 }
 

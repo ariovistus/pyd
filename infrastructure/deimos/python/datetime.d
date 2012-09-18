@@ -1,5 +1,5 @@
 module deimos.python.datetime;
-import util.conv;
+
 import deimos.python.object;
 import deimos.python.pyport;
 
@@ -146,7 +146,7 @@ __gshared PyDateTime_CAPI *PyDateTimeAPI;
 PyDateTime_CAPI* PyDateTime_IMPORT()() {
     if (PyDateTimeAPI == null) {
         PyDateTimeAPI = cast(PyDateTime_CAPI *)
-            PyCObject_Import(zc("datetime"), zc("datetime_CAPI"));
+            PyCObject_Import(cast(char*)("datetime".ptr), cast(char*)("datetime_CAPI".ptr));
     }
     return PyDateTimeAPI;
 }

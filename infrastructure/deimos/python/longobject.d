@@ -3,6 +3,7 @@ module deimos.python.longobject;
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.unicodeobject;
+import deimos.python.longintrepr;
 
 extern(C):
 // Python-header-file: Include/longobject.h:

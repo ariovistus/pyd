@@ -15,16 +15,16 @@ version(Python_2_6_Or_Later) {
     }
 
     /* Type object */
-    PyTypeObject PyByteArray_Type;
-    PyTypeObject PyByteArrayIter_Type;
+    __gshared PyTypeObject PyByteArray_Type;
+    __gshared PyTypeObject PyByteArrayIter_Type;
 
     /* Type check macros */
     int PyByteArray_Check()(PyObject* self) {
-        return PyObject_TypeCheck(self, PyByteArray_Type_p);
+        return PyObject_TypeCheck(self, &PyByteArray_Type);
     }
 
     int PyByteArray_CheckExact()(PyObject* self) {
-        return Py_TYPE(self) == PyByteArray_Type_p;
+        return Py_TYPE(self) == &PyByteArray_Type;
     }
 
     /* Direct API functions */
@@ -44,9 +44,9 @@ version(Python_2_6_Or_Later) {
         }
     }
 
-    auto PyByteArray_GET_SIZE(PyObject* self) {
+    auto PyByteArray_GET_SIZE()(PyObject* self) {
         assert(PyByteArray_Check(self));
-        return Py_SIZE(self);
+        return Py_SIZE(cast(PyVarObject*) self);
     }
 
 

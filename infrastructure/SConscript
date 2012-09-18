@@ -1,6 +1,8 @@
 from os.path import abspath 
 Import('*')
 print (env27).subst_path(infra)
-env27_c = env27.Clone(DFLAGS = ["-c", "-J"+join("infrastructure", "deimos","python")], DPATH=".")
+env27_c = env27.Clone(DFLAGS = ["-c"], DPATH=".")
 
-env27_c.Program("deimos/python/Python.d");
+for g in Glob(join(infra, "deimos", "python", "*.d")):
+    env27_c.Object(g);
+#env27_c.Program(env27_c.Object("deimos/python/Python.d"));

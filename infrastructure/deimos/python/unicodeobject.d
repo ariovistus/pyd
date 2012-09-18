@@ -57,7 +57,7 @@ const(char)* PyUnicode_AS_DATA()(PyUnicodeObject* op) {
     return cast(const(char)*) op.str;
 }
 
-Py_UNICODE Py_UNICODE_REPLACEMENT_CHARACTER = 0xFFFD;
+enum Py_UNICODE Py_UNICODE_REPLACEMENT_CHARACTER = 0xFFFD;
 
 version(Python_Unicode_UCS2) {
     enum PyUnicode_ = "PyUnicodeUCS2_";
@@ -527,7 +527,7 @@ enum string unicode_funs = q{
 
   };
 
-mixin(substitute_and_alias(unicode_funs));
+//mixin(substitute_and_alias(unicode_funs));
 
 version(Python_3_2_Or_Later) {
     size_t Py_UNICODE_strlen(const(Py_UNICODE)* u);
@@ -661,6 +661,7 @@ version(Python_3_2_Or_Later) {
             );
 }
 
+/*
 alias _PyUnicode_IsWhitespace Py_UNICODE_ISSPACE;
 alias _PyUnicode_IsLowercase Py_UNICODE_ISLOWER;
 alias _PyUnicode_IsUppercase Py_UNICODE_ISUPPER;
@@ -676,6 +677,7 @@ alias _PyUnicode_ToDecimalDigit Py_UNICODE_TODECIMAL;
 alias _PyUnicode_ToDigit Py_UNICODE_TODIGIT;
 alias _PyUnicode_ToNumeric Py_UNICODE_TONUMERIC;
 alias _PyUnicode_IsAlpha Py_UNICODE_ISALPHA;
+*/
 
 int Py_UNICODE_ISALNUM()(Py_UNICODE ch) {
     return (

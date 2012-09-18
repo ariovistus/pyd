@@ -1,6 +1,5 @@
 module deimos.python.abstract_;
 
-import util.conv;
 import deimos.python.pyport;
 import deimos.python.object;
 
@@ -454,15 +453,15 @@ version(Python_3_0_Or_Later) {
     // D translations of C macros:
     /// _
     PyObject* PyMapping_Keys()(PyObject* o) {
-        return PyObject_CallMethod(o, zc("keys"), null);
+        return PyObject_CallMethod(o, cast(char*)("keys".ptr), null);
     }
     /// _
     PyObject* PyMapping_Values()(PyObject* o) {
-        return PyObject_CallMethod(o, zc("values"), null);
+        return PyObject_CallMethod(o, cast(char*)("values".ptr), null);
     }
     /// _
     PyObject* PyMapping_Items()(PyObject* o) {
-        return PyObject_CallMethod(o, zc("items"), null);
+        return PyObject_CallMethod(o, cast(char*)("items".ptr), null);
     }
 }
 /// _

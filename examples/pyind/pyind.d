@@ -2,9 +2,12 @@ module pyind;
 
 import std.stdio;
 import pyd.pyd;
-import python: Py_ssize_t;
+//import deimos.python.unicodeobject;
+import deimos.python.Python: Py_ssize_t, Py_Initialize;
+import deimos.python.pyport;
+
+//import python: Py_ssize_t,Py_Initialize;
 import pyd.embedded;
-import python: Py_Initialize;
 
 
 void knock() {
