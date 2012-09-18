@@ -45,7 +45,11 @@ static this() {
     )();
 }
 
+import deimos.python.datetime;
+__gshared PyDateTime_CAPI* gim;
+
 void main() {
+    gim = PyDateTime_IMPORT();
     // simple expressions can be evaluated
     int i = py_eval!int("1+2", "office");
     writeln(i);

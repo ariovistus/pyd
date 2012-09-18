@@ -34,7 +34,7 @@ PyObject* PyObject_CallObject(PyObject* callable_object, PyObject* args);
 /// _
 PyObject* PyObject_CallFunction(PyObject* callable_object, char* format, ...);
 /// _
-PyObject* PyObject_CallMethod(PyObject* o, char* m, char* format, ...);
+PyObject* PyObject_CallMethod(PyObject* o, const(char)* m, const(char)* format, ...);
 /// _
 PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...);
 /// _
@@ -453,15 +453,15 @@ version(Python_3_0_Or_Later) {
     // D translations of C macros:
     /// _
     PyObject* PyMapping_Keys()(PyObject* o) {
-        return PyObject_CallMethod(o, cast(char*)("keys".ptr), null);
+        return PyObject_CallMethod(o, "keys", null);
     }
     /// _
     PyObject* PyMapping_Values()(PyObject* o) {
-        return PyObject_CallMethod(o, cast(char*)("values".ptr), null);
+        return PyObject_CallMethod(o, "values", null);
     }
     /// _
     PyObject* PyMapping_Items()(PyObject* o) {
-        return PyObject_CallMethod(o, cast(char*)("items".ptr), null);
+        return PyObject_CallMethod(o, "items", null);
     }
 }
 /// _

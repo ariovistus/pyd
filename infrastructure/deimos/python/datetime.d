@@ -2,6 +2,7 @@ module deimos.python.datetime;
 
 import deimos.python.object;
 import deimos.python.pyport;
+import deimos.python.cobject;
 
 extern(C):
 // Python-header-file: Include/datetime.h:
@@ -141,12 +142,12 @@ struct PyDateTime_CAPI {
 
 // went away in python 3. who cares?
 enum DATETIME_API_MAGIC = 0x414548d5;
-__gshared PyDateTime_CAPI *PyDateTimeAPI;
 
 PyDateTime_CAPI* PyDateTime_IMPORT()() {
+    static PyDateTime_CAPI* PyDateTimeAPI;
     if (PyDateTimeAPI == null) {
         PyDateTimeAPI = cast(PyDateTime_CAPI *)
-            PyCObject_Import(cast(char*)("datetime".ptr), cast(char*)("datetime_CAPI".ptr));
+            PyCObject_Import("datetime", "datetime_CAPI");
     }
     return PyDateTimeAPI;
 }

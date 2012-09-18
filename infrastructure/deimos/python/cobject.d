@@ -24,7 +24,7 @@ PyObject* PyCObject_FromVoidPtrAndDesc(void* cobj, void* desc,
         void function(void*,void*) destruct);
 void* PyCObject_AsVoidPtr(PyObject*);
 void* PyCObject_GetDesc(PyObject*);
-void* PyCObject_Import(char* module_name, char* cobject_name);
+void* PyCObject_Import(const(char)* module_name, const(char)* cobject_name);
 int PyCObject_SetVoidPtr(PyObject* self, void* cobj);
 
 version(Python_2_6_Or_Later){
