@@ -1,5 +1,6 @@
 module deimos.python.bytesobject;
 
+import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.stringobject;
 import std.c.stdarg;
@@ -91,7 +92,10 @@ enum F_BLANK =      (1<<2);
 enum F_ALT =        (1<<3);
 enum F_ZERO =       (1<<4);
 
-}else version(Python_2_6_Or_Later){
+}else {
+    // these aliases were added in 2.6, but what they alias have been
+    // around since 2.4 at least, so there is no harm in having them before
+    // 2.6. It should help in maintaining portability between 2 and 3.
     alias PyStringObject PyBytesObject;
     alias PyString_Type PyBytes_Type;
 

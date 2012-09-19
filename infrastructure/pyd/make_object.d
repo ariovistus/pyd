@@ -156,10 +156,6 @@ PyObject* d_to_python(T) (T t) {
         }else static if(isSigned!T) {
             return PyLong_FromLongLong(t);
         }
-    } else static if (is(T : C_long)) {
-        return PyInt_FromLong(t);
-    } else static if (is(T : C_longlong)) {
-        return PyLong_FromLongLong(t);
     } else static if (isFloatingPoint!T) {
         return PyFloat_FromDouble(t);
     } else static if( isTuple!T) {
@@ -417,26 +413,34 @@ T python_to_d(T) (PyObject* o) {
     } else static if (isSomeString!T) {
         alias Unqual!(typeof(T.init[0])) C;
         PyObject* str;
-        if(PyString_Check(o)) {
+        if(PyBytes_Check(o)) {
             static if(is(C == char)) {
                 str = o;
             }else{
-                str = PyObject_Unicode(o);
-                if(!str) handle_exception();
+                version(Python_3_0_Or_Later) {
+                    str = PyObject_Str(o);
+                    if(!str) handle_exception();
+                }else{
+                    str = PyObject_Unicode(o);
+                    if(!str) handle_exception();
+                }
             }
         }else if(PyUnicode_Check(o)) {
             str = o;
         }else {
             str = PyObject_Repr(o);
             if(!str) handle_exception();
-            static if(!is(C == char)) {
-                str = PyObject_Unicode(str);
-                if(!str) handle_exception();
+            version(Python_3_0_Or_Later) {
+            }else{
+                static if(!is(C == char)) {
+                    str = PyObject_Unicode(str);
+                    if(!str) handle_exception();
+                }
             }
         }
         static if(is(C == char)) {
-            if(PyString_Check(str)) {
-                const(char)* res = PyString_AsString(str);
+            if(PyBytes_Check(str)) {
+                const(char)* res = PyBytes_AsString(str);
                 if(!res) handle_exception();
                 return to!T(res);
             }
@@ -446,7 +450,7 @@ T python_to_d(T) (PyObject* o) {
             static if(is(C == char)) {
                 PyObject* utf8 = PyUnicode_AsUTF8String(str);
                 if(!utf8) handle_exception();
-                const(char)* res = PyString_AsString(utf8);
+                const(char)* res = PyBytes_AsString(utf8);
                 if(!res) handle_exception();
                 return to!T(res);
             }else static if(is(C == wchar)) {
@@ -454,8 +458,8 @@ T python_to_d(T) (PyObject* o) {
                 if(!utf16) handle_exception();
                 // PyUnicode_AsUTF16String puts a BOM character in front of
                 // string
-                auto ptr = cast(const(wchar)*)(PyString_AsString(utf16)+2);
-                Py_ssize_t len = PyString_Size(utf16)/2-1; 
+                auto ptr = cast(const(wchar)*)(PyBytes_AsString(utf16)+2);
+                Py_ssize_t len = PyBytes_Size(utf16)/2-1; 
                 wchar[] ws = new wchar[](len);
                 ws[] = ptr[0 .. len];
                 return cast(T) ws;
@@ -464,8 +468,8 @@ T python_to_d(T) (PyObject* o) {
                 if(!utf32) handle_exception();
                 // PyUnicode_AsUTF32String puts a BOM character in front of
                 // string
-                auto ptr = cast(const(dchar)*)(PyString_AsString(utf32)+4);
-                Py_ssize_t len = PyString_Size(utf32)/4-1; 
+                auto ptr = cast(const(dchar)*)(PyBytes_AsString(utf32)+4);
+                Py_ssize_t len = PyBytes_Size(utf32)/4-1; 
                 dchar[] ds = new dchar[](len);
                 ds[] = ptr[0 .. len];
                 return cast(T) ds;
@@ -492,19 +496,23 @@ T python_to_d(T) (PyObject* o) {
         handle_exception();
         return cast(T) res;
     } else static if(isIntegral!T) {
-        if(PyInt_Check(o)) {
-            C_long res = PyInt_AsLong(o);
-            handle_exception();
-            static if(isUnsigned!T) {
-                if(res < 0) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, 0, T.max));
-                if(T.max < res) could_not_convert!T(o,format("%s out of bounds [%s, %s]", res, 0, T.max));
-                return cast(T) res;
-            }else static if(isSigned!T) {
-                if(T.min > res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
-                if(T.max < res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
-                return cast(T) res;
+        version(Python_3_0_Or_Later) {
+        }else{
+            if(PyInt_Check(o)) {
+                C_long res = PyInt_AsLong(o);
+                handle_exception();
+                static if(isUnsigned!T) {
+                    if(res < 0) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, 0, T.max));
+                    if(T.max < res) could_not_convert!T(o,format("%s out of bounds [%s, %s]", res, 0, T.max));
+                    return cast(T) res;
+                }else static if(isSigned!T) {
+                    if(T.min > res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
+                    if(T.max < res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
+                    return cast(T) res;
+                }
             }
-        }else if(PyLong_Check(o)) {
+        }
+        if(PyLong_Check(o)) {
             static if(isUnsigned!T) {
                 static assert(T.sizeof <= C_ulonglong.sizeof);
                 C_ulonglong res = PyLong_AsUnsignedLongLong(o);
@@ -523,15 +531,14 @@ T python_to_d(T) (PyObject* o) {
                 if(T.max < res) could_not_convert!T(o); 
                 return cast(T) res;
             }
-        }else could_not_convert!T(o);
+        }
     } else static if (isBoolean!T) {
         if (!PyNumber_Check(o)) could_not_convert!(T)(o);
         int res = PyObject_IsTrue(o);
         handle_exception();
         return res == 1;
-    }/+ else {
-        could_not_convert!(T)(o);
-    }+/
+    }
+
     if (from_converter_registry!(T).dg) {
         return from_converter_registry!(T).dg(o);
     }
@@ -597,7 +604,7 @@ if((isArray!T || IsStaticArrayPointer!T) &&
 
     alias MatrixInfo!T.MatrixElementType ME;
     string format = SimpleFormatType!ME.s;
-    PyObject* pyformat = PyString_FromStringAndSize(format.ptr, format.length);
+    PyObject* pyformat = PyBytes_FromStringAndSize(format.ptr, format.length);
     PyObject* args = PyTuple_New(1);
     PyTuple_SetItem(args, 0, pyformat);
     scope(exit) Py_DECREF(args);
@@ -1173,7 +1180,7 @@ void could_not_convert(T) (PyObject* o, string reason = "",
         if (py_type_str is null) {
             py_typename = "<unknown>";
         } else {
-            py_typename = to!string(PyString_AsString(py_type_str));
+            py_typename = to!string(PyBytes_AsString(py_type_str));
             Py_DECREF(py_type_str);
         }
     }

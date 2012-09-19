@@ -31,6 +31,7 @@ import std.algorithm: startsWith;
 import std.metastrings;
 import std.typetuple;
 import std.traits;
+import util.conv;
 import util.typelist;
 import pyd.func_wrap;
 
@@ -39,6 +40,9 @@ private PyMethodDef module_global_methods[] = [
 ];
 
 private PyMethodDef[][string] module_methods;
+version(Python_3_0_Or_Later) {
+    private PyModuleDef*[string] pyd_moduledefs;
+}
 private PyObject*[string] pyd_modules;
 
 private void ready_module_methods(string modulename) {
@@ -233,7 +237,19 @@ PyObject* module_init(string docstring="") {
     //_loadPythonSupport();
     string name = pyd_module_name;
     ready_module_methods("");
-    pyd_modules[""] = cast(PyObject*) Py_InitModule3(name ~ "\0", module_methods[""].ptr, docstring ~ "\0");
+    version(Python_3_0_Or_Later) {
+        PyModuleDef* modl = pyd_moduledefs[""] = new PyModuleDef;
+        (cast(PyObject*) modl).ob_refcnt = 1;
+        modl.m_name = zcc(name);
+        modl.m_doc = zcc(docstring);
+        modl.m_size = -1;
+        modl.m_methods = module_methods[""].ptr;
+
+        pyd_modules[""] = PyModule_Create(modl);
+    }else {
+        pyd_modules[""] = Py_INCREF(Py_InitModule3((name ~ "\0"), 
+                    module_methods[""].ptr, (docstring ~ "\0")));
+    }
     foreach(action; on_module_init_deferred_actions) {
         action();
     }
@@ -255,7 +271,20 @@ void py_init() {
  */
 PyObject* add_module(string modulename, string docstring="") {
     ready_module_methods(modulename);
-    pyd_modules[modulename] = cast(PyObject*) Py_InitModule3(modulename ~ "\0", module_methods[modulename].ptr, docstring ~ "\0");
+    version(Python_3_0_Or_Later) {
+        PyModuleDef* modl = pyd_moduledefs[modulename] = new PyModuleDef;
+        (cast(PyObject*) modl).ob_refcnt = 1;
+        modl.m_name = zcc(modulename);
+        modl.m_doc = zcc(docstring);
+        modl.m_size = -1;
+        modl.m_methods = module_methods[modulename].ptr;
+
+        pyd_modules[modulename] = PyModule_Create(modl);
+        zz = 44;
+    }else{
+        pyd_modules[modulename] = Py_INCREF(Py_InitModule3((modulename ~ "\0"), 
+                    module_methods[modulename].ptr, (docstring ~ "\0")));
+    }
     return pyd_modules[modulename];
 }
 

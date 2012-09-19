@@ -369,11 +369,22 @@ Struct Format Strings </a>
     int opCmp(Object o) {
         PydObject rhs = cast(PydObject) o;
         if (!rhs) return -1;
-        // This function happily maps exactly to opCmp
-        int res = PyObject_Compare(m_ptr, rhs.m_ptr);
-        // Check for possible error
-        handle_exception();
-        return res;
+        version(Python_3_0_Or_Later) {
+            int res = PyObject_RichCompareBool(m_ptr, rhs.m_ptr, Py_LT);
+            if(res == -1) handle_exception();
+            if(res == 1) return -1;
+            res = PyObject_RichCompareBool(m_ptr, rhs.m_ptr, Py_EQ);
+            if(res == -1) handle_exception();
+            if(res == 1) return 0;
+            return 1;
+        }else{
+            // This function happily maps exactly to opCmp
+            // EMN: but goes away in python 3.
+            int res = PyObject_Compare(m_ptr, rhs.m_ptr);
+            // Check for possible error
+            handle_exception();
+            return res;
+        }
     }
 
     /**
@@ -382,9 +393,9 @@ Struct Format Strings </a>
     override bool opEquals(Object o) {
         PydObject rhs = cast(PydObject) o;
         if (!rhs) return false;
-        int res = PyObject_Compare(m_ptr, rhs.m_ptr);
-        handle_exception();
-        return res == 0;
+        int res = PyObject_RichCompareBool(m_ptr, rhs.m_ptr, Py_EQ);
+        if(res == -1) handle_exception();
+        return res == 1;
     }
     
     /// Equivalent to _repr(this) in Python.
@@ -401,9 +412,17 @@ Struct Format Strings </a>
         return python_to_d!(string)(m_ptr);
     }
     
-    /// Equivalent to _unicode(this) in Python.
-    PydObject unicode() {
-        return new PydObject(PyObject_Unicode(m_ptr));
+    version(Python_3_0_Or_Later) {
+    }else{
+        /// Equivalent to _unicode(this) in Python.
+        PydObject unicode() {
+            return new PydObject(PyObject_Unicode(m_ptr));
+        }
+    }
+
+    /// Equivalent to _bytes(this) in Python.
+    PydObject bytes() {
+        return new PydObject(PyObject_Bytes(m_ptr));
     }
 
     /// Equivalent to isinstance(this, cls) in Python.
@@ -905,9 +924,12 @@ Struct Format Strings </a>
     //-----------------
     // Type conversion
     //-----------------
-    /// Converts any Python number to int.
-    PydObject as_int() {
-        return new PydObject(PyNumber_Int(m_ptr));
+    version(Python_3_0_Or_Later) {
+    }else{
+        /// Converts any Python number to int.
+        PydObject as_int() {
+            return new PydObject(PyNumber_Int(m_ptr));
+        }
     }
     /// Converts any Python number to long.
     PydObject as_long() {

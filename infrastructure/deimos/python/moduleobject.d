@@ -2,6 +2,7 @@ module deimos.python.moduleobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.methodobject;
 
 extern(C):
 // Python-header-file: Include/moduleobject.h:

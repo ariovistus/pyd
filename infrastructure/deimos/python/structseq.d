@@ -2,6 +2,7 @@ module deimos.python.structseq;
 
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.tupleobject;
 
 extern(C):
 // Python-header-file: Include/structseq.h:

@@ -68,59 +68,15 @@ template wrapped_class_object(T) {
     }
 }
 
+void init_PyTypeObject(T)(ref PyTypeObject tipo) {
+    (cast(PyObject*) &tipo).ob_refcnt = 1;
+    tipo.tp_dealloc = &wrapped_methods!(T).wrapped_dealloc;
+    tipo.tp_new = &wrapped_methods!(T).wrapped_new;
+}
 //
 template wrapped_class_type(T) {
 // The type object, an instance of PyType_Type
-    static PyTypeObject wrapped_class_type = {
-        1,                            /*ob_refcnt*/
-        null,                         /*ob_type*/
-        0,                            /*ob_size*/
-        null,                         /*tp_name*/
-        0,                            /*tp_basicsize*/
-        0,                            /*tp_itemsize*/
-        &wrapped_methods!(T).wrapped_dealloc, /*tp_dealloc*/
-        null,                         /*tp_print*/
-        null,                         /*tp_getattr*/
-        null,                         /*tp_setattr*/
-        null,                         /*tp_compare*/
-        null,                         /*tp_repr*/
-        null,                         /*tp_as_number*/
-        null,                         /*tp_as_sequence*/
-        null,                         /*tp_as_mapping*/
-        null,                         /*tp_hash */
-        null,                         /*tp_call*/
-        null,                         /*tp_str*/
-        null,                         /*tp_getattro*/
-        null,                         /*tp_setattro*/
-        null,                         /*tp_as_buffer*/
-        0,                            /*tp_flags*/
-        null,                         /*tp_doc*/
-        null,                         /*tp_traverse*/
-        null,                         /*tp_clear*/
-        null,                         /*tp_richcompare*/
-        0,                            /*tp_weaklistoffset*/
-        null,                         /*tp_iter*/
-        null,                         /*tp_iternext*/
-        null,                         /*tp_methods*/
-        null,                         /*tp_members*/
-        null,                         /*tp_getset*/
-        null,                         /*tp_base*/
-        null,                         /*tp_dict*/
-        null,                         /*tp_descr_get*/
-        null,                         /*tp_descr_set*/
-        0,                            /*tp_dictoffset*/
-        null,                         /*tp_init*/
-        null,                         /*tp_alloc*/
-        &wrapped_methods!(T).wrapped_new, /*tp_new*/
-        null,                         /*tp_free*/
-        null,                         /*tp_is_gc*/
-        null,                         /*tp_bases*/
-        null,                         /*tp_mro*/
-        null,                         /*tp_cache*/
-        null,                         /*tp_subclasses*/
-        null,                         /*tp_weaklist*/
-        null,                         /*tp_del*/
-    };
+    static PyTypeObject wrapped_class_type;
 }
 
 // A mapping of all class references that are being held by Python.
@@ -1329,6 +1285,8 @@ struct Constructors(Ctors...) {
             static if (is(typeof(new T))) {
                 static if (is(T == class)) {
                     type.tp_init = &wrapped_init!(Shim).init;
+                    import std.stdio;
+                    writeln("type.tp_init: ", type.tp_init);
                 } else {
                     type.tp_init = &wrapped_struct_init!(T).init;
                 }
@@ -1354,8 +1312,10 @@ struct Iterator(Params...) {
     static void call(T)() {
         alias wrapped_class_type!T type;
         static if(Iters.length == 1 && Nexts.length == 1) {
-            // meh, we can probably ignore args and kwargs.
-            type.tp_flags |= Py_TPFLAGS_HAVE_ITER;
+            version(Python_3_0_Or_Later) {
+            }else{
+                type.tp_flags |= Py_TPFLAGS_HAVE_ITER;
+            }
             type.tp_iter = &opiter_wrap!(T, Iters[0].func).func;
             type.tp_iternext = &opiter_wrap!(T, Nexts[0].func).func;
         }
@@ -1412,20 +1372,15 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
     }
     void wrap_class() {
         alias wrapped_class_type!(T) type;
-        //writefln("entering wrap_class for %s", typeid(T));
-        //pragma(msg, "wrap_class, T is " ~ prettytypeof!(T));
+        init_PyTypeObject!T(type);
 
-        //Params params;
-        //writefln("before params: tp_init is %s", type.tp_init);
         foreach (param; Params) {
             static if (param.needs_shim) {
-                //mixin param.call!(T) PCall;
                 param.call!(T, shim_class)();
             } else {
                 param.call!(T)();
             }
         }
-        //writefln("after params: tp_init is %s", type.tp_init);
 
         assert(Pyd_Module_p(modulename) !is null, "Must initialize module before wrapping classes.");
         string module_name = to!string(PyModule_GetName(Pyd_Module_p(modulename)));
@@ -1433,10 +1388,14 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         //////////////////
         // Basic values //
         //////////////////
-        type.ob_type      = &PyType_Type;
+        (cast(PyObject*) &type).ob_type      = &PyType_Type;
         type.tp_basicsize = (wrapped_class_object!(T)).sizeof;
         type.tp_doc       = (docstring ~ "\0").ptr;
-        type.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_CHECKTYPES;
+        version(Python_3_0_Or_Later) {
+            type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        }else{
+            type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_CHECKTYPES;
+        }
         //type.tp_repr      = &wrapped_repr!(T).repr;
         type.tp_methods   = wrapped_method_list!(T).ptr;
         type.tp_name      = (module_name ~ "." ~ name ~ "\0").ptr;

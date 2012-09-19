@@ -103,20 +103,20 @@ string printSyntaxError(PyObject* type, PyObject* value, PyObject* traceback) {
     string text;
     auto ptext = PyObject_GetAttrString(value, "text");
     if(ptext) {
-        auto p2text = PyString_AsString(ptext);
+        auto p2text = PyBytes_AsString(ptext);
         if(p2text) text = strip(to!string(p2text));
     }
     C_long offset;
     auto poffset = PyObject_GetAttrString(value, "offset");
     if(poffset) {
-        offset = PyInt_AsLong(poffset);
+        offset = PyLong_AsLong(poffset);
     }
     auto valtype = to!string(value.ob_type.tp_name);
 
     string message;
     auto pmsg = PyObject_GetAttrString(value, "msg");
     if(pmsg) {
-        auto cmsg = PyString_AsString(pmsg);
+        auto cmsg = PyBytes_AsString(pmsg);
         if(cmsg) message = to!string(cmsg);
     }
     string space = "";
@@ -132,7 +132,11 @@ string printGenericError(PyObject* type, PyObject* value, PyObject* traceback) {
     auto valtype = to!string(value.ob_type.tp_name);
 
     string message;
-    PyObject* uni = PyObject_Unicode(value);
+    version(Python_3_0_Or_Later) {
+        PyObject* uni = PyObject_Str(value);
+    }else{
+        PyObject* uni = PyObject_Unicode(value);
+    }
     if(!uni) {
         PyErr_Clear();
         return "";
@@ -142,7 +146,7 @@ string printGenericError(PyObject* type, PyObject* value, PyObject* traceback) {
         PyErr_Clear();
         return "";
     }
-    auto cmsg = PyString_AsString(str);
+    auto cmsg = PyBytes_AsString(str);
     if(cmsg) message = to!string(cmsg);
     return format(q"{
 %s: %s}", valtype, message);
@@ -195,7 +199,7 @@ public:
                 pmsg = PyObject_GetAttrString(m_value, "message");
             }
             if(pmsg) {
-                auto cmsg = PyString_AsString(pmsg);
+                auto cmsg = PyBytes_AsString(pmsg);
                 if(cmsg) message = to!string(cmsg);
             }
         }
@@ -208,7 +212,7 @@ public:
         if(m_value) {
             auto poffset = PyObject_GetAttrString(m_value, "offset");
             if(poffset) {
-                offset = PyInt_AsLong(poffset);
+                offset = PyLong_AsLong(poffset);
             }
         }
         return offset;

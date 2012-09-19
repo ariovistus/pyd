@@ -1,5 +1,6 @@
 module deimos.python.setobject;
 
+import std.c.stdio;
 import deimos.python.pyport;
 import deimos.python.object;
 

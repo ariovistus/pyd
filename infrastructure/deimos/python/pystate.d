@@ -4,6 +4,7 @@ import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.frameobject;
 import deimos.python.pyatomic;
+import deimos.python.moduleobject;
 
 extern(C):
 // Python-header-file: Include/pystate.h:

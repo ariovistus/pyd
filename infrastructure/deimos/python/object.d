@@ -35,7 +35,9 @@ version(Python_3_0_Or_Later) {
 
 struct PyObject {
     version(Python_3_0_Or_Later) {
-        mixin _PyObject_HEAD_EXTRA;
+        version(Issue7758Fixed) {
+            mixin _PyObject_HEAD_EXTRA;
+        }
         Py_ssize_t ob_refcnt;
         PyTypeObject* ob_type;
     }else {
@@ -83,7 +85,11 @@ version(Python_3_0_Or_Later) {
 
 struct PyVarObject {
     version(Python_3_0_Or_Later) {
-        mixin PyObject_HEAD;
+        version(Issue7758Fixed) {
+            mixin PyObject_HEAD;
+        }else{
+            PyObject ob_base;
+        }
         Py_ssize_t ob_size; /* Number of items in variable part */
     }else{
         mixin PyObject_VAR_HEAD;
@@ -222,7 +228,10 @@ struct PyNumberMethods {
     binaryfunc nb_and;
     binaryfunc nb_xor;
     binaryfunc nb_or;
-    coercion nb_coerce;
+    version(Python_3_0_Or_Later) {
+    }else{
+        coercion nb_coerce;
+    }
     unaryfunc nb_int;
     version(Python_3_0_Or_Later) {
         void* nb_reserved;  /* the slot formerly known as nb_long */
@@ -506,14 +515,11 @@ version(Python_3_0_Or_Later) {
 }
 PyObject* PyObject_Str(PyObject*);
 
-version(Python_2_6_Or_Later){
-    alias PyObject_Str PyObject_Bytes;
-}
-
 version(Python_3_0_Or_Later) {
     PyObject* PyObject_ASCII(PyObject*);
     PyObject* PyObject_Bytes(PyObject*);
 }else{
+    alias PyObject_Str PyObject_Bytes;
     PyObject * PyObject_Unicode(PyObject*);
     int PyObject_Compare(PyObject*, PyObject*);
 }
@@ -644,8 +650,11 @@ version(Python_2_6_Or_Later){
     enum Py_TPFLAGS_TYPE_SUBCLASS        =(1L<<31);
 }
 
-version(Python_2_5_Or_Later){
-    enum int Py_TPFLAGS_DEFAULT =
+version(Python_3_0_Or_Later) {
+    enum Py_TPFLAGS_DEFAULT = Py_TPFLAGS_HAVE_STACKLESS_EXTENSION |
+        Py_TPFLAGS_HAVE_VERSION_TAG;
+}else version(Python_2_5_Or_Later){
+    enum Py_TPFLAGS_DEFAULT =
         Py_TPFLAGS_HAVE_GETCHARBUFFER |
         Py_TPFLAGS_HAVE_SEQUENCE_IN |
         Py_TPFLAGS_HAVE_INPLACEOPS |
@@ -657,8 +666,7 @@ version(Python_2_5_Or_Later){
         Py_TPFLAGS_HAVE_INDEX |
         0
         ;
-    version(Python_3_0_Or_Later) {
-    }else version(Python_2_6_Or_Later) {
+    version(Python_2_6_Or_Later) {
         // meh
         enum Py_TPFLAGS_DEFAULT_EXTERNAL = Py_TPFLAGS_DEFAULT;
     }
@@ -750,12 +758,12 @@ Borrowed!PyObject* Py_None()() {
     return borrowed(&_Py_NoneStruct);
 }
 /* Rich comparison opcodes */
-enum int Py_LT = 0;
-enum int Py_LE = 1;
-enum int Py_EQ = 2;
-enum int Py_NE = 3;
-enum int Py_GT = 4;
-enum int Py_GE = 5;
+enum Py_LT = 0;
+enum Py_LE = 1;
+enum Py_EQ = 2;
+enum Py_NE = 3;
+enum Py_GT = 4;
+enum Py_GE = 5;
 
 version(Python_3_0_Or_Later) {
     void _Py_Dealloc(PyObject*);

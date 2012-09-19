@@ -2,6 +2,7 @@ module deimos.python.complexobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.unicodeobject;
 
 extern(C):
 // Python-header-file: Include/complexobject.h:

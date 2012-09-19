@@ -281,24 +281,38 @@ enum string unicode_funs = q{
                 );
     }
 
-    PyObject *PyUnicode_DecodeUTF7(const(char) *string, Py_ssize_t length, const(char) *errors);
-    PyObject *PyUnicode_EncodeUTF7(Py_UNICODE *data, Py_ssize_t length,
-        int encodeSetO, int encodeWhiteSpace, const(char) *errors
+    PyObject* PyUnicode_DecodeUTF7(
+            const(char)* string, 
+            Py_ssize_t length, 
+            const(char)* errors);
+
+    PyObject* PyUnicode_EncodeUTF7(
+            Py_UNICODE* data, 
+            Py_ssize_t length,
+            int encodeSetO, 
+            int encodeWhiteSpace, 
+            const(char)* errors
       );
 
-    PyObject *PyUnicode_DecodeUTF8(const(char) *string, Py_ssize_t length, const(char) *errors);
-    PyObject *PyUnicode_DecodeUTF8Stateful(const(char) *string, Py_ssize_t length,
-        const(char) *errors, Py_ssize_t *consumed
+    PyObject* PyUnicode_DecodeUTF8(
+            const(char)* string, 
+            Py_ssize_t length, 
+            const(char)* errors);
+    PyObject* PyUnicode_DecodeUTF8Stateful(
+            const(char)* string, 
+            Py_ssize_t length,
+            const(char)* errors, 
+            Py_ssize_t* consumed
       );
-    PyObject *PyUnicode_AsUTF8String(PyObject *unicode);
-    PyObject *PyUnicode_EncodeUTF8(Py_UNICODE *data, Py_ssize_t length, const(char) *errors);
+    PyObject* PyUnicode_AsUTF8String(PyObject *unicode);
+    PyObject* PyUnicode_EncodeUTF8(Py_UNICODE *data, Py_ssize_t length, const(char) *errors);
 
-    PyObject *PyUnicode_DecodeUTF16(const(char) *string, Py_ssize_t length, const(char) *errors, int *byteorder);
-    PyObject *PyUnicode_DecodeUTF16Stateful(const(char) *string, Py_ssize_t length,
+    PyObject* PyUnicode_DecodeUTF16(const(char) *string, Py_ssize_t length, const(char) *errors, int *byteorder);
+    PyObject* PyUnicode_DecodeUTF16Stateful(const(char) *string, Py_ssize_t length,
         const(char) *errors, int *byteorder, Py_ssize_t *consumed
       );
-    PyObject *PyUnicode_AsUTF16String(PyObject *unicode);
-    PyObject *PyUnicode_EncodeUTF16(Py_UNICODE *data, Py_ssize_t length,
+    PyObject* PyUnicode_AsUTF16String(PyObject *unicode);
+    PyObject* PyUnicode_EncodeUTF16(Py_UNICODE *data, Py_ssize_t length,
         const(char) *errors, int byteorder
       );
 

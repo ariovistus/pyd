@@ -9,7 +9,7 @@ extern(C):
 
 C_long PyImport_GetMagicNumber();
 version(Python_3_0_Or_Later) {
-    const(char)* PyImport_GetMagicTag(void);
+    const(char)* PyImport_GetMagicTag();
 }
 PyObject* PyImport_ExecCodeModule(char* name, PyObject* co);
 PyObject* PyImport_ExecCodeModuleEx(char* name, PyObject* co, char* pathname);

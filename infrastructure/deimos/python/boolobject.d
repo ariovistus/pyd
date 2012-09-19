@@ -3,6 +3,7 @@ module deimos.python.boolobject;
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.intobject;
+import deimos.python.longintrepr;
 
 extern(C):
 // Python-header-file: Include/boolobject.h:

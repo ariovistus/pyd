@@ -2,6 +2,7 @@ module deimos.python.floatobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
+import deimos.python.unicodeobject;
 import deimos.python.pythonrun;
 import std.c.stdio;
 
