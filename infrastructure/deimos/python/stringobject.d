@@ -35,7 +35,30 @@ int PyString_CheckExact()(PyObject* op) {
     return Py_TYPE(op) == &PyString_Type;
 }
 
+/**
+   For PyString_FromString(), the parameter `str' points to a null-terminated
+   string containing exactly `size' bytes.
+
+   For PyString_FromStringAndSize(), the parameter the parameter `str' is
+   either NULL or else points to a string containing at least `size' bytes.
+   For PyString_FromStringAndSize(), the string in the `str' parameter does
+   not have to be null-terminated.  (Therefore it is safe to construct a
+   substring by calling `PyString_FromStringAndSize(origstring, substrlen)'.)
+   If `str' is NULL then PyString_FromStringAndSize() will allocate `size+1'
+   bytes (setting the last byte to the null terminating character) and you can
+   fill in the data yourself.  If `str' is non-NULL then the resulting
+   PyString object must be treated as immutable and you must not fill in nor
+   alter the data yourself, since the strings may be shared.
+
+   The PyObject member `op->ob_size', which denotes the number of "extra
+   items" in a variable-size object, will contain the number of bytes
+   allocated for string data, not counting the null terminating character.
+   It is therefore equal to the `size' parameter (for
+   PyString_FromStringAndSize()) or the length of the string in the `str'
+   parameter (for PyString_FromString()).
+*/
 PyObject* PyString_FromStringAndSize(const(char)*, Py_ssize_t);
+/// ditto
 PyObject* PyString_FromString(const(char)*);
 PyObject* PyString_FromFormatV(const(char)*,  va_list); 
 PyObject* PyString_FromFormat(const(char)*, ...);

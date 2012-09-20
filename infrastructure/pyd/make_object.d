@@ -604,7 +604,7 @@ if((isArray!T || IsStaticArrayPointer!T) &&
         PyObject* pyformat = d_to_python(format);
     }else{
         // stinking py2 array won't take unicode
-        PyObject* pyformat = PyString_FromStringAndSize(format.ptr, format.length);
+        PyObject* pyformat = d_to_python_bytes(format);
     }
     PyObject* args = PyTuple_New(1);
     PyTuple_SetItem(args, 0, pyformat);
@@ -623,6 +623,13 @@ if((isArray!T || IsStaticArrayPointer!T) &&
     }
     arr_o.ob_item = cast(ubyte*) data;
     return obj;
+}
+
+/**
+  Convert a D object to python bytes (str, in python 2).
+*/
+PyObject* d_to_python_bytes(T)(T t) if(is(T == string)) {
+    return PyBytes_FromStringAndSize(t.ptr, t.length);
 }
 
 /** Convert an iterable Python object to a D object.
