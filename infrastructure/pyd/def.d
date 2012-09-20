@@ -255,6 +255,13 @@ void py_init() {
     foreach(action; after_py_init_deferred_actions) {
         action();
     }
+    version(Python_3_0_Or_Later) {
+        // stinking python 3 lazy initializes modules.
+        import pyd.embedded;
+        foreach(modulename, _; pyd_module_classes) {
+            py_import(modulename);
+        }
+    }
 }
 
 /// For embedding python, should you wish to restart the interpreter.

@@ -1512,10 +1512,11 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         alias _T* T;
     }
     void wrap_class() {
-        if(!Pyd_Module_p(modulename) && 
-                should_defer_class_wrap(modulename, name)) {
-            defer_class_wrap(modulename, name,  toDelegate(&wrap_class));
-            return;
+        if(!Pyd_Module_p(modulename)) {
+            if(should_defer_class_wrap(modulename, name)) {
+                defer_class_wrap(modulename, name,  toDelegate(&wrap_class));
+                return;
+            }
         }
         alias wrapped_class_type!(T) type;
         init_PyTypeObject!T(type);

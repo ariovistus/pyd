@@ -246,7 +246,7 @@ PyObject* d_to_python(T) (T t) {
         // If it's not a wrapped type, fall through to the exception.
     // If converting a struct by value, create a copy and wrap that
     } else static if (is(T == struct) && isInputRange!T) {
-            return d_to_python(wrap_range(t));
+        return d_to_python(wrap_range(t));
     } else static if (is(T == struct)) {
         if (is_wrapped!(T*)) {
             T* temp = new T;
@@ -569,7 +569,7 @@ if(isArray!T || IsStaticArrayPointer!T) {
         could_not_convert!T(o,
                 format("item size mismatch: %s vs %s", 
                     itemsize, E.sizeof));
-    Py_ssize_t count = arr_o.ob_size; 
+    Py_ssize_t count = Py_SIZE(arr_o);
     if(count < 0) 
         could_not_convert!T(o, format("nonsensical array length: %s", 
                     count));
@@ -600,7 +600,12 @@ if((isArray!T || IsStaticArrayPointer!T) &&
 
     alias MatrixInfo!T.MatrixElementType ME;
     string format = SimpleFormatType!ME.s;
-    PyObject* pyformat = PyBytes_FromStringAndSize(format.ptr, format.length);
+    version(Python_3_0_Or_Later) {
+        PyObject* pyformat = d_to_python(format);
+    }else{
+        // stinking py2 array won't take unicode
+        PyObject* pyformat = PyString_FromStringAndSize(format.ptr, format.length);
+    }
     PyObject* args = PyTuple_New(1);
     PyTuple_SetItem(args, 0, pyformat);
     scope(exit) Py_DECREF(args);
@@ -609,7 +614,7 @@ if((isArray!T || IsStaticArrayPointer!T) &&
     arrayobject* arr_o = cast(arrayobject*) obj;
     Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
     size_t datalen = ME.sizeof*shape[0];
-    arr_o.ob_size = shape[0];
+    Py_SET_SIZE(arr_o, shape[0]);
     void* data = PyMem_Malloc(datalen);
     static if(isPointer!T) {
         memcpy(data, t, datalen);
@@ -816,7 +821,6 @@ auto wrap_range(Range)(Range range) if(is(Range == struct)) {
     wrap.front = delegate PyObject*(void* a) {
         return d_to_python(front_dg(cast(Range*)a));
     };
-
     return wrap;
 }
 
@@ -1176,7 +1180,7 @@ void could_not_convert(T) (PyObject* o, string reason = "",
         if (py_type_str is null) {
             py_typename = "<unknown>";
         } else {
-            py_typename = to!string(PyBytes_AsString(py_type_str));
+            py_typename = python_to_d!string(py_type_str);
             Py_DECREF(py_type_str);
         }
     }

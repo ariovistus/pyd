@@ -18,8 +18,9 @@ PYTHON_3_2 = -version=Python_3_2_Or_Later \
 	     -L-lpython3.2mu
 DC = dmd -unittest -property -debug -gc
 
-all: pydobject.x make_object.x make_object3.x embedded.x embedded3.x func_wrap.x func_wrap3.x class_wrap.x class_wrap3.x def.x def3.x struct_wrap.x buffer.x
+all: pydobject.x pydobject3.x make_object.x make_object3.x embedded.x embedded3.x func_wrap.x func_wrap3.x class_wrap.x class_wrap3.x def.x def3.x struct_wrap.x buffer.x
 	./pydobject.x
+	./pydobject3.x
 	./make_object.x
 	./make_object3.x
 	./embedded.x

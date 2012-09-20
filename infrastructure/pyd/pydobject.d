@@ -743,7 +743,10 @@ Struct Format Strings </a>
     // Arithmetic
     //------------
     /// Forwards to appropriate Python binary operator overload.
-    PydObject opBinary(string op, T)(T o) {
+    ///
+    /// Note / in python 3 always returns a floating point value,
+    /// while in python 2 returns an int for int arguments.
+    PydObject opBinary(string op, T)(T o) if(op != "in") {
         static if((is(T : int) || is(T == PydObject)) && op == "*") {
             if(PySequence_Check(m_ptr)) {
                 static if(is(T == PydObject)) {
@@ -766,7 +769,11 @@ Struct Format Strings </a>
         }else static if(op == "*") {
             return new PydObject(PyNumber_Multiply(m_ptr, rhs.m_ptr));
         }else static if(op == "/") {
-            return new PydObject(PyNumber_Divide(m_ptr, rhs.m_ptr));
+            version(Python_3_0_Or_Later) {
+                return new PydObject(PyNumber_TrueDivide(m_ptr, rhs.m_ptr));
+            }else{
+                return new PydObject(PyNumber_Divide(m_ptr, rhs.m_ptr));
+            }
         }else static if(op == "%") {
             return new PydObject(PyNumber_Remainder(m_ptr, rhs.m_ptr));
         }else static if(op == "^^") {
@@ -887,7 +894,11 @@ Struct Format Strings </a>
         }else static if(op == "*") {
             alias PyNumber_InPlaceMultiply Op;
         }else static if(op == "/") {
-            alias PyNumber_InPlaceDivide Op;
+            version(Python_3_0_Or_Later) {
+                alias PyNumber_InPlaceTrueDivide Op;
+            }else{
+                alias PyNumber_InPlaceDivide Op;
+            }
         }else static if(op == "%") {
             alias PyNumber_InPlaceRemainder Op;
         }else static if(op == "^^") {
@@ -1031,7 +1042,7 @@ Struct Format Strings </a>
     }
     /// ditto
     bool opBinaryRight(string op,T)(T key) if(op == "in" && is(T == string)){
-        if(PyDict_Check(m_ptr) || PyMapping_Check(m_ptr)) {
+        if(!PySequence_Check(m_ptr) && (PyDict_Check(m_ptr) || PyMapping_Check(m_ptr))) {
             return this.has_key(key);
         }else{
             PydObject v = py(key);
