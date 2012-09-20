@@ -929,10 +929,12 @@ struct OpIndex(index_t...) {
         }
     }
     static void call(T)() {
+        /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_mapping.mp_subscript";
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opindex_wrap!(T, Inner!T.FN).func;");
+        */
     }
     template shim(size_t i,T) {
         // bah
@@ -982,10 +984,12 @@ struct OpIndexAssign(index_t...) {
         }
     }
     static void call(T)() {
+        /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_mapping.mp_ass_subscript";
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opindexassign_wrap!(T, Inner!T.FN).func;");
+        */
     }
     template shim(size_t i,T) {
         // bah
@@ -1028,10 +1032,12 @@ struct OpSlice() {
         }
     }
     static void call(T)() {
+        /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_sequence.sq_slice";
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opslice_wrap!(T, Inner!T.FN).func;");
+        */
     }
     template shim(size_t i,T) {
         // bah
@@ -1087,10 +1093,12 @@ struct OpSliceAssign(rhs_t = Guess) {
         }
     }
     static void call(T)() {
+        /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_sequence.sq_ass_slice";
         mixin(autoInitializeMethods());
         mixin(slot ~ " = &opsliceassign_wrap!(T, Inner!T.FN).func;");
+        */
     }
     template shim(size_t i,T) {
         // bah
@@ -1321,11 +1329,138 @@ struct Iterator(Params...) {
     }
 }
 
+template IsOpIndex(P...) {
+    enum bool IsOpIndex = P[0].stringof.startsWith("OpIndex!");
+}
+template IsOpIndexAssign(P...) {
+    enum bool IsOpIndexAssign = P[0].stringof.startsWith("OpIndexAssign!");
+}
+template IsOpSlice(P...) {
+    enum bool IsOpSlice = P[0].stringof.startsWith("OpSlice!");
+}
+template IsOpSliceAssign(P...) {
+    enum bool IsOpSliceAssign = P[0].stringof.startsWith("OpSliceAssign!");
+}
+template IsLen(P...) {
+    enum bool IsLen = P[0].stringof.startsWith("Len!");
+}
 /*
    Extended slice syntax goes through mp_subscript, mp_ass_subscript,
    not sq_slice, sq_ass_slice.
+
+TODO: Python's extended slicing is more powerful than D's. We should expose
+this.
 */
 struct IndexSliceMerge(Params...) {
+    alias Filter!(IsOpIndex, Params) OpIndexs;
+    alias Filter!(IsOpIndexAssign, Params) OpIndexAssigns;
+    alias Filter!(IsOpSlice, Params) OpSlices;
+    alias Filter!(IsOpSliceAssign, Params) OpSliceAssigns;
+    alias Filter!(IsLen, Params) Lens;
+
+    static assert(OpIndexs.length <= 1);
+    static assert(OpIndexAssigns.length <= 1);
+    static assert(OpSlices.length <= 1);
+    static assert(OpSliceAssigns.length <= 1);
+
+    static void call(T)() {
+        alias wrapped_class_type!T type;
+        static if(OpIndexs.length + OpSlices.length) {
+            {
+                enum slot = "type.tp_as_mapping.mp_subscript";
+                mixin(autoInitializeMethods());
+                mixin(slot ~ " = &op_func!(T);");
+            }
+        }
+        static if(OpIndexAssigns.length + OpSliceAssigns.length) {
+            {
+                enum slot = "type.tp_as_mapping.mp_ass_subscript";
+                mixin(autoInitializeMethods());
+                mixin(slot ~ " = &ass_func!(T);");
+            }
+        }
+    }
+
+
+    static extern(C) PyObject* op_func(T)(PyObject* self, PyObject* key) {
+        static if(OpIndexs.length) {
+            version(Python_2_5_Or_Later) {
+                if(!PyIndex_Check(key)) goto slice;
+                Py_ssize_t i = PyNumber_AsSsize_t(key, PyExc_IndexError);
+            }else{
+                if(!PyInt_Check(key)) goto slice;
+                C_long i = PyLong_AsLong(key);
+            }
+            if(i == -1 && PyErr_Occurred()) {
+                return null;
+            }
+            alias OpIndexs[0] OpIndex0;
+            return opindex_wrap!(T, OpIndex0.Inner!T.FN).func(self, key);
+        }
+slice:
+        static if(OpSlices.length) {
+            if(PySlice_Check(key)) {
+                Py_ssize_t len = PyObject_Length(self);
+                Py_ssize_t start, stop, step, slicelength;
+                if(PySlice_GetIndicesEx(key, len,
+                            &start, &stop, &step, &slicelength) < 0) {
+                    return null;
+                }
+                if(step != 1) {
+                    PyErr_SetString(PyExc_TypeError, 
+                            "slice steps not supported in D");
+                    return null;
+                }
+                alias OpSlices[0] OpSlice0;
+                return opslice_wrap!(T, OpSlice0.Inner!T.FN).func(
+                        self, start, stop);
+            }
+        }
+        PyErr_SetString(PyExc_TypeError, format(
+                    "index type '%s' not supported\0", to!string(key.ob_type.tp_name)).ptr);
+        return null;
+    }
+
+    static extern(C) int ass_func(T)(PyObject* self, PyObject* key, 
+            PyObject* val) {
+        static if(OpIndexAssigns.length) {
+            version(Python_2_5_Or_Later) {
+                if(!PyIndex_Check(key)) goto slice;
+                Py_ssize_t i = PyNumber_AsSsize_t(key, PyExc_IndexError);
+            }else{
+                if(!PyInt_Check(key)) goto slice;
+                C_long i = PyLong_AsLong(key);
+            }
+            if(i == -1 && PyErr_Occurred()) {
+                return -1;
+            }
+            alias OpIndexAssigns[0] OpIndexAssign0;
+            return opindexassign_wrap!(T, OpIndexAssign0.Inner!T.FN).func(
+                    self, key, val);
+        }
+slice:
+        static if(OpSliceAssigns.length) {
+            if(PySlice_Check(key)) {
+                Py_ssize_t len = PyObject_Length(self);
+                Py_ssize_t start, stop, step, slicelength;
+                if(PySlice_GetIndicesEx(key, len,
+                            &start, &stop, &step, &slicelength) < 0) {
+                    return -1;
+                }
+                if(step != 1) {
+                    PyErr_SetString(PyExc_TypeError, 
+                            "slice steps not supported in D");
+                    return -1;
+                }
+                alias OpSliceAssigns[0] OpSliceAssign0;
+                return opsliceassign_wrap!(T, OpSliceAssign0.Inner!T.FN).func(
+                        self, start, stop, val);
+            }
+        }
+        PyErr_SetString(PyExc_TypeError, format(
+                    "assign index type '%s' not supported\0", to!string(key.ob_type.tp_name)).ptr);
+        return -1;
+    }
 }
 
 /*
@@ -1431,6 +1566,9 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
 
         Operators!(Filter!(IsOp, Params)).call!T();
         // its just that simple.
+
+        IndexSliceMerge!(Params).call!T();
+        // indexing and slicing aren't exactly simple.
 
         //////////////////////////
         // Constructor wrapping //
