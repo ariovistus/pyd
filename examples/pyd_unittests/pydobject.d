@@ -1,7 +1,10 @@
 import pyd.pyd, pyd.embedded;
 
 static this() {
-    add_module("testing");
+    on_py_init({
+    add_module!(ModuleName!"testing")();
+    });
+    py_init();
 }
 
 // PydObject as dict

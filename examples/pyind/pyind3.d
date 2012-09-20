@@ -31,22 +31,22 @@ class Y {
 
 
 static this() {
-    def!(knock, ModuleName!"office", Docstring!"a brain specialist works here")(); 
-    add_module("office");
+    on_py_init({
+            def!(knock, ModuleName!"office", Docstring!"a brain specialist works here")(); 
+            add_module!(ModuleName!"office")();
+    });
+    on_py_init({
     wrap_class!(Y, 
         Def!(Y.query),
         ModuleName!"office",
         Property!(Y.brain_status),
         Property!(Y.resolution, Mode!"r"),
     )();
+    }, PyInitOrdering.After);
+    py_init();
 }
 
 void main() {
-    py_stmts(
-            "import office\n"
-            "print(office)"
-            ,
-            );
     // simple expressions can be evaluated
     int i = py_eval!int("1+2", "office");
     writeln(i);
@@ -85,8 +85,8 @@ class X:
     py_stmts(q"<
 y = Y();
 y.brain_status = "HURTS";
-print "MY BRAIN %s" % y.brain_status;
-print y.resolution
+print("MY BRAIN %s" % y.brain_status);
+print(y.resolution)
 >","office");
 }
 

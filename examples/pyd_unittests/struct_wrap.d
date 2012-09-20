@@ -15,7 +15,10 @@ struct Foo1{
 }
 
 static this() {
-    add_module("testing");
+    on_py_init({
+    add_module!(ModuleName!"testing")();
+    });
+    on_py_init({
     wrap_struct!(
             Foo1,
             ModuleName!"testing",
@@ -25,6 +28,9 @@ static this() {
             Member!("k"),
             Def!(Foo1.bar),
             )();
+    }, PyInitOrdering.After);
+
+    py_init();
 }
 
 

@@ -96,9 +96,28 @@ struct PyVarObject {
     }
 }
 
-auto Py_REFCNT()(PyObject* ob){ return ob.ob_refcnt; }
-auto Py_TYPE()(PyObject* ob){ return ob.ob_type; }
-auto Py_SIZE()(PyVarObject* ob){ return ob.ob_size; }
+auto Py_REFCNT(T)(T* ob) { 
+    return (cast(PyObject*)ob).ob_refcnt; 
+}
+auto Py_TYPE(T)(T* ob) { 
+    return (cast(PyObject*)ob).ob_type; 
+}
+auto Py_SIZE(T)(T* ob) { 
+    return (cast(PyVarObject*)ob).ob_size; 
+}
+
+// nonstandard, but annonying to do without.
+void Py_SET_REFCNT(T)(T* ob, int refcnt) {
+    (cast(PyObject*) ob).ob_refcnt = refcnt;
+}
+void Py_SET_TYPE(T)(T* ob, PyTypeObject* tipo) { 
+    (cast(PyObject*)ob).ob_type = tipo; 
+}
+void Py_SET_SIZE(T)(T* ob, Py_ssize_t size) { 
+    (cast(PyVarObject*)ob).ob_size = size; 
+}
+
+// end nonstandard
 
 alias PyObject* function(PyObject*) unaryfunc;
 alias PyObject* function(PyObject*, PyObject*) binaryfunc;

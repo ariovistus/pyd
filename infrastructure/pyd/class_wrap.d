@@ -31,6 +31,7 @@ import std.algorithm: countUntil;
 import std.traits;
 import std.conv;
 import std.exception: enforce;
+import std.functional;
 import std.metastrings;
 import std.typetuple;
 import std.string: format;
@@ -69,7 +70,7 @@ template wrapped_class_object(T) {
 }
 
 void init_PyTypeObject(T)(ref PyTypeObject tipo) {
-    (cast(PyObject*) &tipo).ob_refcnt = 1;
+    Py_SET_REFCNT(&tipo, 1);
     tipo.tp_dealloc = &wrapped_methods!(T).wrapped_dealloc;
     tipo.tp_new = &wrapped_methods!(T).wrapped_new;
 }
@@ -881,7 +882,7 @@ struct OpCompare(_rhs_t = Guess) {
     }
     static void call(T)() {
         alias wrapped_class_type!T type;
-        type.tp_compare = &opcmp_wrap!(T, Inner!T.FN).func;
+        type.tp_richcompare = &rich_opcmp_wrap!(T, Inner!T.FN).func;
     }
     template shim(size_t i,T) {
         // bah
@@ -1285,8 +1286,6 @@ struct Constructors(Ctors...) {
             static if (is(typeof(new T))) {
                 static if (is(T == class)) {
                     type.tp_init = &wrapped_init!(Shim).init;
-                    import std.stdio;
-                    writeln("type.tp_init: ", type.tp_init);
                 } else {
                     type.tp_init = &wrapped_struct_init!(T).init;
                 }
@@ -1320,6 +1319,13 @@ struct Iterator(Params...) {
             type.tp_iternext = &opiter_wrap!(T, Nexts[0].func).func;
         }
     }
+}
+
+/*
+   Extended slice syntax goes through mp_subscript, mp_ass_subscript,
+   not sq_slice, sq_ass_slice.
+*/
+struct IndexSliceMerge(Params...) {
 }
 
 /*
@@ -1371,6 +1377,11 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         alias _T* T;
     }
     void wrap_class() {
+        if(!Pyd_Module_p(modulename) && 
+                should_defer_class_wrap(modulename, name)) {
+            defer_class_wrap(modulename, name,  toDelegate(&wrap_class));
+            return;
+        }
         alias wrapped_class_type!(T) type;
         init_PyTypeObject!T(type);
 
@@ -1382,13 +1393,13 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
             }
         }
 
-        assert(Pyd_Module_p(modulename) !is null, "Must initialize module before wrapping classes.");
+        assert(Pyd_Module_p(modulename) !is null, "Must initialize module '" ~ modulename ~ "' before wrapping classes.");
         string module_name = to!string(PyModule_GetName(Pyd_Module_p(modulename)));
 
         //////////////////
         // Basic values //
         //////////////////
-        (cast(PyObject*) &type).ob_type      = &PyType_Type;
+        Py_SET_TYPE(&type, &PyType_Type);
         type.tp_basicsize = (wrapped_class_object!(T)).sizeof;
         type.tp_doc       = (docstring ~ "\0").ptr;
         version(Python_3_0_Or_Later) {

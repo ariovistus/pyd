@@ -375,6 +375,46 @@ template opcmp_wrap(T, alias fn) {
     }
 }
 
+template rich_opcmp_wrap(T, alias fn) {
+    alias wrapped_class_object!(T) wrap_object;
+    alias ParameterTypeTuple!(fn) Info;
+    alias dg_wrapper!(T, typeof(&fn)) get_dg;
+    alias Info[0] OtherT;
+    extern(C)
+    PyObject* func(PyObject* self, PyObject* other, int op) {
+        return exception_catcher(delegate PyObject*() {
+            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            auto dother = python_to_d!OtherT(other);
+            int result = dg(dother);
+            bool pyresult;
+            switch(op) {
+                case Py_LT:
+                    pyresult = (result < 0);
+                    break;
+                case Py_LE:
+                    pyresult = (result <= 0);
+                    break;
+                case Py_EQ:
+                    pyresult = (result == 0);
+                    break;
+                case Py_NE:
+                    pyresult = (result != 0);
+                    break;
+                case Py_GT:
+                    pyresult = (result > 0);
+                    break;
+                case Py_GE:
+                    pyresult = (result >= 0);
+                    break;
+                default:
+                    assert(0);
+            }
+            if (pyresult) return Py_INCREF(Py_True);
+            else return Py_INCREF(Py_False);
+        });
+    }
+}
+
 //----------//
 // Dispatch //
 //----------//

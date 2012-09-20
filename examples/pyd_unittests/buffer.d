@@ -9,7 +9,10 @@ import deimos.python.Python;
 import std.stdio;
 
 void main() {
-    add_module("testing");
+    on_py_init({
+            add_module!(ModuleName!"testing")();
+    });
+    py_init();
     py_stmts(
             "from numpy import eye\n"
             "a = eye(4,k=1)\n",

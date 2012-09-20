@@ -17,7 +17,7 @@ PYTHON_3_2 = -version=Python_3_2_Or_Later \
 	     -L-lpython3.2mu
 DC = dmd -m64 -unittest -property -debug  
 #DC = ldmd2 -unittest -property -debug -gc
-all: pyind
+all: pyind pyind3
 clean:
 	rm -f *.o
 	rm -f pyind

@@ -45,6 +45,8 @@ version(Python_3_0_Or_Later) {
 }
 private PyObject*[string] pyd_modules;
 
+private void delegate()[string][string] pyd_module_classes;
+
 private void ready_module_methods(string modulename) {
     PyMethodDef empty;
     if (!(modulename in module_methods)) {
@@ -53,10 +55,24 @@ private void ready_module_methods(string modulename) {
     }
 }
 
+
 PyObject* Pyd_Module_p(string modulename="") {
     PyObject** m = modulename in pyd_modules;
     if (m is null) return null;
     else return *m;
+}
+
+bool should_defer_class_wrap(string modulename, string classname) {
+    version(Python_3_0_Or_Later) {
+    return !(modulename in pyd_modules) && (modulename in pyd_module_classes)
+        && !(classname in pyd_module_classes[modulename]);
+    }else {
+        return false;
+    }
+}
+void defer_class_wrap(string modulename, string classname, 
+        void delegate() wrapper) {
+    pyd_module_classes[modulename][classname] = wrapper;
 }
 
 /// Param of def
@@ -229,12 +245,29 @@ template alias_selector(alias fn, fn_t) {
 
 string pyd_module_name;
 
+/// For embedding python
+void py_init() {
+    foreach(action; before_py_init_deferred_actions) {
+        action();
+    }
+    Py_Initialize();
+    py_init_called = true;
+    foreach(action; after_py_init_deferred_actions) {
+        action();
+    }
+}
+
+/// For embedding python, should you wish to restart the interpreter.
+void py_finish() {
+    Py_Finalize();
+    py_init_called = false;
+}
+
 /**
  * Module initialization function. Should be called after the last call to def.
  * For extending python.
  */
 PyObject* module_init(string docstring="") {
-    //_loadPythonSupport();
     string name = pyd_module_name;
     ready_module_methods("");
     version(Python_3_0_Or_Later) {
@@ -245,56 +278,105 @@ PyObject* module_init(string docstring="") {
         modl.m_size = -1;
         modl.m_methods = module_methods[""].ptr;
 
-        pyd_modules[""] = PyModule_Create(modl);
     }else {
         pyd_modules[""] = Py_INCREF(Py_InitModule3((name ~ "\0"), 
                     module_methods[""].ptr, (docstring ~ "\0")));
     }
-    foreach(action; on_module_init_deferred_actions) {
+    foreach(action; before_py_init_deferred_actions ~ 
+            after_py_init_deferred_actions) {
+        //TODO: will this work?
         action();
     }
-    module_init_called = true;
+    py_init_called = true;
     return pyd_modules[""];
 }
 
-/// For embedding python
-void py_init() {
-    Py_Initialize();
-    foreach(action; on_module_init_deferred_actions) {
-        action();
-    }
-    module_init_called = true;
-}
-
 /**
- * Module initialization function. Should be called after the last call to def.
+Module initialization function. Should be called after the last call to def.
+
+Params
+Options = Optional parameters. Takes Docstring!(docstring), and ModuleName!(modulename)
+modulename = name of module
+docstring = docstring of module
  */
-PyObject* add_module(string modulename, string docstring="") {
+void add_module(Options...)() {
+    alias Args!("","", "", "",Options) args;
+    enum modulename = args.modulename;
+    enum docstring = args.docstring;
     ready_module_methods(modulename);
     version(Python_3_0_Or_Later) {
-        PyModuleDef* modl = pyd_moduledefs[modulename] = new PyModuleDef;
-        (cast(PyObject*) modl).ob_refcnt = 1;
+        assert(!py_init_called);
+        PyModuleDef* modl = new PyModuleDef;
+        Py_SET_REFCNT(modl, 1);
         modl.m_name = zcc(modulename);
         modl.m_doc = zcc(docstring);
         modl.m_size = -1;
         modl.m_methods = module_methods[modulename].ptr;
+        pyd_moduledefs[modulename] = modl;
+        pyd_module_classes[modulename] = (void delegate()[string]).init;
 
-        pyd_modules[modulename] = PyModule_Create(modl);
-        zz = 44;
+        PyImport_AppendInittab(modulename.ptr, &Py3_ModuleInit!modulename.func);
     }else{
+        // schizophrenic arrangements, these
+        assert(py_init_called);
         pyd_modules[modulename] = Py_INCREF(Py_InitModule3((modulename ~ "\0"), 
                     module_methods[modulename].ptr, (docstring ~ "\0")));
     }
-    return pyd_modules[modulename];
 }
 
-bool module_init_called = false;
-void delegate()[] on_module_init_deferred_actions;
-void on_module_init(void delegate() dg) {
-    if(module_init_called) {
-        dg();
-    }else {
-        on_module_init_deferred_actions ~= dg;
+template Py3_ModuleInit(string modulename) {
+    extern(C) PyObject* func() {
+        pyd_modules[modulename] = PyModule_Create(pyd_moduledefs[modulename]);
+        foreach(n,action; pyd_module_classes[modulename]) {
+            action();
+        }
+        return pyd_modules[modulename];
+    }
+}
+
+bool py_init_called = false;
+void delegate()[] before_py_init_deferred_actions;
+void delegate()[] after_py_init_deferred_actions;
+
+/// 
+enum PyInitOrdering{
+    /// call will be made before Py_Initialize.
+    Before,
+    /// call will be made after Py_Initialize.
+    After,
+}
+
+/// call will be made at the appropriate time for initializing
+/// modules.  (for python 2, it should be after Py_Initialize, 
+/// for python 3, before).
+version(Python_3_0_Or_Later) {
+    enum PyInitOrdering ModuleInit = PyInitOrdering.Before;
+}else{
+    enum PyInitOrdering ModuleInit = PyInitOrdering.After;
+}
+
+/**
+  Use this to wrap calls to add_module and the like.
+
+  py_init will ensure they are called at the appropriate time
+  */
+void on_py_init(void delegate() dg, 
+        PyInitOrdering ord = ModuleInit) {
+    with(PyInitOrdering) switch(ord) {
+        case Before:
+            if(py_init_called) {
+                enforce(0, "py_init has already been called");
+            }
+            before_py_init_deferred_actions ~= dg;
+            break;
+        case After:
+            if(py_init_called) {
+                dg();
+            }
+            after_py_init_deferred_actions ~= dg;
+            break;
+        default:
+            assert(0);
     }
 }
 

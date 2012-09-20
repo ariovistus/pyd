@@ -31,8 +31,13 @@ class Y {
 
 
 static this() {
-    def!(knock, ModuleName!"office", Docstring!"a brain specialist works here")(); 
-    add_module("office");
+    on_py_init({
+            def!(knock, ModuleName!"office", 
+                Docstring!"a brain specialist works here")(); 
+            add_module!(ModuleName!"office")();
+            });
+    py_init();
+
     wrap_class!(Y, 
         Def!(Y.query),
         ModuleName!"office",

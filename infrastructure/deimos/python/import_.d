@@ -83,16 +83,10 @@ struct _inittab {
 __gshared PyTypeObject PyNullImporter_Type;
 __gshared _inittab* PyImport_Inittab;
 
-version(Python_2_7_Or_Later){
-    alias const(char) Char2;
-}else{
-    alias char Char2;
-}
-
 version(Python_3_0_Or_Later) {
-    int PyImport_AppendInittab(Char2* name, PyObject* function() initfunc);
+    int PyImport_AppendInittab(const(char)* name, PyObject* function() initfunc);
 }else {
-    int PyImport_AppendInittab(Char2* name, void function() initfunc);
+    int PyImport_AppendInittab(const(char)* name, void function() initfunc);
 }
 int PyImport_ExtendInittab(_inittab *newtab);
 

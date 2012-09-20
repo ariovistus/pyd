@@ -53,14 +53,17 @@ import pyd.exception;
 
 
 shared static this() {
-    on_module_init(
-            {
-            add_module("pyd", "contains some wrapper utilities");
+    on_py_init( {
+            add_module!(
+                ModuleName!"pyd", 
+                Docstring!"contains some wrapper utilities")();
+            });
+    on_py_init( {
             wrap_struct!(RangeWrapper,
                 ModuleName!"pyd",
                 Def!(RangeWrapper.iter, PyName!"__iter__"),
                 Def!(RangeWrapper.next))();
-            });
+            }, PyInitOrdering.After);
 }
 
 class to_conversion_wrapper(dg_t) {
@@ -403,13 +406,6 @@ T python_to_d(T) (PyObject* o) {
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
             return WrapPyObject_AsObject!(T)(o);
         }// else could_not_convert!(T)(o);
-    /+
-    } else static if (is(wchar[] : T)) {
-        wchar[] temp;
-        temp.length = PyUnicode_GetSize(o);
-        PyUnicode_AsWideChar(cast(PyUnicodeObject*)o, temp, temp.length);
-        return temp;
-    +/
     } else static if (isSomeString!T) {
         alias Unqual!(typeof(T.init[0])) C;
         PyObject* str;

@@ -46,14 +46,11 @@ import std.algorithm: findSplit;
 import std.string: strip;
 import std.traits;
 
-shared static this() {
-    py_init();
-}
-
 /++
  + Fetch a python module object.
  +/
 PydObject py_import(string name) {
+    debug assert(Py_IsInitialized(), "python not initialized");
     return new PydObject(PyImport_ImportModule(zcc(name)));
 }
 
@@ -67,7 +64,8 @@ modl = context in which to run expression. must be a python module name.
 func_t = type of d function
  +/
 ReturnType!func_t py_def( string python, string modl, func_t) 
-    (ParameterTypeTuple!func_t args, string file = __FILE__, size_t line = __LINE__) {
+    (ParameterTypeTuple!func_t args, 
+     string file = __FILE__, size_t line = __LINE__) {
     //Note that type is really the only thing that need be static here, but hey.
         alias ReturnType!func_t R;
         alias ParameterTypeTuple!func_t Args;
@@ -78,6 +76,7 @@ ReturnType!func_t py_def( string python, string modl, func_t)
     static PythonException exc;
     static string errmsg;
     static bool once = true;
+    debug assert(Py_IsInitialized(), "python not initialized");
     if(once) {
         once = false;
         auto globals = py_import(modl).getdict();
@@ -118,6 +117,7 @@ python = a python expression
 modl = context in which to run expression. either a python module name, or "".
  +/
 T py_eval(T = PydObject)(string python, string modl = "", string file = __FILE__, size_t line = __LINE__) {
+    debug assert(Py_IsInitialized(), "python not initialized");
     PydObject locals = null;
     PyObject* locals_ptr = null;
     if(modl == "") {
@@ -151,6 +151,7 @@ python = python statements
 modl = context in which to run expression. either a python module name, or "".
  +/
 void py_stmts(string python, string modl = "",string file = __FILE__, size_t line = __LINE__) {
+    debug assert(Py_IsInitialized(), "python not initialized");
     PydObject locals;
     PyObject* locals_ptr;
     if(modl == "") {

@@ -103,6 +103,9 @@ string printSyntaxError(PyObject* type, PyObject* value, PyObject* traceback) {
     string text;
     auto ptext = PyObject_GetAttrString(value, "text");
     if(ptext) {
+        version(Python_3_0_Or_Later) {
+            ptext = PyUnicode_AsUTF8String(ptext);
+        }
         auto p2text = PyBytes_AsString(ptext);
         if(p2text) text = strip(to!string(p2text));
     }
@@ -116,6 +119,9 @@ string printSyntaxError(PyObject* type, PyObject* value, PyObject* traceback) {
     string message;
     auto pmsg = PyObject_GetAttrString(value, "msg");
     if(pmsg) {
+        version(Python_3_0_Or_Later) {
+            pmsg = PyUnicode_AsUTF8String(pmsg);
+        }
         auto cmsg = PyBytes_AsString(pmsg);
         if(cmsg) message = to!string(cmsg);
     }

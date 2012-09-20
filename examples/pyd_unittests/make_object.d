@@ -7,7 +7,10 @@ import deimos.python.Python;
 import std.stdio;
 
 static this() {
-    add_module("testing");
+    on_py_init({
+    add_module!(ModuleName!"testing")();
+    });
+    py_init();
 }
 
 auto cantconvert(E)(lazy E e) {
