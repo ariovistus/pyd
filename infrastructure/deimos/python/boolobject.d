@@ -1,3 +1,6 @@
+/** 
+  Mirror _boolobject.h
+  */
 module deimos.python.boolobject;
 
 import deimos.python.pyport;
@@ -13,9 +16,11 @@ version(Python_3_0_Or_Later) {
     alias PyIntObject PyBoolObject;
 }
 
+/// _
 __gshared PyTypeObject PyBool_Type;
 
 // D translation of C macro:
+/// _
 int PyBool_Check()(PyObject* x) {
     return x.ob_type == &PyBool_Type;
 }
@@ -28,9 +33,11 @@ version(Python_3_0_Or_Later) {
     __gshared PyIntObject _Py_TrueStruct;
 }
 
+/// _
 @property Borrowed!PyObject* Py_True()() {
     return cast(Borrowed!PyObject*) &_Py_TrueStruct;
 }
+/// _
 @property Borrowed!PyObject* Py_False()() {
     version(Python_3_0_Or_Later) {
         return cast(Borrowed!PyObject*) &_Py_FalseStruct;
@@ -39,6 +46,7 @@ version(Python_3_0_Or_Later) {
     }
 }
 
+/** Function to return a bool from a C long */
 PyObject* PyBool_FromLong(C_long);
 
 

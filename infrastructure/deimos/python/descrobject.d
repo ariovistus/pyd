@@ -1,3 +1,6 @@
+/**
+  Mirror _descrobject.h
+  */
 module deimos.python.descrobject;
 
 import deimos.python.pyport;
@@ -8,43 +11,79 @@ import deimos.python.structmember;
 extern(C):
 // Python-header-file: Include/descrobject.h:
 
+/// _
 alias PyObject* function(PyObject*, void*) getter;
+/// _
 alias int function(PyObject*, PyObject*, void*) setter;
 
+/// _
 struct PyGetSetDef {
+    /// _
     char* name;
+    /// ditto
     getter get;
+    /// ditto
     setter set;
+    /// ditto
     char* doc;
+    /// ditto
     void* closure;
 }
 
+/// _
 alias PyObject* function(PyObject*, PyObject*, void*) wrapperfunc;
+/// _
 alias PyObject* function(PyObject*, PyObject*, void*, PyObject*) wrapperfunc_kwds;
 
+/// _
 struct wrapperbase {
+    /// _
     char* name;
+    /// ditto
     int offset;
+    /// ditto
     void* function_;
+    /// ditto
     wrapperfunc wrapper;
+    /// ditto
     char* doc;
+    /// ditto
     int flags;
+    /// ditto
     PyObject* name_strobj;
 }
 
+/// _
 enum PyWrapperFlag_KEYWORDS = 1;
 
+/// _
 template PyDescr_COMMON() {
-    mixin PyObject_HEAD;
-    PyTypeObject* d_type;
-    PyObject* d_name;
+    version(Python_3_0_Or_Later) {
+        /// _
+        PyDescrObject d_common;
+    }else{
+        mixin PyObject_HEAD;
+        /// _
+        PyTypeObject* d_type;
+        /// _
+        PyObject* d_name;
+    }
 }
 
+/// subclass of PyObject.
 struct PyDescrObject {
-    mixin PyDescr_COMMON;
+    version(Python_3_0_Or_Later) {
+        mixin PyObject_HEAD;
+        /// _
+        PyTypeObject* d_type;
+        /// _
+        PyObject* d_name;
+    }else{
+        mixin PyDescr_COMMON;
+    }
 }
 
-// these were introduced in python 3, but they look generally useful.
+/// introduced in python 3, but looks generally useful.
 PyTypeObject* PyDescr_TYPE(T)(T* x) 
 if(     is(T == PyDescrObject) ||
         is(T == PyMethodDescrObject) ||
@@ -55,6 +94,7 @@ if(     is(T == PyDescrObject) ||
     return ((cast(PyDescrObject*)x).d_type);
 }
 
+/// introduced in python 3, but looks generally useful.
 PyObject* PyDescr_NAME(T)(T* x) 
 if(     is(T == PyDescrObject) ||
         is(T == PyMethodDescrObject) ||
@@ -65,64 +105,71 @@ if(     is(T == PyDescrObject) ||
     return ((cast(PyDescrObject*)x).d_name);
 }
 
+/// subclass of PyDescrObject
 struct PyMethodDescrObject {
-    version(Python_3_0_Or_Later) {
-        PyDescrObject d_common;
-    }else {
-        mixin PyDescr_COMMON;
-    }
+    mixin PyDescr_COMMON;
+    /// _
     PyMethodDef* d_method;
 }
 
+/// subclass of PyDescrObject
 struct PyMemberDescrObject {
-    version(Python_3_0_Or_Later) {
-        PyDescrObject d_common;
-    }else {
-        mixin PyDescr_COMMON;
-    }
+    mixin PyDescr_COMMON;
+    /// _
     PyMemberDef* d_member;
 }
 
+/// subclass of PyDescrObject
 struct PyGetSetDescrObject {
-    version(Python_3_0_Or_Later) {
-        PyDescrObject d_common;
-    }else {
-        mixin PyDescr_COMMON;
-    }
+    mixin PyDescr_COMMON;
+    /// _
     PyGetSetDef* d_getset;
 }
 
+/// subclass of PyDescrObject
 struct PyWrapperDescrObject {
-    version(Python_3_0_Or_Later) {
-        PyDescrObject d_common;
-    }else {
-        mixin PyDescr_COMMON;
-    }
+    mixin PyDescr_COMMON;
+    /// _
     wrapperbase* d_base;
+    /** This can be any function pointer */
     void* d_wrapped;
 }
 
-// PyWrapperDescr_Type is currently not accessible from D.
+/// _
 __gshared PyTypeObject PyWrapperDescr_Type;
 version(Python_2_6_Or_Later) {
+    /// Availability: >= 2.6
     __gshared PyTypeObject PyDictProxy_Type;
+    /// Availability: >= 2.6
     __gshared PyTypeObject PyGetSetDescr_Type;
+    /// Availability: >= 2.6
     __gshared PyTypeObject PyMemberDescr_Type;
 }
 version(Python_3_0_Or_Later) {
+    /// Availability: 3.2
     __gshared PyTypeObject PyClassMethodDescr_Type;
+    /// Availability: 3.2
     __gshared PyTypeObject PyMethodDescr_Type;
+    /// Availability: 3.2
     __gshared PyTypeObject _PyMethodWrapper_Type;
 }
 
+/// _
 PyObject* PyDescr_NewMethod(PyTypeObject*, PyMethodDef*);
+/// _
 PyObject* PyDescr_NewClassMethod(PyTypeObject*, PyMethodDef*);
+/// _
 PyObject* PyDescr_NewMember(PyTypeObject*, PyMemberDef*);
+/// _
 PyObject* PyDescr_NewGetSet(PyTypeObject*, PyGetSetDef*);
+/// _
 PyObject* PyDescr_NewWrapper(PyTypeObject*, wrapperbase*, void*);
+/// _
 PyObject* PyDictProxy_New(PyObject*);
+/// _
 PyObject* PyWrapper_New(PyObject*, PyObject*);
 
+/// _
 __gshared PyTypeObject PyProperty_Type;
 
 

@@ -1,3 +1,9 @@
+/**
+  Mirror _pyatomic.h
+
+  Note this is python 3 only
+  (and very probably doesn't work period)
+  */
 module deimos.python.pyatomic;
 
 /* This is modeled after the atomics interface from C1x, according to

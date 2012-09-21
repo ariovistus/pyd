@@ -1,3 +1,8 @@
+/**
+  Mirror _grammar.h
+
+  Grammar interface 
+  */
 module deimos.python.grammar;
 
 import std.c.stdio;
@@ -5,81 +10,113 @@ import std.c.stdio;
 extern(C):
 // Python-header-file: Include/object.h:
 
-/* A label of an arc */
-
+/** A label of an arc */
 struct label{
+    /// _
     int		 lb_type;
+    /// _
     char*	lb_str;
 }
 
-enum EMPTY = 0;		/* Label number 0 is by definition the empty label */
+/** Label number 0 is by definition the empty label */
+enum EMPTY = 0;		
 
-/* A list of labels */
-
+/** A list of labels */
 struct labellist{
+    /// _
     int		 ll_nlabels;
+    /// _
     label*	ll_label;
 }
 
-/* An arc from one state to another */
-
+/** An arc from one state to another */
 struct arc{
-    short	a_lbl;		/* Label of this arc */
-    short	a_arrow;	/* State where this arc goes to */
+    /** Label of this arc */
+    short	a_lbl;		
+    /** State where this arc goes to */
+    short	a_arrow;	
 }
 
-/* A state in a DFA */
-
+/** A state in a DFA */
 struct state{
+    /// _
     int		 s_narcs;
-    arc*	 s_arc;		/* Array of arcs */
+    /** Array of arcs */
+    arc*	 s_arc;		
 	
     /* Optional accelerators */
-    int		 s_lower;	/* Lowest label index */
-    int		 s_upper;	/* Highest label index */
-    int*	 s_accel;	/* Accelerator */
-    int		 s_accept;	/* Nonzero for accepting state */
+    /** Lowest label index */
+    int		 s_lower;	
+    /** Highest label index */
+    int		 s_upper;	
+    /** Accelerator */
+    int*	 s_accel;	
+    /** Nonzero for accepting state */
+    int		 s_accept;	
 }
 
-/* A DFA */
-
+/** A DFA */
 struct dfa{
-    int		 d_type;	/* Non-terminal this represents */
-    char*	 d_name;	/* For printing */
-    int		 d_initial;	/* Initial state */
+    /** Non-terminal this represents */
+    int		 d_type;	
+    /** For printing */
+    char*	 d_name;	
+    /** Initial state */
+    int		 d_initial;	
+    /// _
     int		 d_nstates;
-    state*	 d_state;	/* Array of states */
+    /** Array of states */
+    state*	 d_state;	
+    /// _
     void*/*bitset*/	 d_first;
 } 
 
-/* A grammar */
-
+/** A grammar */
 struct grammar{
+    /// _
     int		 g_ndfas;
-    dfa*	 g_dfa;		/* Array of DFAs */
+    /** Array of DFAs */
+    dfa*	 g_dfa;		
+    /// _
     labellist	 g_ll;
-    int		 g_start;	/* Start symbol of the grammar */
-    int		 g_accel;	/* Set if accelerators present */
+    /** Start symbol of the grammar */
+    int		 g_start;	
+    /** Set if accelerators present */
+    int		 g_accel;	
 } 
 
 /* FUNCTIONS */
 
+/// _
 grammar* newgrammar(int start);
+/// _
 dfa* adddfa(grammar* g, int type, char* name);
+/// _
 int addstate(dfa* d);
+/// _
 void addarc(dfa* d, int from, int to, int lbl);
+/// _
 dfa *PyGrammar_FindDFA(grammar* g, int type);
 
+/// _
 int addlabel(labellist* ll, int type, char* str);
+/// _
 int findlabel(labellist* ll, int type, char* str);
+/// _
 char* PyGrammar_LabelRepr(label* lb);
+/// _
 void translatelabels(grammar* g);
 
+/// _
 void addfirstsets(grammar* g);
 
+/// _
 void PyGrammar_AddAccelerators(grammar* g);
+/// _
 void PyGrammar_RemoveAccelerators(grammar*);
 
+/// _
 void printgrammar(grammar* g, FILE* fp);
+/// _
 void printnonterminals(grammar* g, FILE* fp);
 

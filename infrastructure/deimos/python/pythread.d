@@ -1,3 +1,6 @@
+/**
+  Mirror _pythread.h
+  */
 module deimos.python.pythread;
 
 import deimos.python.pyport;
@@ -6,31 +9,47 @@ extern(C):
 // Python-header-file: Include/pythread.h:
 
 version(Python_3_2_Or_Later) {
-    /* Return status codes for Python lock acquisition.  Chosen for maximum
+    /** Return status codes for Python lock acquisition.  Chosen for maximum
      * backwards compatibility, ie failure -> 0, success -> 1.  */
+    /// Availability: >= 3.2
     enum PyLockStatus {
+        /// _
         PY_LOCK_FAILURE = 0,
+        /// _
         PY_LOCK_ACQUIRED = 1,
+        /// _
         PY_LOCK_INTR
     } 
 }
 
+/// _
 alias void* PyThread_type_lock;
+/// _
 alias void* PyThread_type_sema;
 
+/// _
 void PyThread_init_thread();
+/// _
 C_long PyThread_start_new_thread(void function(void*), void*);
+/// _
 void PyThread_exit_thread();
+/// _
 void PyThread__PyThread_exit_thread();
+/// _
 C_long PyThread_get_thread_ident();
 
+/// _
 PyThread_type_lock PyThread_allocate_lock();
+/// _
 void PyThread_free_lock(PyThread_type_lock);
+/// _
 int PyThread_acquire_lock(PyThread_type_lock, int);
+/// _
 enum WAIT_LOCK = 1;
+/// _
 enum NOWAIT_LOCK = 0;
 version(Python_3_2_Or_Later) {
-    /* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
+    /** PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
        on a lock (see PyThread_acquire_lock_timed() below).
        PY_TIMEOUT_MAX is the highest usable value (in microseconds) of that
        type, and depends on the system threading API.
@@ -39,6 +58,7 @@ version(Python_3_2_Or_Later) {
         module exposes a higher-level API, with timeouts expressed in seconds
         and floating-point numbers allowed.
      */
+    /// Availability: >= 3.2
     alias C_long PY_TIMEOUT_T;
 
     /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
@@ -63,29 +83,41 @@ version(Python_3_2_Or_Later) {
        call will return PY_LOCK_INTR.  The caller may reattempt to acquire the
        lock.
      */
+    /// Availability: >= 3.2
         PyLockStatus PyThread_acquire_lock_timed(
             PyThread_type_lock,
             PY_TIMEOUT_T microseconds,
             int intr_flag);
 
 }
+/// _
 void PyThread_release_lock(PyThread_type_lock);
 
 version(Python_2_5_Or_Later){
+    /// Availability: >= 2.5
     size_t PyThread_get_stacksize();
+    /// Availability: >= 2.5
     int PyThread_set_stacksize(size_t);
 }
 
+/// _
 void PyThread_exit_prog(int);
+/// _
 void PyThread__PyThread_exit_prog(int);
 
+/// _
 int PyThread_create_key();
+/// _
 void PyThread_delete_key(int);
+/// _
 int PyThread_set_key_value(int, void*);
+/// _
 void* PyThread_get_key_value(int);
+/// _
 void PyThread_delete_key_value(int key);
 
 version(Python_2_5_Or_Later) {
+    /// Availability: >= 2.5
     void PyThread_ReInitTLS();
 }
 

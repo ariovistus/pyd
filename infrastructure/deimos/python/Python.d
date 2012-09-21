@@ -1,7 +1,10 @@
 module deimos.python.Python;
 
+/// _
 enum int Py_single_input = 256;
+/// _
 enum int Py_file_input = 257;
+/// _
 enum int Py_eval_input = 258;
 
 version(Python_2_4_Or_Later) {

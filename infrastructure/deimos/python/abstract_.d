@@ -1,14 +1,19 @@
+/**
+  Mirror abstract.h
+
+See_Also:
+<a href="http://docs.python.org/c-api/abstract.html"> Abstract Objects Layer</a>
+  */
 module deimos.python.abstract_;
 
 import deimos.python.pyport;
 import deimos.python.object;
 
 extern(C):
-// Python-header-file: Include/abstract.h:
 
 // D translations of C macros:
 /// _
-int PyObject_DelAttrString()(PyObject* o, Char1 *a) {
+int PyObject_DelAttrString()(PyObject* o, const(char) *a) {
     return PyObject_SetAttrString(o, a, null);
 }
 /// _
@@ -22,9 +27,9 @@ version(Python_3_0_Or_Later) {
 int PyObject_Cmp(PyObject* o1, PyObject* o2, int *result);
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // CALLABLES
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 
 /// _
 PyObject* PyObject_Call(PyObject* callable_object, PyObject* args, PyObject* kw);
@@ -39,20 +44,26 @@ PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...);
 /// _
 PyObject* PyObject_CallMethodObjArgs(PyObject* o,PyObject* m, ...);
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // GENERIC
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
+/// _
 PyObject* PyObject_Type(PyObject* o);
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // CONTAINERS
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 
+/// _
 Py_ssize_t PyObject_Size(PyObject* o);
-//int PyObject_Length(PyObject* o);
 /// _
 alias PyObject_Size PyObject_Length;
-/// _
+
+/** The length hint function returns a non-negative value from o.__len__()
+   or o.__length_hint__().  If those methods aren't found or return a negative
+   value, then the defaultvalue is returned.  If one of the calls fails,
+   this function returns -1.
+*/
 version(Python_2_6_Or_Later){
     Py_ssize_t _PyObject_LengthHint(PyObject*, Py_ssize_t);
 }else version(Python_2_5_Or_Later){
@@ -77,11 +88,12 @@ int PyObject_CheckReadBuffer(PyObject* obj);
 int PyObject_AsReadBuffer(PyObject* obj, void** buffer, Py_ssize_t* buffer_len);
 /// _
 int PyObject_AsWriteBuffer(PyObject* obj, void** buffer, Py_ssize_t* buffer_len);
-/// _
 
 version(Python_2_6_Or_Later){
     /* new buffer API */
 
+    /** Return 1 if the getbuffer function is available, otherwise
+       return 0 */
     int PyObject_CheckBuffer()(PyObject* obj){
         version(Python_3_0_Or_Later) {
             return (obj.ob_type.tp_as_buffer !is null) &&
@@ -93,45 +105,31 @@ version(Python_2_6_Or_Later){
         }
     }
 
-    /* Return 1 if the getbuffer function is available, otherwise
-       return 0 */
-
-/// _
-    int PyObject_GetBuffer(PyObject* obj, Py_buffer* view,
-            int flags);
-
-    /* This is a C-API version of the getbuffer function call.  It checks
+    /** This is a C-API version of the getbuffer function call.  It checks
        to make sure object has the required function pointer and issues the
        call.  Returns -1 and raises an error on failure and returns 0 on
        success
      */
+    int PyObject_GetBuffer(PyObject* obj, Py_buffer* view,
+            int flags);
 
-
-/// _
-    void* PyBuffer_GetPointer(Py_buffer* view, Py_ssize_t* indices);
-
-    /* Get the memory area pointed to by the indices for the buffer given.
+    /** Get the memory area pointed to by the indices for the buffer given.
        Note that view->ndim is the assumed size of indices
      */
+    void* PyBuffer_GetPointer(Py_buffer* view, Py_ssize_t* indices);
 
-/// _
+    /** Return the implied itemsize of the data-format area from a
+       struct-style description 
+
+       abstract.h lies; this function actually does not exist. We're lying too.
+     */
     int PyBuffer_SizeFromFormat(const(char) *);
-
-    /* Return the implied itemsize of the data-format area from a
-       struct-style description */
-
-
 
 /// _
     int PyBuffer_ToContiguous(void* buf, Py_buffer* view,
             Py_ssize_t len, char fort);
 
-/// _
-    int PyBuffer_FromContiguous(Py_buffer* view, void* buf,
-            Py_ssize_t len, char fort);
-
-
-    /* Copy len bytes of data from the contiguous chunk of memory
+    /** Copy len bytes of data from the contiguous chunk of memory
        pointed to by buf into the buffer exported by obj.  Return
        0 on success and return -1 and raise a PyBuffer_Error on
        error (i.e. the object does not have a buffer interface or
@@ -146,60 +144,58 @@ version(Python_2_6_Or_Later){
        in whatever way is more efficient.
 
      */
+    int PyBuffer_FromContiguous(Py_buffer* view, void* buf,
+            Py_ssize_t len, char fort);
 
-/// _
+
+
+    /** Copy the data from the src buffer to the buffer of dest
+     */
     int PyObject_CopyData(PyObject* dest, PyObject* src);
 
-    /* Copy the data from the src buffer to the buffer of destination
-     */
 
 /// _
     int PyBuffer_IsContiguous(Py_buffer* view, char fort);
 
 
-/// _
+    /**  Fill the strides array with byte-strides of a contiguous
+        (Fortran-style if fort is 'F' or C-style otherwise)
+        array of the given shape with the given number of bytes
+        per element.
+     */
     void PyBuffer_FillContiguousStrides(int ndims,
             Py_ssize_t* shape,
             Py_ssize_t* strides,
             int itemsize,
             char fort);
 
-    /*  Fill the strides array with byte-strides of a contiguous
-        (Fortran-style if fort is 'F' or C-style otherwise)
-        array of the given shape with the given number of bytes
-        per element.
-     */
-
-/// _
-    int PyBuffer_FillInfo(Py_buffer* view, PyObject* o, void* buf,
-            Py_ssize_t len, int readonly,
-            int flags);
-
-    /* Fills in a buffer-info structure correctly for an exporter
+    /** Fills in a buffer-info structure correctly for an exporter
        that can only share a contiguous chunk of memory of
        "unsigned bytes" of the given length. Returns 0 on success
        and -1 (with raising an error) on error.
      */
+    int PyBuffer_FillInfo(Py_buffer* view, PyObject* o, void* buf,
+            Py_ssize_t len, int readonly,
+            int flags);
 
-/// _
+    /** Releases a Py_buffer obtained from getbuffer ParseTuple's s*.
+     */
     void PyBuffer_Release(Py_buffer* view);
 
-    /* Releases a Py_buffer obtained from getbuffer ParseTuple's s*.
-     */
-
-/// _
-    PyObject* PyObject_Format(PyObject* obj,
-            PyObject* format_spec);
-    /*
+    /**
        Takes an arbitrary object and returns the result of
        calling obj.__format__(format_spec).
      */
+    PyObject* PyObject_Format(PyObject* obj,
+            PyObject* format_spec);
 
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // ITERATORS
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
+
+/// _
 PyObject* PyObject_GetIter(PyObject*);
 
 // D translation of C macro:
@@ -235,7 +231,7 @@ PyObject* PyNumber_Subtract(PyObject* o1, PyObject* o2);
 PyObject* PyNumber_Multiply(PyObject* o1, PyObject* o2);
 version(Python_3_0_Or_Later) {
 }else{
-    /// _
+    /// Availability: 2.*
     PyObject* PyNumber_Divide(PyObject* o1, PyObject* o2);
 }
 /// _
@@ -267,8 +263,8 @@ PyObject* PyNumber_Xor(PyObject* o1, PyObject* o2);
 /// _
 PyObject* PyNumber_Or(PyObject* o1, PyObject* o2);
 
-/// _
-version(Python_2_5_Or_Later){
+version(Python_2_5_Or_Later) {
+/// Availability: >= 2.5
     int PyIndex_Check()(PyObject* obj) {
         version(Python_3_0_Or_Later) {
             return obj.ob_type.tp_as_number !is null &&
@@ -279,7 +275,7 @@ version(Python_2_5_Or_Later){
                 obj.ob_type.tp_as_number.nb_index !is null;
         }
     }
-/// _
+/// Availability: >= 2.5
     PyObject* PyNumber_Index(PyObject* o);
     /**
        Returns the Integral instance converted to an int. The
@@ -288,11 +284,13 @@ version(Python_2_5_Or_Later){
        used to create the TypeError if integral isn't actually an
        Integral instance. error_format should be a format string
        that can accept a char* naming integral's type.
+
+        Availability: >= 2.5
      */
     Py_ssize_t PyNumber_AsSsize_t(PyObject* o, PyObject* exc);
 }
-version(Python_2_6_Or_Later){
-
+version(Python_2_6_Or_Later) {
+/// Availability: >= 2.6
     PyObject*  _PyNumber_ConvertIntegralToInt(
             PyObject* integral,
             const(char)* error_format);
@@ -300,7 +298,7 @@ version(Python_2_6_Or_Later){
 
 version(Python_3_0_Or_Later) {
 }else {
-    /// _
+    /// Availability: 2.*
     PyObject* PyNumber_Int(PyObject* o);
 }
 /// _
@@ -315,7 +313,7 @@ PyObject* PyNumber_InPlaceSubtract(PyObject* o1, PyObject* o2);
 PyObject* PyNumber_InPlaceMultiply(PyObject* o1, PyObject* o2);
 version(Python_3_0_Or_Later) {
 }else{
-    /// _
+    /// Availability: 2.*
     PyObject* PyNumber_InPlaceDivide(PyObject* o1, PyObject* o2);
 }
 /// _
@@ -336,21 +334,23 @@ PyObject* PyNumber_InPlaceAnd(PyObject* o1, PyObject* o2);
 PyObject* PyNumber_InPlaceXor(PyObject* o1, PyObject* o2);
 /// _
 PyObject* PyNumber_InPlaceOr(PyObject* o1, PyObject* o2);
-/// _
-version(Python_2_6_Or_Later){
-    PyObject* PyNumber_ToBase(PyObject* n, int base);
 
-    /*
+version(Python_2_6_Or_Later){
+    /**
        Returns the integer n converted to a string with a base, with a base
        marker of 0b, 0o or 0x prefixed if applicable.
        If n is not an int object, it is converted with PyNumber_Index first.
+
+Availability: >= 2.6
      */
+    PyObject* PyNumber_ToBase(PyObject* n, int base);
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // SEQUENCES
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 
+/// _
 int PySequence_Check(PyObject* o);
 /// _
 Py_ssize_t PySequence_Size(PyObject* o);
@@ -421,9 +421,10 @@ PyObject*  PySequence_InPlaceConcat(PyObject* o1, PyObject* o2);
 /// _
 PyObject*  PySequence_InPlaceRepeat(PyObject* o, Py_ssize_t count);
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // MAPPINGS
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
+/// _
 int PyMapping_Check(PyObject* o);
 /// _
 Py_ssize_t PyMapping_Size(PyObject* o);
@@ -445,20 +446,23 @@ int PyMapping_HasKeyString(PyObject* o, char* key);
 int PyMapping_HasKey(PyObject* o, PyObject* key);
 
 version(Python_3_0_Or_Later) {
+    /// _
      PyObject* PyMapping_Keys(PyObject* o);
+    /// _
      PyObject* PyMapping_Values(PyObject* o);
+    /// _
      PyObject* PyMapping_Items(PyObject* o);
 }else {
     // D translations of C macros:
-    /// _
+/// Availability: 2.*
     PyObject* PyMapping_Keys()(PyObject* o) {
         return PyObject_CallMethod(o, "keys", null);
     }
-    /// _
+/// Availability: 2.*
     PyObject* PyMapping_Values()(PyObject* o) {
         return PyObject_CallMethod(o, "values", null);
     }
-    /// _
+/// Availability: 2.*
     PyObject* PyMapping_Items()(PyObject* o) {
         return PyObject_CallMethod(o, "items", null);
     }
@@ -468,16 +472,16 @@ PyObject* PyMapping_GetItemString(PyObject* o, char* key);
 /// _
 int PyMapping_SetItemString(PyObject* o, char* key, PyObject* value);
 
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 // GENERIC
-/////////////////////////////////////////////////////////////////////////////
+//-//////////////////////////////////////////////////////////////////////////
 int PyObject_IsInstance(PyObject* object, PyObject* typeorclass);
 /// _
 int PyObject_IsSubclass(PyObject* object, PyObject* typeorclass);
-/// _
 version(Python_2_6_Or_Later){
+/// Availability: >= 2.6
     int _PyObject_RealIsInstance(PyObject* inst, PyObject* cls);
-/// _
+/// Availability: >= 2.6
     int _PyObject_RealIsSubclass(PyObject* derived, PyObject* cls);
 }
 
