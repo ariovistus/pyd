@@ -1,10 +1,10 @@
 module deimos.python.Python;
 
-/// _
+/// start symbol for evaluating a single statement.
 enum int Py_single_input = 256;
-/// _
+/// start symbol for evaluating multiple statements.
 enum int Py_file_input = 257;
-/// _
+/// start symbol for evaluating a single expression.
 enum int Py_eval_input = 258;
 
 version(Python_2_4_Or_Later) {

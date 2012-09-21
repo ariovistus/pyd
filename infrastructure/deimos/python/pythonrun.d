@@ -2,6 +2,9 @@
   Mirror _pythonrun.h
 
   Interfaces to parse and execute pieces of python code 
+
+See_Also:
+<a href="http://docs.python.org/c-api/veryhigh.html"> The Very High Level Layer </a>
   */
 module deimos.python.pythonrun;
 
@@ -79,7 +82,14 @@ version(Python_3_2_Or_Later) {
     char* Py_GetPythonHome();
 }
 
-/// _
+/**
+  Initialize the Python interpreter. For embedding python, this should
+  be called before accessing other Python/C API functions, with the 
+  following exceptions:
+
+  For Python 3, PyImport_AppendInittab and PyImport_ExtendInittab should
+  be called before Py_Initialize.
+  */
 void Py_Initialize();
 /// _
 void Py_InitializeEx(int);
@@ -227,11 +237,40 @@ node* PyParser_SimpleParseStringFlags(const(char)*, int, int);
 /// _
 node* PyParser_SimpleParseFileFlags(FILE*, const(char)*,int, int);
 
-/// _
-PyObject* PyRun_StringFlags( const(char)*, int, PyObject*, PyObject*, PyCompilerFlags*);
+    /**
+Params:
+str = python code to run
+s = start symbol. one of Py_eval_input, Py_file_input, Py_single_input.
+g = globals variables. should be a dict.
+l = local variables. should be a dict.
+flags = compilation flags (modified by `from __future__ import xx`).
+
+Returns:
+result of executing code, or null if an exception was raised.
+*/
+PyObject* PyRun_StringFlags( 
+        const(char)* str, 
+        int s, 
+        PyObject* g, 
+        PyObject* g, 
+        PyCompilerFlags* flags);
+
 version(Python_2_5_Or_Later){
-    /// _
-    PyObject* PyRun_String()(const(char)* str, int s, PyObject* g, PyObject* l) {
+    /**
+Params:
+str = python code to run
+s = start symbol. one of Py_eval_input, Py_file_input, Py_single_input.
+g = globals variables. should be a dict.
+l = local variables. should be a dict.
+
+Returns:
+result of executing code, or null if an exception was raised.
+     */
+    PyObject* PyRun_String()(
+            const(char)* str, 
+            int s, 
+            PyObject* g, 
+            PyObject* l) {
         return PyRun_StringFlags(str, s, g, l, null);
     }
     /// _
@@ -252,8 +291,17 @@ version(Python_2_5_Or_Later){
         return Py_CompileStringFlags(str, p, s, null);
     }
 }else{
-    /// _
-    PyObject* PyRun_String(const(char)*, int, PyObject*, PyObject*);
+    /**
+Params:
+str = python code to run
+s = start symbol. one of Py_eval_input, Py_file_input, Py_single_input.
+g = globals variables. should be a dict.
+l = local variables. should be a dict.
+
+Returns:
+result of executing code, or null if an exception was raised.
+*/
+    PyObject* PyRun_String(const(char)* str, int s, PyObject* g, PyObject* l);
     /// _
     PyObject* PyRun_File(FILE*, const(char)*, int, PyObject*, PyObject*);
     /// _

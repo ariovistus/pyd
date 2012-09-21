@@ -18,4 +18,38 @@ unittest {
     assert(func1(3) == 7);    
 }
 
+unittest {
+    // py_stmts with modulename executes within that module
+
+    py_stmts(
+            "a = \"doctor!\""
+            ,
+            "testing");
+    py_stmts(
+            "import testing\n"
+            "assert testing.a == \"doctor!\""
+            );
+
+    // however, py_stmts contextualized or without modulename does not.
+
+    py_stmts(
+            "import testing\n"
+            "a = \"nurse!\""
+            );
+    py_stmts(
+            "import testing\n"
+            "assert testing.a == \"doctor!\""
+            );
+    InterpContext c = new InterpContext();
+    c.py_stmts(
+            "import testing\n"
+            "a = \"nurse!\""
+            );
+    py_stmts(
+            "import testing\n"
+            "assert testing.a == \"doctor!\""
+            );
+
+}
+
 void main() {}

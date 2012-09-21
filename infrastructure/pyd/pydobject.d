@@ -744,8 +744,12 @@ Struct Format Strings </a>
     //------------
     /// Forwards to appropriate Python binary operator overload.
     ///
-    /// Note / in python 3 always returns a floating point value,
-    /// while in python 2 returns an int for int arguments.
+    /// Note the result of / in python 3 (and python 2, if CO_FUTURE_DIVISION
+    /// is set) is interpreted as "true division", otherwise it is integer 
+    /// division for integer arguments.
+    ///
+    /// See_Also:
+    /// <a href="http://www.python.org/dev/peps/pep-0238/"> PEP 238 </a>
     PydObject opBinary(string op, T)(T o) if(op != "in") {
         static if((is(T : int) || is(T == PydObject)) && op == "*") {
             if(PySequence_Check(m_ptr)) {
