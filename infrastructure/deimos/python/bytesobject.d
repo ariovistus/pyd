@@ -152,8 +152,10 @@ enum F_ZERO =       (1<<4);
     alias PyString_AS_STRING PyBytes_AS_STRING;
     /// 
     alias PyString_GET_SIZE PyBytes_GET_SIZE;
-    /// 
+    version(Python_2_6_Or_Later) {
+    /// Availability: >= 2.6
     alias Py_TPFLAGS_STRING_SUBCLASS Py_TPFLAGS_BYTES_SUBCLASS;
+    }
     /// 
     alias PyString_FromStringAndSize PyBytes_FromStringAndSize;
     /// 
@@ -202,6 +204,8 @@ enum F_ZERO =       (1<<4);
     }
     /// 
     alias PyString_AsStringAndSize PyBytes_AsStringAndSize;
-    /// 
+    version(Python_2_6_Or_Later) {
+    /// Availability: >= 2.6
     alias _PyString_InsertThousandsGrouping _PyBytes_InsertThousandsGrouping;
+    }
 }
