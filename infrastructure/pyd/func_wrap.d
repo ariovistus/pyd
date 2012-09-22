@@ -38,21 +38,37 @@ import pyd.make_object;
 
 import std.traits;
 
+template hasFunctionAttrs(T) {
+    static if(isDelegate!T || isFunctionPointer!T) {
+        enum bool hasFunctionAttrs = functionAttributes!T != 
+            FunctionAttribute.none;
+    }else{
+        enum bool hasFunctionAttrs = false;
+    }
+}
+
 // Builds a callable Python object from a delegate or function pointer.
-void PydWrappedFunc_Ready(T)() {
+void PydWrappedFunc_Ready(S)() {
+    static if(hasFunctionAttrs!S) {
+        alias SetFunctionAttributes!(S, 
+                functionLinkage!S, 
+                FunctionAttribute.none) T;
+    }else{
+        alias S T;
+    }
     alias wrapped_class_type!(T) type;
     alias wrapped_class_object!(T) obj;
     if (!is_wrapped!(T)) {
-        type.ob_type = PyType_Type_p;
+        init_PyTypeObject!T(type);
+        Py_SET_TYPE(&type, &PyType_Type);
         type.tp_basicsize = obj.sizeof;
-        type.tp_name = "PydFunc";
+        type.tp_name = "PydFunc".ptr;
         type.tp_flags = Py_TPFLAGS_DEFAULT;
 
         type.tp_call = &wrapped_func_call!(T).call;
 
         PyType_Ready(&type);
-        is_wrapped!(T) = true;
-        //wrapped_classes[typeid(T)] = true;
+        is_wrapped!T = true;
     }
 }
 

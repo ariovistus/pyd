@@ -1,4 +1,5 @@
 import pyd.pyd, pyd.embedded;
+import std.traits;
 import std.functional;
 import std.range;
 import std.algorithm;
@@ -354,6 +355,44 @@ unittest {
     assert(python_to_d!(G1!"steve")(d_to_python(21)) == new G1!"steve"(21));
     assert(python_to_d!(G1!"joe")(d_to_python(22)) == new G1!"joe"(22));
     assert(python_to_d!(G1!"martin")(d_to_python(23)) == new G1!"martin"(23));
+}
+
+unittest {
+    auto func = function () {
+        return 22;
+    };
+
+    // typeof(func) distinct from int function()
+    assert(typeof(func).stringof == "int function() pure nothrow @safe");
+    auto py_func = py(func);
+    assert(py_func().to_d!int() == 22);
+
+    // but we'll convert typeof(func) back to int function()
+    auto refunc = py_func.to_d!(int function())();
+    assert(func is refunc);
+
+    // as well as original type
+    auto refunc2 = py_func.to_d!(typeof(func))();
+    assert(func is refunc2);
+
+    // or int function() pure
+    auto refunc3 = py_func.to_d!(
+            SetFunctionAttributes!(int function(), "D", 
+                FunctionAttribute.pure_))();
+    assert(func is refunc3);
+    // or int function() nothrow
+    auto refunc4 = py_func.to_d!(
+            SetFunctionAttributes!(int function(), "D", 
+                FunctionAttribute.nothrow_))();
+    assert(func is refunc4);
+
+    // etc
+
+    auto dg = delegate() {
+        return 42;
+    };
+    auto py_dg = py(dg);
+    assert(py_dg().to_d!int() == 42);
 }
 
 void main() {}

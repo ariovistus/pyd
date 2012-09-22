@@ -63,9 +63,22 @@ template PydWrapObject_HEAD(T) {
 
 // The class object, a subtype of PyObject
 template wrapped_class_object(T) {
-    extern(C)
-    struct wrapped_class_object {
-        mixin PydWrapObject_HEAD!(T);
+    // point wrapped_class_object!(void function() pure nothrow)
+    // to wrapped_class_object!(void function())
+    static if(hasFunctionAttrs!T) {
+        alias wrapped_class_object!(
+                SetFunctionAttributes!(T, functionLinkage!T, 
+                    FunctionAttribute.none)) wrapped_class_object;
+    }else {
+        extern(C)
+            struct wrapped_class_object {
+                mixin PydWrapObject_HEAD!(T);
+
+                static if(isFunctionPointer!T || isDelegate!T) {
+                    uint functionAttributes;
+                    string linkage; 
+                }
+            }
     }
 }
 
@@ -76,8 +89,16 @@ void init_PyTypeObject(T)(ref PyTypeObject tipo) {
 }
 //
 template wrapped_class_type(T) {
-// The type object, an instance of PyType_Type
-    static PyTypeObject wrapped_class_type;
+    // point wrapped_class_type!(void function() pure nothrow)
+    // to wrapped_class_type!(void function())
+    static if(hasFunctionAttrs!T) {
+        alias wrapped_class_type!(
+                SetFunctionAttributes!(T, functionLinkage!T, 
+                    FunctionAttribute.none)) wrapped_class_type;
+    }else {
+        // The type object, an instance of PyType_Type
+        static PyTypeObject wrapped_class_type;
+    }
 }
 
 // A mapping of all class references that are being held by Python.
@@ -116,7 +137,14 @@ template wrapped_gc_references(dg_t) {
  * the conversion functions (see make_object.d), but possibly useful elsewhere.
  */
 template is_wrapped(T) {
-    bool is_wrapped = false;
+    // point is_wrapped!(void function() pure nothrow)
+    // to is_wrapped!(void function())
+    static if(hasFunctionAttrs!T) {
+        alias is_wrapped!(SetFunctionAttributes!(T, functionLinkage!T, 
+                    FunctionAttribute.none)) is_wrapped;
+    }else {
+        bool is_wrapped = false;
+    }
 }
 
 // The list of wrapped methods for this class.
@@ -1671,20 +1699,63 @@ T WrapPyObject_AsObject(T) (PyObject* _self) {
     alias wrapped_class_type!(T) type;
     wrapped_object* self = cast(wrapped_object*)_self;
     if (!is_wrapped!(T)) {
-        throw new Exception(format("Error extracting D object: Type %s is not wrapped.",typeid(T).toString()));
+        throw new Exception(format(
+                    "Error extracting D object: Type %s is not wrapped.",
+                    typeid(T).toString()));
     }
     if (self is null) {
         throw new Exception("Error extracting D object: 'self' was null!");
     }
     static if (is(T == class)) {
         if (cast(Object)(self.d_obj) is null) {
-            throw new Exception("Error extracting D object: Reference was not castable to Object!");
+            throw new Exception(
+                    "Error extracting D object: "
+                    "Reference was not castable to Object!");
         }
         if (cast(T)cast(Object)(self.d_obj) is null) {
-            throw new Exception(format("Error extracting D object: Object was not castable to type %s.",typeid(T).toString()));
+            throw new Exception(format(
+                        "Error extracting D object: "
+                        "Object was not castable to type %s.",
+                        typeid(T).toString()));
         }
     }
-    return self.d_obj;
+    static if(hasFunctionAttrs!T && !is(typeof(self.d_obj) == T)) {
+        // check that casting is safe enough
+        if(self.linkage != functionLinkage!T) {
+            // can't cast away linkage!
+            // TODO: should we wrap this somehow?
+            throw new Exception(format(
+                        "trying to convert a extern(\"%s\") "
+                        "%s to extern(\"%s\")",
+                        self.linkage, (isDelegate!T ? "delegate":"function"),
+                        functionLinkage!T));
+        }else if((~self.functionAttributes & functionAttributes!T) == 0) {
+            // same type or only casting away attrs - ok!
+            return cast(T) self.d_obj;
+        }else{
+            string attrs_to_string(uint attrs) {
+                string s = "";
+                with(FunctionAttribute) {
+                    if(attrs & pure_) s ~= " pure";
+                    if(attrs & nothrow_) s ~= " nothrow";
+                    if(attrs & ref_) s ~= " ref";
+                    if(attrs & property) s ~= " @property";
+                    if(attrs & trusted) s ~= " @trusted";
+                    if(attrs & safe) s ~= " @safe";
+                }
+                return s;
+            }
+            throw new Exception(format(
+                        "trying to convert %s%s to %s",
+                        SetFunctionAttributes!(T, 
+                            functionLinkage!T, 
+                            FunctionAttribute.none).stringof,
+                        attrs_to_string(self.functionAttributes),
+                        T.stringof));
+        }
+    }else {
+        return self.d_obj;
+    }
 }
 
 /*
@@ -1693,6 +1764,10 @@ T WrapPyObject_AsObject(T) (PyObject* _self) {
 void WrapPyObject_SetObj(T) (PyObject* _self, T t) {
     alias wrapped_class_object!(T) obj;
     obj* self = cast(obj*)_self;
+    static if(isFunctionPointer!T || isDelegate!T) {
+        self.functionAttributes = functionAttributes!T;
+        self.linkage = functionLinkage!T;
+    }
     if (t is self.d_obj) return;
     // Clean up the old object, if there is one
     if (self.d_obj !is null) {

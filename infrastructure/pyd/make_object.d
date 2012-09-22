@@ -225,7 +225,7 @@ PyObject* d_to_python(T) (T t) {
             }
         }
         return dict;
-    } else static if (is(T == delegate) || is(T == function)) {
+    } else static if (isDelegate!T || isFunctionPointer!T) {
         PydWrappedFunc_Ready!(T)();
         return WrapPyObject_FromObject(t);
     } else static if (is(T : PydObject)) {
@@ -400,7 +400,7 @@ T python_to_d(T) (PyObject* o) {
         } else if (PyCallable_Check(o)) {
             return PydCallable_AsDelegate!(T)(o);
         }// else could_not_convert!(T)(o);
-    } else static if (is(T == function)) {
+    } else static if (isDelegate!T || isFunctionPointer!T) {
         // We can only make it a function pointer if we originally wrapped a
         // function pointer.
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
