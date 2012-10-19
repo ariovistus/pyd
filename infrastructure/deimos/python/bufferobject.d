@@ -16,7 +16,7 @@ version(Python_3_0_Or_Later) {
 }else{
 
 /// Availability: 2.*
-__gshared PyTypeObject PyBuffer_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyBuffer_Type");
 
 // D translation of C macro:
 /// Availability: 2.*

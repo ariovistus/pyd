@@ -759,11 +759,11 @@ int PyObject_TypeCheck()(PyObject* ob, PyTypeObject* tp) {
 }
 
 /** built-in 'type' */
-__gshared PyTypeObject PyType_Type; 
+mixin(PyAPI_DATA!"PyTypeObject PyType_Type"); 
 /** built-in 'object' */
-__gshared PyTypeObject PyBaseObject_Type; 
+mixin(PyAPI_DATA!"PyTypeObject PyBaseObject_Type"); 
 /** built-in 'super' */
-__gshared PyTypeObject PySuper_Type; 
+mixin(PyAPI_DATA!"PyTypeObject PySuper_Type"); 
 
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
@@ -912,7 +912,7 @@ version(Python_3_0_Or_Later) {
         Py_hash_t suffix;
     } 
     /// Availability: 3.*
-    __gshared _Py_HashSecret_t _Py_HashSecret;
+    mixin(PyAPI_DATA!"_Py_HashSecret_t _Py_HashSecret");
 }else{
     /// _
     C_long _Py_HashDouble(double);
@@ -927,7 +927,7 @@ version(Python_3_0_Or_Later) {
             C_long suffix;
         } 
         /// _
-        __gshared _Py_HashSecret_t _Py_HashSecret;
+        mixin(PyAPI_DATA!"_Py_HashSecret_t _Py_HashSecret");
     }
 }
 
@@ -1186,7 +1186,7 @@ void Py_IncRef(PyObject *);
 /// ditto
 void Py_DecRef(PyObject *);
 
-__gshared PyObject _Py_NoneStruct;
+mixin(PyAPI_DATA!"PyObject _Py_NoneStruct");
 
 // issue 8683 gets in the way of this being a property
 Borrowed!PyObject* Py_None()() {

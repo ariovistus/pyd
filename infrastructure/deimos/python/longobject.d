@@ -14,7 +14,7 @@ extern(C):
 // Python-header-file: Include/longobject.h:
 
 /// _
-__gshared PyTypeObject PyLong_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyLong_Type");
 
 // D translation of C macro:
 /// _

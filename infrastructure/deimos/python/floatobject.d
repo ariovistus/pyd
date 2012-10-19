@@ -20,7 +20,7 @@ struct PyFloatObject {
 }
 
 /// _
-__gshared PyTypeObject PyFloat_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyFloat_Type");
 
 // D translation of C macro:
 /// _

@@ -10,7 +10,7 @@ extern(C):
 // Python-header-file: Include/memoryobject.h:
 version(Python_2_7_Or_Later) {
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyMemoryView_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyMemoryView_Type");
 
     /// Availability: >= 2.7
     int PyMemoryView_Check()(PyObject* op) {

@@ -38,7 +38,7 @@ struct PyIntObject {
 }
 
 /// Availability: 2.*
-__gshared PyTypeObject PyInt_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyInt_Type");
 
 // D translation of C macro:
 /// Availability: 2.*

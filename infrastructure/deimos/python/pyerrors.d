@@ -210,144 +210,144 @@ version(Python_2_5_Or_Later) {
 
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
-    __gshared PyObject* PyExc_BaseException;
+    mixin(PyAPI_DATA!"PyObject* PyExc_BaseException");
 }
 /// _
-__gshared PyObject* PyExc_Exception;
+mixin(PyAPI_DATA!"PyObject* PyExc_Exception");
 /// _
-__gshared PyObject* PyExc_StopIteration;
+mixin(PyAPI_DATA!"PyObject* PyExc_StopIteration");
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
-    __gshared PyObject* PyExc_GeneratorExit;
+    mixin(PyAPI_DATA!"PyObject* PyExc_GeneratorExit");
 }
 version(Python_3_0_Or_Later) {
 }else{
     /// Availability: 2.*
-    __gshared PyObject* PyExc_StandardError;
+    mixin(PyAPI_DATA!"PyObject* PyExc_StandardError");
 }
 /// _
-__gshared PyObject* PyExc_ArithmeticError;
+mixin(PyAPI_DATA!"PyObject* PyExc_ArithmeticError");
 /// _
-__gshared PyObject* PyExc_LookupError;
+mixin(PyAPI_DATA!"PyObject* PyExc_LookupError");
 
 /// _
-__gshared PyObject* PyExc_AssertionError;
+mixin(PyAPI_DATA!"PyObject* PyExc_AssertionError");
 /// _
-__gshared PyObject* PyExc_AttributeError;
+mixin(PyAPI_DATA!"PyObject* PyExc_AttributeError");
 /// _
-__gshared PyObject* PyExc_EOFError;
+mixin(PyAPI_DATA!"PyObject* PyExc_EOFError");
 /// _
-__gshared PyObject* PyExc_FloatingPointError;
+mixin(PyAPI_DATA!"PyObject* PyExc_FloatingPointError");
 /// _
-__gshared PyObject* PyExc_EnvironmentError;
+mixin(PyAPI_DATA!"PyObject* PyExc_EnvironmentError");
 /// _
-__gshared PyObject* PyExc_IOError;
+mixin(PyAPI_DATA!"PyObject* PyExc_IOError");
 /// _
-__gshared PyObject* PyExc_OSError;
+mixin(PyAPI_DATA!"PyObject* PyExc_OSError");
 /// _
-__gshared PyObject* PyExc_ImportError;
+mixin(PyAPI_DATA!"PyObject* PyExc_ImportError");
 /// _
-__gshared PyObject* PyExc_IndexError;
+mixin(PyAPI_DATA!"PyObject* PyExc_IndexError");
 /// _
-__gshared PyObject* PyExc_KeyError;
+mixin(PyAPI_DATA!"PyObject* PyExc_KeyError");
 /// _
-__gshared PyObject* PyExc_KeyboardInterrupt;
+mixin(PyAPI_DATA!"PyObject* PyExc_KeyboardInterrupt");
 /// _
-__gshared PyObject* PyExc_MemoryError;
+mixin(PyAPI_DATA!"PyObject* PyExc_MemoryError");
 /// _
-__gshared PyObject* PyExc_NameError;
+mixin(PyAPI_DATA!"PyObject* PyExc_NameError");
 /// _
-__gshared PyObject* PyExc_OverflowError;
+mixin(PyAPI_DATA!"PyObject* PyExc_OverflowError");
 /// _
-__gshared PyObject* PyExc_RuntimeError;
+mixin(PyAPI_DATA!"PyObject* PyExc_RuntimeError");
 /// _
-__gshared PyObject* PyExc_NotImplementedError;
+mixin(PyAPI_DATA!"PyObject* PyExc_NotImplementedError");
 /// _
-__gshared PyObject* PyExc_SyntaxError;
+mixin(PyAPI_DATA!"PyObject* PyExc_SyntaxError");
 /// _
-__gshared PyObject* PyExc_IndentationError;
+mixin(PyAPI_DATA!"PyObject* PyExc_IndentationError");
 /// _
-__gshared PyObject* PyExc_TabError;
+mixin(PyAPI_DATA!"PyObject* PyExc_TabError");
 /// _
-__gshared PyObject* PyExc_ReferenceError;
+mixin(PyAPI_DATA!"PyObject* PyExc_ReferenceError");
 /// _
-__gshared PyObject* PyExc_SystemError;
+mixin(PyAPI_DATA!"PyObject* PyExc_SystemError");
 /// _
-__gshared PyObject* PyExc_SystemExit;
+mixin(PyAPI_DATA!"PyObject* PyExc_SystemExit");
 /// _
-__gshared PyObject* PyExc_TypeError;
+mixin(PyAPI_DATA!"PyObject* PyExc_TypeError");
 /// _
-__gshared PyObject* PyExc_UnboundLocalError;
+mixin(PyAPI_DATA!"PyObject* PyExc_UnboundLocalError");
 /// _
-__gshared PyObject* PyExc_UnicodeError;
+mixin(PyAPI_DATA!"PyObject* PyExc_UnicodeError");
 /// _
-__gshared PyObject* PyExc_UnicodeEncodeError;
+mixin(PyAPI_DATA!"PyObject* PyExc_UnicodeEncodeError");
 /// _
-__gshared PyObject* PyExc_UnicodeDecodeError;
+mixin(PyAPI_DATA!"PyObject* PyExc_UnicodeDecodeError");
 /// _
-__gshared PyObject* PyExc_UnicodeTranslateError;
+mixin(PyAPI_DATA!"PyObject* PyExc_UnicodeTranslateError");
 /// _
-__gshared PyObject* PyExc_ValueError;
+mixin(PyAPI_DATA!"PyObject* PyExc_ValueError");
 /// _
-__gshared PyObject* PyExc_ZeroDivisionError;
+mixin(PyAPI_DATA!"PyObject* PyExc_ZeroDivisionError");
 version(Windows) {
     /// Availability: Windows only
-    __gshared PyObject* PyExc_WindowsError;
+    mixin(PyAPI_DATA!"PyObject* PyExc_WindowsError");
 }
 // ??!
 version(VMS) {
     /// Availability: VMS only
-    __gshared PyObject* PyExc_VMSError;
+    mixin(PyAPI_DATA!"PyObject* PyExc_VMSError");
 }
 version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
-    __gshared PyObject* PyExc_BufferError;
+    mixin(PyAPI_DATA!"PyObject* PyExc_BufferError");
 }
 
 version(Python_3_0_Or_Later) {
 }else{
     /// Availability: 2.*
-    __gshared PyObject* PyExc_MemoryErrorInst;
+    mixin(PyAPI_DATA!"PyObject* PyExc_MemoryErrorInst");
 }
 version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
-    __gshared PyObject* PyExc_RecursionErrorInst;
+    mixin(PyAPI_DATA!"PyObject* PyExc_RecursionErrorInst");
 }
 
 /** Predefined warning categories */
-__gshared PyObject* PyExc_Warning;
+mixin(PyAPI_DATA!"PyObject* PyExc_Warning");
 /// ditto
-__gshared PyObject* PyExc_UserWarning;
+mixin(PyAPI_DATA!"PyObject* PyExc_UserWarning");
 /// ditto
-__gshared PyObject* PyExc_DeprecationWarning;
+mixin(PyAPI_DATA!"PyObject* PyExc_DeprecationWarning");
 /// ditto
-__gshared PyObject* PyExc_PendingDeprecationWarning;
+mixin(PyAPI_DATA!"PyObject* PyExc_PendingDeprecationWarning");
 /// ditto
-__gshared PyObject* PyExc_SyntaxWarning;
+mixin(PyAPI_DATA!"PyObject* PyExc_SyntaxWarning");
 /* PyExc_OverflowWarning will go away for Python 2.5 */
 version(Python_2_5_Or_Later) {
 }else{
     /// Availability: 2.4
-    __gshared PyObject* PyExc_OverflowWarning;
+    mixin(PyAPI_DATA!"PyObject* PyExc_OverflowWarning");
 }
 /// _
-__gshared PyObject* PyExc_RuntimeWarning;
+mixin(PyAPI_DATA!"PyObject* PyExc_RuntimeWarning");
 /// _
-__gshared PyObject* PyExc_FutureWarning;
+mixin(PyAPI_DATA!"PyObject* PyExc_FutureWarning");
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
-    __gshared PyObject* PyExc_ImportWarning;
+    mixin(PyAPI_DATA!"PyObject* PyExc_ImportWarning");
     /// Availability: >= 2.5
-    __gshared PyObject* PyExc_UnicodeWarning;
+    mixin(PyAPI_DATA!"PyObject* PyExc_UnicodeWarning");
 }
 version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
-    __gshared PyObject* PyExc_BytesWarning;
+    mixin(PyAPI_DATA!"PyObject* PyExc_BytesWarning");
 }
 
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    __gshared PyObject* PyExc_ResourceWarning;
+    mixin(PyAPI_DATA!"PyObject* PyExc_ResourceWarning");
 
     /** Traceback manipulation (PEP 3134) */
     int PyException_SetTraceback(PyObject*, PyObject*);

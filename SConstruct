@@ -1,5 +1,5 @@
 from os.path import join
-import re
+import re, sys
 rx = re.compile("(\d+)\.(\d+)")
 
 def pv_split(pyversion):
@@ -31,7 +31,9 @@ env27 = Environment(
     DFLAGS = ['-unittest', '-property', '-debug', '-gc'],
     DLINKFLAGS = py_lib("2.7"),
     )
-Export('infra', 'py_versions', 'py_lib', 'pydfiles', 'join', 'env27')
+if sys.platform.lower().startswith("win"): exe_suffix = ".exe"
+else: exe_suffix = ".x"
+Export('infra', 'py_versions', 'py_lib', 'pydfiles', 'join', 'env27', "exe_suffix")
 SConscript([
     join("examples","pyind","SConscript"),
     join("examples", "pyd_unittests","SConscript"),

@@ -35,9 +35,9 @@ struct PyTupleObject {
 }
 
 /// _
-__gshared PyTypeObject PyTuple_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyTuple_Type");
 /// _
-__gshared PyTypeObject PyTupleIter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyTupleIter_Type");
 
 // D translation of C macro:
 /// _

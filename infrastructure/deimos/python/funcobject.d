@@ -61,7 +61,7 @@ struct PyFunctionObject {
 }
 
 /// _
-__gshared PyTypeObject PyFunction_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyFunction_Type");
 
 // D translation of C macro:
 /// _
@@ -133,9 +133,9 @@ version(Python_3_0_Or_Later) {
 }
 
 /// _
-__gshared PyTypeObject PyClassMethod_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyClassMethod_Type");
 /// _
-__gshared PyTypeObject PyStaticMethod_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyStaticMethod_Type");
 
 /// _
 PyObject* PyClassMethod_New(PyObject*);

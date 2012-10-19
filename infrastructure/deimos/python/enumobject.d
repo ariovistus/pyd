@@ -3,9 +3,10 @@
   */
 module deimos.python.enumobject;
 
+import deimos.python.pyport;
 import deimos.python.object;
 
 /// _
-__gshared PyTypeObject PyEnum_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyEnum_Type");
 /// _
-__gshared PyTypeObject PyReversed_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyReversed_Type");

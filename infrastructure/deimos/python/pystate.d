@@ -182,7 +182,7 @@ int PyThreadState_SetAsyncExc(C_long, PyObject*);
 
 version(Python_3_0_Or_Later) {
     /// _
-    __gshared _Py_atomic_address _PyThreadState_Current;
+    mixin(PyAPI_DATA!"_Py_atomic_address _PyThreadState_Current");
 
     /// _
     auto PyThreadState_GET()() { 
@@ -191,7 +191,7 @@ version(Python_3_0_Or_Later) {
     }
 }else{
     /// _
-    __gshared PyThreadState* _PyThreadState_Current;
+    mixin(PyAPI_DATA!"PyThreadState* _PyThreadState_Current");
 
     /// _
     auto PyThreadState_GET()() { 
@@ -260,4 +260,4 @@ PyThreadState* PyThreadState_Next(PyThreadState*);
 alias PyFrameObject* function(PyThreadState* self_) PyThreadFrameGetter;
 
 /// _
-__gshared PyThreadFrameGetter _PyThreadState_GetFrame;
+mixin(PyAPI_DATA!"PyThreadFrameGetter _PyThreadState_GetFrame");

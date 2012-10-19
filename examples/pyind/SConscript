@@ -1,2 +1,2 @@
 Import('*')
-env27.Program("pyind",["pyind.d", ] + pydfiles)
+env27.Program("pyind"+exe_suffix,["pyind.d", ] + pydfiles)

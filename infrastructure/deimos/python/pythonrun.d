@@ -463,9 +463,10 @@ void PyByteArray_Fini();
 char* PyOS_Readline(FILE*, FILE*, char*);
 
 /// _
-__gshared int function() PyOS_InputHook;
+mixin(PyAPI_DATA!"int function() PyOS_InputHook");
 /// _
-__gshared char* function(FILE*, FILE*, char*) PyOS_ReadlineFunctionPointer;
+mixin(PyAPI_DATA!"char* function(FILE*, FILE*, char*) 
+    PyOS_ReadlineFunctionPointer");
 /// _
-__gshared PyThreadState* _PyOS_ReadlineTState;
+mixin(PyAPI_DATA!"PyThreadState* _PyOS_ReadlineTState");
 

@@ -36,14 +36,14 @@ struct PyListObject {
 }
 
 /// _
-__gshared PyTypeObject PyList_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyList_Type");
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    __gshared PyTypeObject PyListIter_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyListIter_Type");
     /// Availability: 3.*
-    __gshared PyTypeObject PyListRevIter_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyListRevIter_Type");
     /// Availability: 3.*
-    __gshared PyTypeObject PySortWrapper_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PySortWrapper_Type");
 }
 
 // D translation of C macro:

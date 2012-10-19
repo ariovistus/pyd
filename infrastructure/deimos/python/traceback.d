@@ -39,7 +39,7 @@ version(Python_3_2_Or_Later) {
 }
 
 /// _
-__gshared PyTypeObject PyTraceBack_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyTraceBack_Type");
 
 // D translation of C macro:
 /// _

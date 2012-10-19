@@ -48,7 +48,7 @@ struct PyUnicodeObject {
 }
 
 /// _
-__gshared PyTypeObject PyUnicode_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyUnicode_Type");
 
 // D translations of C macros:
 /** Fast access macros */

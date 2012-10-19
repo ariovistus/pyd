@@ -1,6 +1,6 @@
 module testdll;
 
-import python;
+import deimos.python.Python;
 import pyd.pyd;
 import std.stdio, std.string;
 
@@ -209,5 +209,6 @@ extern(C) void PydMain() {
         Member!("i", Docstring!"One sample data member of S."),
         Member!("s", Docstring!"Another sample data member of S."),
     )();
+
 }
 

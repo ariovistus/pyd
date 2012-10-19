@@ -97,7 +97,7 @@ struct PyFrameObject {
 }
 
 /// _
-__gshared PyTypeObject PyFrame_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyFrame_Type");
 
 // D translation of C macro:
 /// _

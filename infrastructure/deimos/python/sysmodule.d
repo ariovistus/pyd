@@ -49,9 +49,9 @@ version(Python_3_2_Or_Later) {
 }
 
 /// _
-__gshared PyObject* _PySys_TraceFunc;
+mixin(PyAPI_DATA!"PyObject* _PySys_TraceFunc");
 /// _
-__gshared PyObject** _PySys_ProfileFunc;
+mixin(PyAPI_DATA!"PyObject** _PySys_ProfileFunc");
 
 /// _
 void PySys_ResetWarnOptions();

@@ -19,11 +19,11 @@ extern(C):
 // Python-header-file: Include/rangeobject.h:
 
 /// _
-__gshared PyTypeObject PyRange_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyRange_Type");
 /// _
-__gshared PyTypeObject PyRangeIter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyRangeIter_Type");
 /// _
-__gshared PyTypeObject PyLongRangeIter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyLongRangeIter_Type");
 
 // D translation of C macro:
 /// _

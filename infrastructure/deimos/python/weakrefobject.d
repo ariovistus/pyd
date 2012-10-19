@@ -45,11 +45,11 @@ struct PyWeakReference {
 }
 
 /// _
-__gshared PyTypeObject _PyWeakref_RefType;
+mixin(PyAPI_DATA!"PyTypeObject _PyWeakref_RefType");
 /// _
-__gshared PyTypeObject _PyWeakref_ProxyType;
+mixin(PyAPI_DATA!"PyTypeObject _PyWeakref_ProxyType");
 /// _
-__gshared PyTypeObject _PyWeakref_CallableProxyType;
+mixin(PyAPI_DATA!"PyTypeObject _PyWeakref_CallableProxyType");
 
 // D translations of C macros:
 /// _

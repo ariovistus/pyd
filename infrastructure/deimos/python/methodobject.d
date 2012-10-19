@@ -15,7 +15,7 @@ extern(C):
 /** This is about the type 'builtin_function_or_method',
    not Python methods in user-defined classes.  See classobject.h
    for the latter. */
-__gshared PyTypeObject PyCFunction_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyCFunction_Type");
 
 // D translation of C macro:
 /// _

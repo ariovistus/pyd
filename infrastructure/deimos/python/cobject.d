@@ -30,7 +30,7 @@ extern(C):
 // from the C level to Python and back (in essence, an opaque handle).
 
 /// Availaibility: 2.*, 3.0, 3.1
-__gshared PyTypeObject PyCObject_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyCObject_Type");
 
 // D translation of C macro:
 /// Availaibility: 2.*, 3.0, 3.1

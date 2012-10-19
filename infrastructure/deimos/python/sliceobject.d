@@ -11,7 +11,7 @@ import deimos.python.object;
 extern(C):
 // Python-header-file: Include/sliceobject.h:
 
-__gshared PyObject _Py_EllipsisObject;
+mixin(PyAPI_DATA!"PyObject _Py_EllipsisObject");
 
 /** The unique ellipsis object "..." */
 @property PyObject* Py_Ellipsis()() {
@@ -36,7 +36,7 @@ struct PySliceObject {
 }
 
 /// _
-__gshared PyTypeObject PySlice_Type;
+mixin(PyAPI_DATA!"PyTypeObject PySlice_Type");
 
 // D translation of C macro:
 /// _

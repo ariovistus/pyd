@@ -16,7 +16,7 @@ struct PyCellObject {
 }
 
 ///_
-__gshared PyTypeObject PyCell_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyCell_Type");
 
 // D translation of C macro:
 ///_

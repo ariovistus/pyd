@@ -136,22 +136,22 @@ struct PyWrapperDescrObject {
 }
 
 /// _
-__gshared PyTypeObject PyWrapperDescr_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyWrapperDescr_Type");
 version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
-    __gshared PyTypeObject PyDictProxy_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictProxy_Type");
     /// Availability: >= 2.6
-    __gshared PyTypeObject PyGetSetDescr_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyGetSetDescr_Type");
     /// Availability: >= 2.6
-    __gshared PyTypeObject PyMemberDescr_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyMemberDescr_Type");
 }
 version(Python_3_0_Or_Later) {
     /// Availability: 3.2
-    __gshared PyTypeObject PyClassMethodDescr_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyClassMethodDescr_Type");
     /// Availability: 3.2
-    __gshared PyTypeObject PyMethodDescr_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyMethodDescr_Type");
     /// Availability: 3.2
-    __gshared PyTypeObject _PyMethodWrapper_Type;
+    mixin(PyAPI_DATA!"PyTypeObject _PyMethodWrapper_Type");
 }
 
 /// _
@@ -170,6 +170,6 @@ PyObject* PyDictProxy_New(PyObject*);
 PyObject* PyWrapper_New(PyObject*, PyObject*);
 
 /// _
-__gshared PyTypeObject PyProperty_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyProperty_Type");
 
 

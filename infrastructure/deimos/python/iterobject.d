@@ -12,7 +12,7 @@ extern(C):
 // Python-header-file: Include/iterobject.h:
 
 /// _
-__gshared PyTypeObject PySeqIter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PySeqIter_Type");
 
 // D translation of C macro:
 /// _
@@ -24,10 +24,10 @@ int PySeqIter_Check()(PyObject* op) {
 PyObject* PySeqIter_New(PyObject*);
 
 /// _
-__gshared PyTypeObject PyCallIter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyCallIter_Type");
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    __gshared PyTypeObject PyCmpWrapper_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyCmpWrapper_Type");
 }
 
 // D translation of C macro:

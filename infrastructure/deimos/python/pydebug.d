@@ -5,42 +5,44 @@ module deimos.python.pydebug;
 
 import std.c.stdlib;
 
+import deimos.python.pyport;
+
 extern(C):
 // Python-header-file: Include/node.h
 
 /// _
-__gshared int Py_DebugFlag;
+mixin(PyAPI_DATA!"int Py_DebugFlag");
 /// _
-__gshared int Py_VerboseFlag;
+mixin(PyAPI_DATA!"int Py_VerboseFlag");
 version(Python_3_0_Or_Later) {
-    __gshared int Py_QuietFlag;
+    mixin(PyAPI_DATA!"int Py_QuietFlag");
 }
 /// _
-__gshared int Py_InteractiveFlag;
+mixin(PyAPI_DATA!"int Py_InteractiveFlag");
 /// _
-__gshared int Py_OptimizeFlag;
+mixin(PyAPI_DATA!"int Py_OptimizeFlag");
 /// _
-__gshared int Py_NoSiteFlag;
+mixin(PyAPI_DATA!"int Py_NoSiteFlag");
 /// _
-__gshared int Py_UseClassExceptionsFlag;
+mixin(PyAPI_DATA!"int Py_UseClassExceptionsFlag");
 /// _
-__gshared int Py_FrozenFlag;
+mixin(PyAPI_DATA!"int Py_FrozenFlag");
 version(Python_3_0_Or_Later) {
 }else{
     /// Availability: 2.*
-    __gshared int Py_TabcheckFlag;
+    mixin(PyAPI_DATA!"int Py_TabcheckFlag");
     /// Availability: 2.*
-    __gshared int Py_UnicodeFlag;
+    mixin(PyAPI_DATA!"int Py_UnicodeFlag");
 }
 /// _
-__gshared int Py_IgnoreEnvironmentFlag;
+mixin(PyAPI_DATA!"int Py_IgnoreEnvironmentFlag");
 /// _
-__gshared int Py_DivisionWarningFlag;
+mixin(PyAPI_DATA!"int Py_DivisionWarningFlag");
 version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
-    __gshared int Py_DontWriteBytecodeFlag;
+    mixin(PyAPI_DATA!"int Py_DontWriteBytecodeFlag");
     /// Availability: >= 2.6
-    __gshared int Py_NoUserSiteDirectory;
+    mixin(PyAPI_DATA!"int Py_NoUserSiteDirectory");
 }
 
 version(Python_3_0_Or_Later) {
@@ -49,20 +51,20 @@ version(Python_3_0_Or_Later) {
        on the command line, and is used in 2.2 by ceval.c to make all "/" divisions
        true divisions (which they will be in 3.0). */
     /// Availability: 2.*
-    __gshared int _Py_QnewFlag;
+    mixin(PyAPI_DATA!"int _Py_QnewFlag");
 
     version(Python_2_6_Or_Later) {
         /// Availability: 2.6, 2.7
-        __gshared int Py_Py3kWarningFlag;
+        mixin(PyAPI_DATA!"int Py_Py3kWarningFlag");
     }
 }
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    __gshared int Py_UnbufferedStdioFlag;
+    mixin(PyAPI_DATA!"int Py_UnbufferedStdioFlag");
 }
 version(Python_2_7_Or_Later) {
     /// Availability: >= 2.7
-    __gshared int Py_HashRandomizationFlag;
+    mixin(PyAPI_DATA!"int Py_HashRandomizationFlag");
 }
 
 /** this is a wrapper around getenv() that pays attention to

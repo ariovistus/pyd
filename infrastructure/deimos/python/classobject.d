@@ -66,7 +66,7 @@ struct PyMethodObject {
 }
 
 /// _
-__gshared PyTypeObject PyMethod_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyMethod_Type");
 
 // D translation of C macro:
 int PyMethod_Check()(PyObject *op) {
@@ -78,9 +78,9 @@ version(Python_3_0_Or_Later) {
     PyObject* PyMethod_New(PyObject*, PyObject*);
 }else{
     /// Availability: 2.*
-    __gshared PyTypeObject PyClass_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyClass_Type");
     /// Availability: 2.*
-    __gshared PyTypeObject PyInstance_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyInstance_Type");
     // D translation of C macro:
     /// Availability: 2.*
     int PyClass_Check()(PyObject *op) {
@@ -149,7 +149,7 @@ version(Python_3_0_Or_Later) {
     }
 
     /// Availability: 3.*
-    __gshared PyTypeObject PyInstanceMethod_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyInstanceMethod_Type");
 
     /// Availability: 3.*
     int PyInstanceMethod_Check()(PyObject* op) {

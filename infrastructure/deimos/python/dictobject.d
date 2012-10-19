@@ -82,20 +82,20 @@ struct PyDictObject{
 }
 
 /// _
-__gshared PyTypeObject PyDict_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyDict_Type");
 version(Python_2_7_Or_Later) {
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyDictIterKey_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictIterKey_Type");
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyDictIterValue_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictIterValue_Type");
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyDictIterItem_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictIterItem_Type");
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyDictKeys_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictKeys_Type");
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyDictItems_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictItems_Type");
     /// Availability: >= 2.7
-    __gshared PyTypeObject PyDictValues_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyDictValues_Type");
 }
 
 // D translation of C macro:

@@ -65,7 +65,7 @@ version(Python_3_0_Or_Later) {
     }
 
     /// Availability: 2.*
-    __gshared PyTypeObject PyFile_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyFile_Type");
 
     // D translation of C macro:
     /// Availability: 2.*
@@ -123,7 +123,7 @@ int PyObject_AsFileDescriptor(PyObject*);
 /** The default encoding used by the platform file system APIs
    If non-NULL, this is different than the default encoding for strings
 */
-__gshared const(char)* Py_FileSystemDefaultEncoding;
+mixin(PyAPI_DATA!"const(char)* Py_FileSystemDefaultEncoding");
 
 /// _
 enum PY_STDIOTEXTMODE = "b";
@@ -135,11 +135,11 @@ enum PY_STDIOTEXTMODE = "b";
 char* Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*);
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    __gshared int Py_HasFileSystemDefaultEncoding;
+    mixin(PyAPI_DATA!"int Py_HasFileSystemDefaultEncoding");
     /// Availability: 3.*
     PyObject* PyFile_NewStdPrinter(int);
     /// Availability: 3.*
-    __gshared PyTypeObject PyStdPrinter_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyStdPrinter_Type");
 }else{
     /** Routines to replace fread() and fgets() which accept any of \r, \n
       or \r\n as line terminators.

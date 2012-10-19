@@ -13,7 +13,7 @@ extern(C):
 // Python-header-file: Include/moduleobject.h:
 
 /// _
-__gshared PyTypeObject PyModule_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyModule_Type");
 
 // D translation of C macro:
 /// _

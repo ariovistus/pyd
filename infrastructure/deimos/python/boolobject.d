@@ -17,7 +17,7 @@ version(Python_3_0_Or_Later) {
 }
 
 /// _
-__gshared PyTypeObject PyBool_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyBool_Type");
 
 // D translation of C macro:
 /// _
@@ -26,11 +26,11 @@ int PyBool_Check()(PyObject* x) {
 }
 
 version(Python_3_0_Or_Later) {
-    __gshared PyLongObject _Py_FalseStruct;
-    __gshared PyLongObject _Py_TrueStruct;
+    mixin(PyAPI_DATA!"PyLongObject _Py_FalseStruct");
+    mixin(PyAPI_DATA!"PyLongObject _Py_TrueStruct");
 }else {
-    __gshared PyIntObject _Py_ZeroStruct;
-    __gshared PyIntObject _Py_TrueStruct;
+    mixin(PyAPI_DATA!"PyIntObject _Py_ZeroStruct");
+    mixin(PyAPI_DATA!"PyIntObject _Py_TrueStruct");
 }
 
 /// _

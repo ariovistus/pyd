@@ -56,9 +56,9 @@ struct PyStringObject {
 }
 
 /// Availability: 2.*
-__gshared PyTypeObject PyBaseString_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyBaseString_Type");
 /// Availability: 2.*
-__gshared PyTypeObject PyString_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyString_Type");
 
 // D translation of C macro:
 /// Availability: 2.*

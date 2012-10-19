@@ -37,9 +37,9 @@ version(Python_3_0_Or_Later) {
     } 
 
     /// 
-    __gshared PyTypeObject PyBytes_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyBytes_Type");
     /// 
-    __gshared PyTypeObject PyBytesIter_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyBytesIter_Type");
     // D translation of C macro:
     /// 
     int PyBytes_Check()(PyObject* op) {

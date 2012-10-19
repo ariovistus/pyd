@@ -33,9 +33,9 @@ version(Python_2_6_Or_Later) {
 
     /* Type object */
 /// Availability: >= 2.6
-    __gshared PyTypeObject PyByteArray_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyByteArray_Type");
 /// Availability: >= 2.6
-    __gshared PyTypeObject PyByteArrayIter_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PyByteArrayIter_Type");
 
     /** Type check macro 
 Availability: >= 2.6

@@ -1,7 +1,7 @@
 // A module written to the raw Python/C API.
 module rawexample;
 
-import python;
+import deimos.python.Python;
 import std.stdio;
 
 // our druntime handling is still a bit crummy
@@ -21,15 +21,13 @@ struct Derived_object {
 extern(C)
 PyObject* Base_foo(PyObject* self, PyObject* args) {
     writefln("Base.foo");
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_INCREF(Py_None);
 }
 
 extern(C)
 PyObject* Base_bar(PyObject* self, PyObject* args) {
     writefln("Base.bar");
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_INCREF(Py_None);
 }
 
 PyMethodDef[] Base_methods = [
@@ -41,8 +39,7 @@ PyMethodDef[] Base_methods = [
 extern(C)
 PyObject* Derived_bar(PyObject* self, PyObject* args) {
     writefln("Derived.bar");
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_INCREF(Py_None);
 }
 
 PyMethodDef[] Derived_methods = [
@@ -53,8 +50,7 @@ PyMethodDef[] Derived_methods = [
 extern(C)
 PyObject* hello(PyObject* self, PyObject* args) {
     writefln("Hello, world!");
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_INCREF(Py_None);
 }
 
 PyMethodDef[] rawexample_methods = [
@@ -66,7 +62,7 @@ extern(C)
 export void initrawexample() {
     PyObject* m = Py_INCREF(Py_InitModule("rawexample", rawexample_methods.ptr));
 
-    Base_type.ob_type = PyType_Type_p;
+    Base_type.ob_type = &PyType_Type;
     Base_type.tp_basicsize = Base_object.sizeof;
     Base_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
     Base_type.tp_methods = Base_methods.ptr;
@@ -76,7 +72,7 @@ export void initrawexample() {
     Py_INCREF(cast(PyObject*)&Base_type);
     PyModule_AddObject(m, "Base", cast(PyObject*)&Base_type);
 
-    Derived_type.ob_type = PyType_Type_p;
+    Derived_type.ob_type = &PyType_Type;
     Derived_type.tp_basicsize = Derived_object.sizeof;
     Derived_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
     Derived_type.tp_methods = Derived_methods.ptr;

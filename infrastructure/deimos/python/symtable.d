@@ -142,7 +142,7 @@ struct PySTEntryObject{
 
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
-    __gshared PyTypeObject PySTEntry_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PySTEntry_Type");
 
     /// _
     int PySymtableEntry_Check()(PyObject* op) {
@@ -163,7 +163,7 @@ version(Python_2_5_Or_Later) {
     /// Availability: 2.4
     alias PySTEntryObject PySymtableEntryObject;
     /// Availability: 2.4
-    __gshared PyTypeObject PySymtableEntry_Type;
+    mixin(PyAPI_DATA!"PyTypeObject PySymtableEntry_Type");
 
     /// _
     int PySymtableEntry_Check()(PyObject* op) {

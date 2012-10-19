@@ -49,7 +49,7 @@ struct PyComplexObject {
 }
 
 /// _
-__gshared PyTypeObject PyComplex_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyComplex_Type");
 
 // D translation of C macro:
 /// _

@@ -82,7 +82,7 @@ void Py_LeaveRecursiveCall()() {
 /// _
 int _Py_CheckRecursiveCall(char* where);
 /// _
-__gshared int _Py_CheckRecursionLimit;
+mixin(PyAPI_DATA!"int _Py_CheckRecursionLimit");
 
 // TODO: version(STACKCHECK)
 /// _
@@ -155,9 +155,9 @@ version(Python_2_5_Or_Later){
 version(Python_3_0_Or_Later) {
 }else{
     /// _
-    __gshared /*volatile*/ int _Py_Ticker;
+    mixin(PyAPI_DATA!"/*volatile*/ int _Py_Ticker");
     /// _
-    __gshared int _Py_CheckInterval;
+    mixin(PyAPI_DATA!"int _Py_CheckInterval");
 }
 
 /// _

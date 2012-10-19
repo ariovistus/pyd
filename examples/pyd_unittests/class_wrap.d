@@ -216,11 +216,11 @@ bizzy %= 3
 assert bizzy.m == 36
 bizzy **= 4
 assert bizzy.m == 48
-bizzy[2] = 3.3
-assert bizzy.m == 3302
-bizzy[2:3] = 4.3
-assert bizzy.m == 4323
-assert bizzy(40.5) == 44823
+bizzy[2] = 3.5
+assert bizzy.m == 3502
+bizzy[2:3] = 4.5
+assert bizzy.m == 4523
+assert bizzy(40.5) == 45023
 }", "testing");
 
 py_stmts(q"{

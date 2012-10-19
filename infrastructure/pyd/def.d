@@ -325,7 +325,10 @@ void add_module(Options...)() {
         PyImport_AppendInittab(modulename.ptr, &Py3_ModuleInit!modulename.func);
     }else{
         // schizophrenic arrangements, these
-        assert(py_init_called);
+        version(PydPythonExtension) {
+        }else{
+            assert(py_init_called);
+        }
         pyd_modules[modulename] = Py_INCREF(Py_InitModule3((modulename ~ "\0"), 
                     module_methods[modulename].ptr, (docstring ~ "\0")));
     }

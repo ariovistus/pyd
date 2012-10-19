@@ -59,3 +59,19 @@ version(Python_2_5_Or_Later){
     alias int Py_ssize_t;
 }
 
+template PyAPI_DATA(string decl) {
+    version(Windows) {
+    enum PyAPI_DATA = (q{
+        extern(C)
+        extern
+        export
+        __gshared
+    } ~ decl ~ ";");
+    }else{
+    // todo: check that extern export doesn't break linux build somehow
+    enum PyAPI_DATA = (q{
+        extern(C)
+        __gshared
+    } ~ decl ~ ";");
+    }
+}

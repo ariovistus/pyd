@@ -63,6 +63,7 @@ _metaFiles = [
 ]
 
 _utilFiles = [
+    'conv.d',
     'typelist.d',
     'multi_index.d',
     'replace.d',
@@ -212,9 +213,8 @@ class DCompiler(cc.CCompiler):
                     )
                 sources.append((winpath(filePath,self.winonly), 'infra'))
         # Add the infraDir to the include path for pyd, st, and meta.
-        if True in (with_pyd, with_st, with_meta):
-            includePathOpts += self._includeOpts
-            includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
+        includePathOpts += self._includeOpts
+        includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
         
         # Add DLL/SO boilerplate code file.
         if _isPlatWin:
@@ -253,7 +253,8 @@ class DCompiler(cc.CCompiler):
             major = sys.version_info[0]
             minor = sys.version_info[1]
             optf = 'Python_%d_%d_Or_Later'
-            return [opt % (optf % (major,m)) for m in range(4,minor+1)]
+            return [opt % 'PydPythonExtension'] + [opt % (optf % (major,m)) for m in range(4,minor+1)]
+
             
         pythonVersionOpts = pvo(self._versionOpt) 
 

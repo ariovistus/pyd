@@ -31,7 +31,7 @@ struct PyGenObject {
 }
 
 /// _
-__gshared PyTypeObject PyGen_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyGen_Type");
 
 // D translations of C macros:
 /// _

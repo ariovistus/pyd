@@ -3,4 +3,7 @@ syntax: glob
 *.o
 *.so
 *.x
+*.lib
+*.exe
+*.obj
 junk.txt

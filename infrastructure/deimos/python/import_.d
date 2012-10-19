@@ -132,9 +132,9 @@ struct _inittab {
 }
 
 /// _
-__gshared PyTypeObject PyNullImporter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyNullImporter_Type");
 /// _
-__gshared _inittab* PyImport_Inittab;
+mixin(PyAPI_DATA!"_inittab* PyImport_Inittab");
 
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
@@ -158,5 +158,5 @@ struct _frozen {
 
 /** Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
-__gshared _frozen* PyImport_FrozenModules;
+mixin(PyAPI_DATA!"_frozen* PyImport_FrozenModules");
 

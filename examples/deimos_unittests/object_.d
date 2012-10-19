@@ -1,4 +1,17 @@
-import deimos.python.object;
+import std.string;
+
+import deimos.python.Python;
+
+shared static this() {
+    Py_Initialize();
+}
+
+unittest {
+    PyObject* type1 = PyObject_Type(PyObject_Type(PyDict_New()));
+    PyObject* type2 = cast(PyObject*) &PyType_Type;
+    // linker broken?
+    assert(type1 == type2, format("problem: deimos' PyType_Type isn't pointing at python's PyType_Type (py:%x, d:%x)",type1, type2));
+}
 
 unittest {
     // breaks linking?

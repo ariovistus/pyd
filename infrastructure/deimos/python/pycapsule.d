@@ -17,6 +17,7 @@ See_Also:
   */
 module deimos.python.pycapsule;
 
+import deimos.python.pyport;
 import deimos.python.object;
 
 version(Python_2_7_Or_Later) {
@@ -24,7 +25,7 @@ extern(C):
 // Python-header-file: Include/pycapsule.h:
 
 /// Availability: >= 2.7
-__gshared PyTypeObject PyCapsule_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyCapsule_Type");
 
 /// Availability: >= 2.7
 alias void function(PyObject*) PyCapsule_Destructor;

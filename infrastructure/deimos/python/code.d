@@ -105,7 +105,7 @@ version(Python_3_2_Or_Later) {
 enum int CO_MAXBLOCKS = 20;
 
 /// _
-__gshared PyTypeObject PyCode_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyCode_Type");
 
 // D translations of C macros:
 /// _

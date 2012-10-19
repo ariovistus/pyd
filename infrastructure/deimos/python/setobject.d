@@ -84,11 +84,11 @@ struct PySetObject {
 }
 
 /// _
-__gshared PyTypeObject PySet_Type;
+mixin(PyAPI_DATA!"PyTypeObject PySet_Type");
 /// _
-__gshared PyTypeObject PyFrozenSet_Type;
+mixin(PyAPI_DATA!"PyTypeObject PyFrozenSet_Type");
 /// _
-__gshared PyTypeObject PySetIter_Type;
+mixin(PyAPI_DATA!"PyTypeObject PySetIter_Type");
 
 // D translations of C macros:
 /// _
