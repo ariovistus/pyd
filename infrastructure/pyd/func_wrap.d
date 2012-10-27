@@ -475,20 +475,28 @@ PyObject* arrangeNamedArgs(alias fn)(PyObject* args, PyObject* kwargs) {
 
 template minNumArgs_impl(alias fn, fnT) {
     alias ParameterTypeTuple!(fnT) Params;
-    Params params;// = void;
-
-    template loop(size_t i = 0) {
-        static assert (i <= Params.length);
-
-        static if (__traits(compiles,fn(params[0..i].init))) {
-            enum size_t res = i;
-        } else {
-            alias loop!(i+1).res res;
+    alias ParameterDefaultValueTuple!(fn) Defaults;
+    alias variadicFunctionStyle!fn vstyle;
+    static if(Params.length == 0) {
+        // handle func(), func(...)
+        enum res = 0;
+    }else static if(vstyle == Variadic.typesafe){
+        // handle func(nondefault T1 t1, nondefault T2 t2, etc, TN[]...)
+        enum res = Params.length-1;
+    }else {
+        size_t count_nondefault() {
+            size_t result = 0;
+            foreach(i, v; Defaults) {
+                static if(is(v == void)) {
+                    result ++;
+                }else break;
+            }
+            return result;
         }
+        enum res = count_nondefault();
     }
-
-    alias loop!().res res;
 }
+
 /**
   Finds the minimal number of arguments a given function needs to be provided
  */
