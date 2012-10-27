@@ -393,11 +393,13 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
     template shim(size_t i, T) {
         enum shim = Replace!(q{    
             alias Params[$i] __pyd_p$i;
-            ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) {
+            $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) {
                 return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func("$name", t);
             }
             alias T.$realname $realname;
-        }, "$i",i,"$realname",realname, "$name", name);
+        }, "$i",i,"$realname",realname, "$name", name, "$override", 
+        // todo: figure out what's going on here
+        (variadicFunctionStyle!func == Variadic.no ? "override":""));
     }
 }
 
@@ -512,7 +514,7 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
         template shim(size_t i, T) {
             static if(countUntil(parts.mode, "r") != -1) {
                 enum getter = Replace!(q{
-                ReturnType!(__pyd_p$i.get_t) $realname() {
+                override ReturnType!(__pyd_p$i.get_t) $realname() {
                     return __pyd_get_overload!("$realname", __pyd_p$i.get_t).func("$name");
                 }
                 } , "$i",i,"$realname",realname, "$name", pyname);

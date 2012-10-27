@@ -524,15 +524,9 @@ bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
     }
     alias variadicFunctionStyle!fn vstyle;
     alias ParameterTypeTuple!fn ps;
+    alias ParameterDefaultValueTuple!fn defaults;
     static if(vstyle == Variadic.no) {
-        if(n > ps.length) return false;
-        if(n == 0 && __traits(compiles, fn())) return true;
-        foreach(i,_p; ps) {
-            if(__traits(compiles, fn(ps[0 .. i+1].init)) && i+1 == n) {
-                return true;
-            }
-        }
-        return false;
+        return (n >= minArgs!(fn,fn_t) && n <= maxArgs!(fn,fn_t).max);
     }else static if(vstyle == Variadic.c) {
         return true;
     }else static if(vstyle == Variadic.d) {

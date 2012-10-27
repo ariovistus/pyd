@@ -1,26 +1,26 @@
 module util.typelist;
 
-
 import std.algorithm;
 import std.typetuple;
 
-// from std.typecons:
-
-// this would be deprecated by std.typelist.Filter
-// emn: std.typelist DOESNT EXIST
-template Filter(alias pred, lst...)
-{
-    static if (lst.length > 0)
+static if(__traits(hasMember,std.typetuple, "Filter")) {
+    public import std.typetuple: Filter;
+}else{
+    // functionality added in 2.061
+    template Filter(alias pred, lst...)
     {
-        alias Filter!(pred, lst[1 .. $]) tail;
-        //
-        static if (pred!(lst[0]))
-            alias TypeTuple!(lst[0], tail) Filter;
+        static if (lst.length > 0)
+        {
+            alias Filter!(pred, lst[1 .. $]) tail;
+            //
+            static if (pred!(lst[0]))
+                alias TypeTuple!(lst[0], tail) Filter;
+            else
+                alias tail Filter;
+        }
         else
-            alias tail Filter;
+            alias TypeTuple!() Filter;
     }
-    else
-        alias TypeTuple!() Filter;
 }
 
 template Join(string delimit, T...) {

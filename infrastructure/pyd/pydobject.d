@@ -366,7 +366,7 @@ Struct Format Strings </a>
     /**
      * Exposes Python object comparison to D. Equivalent to cmp(this, rhs) in Python.
      */
-    int opCmp(Object o) {
+    override int opCmp(Object o) {
         PydObject rhs = cast(PydObject) o;
         if (!rhs) return -1;
         version(Python_3_0_Or_Later) {
@@ -408,7 +408,7 @@ Struct Format Strings </a>
         return new PydObject(PyObject_Str(m_ptr));
     }
     /// Allows use of PydObject in writeln via %s
-    string toString() {
+    override string toString() {
         return python_to_d!(string)(m_ptr);
     }
     
@@ -1206,6 +1206,9 @@ struct PydInputRange(E = PydObject) {
             handle_exception();
         }
         popFront();
+    }
+    this(this) {
+        Py_INCREF(iter);
     }
     ~this() {
         Py_XDECREF(iter);
