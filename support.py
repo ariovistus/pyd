@@ -58,6 +58,7 @@ class Extension(std_Extension):
             kwargs['with_main'] = False
             del kwargs['raw_only']
         with_pyd  = kwargs.pop('with_pyd', True)
+        build_deimos = kwargs.pop('build_deimos', False)
         with_st   = kwargs.pop('with_st', False) # 5/23/07 st off by default.
         # StackThreads doesn't work with Tango at the moment.
         if with_tango:
@@ -74,7 +75,7 @@ class Extension(std_Extension):
             # The special PydMain function should only be used when using Pyd
             with_main = False
 
-        define_macros.append(((with_pyd, with_st, with_meta, with_main), 'aux'))
+        define_macros.append(((with_pyd, with_st, with_meta, with_main, build_deimos), 'aux'))
 
         std_Extension.__init__(self, *args, **kwargs)
 

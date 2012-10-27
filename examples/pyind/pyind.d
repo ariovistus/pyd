@@ -35,7 +35,7 @@ static this() {
             def!(knock, ModuleName!"office", 
                 Docstring!"a brain specialist works here")(); 
             add_module!(ModuleName!"office")();
-            });
+    });
     py_init();
 
     wrap_class!(Y, 

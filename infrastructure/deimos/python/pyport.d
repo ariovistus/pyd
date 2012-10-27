@@ -59,19 +59,24 @@ version(Python_2_5_Or_Later){
     alias int Py_ssize_t;
 }
 
+version(linux) version(DigitalMars) version = dmd_linux;
 template PyAPI_DATA(string decl) {
-    version(Windows) {
-    enum PyAPI_DATA = (q{
-        extern(C)
-        extern
-        export
-        __gshared
-    } ~ decl ~ ";");
+    
+    version(dmd_linux) {
+        // has to be special
+
+        // todo: why does ldc/linux not work this way? 
+        //  --export-dynamic seems not to change anything
+        enum PyAPI_DATA = (q{
+            extern(C)
+            __gshared
+        } ~ decl ~ ";");
     }else{
-    // todo: check that extern export doesn't break linux build somehow
-    enum PyAPI_DATA = (q{
-        extern(C)
-        __gshared
-    } ~ decl ~ ";");
+        enum PyAPI_DATA = (q{
+            extern(C)
+            extern
+            export
+            __gshared
+        } ~ decl ~ ";");
     }
 }

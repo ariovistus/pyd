@@ -34,7 +34,7 @@ import std.exception: enforce;
 import std.functional;
 import std.metastrings;
 import std.typetuple;
-import std.string: format;
+import std.string: format = xformat;
 import std.typecons: Tuple;
 import util.typelist;
 import util.multi_index;
@@ -523,7 +523,7 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
             }
             static if(countUntil(parts.mode, "w") != -1) {
                 enum setter = Replace!(q{
-                ReturnType!(__pyd_p$i.set_t) $realname(ParameterTypeTuple!(__pyd_p$i.set_t) t) {
+                override ReturnType!(__pyd_p$i.set_t) $realname(ParameterTypeTuple!(__pyd_p$i.set_t) t) {
                     return __pyd_get_overload!("$realname", __pyd_p$i.set_t).func("$name", t);
                 }
                 }, "$i", i, "$realname",realname, "$name", pyname);

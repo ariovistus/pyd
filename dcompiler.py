@@ -69,6 +69,79 @@ _utilFiles = [
     'replace.d',
 ]
 
+_deimosFiles = [
+    'abstract_.d',
+    'ast.d',
+    'boolobject.d',
+    'bufferobject.d',
+    'bytearrayobject.d',
+    'bytesobject.d',
+    'cellobject.d',
+    'ceval.d',
+    'classobject.d',
+    'cobject.d',
+    'codecs.d',
+    'code.d',
+    'compile.d',
+    'complexobject.d',
+    'cStringIO.d',
+    'datetime.d',
+    'descrobject.d',
+    'dictobject.d',
+    'enumobject.d',
+    'errcode.d',
+    'eval.d',
+    'fileobject.d',
+    'floatobject.d',
+    'frameobject.d',
+    'funcobject.d',
+    'genobject.d',
+    'grammar.d',
+    'import_.d',
+    'intobject.d',
+    'intrcheck.d',
+    'iterobject.d',
+    'listobject.d',
+    'longintrepr.d',
+    'longobject.d',
+    'marshal.d',
+    'memoryobject.d',
+    'methodobject.d',
+    'modsupport.d',
+    'moduleobject.d',
+    'node.d',
+    'object.d',
+    'objimpl.d',
+    'parsetok.d',
+    'pgenheaders.d',
+    'pyarena.d',
+    'pyatomic.d',
+    'pycapsule.d',
+    'pydebug.d',
+    'pyerrors.d',
+    'pymem.d',
+    'pyport.d',
+    'pystate.d',
+    'pystrcmp.d',
+    'pystrtod.d',
+    'Python.d',
+    'pythonrun.d',
+    'pythread.d',
+    'rangeobject.d',
+    'setobject.d',
+    'sliceobject.d',
+    'stringobject.d',
+    'structmember.d',
+    'structseq.d',
+    'symtable.d',
+    'sysmodule.d',
+    'timefuncs.d',
+    'traceback.d',
+    'tupleobject.d',
+    'unicodeobject.d',
+    'weakrefobject.d',
+]
+
 _pyVerXDotY = '.'.join(str(v) for v in sys.version_info[:2]) # e.g., '2.4'
 _pyVerXY = _pyVerXDotY.replace('.', '') # e.g., '24'
 
@@ -173,7 +246,7 @@ class DCompiler(cc.CCompiler):
                 sources.append((winpath(source, self.winonly), 'outside'))
 
         # flags = (with_pyd, with_st, with_meta, with_main)
-        with_pyd, with_st, with_meta, with_main = [f for f, category in macros if category == 'aux'][0]
+        with_pyd, with_st, with_meta, with_main, build_deimos = [f for f, category in macros if category == 'aux'][0]
         # And Pyd!
         if with_pyd:
             # If we're not using StackThreads, don't use iteration.d in Pyd
@@ -191,6 +264,14 @@ class DCompiler(cc.CCompiler):
                 if not os.path.isfile(filePath):
                     raise DistutilsPlatformError("Required util source file '%s' is"
                         " missing." % filePath
+                    )
+                sources.append((winpath(filePath,self.winonly), 'infra'))
+        if build_deimos:
+            for file in _deimosFiles:
+                filePath = os.path.join(_infraDir, 'deimos', 'python', file)
+                if not os.path.isfile(filePath):
+                    raise DistutilsPlatformError("Required deimos header "
+                        "file '%s' is missing." % filePath
                     )
                 sources.append((winpath(filePath,self.winonly), 'infra'))
         # If using PydMain, parse the template file

@@ -6,6 +6,6 @@ setup(
     name=projName,
     version='0.1',
     ext_modules=[
-        Extension(projName, [projName + '.d'])
+        Extension(projName, [projName + '.d'], build_deimos=True)
     ],
   )

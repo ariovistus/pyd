@@ -1,5 +1,6 @@
 import std.string;
 
+import std.stdio;
 import deimos.python.Python;
 
 shared static this() {
@@ -17,7 +18,7 @@ unittest {
     // breaks linking?
     Py_XINCREF(Py_None());
     // breaks linking?
-    Py_XDECREF(cast(PyObject*) null);
+    Py_XDECREF(cast(PyObject*) Py_None());
     // breaks linking?
     PyObject_TypeCheck(cast(PyObject*) Py_None(), &PyType_Type);
     

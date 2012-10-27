@@ -32,9 +32,11 @@ class Y {
 
 static this() {
     on_py_init({
-            def!(knock, ModuleName!"office", Docstring!"a brain specialist works here")(); 
+            def!(knock, ModuleName!"office", 
+                Docstring!"a brain specialist works here")(); 
             add_module!(ModuleName!"office")();
     });
+
     on_py_init({
     wrap_class!(Y, 
         Def!(Y.query),
@@ -43,6 +45,7 @@ static this() {
         Property!(Y.resolution, Mode!"r"),
     )();
     }, PyInitOrdering.After);
+
     py_init();
 }
 

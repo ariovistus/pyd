@@ -26,6 +26,7 @@ SOFTWARE.
 module pyd.exception;
 
 import std.conv;
+import std.string: format = xformat;
 import std.string;
 import deimos.python.Python;
 import meta.Nameof : prettytypeof;

@@ -53,6 +53,10 @@ import pyd.exception;
 
 
 shared static this() {
+    init_rangewrapper();
+}
+
+void init_rangewrapper() {
     on_py_init( {
             add_module!(
                 ModuleName!"pyd", 
@@ -63,8 +67,11 @@ shared static this() {
                 ModuleName!"pyd",
                 Def!(RangeWrapper.iter, PyName!"__iter__"),
                 Def!(RangeWrapper.next))();
+            rangeWrapperInited = true;
             }, PyInitOrdering.After);
 }
+
+bool rangeWrapperInited = false;
 
 class to_conversion_wrapper(dg_t) {
     alias ParameterTypeTuple!(dg_t)[0] T;
@@ -327,6 +334,12 @@ class PydConversionException : Exception {
 T python_to_d(T) (PyObject* o) {
     // This ordering is somewhat important. The checks for Tuple and Complex
     // must be before the check for general structs.
+    version(PydPythonExtension) {
+        // druntime doesn't run module ctors :(
+        if(!rangeWrapperInited) {
+            init_rangewrapper();
+        }
+    }
 
     static if (is(PyObject* : T)) {
         return o;
