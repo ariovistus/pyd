@@ -128,6 +128,19 @@ python = python statements
             handle_exception(file,line);
         }
     }
+
+    @property PydObject opDispatch(string id)() {
+        return this.locals[id];
+    }
+
+    @property void opDispatch(string id, T)(T t) {
+        static if(is(T == PydObject)) {
+            alias t s;
+        }else{
+            PydObject s = py(t);
+        }
+        this.locals[id] = py(s);
+    }
 }
 
 /++

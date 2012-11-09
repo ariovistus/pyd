@@ -52,4 +52,18 @@ unittest {
 
 }
 
+unittest {
+    InterpContext c = new InterpContext();
+    c.locals["i"] = py(1);
+    c.j = py(2);
+    c.k = 4;
+    c.py_stmts(
+        "assert i == 1;"
+        "assert j == 2;"
+        "assert k == 4"
+        );
+   // (*^&^&* broken @property
+   // static assert(is(typeof(c.unicode("abc")) == PydObject));
+}
+
 void main() {}
