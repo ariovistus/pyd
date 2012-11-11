@@ -35,6 +35,11 @@ class Foo4{
     }
 }
 
+class Foo5{
+    this(int i, double j = 1.0, double k = 4.5, double L = 6.325){
+    }
+}
+
 unittest {
     static assert(getparams!foo1 == "int i, int j");
     static assert(getparams!foo2 == "int i, double j = 2");
@@ -44,6 +49,8 @@ unittest {
     //pragma(msg, typeof(fn));
     //fn(1);
     static assert(minArgs!(call_ctor!(Foo2, Init!(int, double)).func) == 1);
+    auto fn2 = &call_ctor!(Foo5, Init!(int, double, double, double)).func;
+    static assert(minArgs!(call_ctor!(Foo5, Init!(int, double, double, double)).func) == 1);
 
     static assert(minArgs!foo1 == 2);
     static assert(minArgs!foo2 == 1);
@@ -90,6 +97,12 @@ unittest {
     assert(supportsNArgs!foo5(2));
     assert(!supportsNArgs!foo5(3));
 
+    assert(!supportsNArgs!(Foo5.__ctor)(0));
+    assert(supportsNArgs!(Foo5.__ctor)(1));
+    assert(supportsNArgs!(Foo5.__ctor)(2));
+    assert(supportsNArgs!(Foo5.__ctor)(3));
+    assert(supportsNArgs!(Foo5.__ctor)(4));
+    assert(!supportsNArgs!(Foo5.__ctor)(5));
 }
 
 

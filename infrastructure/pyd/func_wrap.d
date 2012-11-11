@@ -26,6 +26,7 @@ SOFTWARE.
 module pyd.func_wrap;
 
 import deimos.python.Python;
+import std.algorithm: max;
 import std.metastrings;
 import std.exception: enforce;
 import std.range;
@@ -102,7 +103,7 @@ void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, strin
 
 // Calls callable alias fn with PyTuple args.
 // kwargs may be null, args may not
-ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
+ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObject* kwargs) {
     alias ParameterTypeTuple!fn T;
     enum size_t MIN_ARGS = minArgs!fn;
     alias maxArgs!fn MaxArgs;
@@ -112,7 +113,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
     Py_ssize_t argCount = 0;
     // This can make it more convenient to call this with 0 args.
     if(kwargs !is null && PyObject_Length(kwargs) > 0) {
-        args = arrangeNamedArgs!(fn)(args, kwargs);
+        args = arrangeNamedArgs!(fn,fname)(args, kwargs);
         Py_ssize_t newlen = PyObject_Length(args);
         argsoverwrote = true;
     }
@@ -137,11 +138,21 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
     foreach(i, arg; t) {
         enum size_t argNum = i+1;
         static if(MaxArgs.vstyle == Variadic.no) {
+            alias ParameterDefaultValueTuple!fn Defaults;
             if (i < argCount) {
                 auto bpobj =  PyTuple_GetItem(args, i);
-                auto  pobj = Py_XINCREF(bpobj);
-                t[i] = python_to_d!(typeof(arg))(pobj);
-                Py_DECREF(pobj);
+                if(bpobj) {
+                    auto pobj = Py_XINCREF(bpobj);
+                    t[i] = python_to_d!(typeof(arg))(pobj);
+                    Py_DECREF(pobj);
+                }else{
+                    static if(!is(Defaults[i] == void)) {
+                        t[i] = Defaults[i];
+                    }else{
+                        // should never happen
+                        enforce(0, "python non-keyword arg is NULL!");
+                    }
+                }
             }
             static if (argNum >= MIN_ARGS && 
                     (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
@@ -190,12 +201,12 @@ ReturnType!fn applyPyTupleToAlias(alias fn)(PyObject* args, PyObject* kwargs) {
 
 // wraps applyPyTupleToAlias to return a PyObject*
 // kwargs may be null, args may not.
-PyObject* pyApplyToAlias(alias fn) (PyObject* args, PyObject* kwargs) {
+PyObject* pyApplyToAlias(alias fn, string fname) (PyObject* args, PyObject* kwargs) {
     static if (is(ReturnType!fn == void)) {
-        applyPyTupleToAlias!fn(args, kwargs);
+        applyPyTupleToAlias!(fn,fname)(args, kwargs);
         return Py_INCREF(Py_None());
     } else {
-        return d_to_python( applyPyTupleToAlias!fn(args, kwargs) );
+        return d_to_python( applyPyTupleToAlias!(fn,fname)(args, kwargs) );
     }
 }
 
@@ -262,7 +273,7 @@ template wrapped_func_call(fn_t) {
 }
 
 // Wraps a function alias with a PyCFunctionWithKeywords.
-template function_wrap(alias real_fn) {
+template function_wrap(alias real_fn, string fnname) {
     alias ParameterTypeTuple!real_fn Info;
     enum size_t MAX_ARGS = Info.length;
     alias ReturnType!real_fn RT;
@@ -270,14 +281,14 @@ template function_wrap(alias real_fn) {
     extern (C)
     PyObject* func(PyObject* self, PyObject* args, PyObject* kwargs) {
         return exception_catcher(delegate PyObject*() {
-            return pyApplyToAlias!real_fn(args, kwargs);
+            return pyApplyToAlias!(real_fn,fnname)(args, kwargs);
         });
     }
 }
 
 // Wraps a member function alias with a PyCFunction.
 // func's args and kwargs may each be null.
-template method_wrap(C, alias real_fn) {
+template method_wrap(C, alias real_fn, string fname) {
     alias ParameterTypeTuple!real_fn Info;
     enum size_t ARGS = Info.length;
     alias ReturnType!real_fn RT;
@@ -308,7 +319,7 @@ template method_wrap(C, alias real_fn) {
                 PyTuple_SetItem(self_and_args, i+1, pobj);
             }
             alias memberfunc_to_func!(C,real_fn).func func;
-            return pyApplyToAlias!func(self_and_args, kwargs);
+            return pyApplyToAlias!(func,fname)(self_and_args, kwargs);
         });
     }
 }
@@ -410,66 +421,62 @@ class PydWrappedFunc {
     }
 }
 
-
-bool hasAllNamedArgs(alias fn)(Py_ssize_t arglen, PyObject* kwargs) {
-    //static if(variadicFunctionStyle!fn != Variadic.no) return true;
-    alias ParameterIdentifierTuple!fn ids;
-    string[] sids = new string[](ids.length);
-    bool[] flags = new bool[](ids.length);
-    foreach(i,id; ids) sids[i] = id;
-    PyObject* keys = PyDict_Keys(kwargs);
-    Py_ssize_t len = PyObject_Length(keys);
-FOREACH: 
-    foreach(i; 0 .. len) {
-        auto pobj = PySequence_GetItem(keys, i);
-        enforce(pobj != null);
-        string name = python_to_d!string(pobj);
-        Py_DECREF(pobj);
-        foreach(j,id; ids) {
-            if(id == name && j >= arglen) {
-                enforce(!flags[j]); // why would this happen? no idea.
-                flags[j] = true;
-                continue FOREACH;
-            }
-        }
-        return false;
-    }
-    size_t firstmissing = -1;
-    foreach(k,f; flags[arglen .. $]) {
-        if(f && firstmissing != -1) {
-            return false;
-            //enforce(false, format("missing argument '%s'", sids[firstmissing]));
-        }
-        if(!f && firstmissing == -1) {
-            firstmissing = k + arglen;
-        }
-    }
-    return true;
-}
-
-
-PyObject* arrangeNamedArgs(alias fn)(PyObject* args, PyObject* kwargs) {
+PyObject* arrangeNamedArgs(alias fn, string fname)(PyObject* args, PyObject* kwargs) {
     alias ParameterIdentifierTuple!fn ids;
     string[] allfnnames = new string[](ids.length);
-    foreach(i,id; ids) allfnnames[i] = id;
+    size_t[string] allfnnameset;
+    foreach(i,id; ids) {
+        allfnnames[i] = id;
+        allfnnameset[id] = i;
+    }
+    alias variadicFunctionStyle!fn vstyle;
+    size_t firstDefaultValueIndex = ids.length;
+    static if(vstyle == Variadic.no) {
+        alias ParameterDefaultValueTuple!fn Defaults;
+        foreach(i, v; Defaults) {
+            static if(!is(v == void)) {
+                firstDefaultValueIndex = i;
+                break;
+            }
+        }
+    }
 
     Py_ssize_t arglen = PyObject_Length(args);
     enforce(arglen != -1);
     Py_ssize_t kwarglen = PyObject_Length(kwargs);
     enforce(kwarglen != -1);
-    auto allargs = PyTuple_New(arglen+kwarglen);
+    // variadic args might give us a count greater than ids.length
+    // (but in that case there should be no kwargs)
+    auto allargs = PyTuple_New(max(ids.length, arglen+kwarglen));
 
     foreach(i; 0 .. arglen) {
         auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
         PyTuple_SetItem(allargs, i, pobj);
     }
+    PyObject* keys = PyDict_Keys(kwargs);
+    enforce(keys);
+    for(size_t _n = 0; _n < kwarglen; _n++) {
+        PyObject* pkey = PySequence_GetItem(keys, _n);
+        auto name = python_to_d!string(pkey);
+        if(name !in allfnnameset) {
+            enforce(false, format("%s() got an unexpected keyword argument '%s'",fname, name));
+            
 
-    foreach(n,name; allfnnames[arglen .. arglen + kwarglen]) {
-        auto key = d_to_python(name);
-        auto bval = PyDict_GetItem(kwargs, key);
-        auto val = Py_XINCREF(bval);
-        PyTuple_SetItem(allargs, arglen+n, val);
+        }
+        size_t n = allfnnameset[name];
+        auto bval = PyDict_GetItem(kwargs, pkey);
+        if(bval) {
+            auto val = Py_XINCREF(bval);
+            PyTuple_SetItem(allargs, n, val);
+        }else if(vstyle == Variadic.no && n >= firstDefaultValueIndex) {
+            // ok, we can get the default value 
+        }else{
+            enforce(false, format("argument '%s' is NULL! <%s, %s, %s, %s>", 
+                        name, n, firstDefaultValueIndex, ids.length, 
+                        vstyle == Variadic.no));
+        }
     }
+    Py_DECREF(keys);
     return allargs;
 }
 

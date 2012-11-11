@@ -80,7 +80,7 @@ struct Member(string name, Options...) {
 
 template _Member(string realname, string pyname, string mode, string docstring) {
     static const bool needs_shim = false;
-    static void call(T) () {
+    static void call(string classname, T) () {
         pragma(msg, "struct.member: " ~ pyname);
         static PyGetSetDef empty = {null, null, null, null, null};
         alias wrapped_prop_list!(T) list;

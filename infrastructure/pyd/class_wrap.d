@@ -304,17 +304,17 @@ struct property_parts(alias p, string _mode) {
 }
 
 //
-template wrapped_get(T, Parts) {
+template wrapped_get(string fname, T, Parts) {
     // A generic wrapper around a "getter" property.
     extern(C)
     PyObject* func(PyObject* self, void* closure) {
         // method_wrap already catches exceptions
-        return method_wrap!(T, Parts.GetterFn).func(self, null, null);
+        return method_wrap!(T, Parts.GetterFn, fname).func(self, null, null);
     }
 }
 
 //
-template wrapped_set(T, Parts) {
+template wrapped_set(string fname, T, Parts) {
     // A generic wrapper around a "setter" property.
     extern(C)
     int func(PyObject* self, PyObject* value, void* closure) {
@@ -323,7 +323,7 @@ template wrapped_set(T, Parts) {
         scope(exit) Py_DECREF(temp_tuple);
         Py_INCREF(value);
         PyTuple_SetItem(temp_tuple, 0, value);
-        PyObject* res = method_wrap!(T, Parts.SetterFn).func(self, temp_tuple, null);
+        PyObject* res = method_wrap!(T, Parts.SetterFn, fname).func(self, temp_tuple, null);
         // If we get something back, we need to DECREF it.
         if (res) Py_DECREF(res);
         // If we don't, propagate the exception
@@ -339,7 +339,7 @@ template wrapped_set(T, Parts) {
 
 //enum ParamType { Def, StaticDef, Property, Init, Parent, Hide, Iter, AltIter }
 struct DoNothing {
-    static void call(T) () {}
+    static void call(string classname, T) () {}
 }
 
 /**
@@ -377,12 +377,12 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
     enum min_args = minArgs!(func);
     enum bool needs_shim = false;
 
-    static void call(T) () {
+    static void call(string classname, T) () {
         pragma(msg, "class.def: " ~ name);
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = cast(PyCFunction) &method_wrap!(T, func).func;
+        list[$-1].ml_meth = cast(PyCFunction) &method_wrap!(T, func, classname ~ "." ~ name).func;
         list[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
@@ -435,12 +435,12 @@ mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
     alias fn_t func_t;
     enum funcname = name;
     enum bool needs_shim = false;
-    static void call(T) () {
+    static void call(string classname, T) () {
         pragma(msg, "class.static_def: " ~ name);
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!func.func;
+        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!(func, classname ~ "." ~ name).func;
         list[$-1].ml_flags = METH_VARARGS | METH_STATIC | METH_KEYWORDS;
         list[$-1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
@@ -491,17 +491,17 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
         enum realname = __traits(identifier, fn);
         enum funcname = pyname;
         enum bool needs_shim = false;
-        static void call(T) () {
+        static void call(string classname, T) () {
             pragma(msg, "class.prop: " ~ pyname);
             static PyGetSetDef empty = { null, null, null, null, null };
             wrapped_prop_list!(T)[$-1].name = (pyname ~ "\0").dup.ptr;
             static if (countUntil(parts.mode, "r") != -1) {
                 wrapped_prop_list!(T)[$-1].get =
-                    &wrapped_get!(T, parts).func;
+                    &wrapped_get!(classname ~ "." ~ pyname, T, parts).func;
             }
             static if (countUntil(parts.mode, "w") != -1) {
                 wrapped_prop_list!(T)[$-1].set =
-                    &wrapped_set!(T, parts).func;
+                    &wrapped_set!(classname ~ "." ~ pyname,T, parts).func;
             }
             wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").dup.ptr;
             wrapped_prop_list!(T)[$-1].closure = null;
@@ -548,7 +548,7 @@ fn = The property to wrap. Must have the signature string function().
 struct Repr(alias _fn) {
     alias def_selector!(_fn, string function()).FN fn;
     enum bool needs_shim = false;
-    static void call(T)() {
+    static void call(string classname, T)() {
         alias wrapped_class_type!(T) type;
         type.tp_repr = &wrapped_repr!(T, fn).repr;
     }
@@ -593,7 +593,7 @@ struct Init(cps ...) {
                     T.stringof, CtorParams.stringof));
         alias VOverloads[0] FN;
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
     }
     template shim(size_t i, T) {
         enum params = getparams!(Inner!T.FN);
@@ -725,7 +725,7 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
         } else static assert(false, "Cannot get operator overload");
     }
 
-    static void call(T)() {
+    static void call(string classname, T)() {
         // can't handle __op__ __rop__ pairs here
     }
 
@@ -788,7 +788,7 @@ struct OpUnary(string _op) if(IsPyUnary(_op)) {
             alias C.opUnary!(op) FN;
         } else static assert(false, "Cannot get operator overload");
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         alias wrapped_class_type!T type;
         enum slot = unaryslots[op];
         mixin(autoInitializeMethods());
@@ -846,7 +846,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
             alias C.opOpAssign!(_op,rhs_t) FN;
         } else static assert(false, "Cannot get operator assignment overload");
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         alias wrapped_class_type!T type;
         enum slot = binaryslots[op];
         mixin(autoInitializeMethods());
@@ -910,7 +910,7 @@ struct OpCompare(_rhs_t = Guess) {
             alias Overloads1[0] FN;
         }
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         alias wrapped_class_type!T type;
         type.tp_richcompare = &rich_opcmp_wrap!(T, Inner!T.FN).func;
     }
@@ -958,7 +958,7 @@ struct OpIndex(index_t...) {
                     Format!("cannot get a handle on %s.opIndex", C.stringof));
         }
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_mapping.mp_subscript";
@@ -1013,7 +1013,7 @@ struct OpIndexAssign(index_t...) {
                     Format!("cannot get a handle on %s.opIndexAssign", C.stringof));
         }
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_mapping.mp_ass_subscript";
@@ -1061,7 +1061,7 @@ struct OpSlice() {
                         C.stringof));
         }
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_sequence.sq_slice";
@@ -1122,7 +1122,7 @@ struct OpSliceAssign(rhs_t = Guess) {
                         C.stringof));
         }
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         /*
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_sequence.sq_ass_slice";
@@ -1159,7 +1159,7 @@ struct OpCall(Args_t...) {
                 Format!("%s.%s: cannot choose between %s", T.stringof, nom,
                     VOverloads.stringof));
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         alias wrapped_class_type!T type;
         alias Inner!T.FN fn;
         type.tp_call = &opcall_wrap!(T, Inner!T.FN).func;
@@ -1213,7 +1213,7 @@ struct _Len(fnt...) {
                 Format!("%s.%s: cannot choose between %s", T.stringof, nom,
                     VOverloads.stringof));
     }
-    static void call(T)() {
+    static void call(string classname, T)() {
         alias wrapped_class_type!T type;
         enum slot = "type.tp_as_sequence.sq_length";
         mixin(autoInitializeMethods());
@@ -1309,13 +1309,13 @@ struct Operators(Ops...) {
     }
 }
 
-struct Constructors(Ctors...) {
+struct Constructors(string classname, Ctors...) {
     enum bool needs_shim = true;
 
     static void call(T, Shim)() {
         alias wrapped_class_type!T type;
         static if(Ctors.length) {
-            type.tp_init = &wrapped_ctors!(T, Shim, Ctors).func;
+            type.tp_init = &wrapped_ctors!(classname, T, Shim, Ctors).func;
         }else {
             // If a ctor wasn't supplied, try the default.
             // If the default ctor isn't available, and no ctors were supplied,
@@ -1496,9 +1496,9 @@ slice:
 /*
 Params: each param is a Type which supports the interface
 
-Param.needs_shim == false => Param.call!(T)
+Param.needs_shim == false => Param.call!(pyclassname, T)
 or 
-Param.needs_shim == true => Param.call!(T, Shim)
+Param.needs_shim == true => Param.call!(pyclassname,T, Shim)
 
     performs appropriate mutations to the PyTypeObject
 
@@ -1553,9 +1553,9 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
 
         foreach (param; Params) {
             static if (param.needs_shim) {
-                param.call!(T, shim_class)();
+                param.call!(name, T, shim_class)();
             } else {
-                param.call!(T)();
+                param.call!(name,T)();
             }
         }
 
@@ -1604,7 +1604,7 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         //////////////////////////
         // Constructor wrapping //
         //////////////////////////
-        Constructors!(Filter!(IsInit, Params)).call!(T, shim_class)();
+        Constructors!(name, Filter!(IsInit, Params)).call!(T, shim_class)();
 
         //////////////////////////
         // Iterator wrapping    //

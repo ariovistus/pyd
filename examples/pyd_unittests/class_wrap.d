@@ -1,5 +1,6 @@
 import pyd.pyd, pyd.embedded;
 import deimos.python.pyport: Py_ssize_t;
+import std.exception;
 import std.stdio;
 
 shared static this() {
@@ -40,6 +41,8 @@ shared static this() {
             StaticDef!(Bizzy2.a),
             StaticDef!(Bizzy2.b),
             StaticDef!(Bizzy2.c),
+            StaticDef!(Bizzy2.d),
+            Def!(Bizzy2.jj),
     )();
     wrap_class!(Bizzy3,
             ModuleName!"testing",
@@ -47,12 +50,18 @@ shared static this() {
             Def!(Bizzy3.a),
             Def!(Bizzy3.b),
             Def!(Bizzy3.c),
+            Def!(Bizzy3.d),
     )();
     wrap_class!(Bizzy4,
             ModuleName!"testing",
             Property!(Bizzy4.i),
             Repr!(Bizzy4.repr),
             Len!(),
+    )();
+    wrap_class!(Bizzy5,
+            ModuleName!"testing",
+            Init!(int,double,string),
+            Def!(Bizzy5.a),
     )();
     }, PyInitOrdering.After);
 
@@ -64,7 +73,6 @@ class Bizzy {
     int m() { return _m; }
 
     this(int i, double d = 1.0, string s = "hi") {
-        writefln("shawarma i=%s, d=%s, s='%s'",i,d,s);
     }
 
     int a(int i){
@@ -143,8 +151,13 @@ class Bizzy {
 }
 
 class Bizzy2 {
+    int[] js;
     this(int[] i...) {
-        writeln("abooba",i);
+        js = i.dup;
+    }
+
+    int[] jj() {
+        return js;
     }
 
     static int a(int i, double d) {
@@ -160,11 +173,15 @@ class Bizzy2 {
         }
         return ret;
     }
+
+    static string d(int i, int j = 101, string k = "bizbar") {
+        import std.string;
+        return format("<%s, %s, '%s'>", i,j,k);
+    }
 }
 
 class Bizzy3{
     this(int i, int j) {
-        writefln("broomba(%s,%s)",i,j);
     }
 
     int a(int i, double d) {
@@ -180,6 +197,12 @@ class Bizzy3{
         }
         return ret;
     }
+
+    string d(int i, int j = 102, string k = "bizbar") {
+        import std.string;
+        return format("<%s, %s, '%s'>", i,j,k);
+    }
+
 }
 
 class Bizzy4 {
@@ -191,86 +214,107 @@ class Bizzy4 {
     @property string repr() { return "cowabunga"; }
 }
 
+class Bizzy5 {
+    int i;
+    double d;
+    string s;
+    this(int i, double d = 1.0, string s = "hi") {
+        this.i = i;
+        this.d = d;
+        this.s = s;
+    }
+    string a() {
+        import std.string;
+        return format("<%s, %s, '%s'>", i,d,s);
+    }
+}
+
 unittest {
-    py_stmts(q"{
-#bizzy=Bizzy(1,2,3,4,5)
-#bizzy=Bizzy(d=7.1,i=4)
-bizzy=Bizzy(i=4)
-assert bizzy.a(1.0) == 13
-assert Bizzy.b(1.0) == 15
-assert repr(bizzy) == "bye"
-assert bizzy+1 == 2
-assert bizzy*1 == 3
-assert bizzy**1 == 4
-assert 1+bizzy == 5
-assert 19 in bizzy
-assert 0 not in bizzy 
-assert +bizzy == 55
-assert ~bizzy == 44
-assert bizzy > 1
-assert len(bizzy) == 401
-assert bizzy[1:2] == [1,2,3]
-bizzy += 2
-assert bizzy.m == 24
-bizzy %= 3
-assert bizzy.m == 36
-bizzy **= 4
-assert bizzy.m == 48
-bizzy[2] = 3.5
-assert bizzy.m == 3502
-bizzy[2:3] = 4.5
-assert bizzy.m == 4523
-assert bizzy(40.5) == 45023
-}", "testing");
+    InterpContext c = new InterpContext();
+    c.py_stmts("from testing import *");
+    c.py_stmts("bizzy = Bizzy(i=4)");
+    c.py_stmts("assert bizzy.a(1.0) == 13");
+    c.py_stmts("assert Bizzy.b(1.0) == 15");
+    c.py_stmts("assert repr(bizzy) == 'bye'");
+    c.py_stmts("assert bizzy+1 == 2");
+    c.py_stmts("assert bizzy*1 == 3");
+    c.py_stmts("assert bizzy**1 == 4");
+    c.py_stmts("assert 1+bizzy == 5");
+    c.py_stmts("assert 19 in bizzy");
+    c.py_stmts("assert 0 not in bizzy ");
+    c.py_stmts("assert +bizzy == 55");
+    c.py_stmts("assert ~bizzy == 44");
+    c.py_stmts("assert bizzy > 1");
+    c.py_stmts("assert len(bizzy) == 401");
+    c.py_stmts("assert bizzy[1:2] == [1,2,3]");
+    c.py_stmts("bizzy += 2");
+    c.py_stmts("assert bizzy.m == 24");
+    c.py_stmts("bizzy %= 3");
+    c.py_stmts("assert bizzy.m == 36");
+    c.py_stmts("bizzy **= 4");
+    c.py_stmts("assert bizzy.m == 48");
+    c.py_stmts("bizzy[2] = 3.5");
+    c.py_stmts("assert bizzy.m == 3502");
+    c.py_stmts("bizzy[2:3] = 4.5");
+    c.py_stmts("assert bizzy.m == 4523");
+    c.py_stmts("assert bizzy(40.5) == 45023");
 
-py_stmts(q"{
-bizzy = Bizzy2(4);
-bizzy = Bizzy2([4,5]);
-bizzy = Bizzy2(i=4);
-bizzy = Bizzy2(i=[4,5]);
-}", "testing");
+    c.py_stmts("bizzy = Bizzy2(4);");
+    c.py_stmts("assert bizzy.jj() == [4]");
+    c.py_stmts("bizzy = Bizzy2(4,5);");
+    c.py_stmts("assert bizzy.jj() == [4,5]");
+    c.py_stmts("bizzy = Bizzy2(i=4);");
+    c.py_stmts("assert bizzy.jj() == [4]");
+    c.py_stmts("bizzy = Bizzy2(i=[4,5]);");
+    c.py_stmts("assert bizzy.jj() == [4,5]");
 
-assert(py_eval!int("Bizzy2.a(7, 32.1)","testing") == 6427);
-assert(py_eval!int("Bizzy2.a(i=7, d=32.1)","testing") == 6427);
-assert(py_eval!int("Bizzy2.a(d=32.1,i=7)","testing") == 6427);
-assert(py_eval!int("Bizzy2.b(7, 32.1)","testing") == 32173);
-assert(py_eval!int("Bizzy2.b(d=32.1,i=7)","testing") == 32173);
-assert(py_eval!int("Bizzy2.b(i=7, d=32.1)","testing") == 32173);
-assert(py_eval!int("Bizzy2.b(7)","testing") == 3273);
-assert(py_eval!int("Bizzy2.b(i=7)","testing") == 3273);
-assert(py_eval!int("Bizzy2.c(7)","testing") == 7);
-assert(py_eval!int("Bizzy2.c(i=7)","testing") == 7);
-assert(py_eval!int("Bizzy2.c(i=[7])","testing") == 7);
-assert(py_eval!int("Bizzy2.c(7,5,6)","testing") == 657);
-assert(py_eval!int("Bizzy2.c(i=[7,5,6])","testing") == 657);
+    assert(c.py_eval!int("Bizzy2.a(7, 32.1)") == 6427);
+    assert(c.py_eval!int("Bizzy2.a(i=7, d=32.1)") == 6427);
+    assert(c.py_eval!int("Bizzy2.a(d=32.1,i=7)") == 6427);
+    assert(c.py_eval!int("Bizzy2.b(7, 32.1)") == 32173);
+    assert(c.py_eval!int("Bizzy2.b(d=32.1,i=7)") == 32173);
+    assert(c.py_eval!int("Bizzy2.b(i=7, d=32.1)") == 32173);
+    assert(c.py_eval!int("Bizzy2.b(7)") == 3273);
+    assert(c.py_eval!int("Bizzy2.b(i=7)") == 3273);
+    assert(c.py_eval!int("Bizzy2.c(7)") == 7);
+    assert(c.py_eval!int("Bizzy2.c(i=7)") == 7);
+    assert(c.py_eval!int("Bizzy2.c(i=[7])") == 7);
+    assert(c.py_eval!int("Bizzy2.c(7,5,6)") == 657);
+    assert(c.py_eval!int("Bizzy2.c(i=[7,5,6])") == 657);
+    assert(c.py_eval!string("Bizzy2.d(i=7, k='foobiz')") == "<7, 101, 'foobiz'>");
+    // unexpected arguments (s in this case) are invalid.
+    assert(collectException!PythonException(
+                c.py_eval!string("Bizzy2.d(i=7, s='foobiz')")));
 
-py_stmts(q"{
-bizzy = Bizzy3(1,2)
-}", "testing");
-assert(py_eval!int("bizzy.a(7, 32.1)","testing") == 3224);
-assert(py_eval!int("bizzy.a(i=7, d=32.1)","testing") == 3224);
-assert(py_eval!int("bizzy.a(d=32.1,i=7)","testing") == 3224);
-assert(py_eval!int("bizzy.b(7, 32.1)","testing") == 32244);
-assert(py_eval!int("bizzy.b(d=32.1,i=7)","testing") == 32244);
-assert(py_eval!int("bizzy.b(i=7, d=32.1)","testing") == 32244);
-assert(py_eval!int("bizzy.b(7)","testing") == 3344);
-assert(py_eval!int("bizzy.b(i=7)","testing") == 3344);
-assert(py_eval!int("bizzy.c(7)","testing") == 7);
-assert(py_eval!int("bizzy.c(i=7)","testing") == 7);
-assert(py_eval!int("bizzy.c(i=[7])","testing") == 7);
-assert(py_eval!int("bizzy.c(7,5,6)","testing") == 756);
-assert(py_eval!int("bizzy.c(i=[7,5,6])","testing") == 756);
+    c.py_stmts("bizzy = Bizzy3(1,2)");
+    assert(c.py_eval!int("bizzy.a(7, 32.1)") == 3224);
+    assert(c.py_eval!int("bizzy.a(i=7, d=32.1)") == 3224);
+    assert(c.py_eval!int("bizzy.a(d=32.1,i=7)") == 3224);
+    assert(c.py_eval!int("bizzy.b(7, 32.1)") == 32244);
+    assert(c.py_eval!int("bizzy.b(d=32.1,i=7)") == 32244);
+    assert(c.py_eval!int("bizzy.b(i=7, d=32.1)") == 32244);
+    assert(c.py_eval!int("bizzy.b(7)") == 3344);
+    assert(c.py_eval!int("bizzy.b(i=7)") == 3344);
+    assert(c.py_eval!int("bizzy.c(7)") == 7);
+    assert(c.py_eval!int("bizzy.c(i=7)") == 7);
+    assert(c.py_eval!int("bizzy.c(i=[7])") == 7);
+    assert(c.py_eval!int("bizzy.c(7,5,6)") == 756);
+    assert(c.py_eval!int("bizzy.c(i=[7,5,6])") == 756);
+    assert(c.py_eval!string("bizzy.d(i=7, k='foobiz')") == "<7, 102, 'foobiz'>");
 
-py_stmts(q"{
-bizzy = Bizzy4()
-}", "testing");
-assert(py_eval!int("bizzy.i","testing") == 4);
-py_stmts(q"{
-bizzy.i = 10
-}", "testing");
-assert(py_eval!int("bizzy.i","testing") == 10);
-assert(py_eval!int("len(bizzy)","testing") == 5);
-assert(py_eval!string("repr(bizzy)","testing") == "cowabunga");
+    c.py_stmts("bizzy = Bizzy4()");
+    assert(c.py_eval!int("bizzy.i") == 4);
+    c.py_stmts("bizzy.i = 10");
+    assert(c.py_eval!int("bizzy.i") == 10);
+    assert(c.py_eval!int("len(bizzy)") == 5);
+    assert(c.py_eval!string("repr(bizzy)") == "cowabunga");
+
+    c.py_stmts("boozy = Bizzy5(1)");
+    assert(c.py_eval!string("boozy.a()") == "<1, 1, 'hi'>");
+    c.py_stmts("boozy = Bizzy5(1, d=2.0)");
+    assert(c.py_eval!string("boozy.a()") == "<1, 2, 'hi'>");
+    c.py_stmts("boozy = Bizzy5(1, s='ten')");
+    assert(c.py_eval!string("boozy.a()") == "<1, 1, 'ten'>");
 
 }
 

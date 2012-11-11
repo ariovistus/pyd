@@ -205,7 +205,7 @@ void def(alias _fn, Options...)() {
     PyMethodDef[]* list = &module_methods[args.modulename];
 
     (*list)[$-1].ml_name = (args.pyname ~ "\0").dup.ptr;
-    (*list)[$-1].ml_meth = cast(PyCFunction) &function_wrap!fn.func;
+    (*list)[$-1].ml_meth = cast(PyCFunction) &function_wrap!(fn,args.pyname).func;
     (*list)[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
     (*list)[$-1].ml_doc = (args.docstring ~ "\0").dup.ptr;
     (*list) ~= empty;
