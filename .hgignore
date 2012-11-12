@@ -7,3 +7,19 @@ syntax: glob
 *.exe
 *.obj
 junk.txt
+MANIFEST
+examples/arraytest/tsetup.py
+examples/hello/tsetup.py
+examples/inherit/tsetup.py
+examples/rawexample/tsetup.py
+examples/testdll/tsetup.py
+examples/misc/ctypes/boilerplate.d
+syntax: regexp
+^build/
+^examples/arraytest/build/
+^examples/hello/build/
+^examples/inherit/build/
+^examples/rawexample/build/
+^examples/testdll/build/
+^examples/pyind/pyind
+^examples/pyind/pyind3

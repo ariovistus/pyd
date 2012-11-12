@@ -518,7 +518,9 @@ template minArgs(alias fn, fnT = typeof(&fn)) {
 template maxArgs(alias fn, fn_t = typeof(&fn)) {
     alias variadicFunctionStyle!fn vstyle;
     alias ParameterTypeTuple!fn ps;
+    /// _
     enum bool hasMax = vstyle == Variadic.no;
+    /// _
     enum size_t max = ps.length;
 }
 

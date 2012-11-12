@@ -58,7 +58,7 @@ PydObject py_import(string name) {
   Encapsulate a context within the Python interpreter.
 
   This will preserve local variables and changes to the Python interpreter
-  made by 'from __future__ import feature' across calls to this.py_eval and
+  made by 'from ___future__ import feature' across calls to this.py_eval and
   this.py_stmts.
 
   Otherwise, will not segregate global changes made to the Python interpreter.
