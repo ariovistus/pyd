@@ -2,6 +2,9 @@ LDC=ldc2
 
 LIBS= -Wl,--no-as-needed -lphobos-ldc -ldruntime-ldc -lrt -lpthread -ldl -lm 
 
+# convert a D string to python unicode
+test4: test4.py libtest4.so
+	python test4.py
 # raise a python exception in D
 test3: test3.py libtest3.so
 	python test3.py
