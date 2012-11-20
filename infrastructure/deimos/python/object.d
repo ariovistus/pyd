@@ -53,6 +53,8 @@ import deimos.python.methodobject;
 import deimos.python.structmember;
 import deimos.python.descrobject;
 
+pragma(msg, "lookie!");
+
 extern(C):
 // Python-header-file: Include/object.h:
 

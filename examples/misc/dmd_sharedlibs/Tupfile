@@ -1,0 +1,30 @@
+
+include_rules
+BITSI = 32
+ifeq ($(BITSI),32)
+DMD_M=-m32
+GCC_M=-m32
+else	
+ifeq ($(BITSI),64)
+DMD_M=-m64
+GCC_M=-m64
+else
+DMD_M=
+GCC_M=
+endif
+endif
+DMD=dmd $(DMD_M) -unittest
+GCC=gcc $(GCC_M)
+
+!link_lib = | boilerplate.d so_ctor.o |> $(DMD) -fPIC -shared %f boilerplate.d so_ctor.o -of%o && rm -f lib%B.o |> lib%B.so 
+
+: so_ctor.c |> $(GCC) -c %f -o %o |> %B.o
+: test1.d |> !link_lib |> 
+: test2a.d |> !link_lib |> 
+: test2b.d |> !link_lib |>
+: test1.c libtest1.so |> $(GCC) test1.c $(TUP_CWD)/libtest1.so -o %o |> test1.x
+: test2.c libtest2a.so libtest2b.so |> $(GCC) test2.c $(TUP_CWD)/libtest2a.so $(TUP_CWD)/libtest2b.so -o %o |> test2.x
+
+: test3lib.c |> $(GCC) -fPIC -shared %f -o %o |> libtest3.so
+
+: test3.d libtest3.so |> $(DMD) test3.d -L$(TUP_CWD)/libtest3.so -of%o && rm test3.o |> test3.x

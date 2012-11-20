@@ -1,0 +1,62 @@
+
+DC=dmd
+#DC=ldc2
+#DC=gdc
+
+ifeq ($(DC),dmd)
+DVERSION = -version=
+DFLAGS = -unittest -property
+DOUT = -of
+export DOUT
+DINCLUDE = -I
+DC_LIB = -L-l
+else
+ifeq ($(DC),ldc2)
+DVERSION = -d-version=
+DOUT = -of 
+DINCLUDE = -I
+DC_LIB = -L-l
+else
+ifeq ($(DC),gdc)
+# todo
+DVERSION = -version=
+DOUT = -o 
+DINCLUDE = -I
+DC_LIB = -l
+endif
+endif
+endif
+
+PY24_VERSION = $(DVERSION)Python_2_4_Or_Later 
+PY25_VERSION = $(PY24_VERSION) 
+PY25_VERSION += $(DVERSION)Python_2_5_Or_Later 
+PY26_VERSION = $(PY25_VERSION) 
+PY26_VERSION += $(DVERSION)Python_2_6_Or_Later 
+PY27_VERSION = $(PY26_VERSION) 
+PY27_VERSION += $(DVERSION)Python_2_7_Or_Later 
+PY32_VERSION = $(PY27_VERSION) 
+PY32_VERSION += $(DVERSION)Python_3_0_Or_Later 
+PY32_VERSION += $(DVERSION)Python_3_1_Or_Later 
+PY32_VERSION += $(DVERSION)Python_3_2_Or_Later 
+
+PY24_LIB = $(DC_LIB)python2.4
+PY25_LIB = $(DC_LIB)python2.5
+PY26_LIB = $(DC_LIB)python2.6
+PY27_LIB = $(DC_LIB)python2.7
+PY32_LIB = $(DC_LIB)python3.2mu
+
+TOPDIR = $(TUP_CWD)
+PYD_FILES += $(TOPDIR)/infrastructure/deimos/python/*.d
+PYD_FILES += $(TOPDIR)/infrastructure/pyd/*.d
+PYD_FILES += $(TOPDIR)/infrastructure/meta/*.d
+PYD_FILES += $(TOPDIR)/infrastructure/util/*.d
+
+PYD_INCLUDE = $(DINCLUDE)$(TOPDIR)/infrastructure
+
+#dc_py24
+#dc_py25
+#dc_py26
+!dc_py27 = | $(TOPDIR)/pyd27.a |> $(DC) $(DFLAGS) $(PY27_VERSION) $(PY27_LIB) $(PYD_INCLUDE) %f $(TOPDIR)/pyd27.a -of%o && rm -f %B.o |> %B.x
+!dc_py32 = | $(TOPDIR)/pyd32.a |> $(DC) $(DFLAGS) $(PY32_VERSION) $(PY32_LIB) $(PYD_INCLUDE) %f $(TOPDIR)/pyd32.a -of%o && rm -f %B.o |> %B.x
+#dc_py32
+

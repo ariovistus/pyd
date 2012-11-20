@@ -1,0 +1,6 @@
+include_rules
+
+
+#: |> echo $(TUP_CWD) | tee test.txt |> test.txt
+: pyind.d |> !dc_py27 |> 
+: pyind3.d |> !dc_py32 |>

@@ -1,6 +1,7 @@
 syntax: glob
 *.pyc
 *.o
+*.a
 *.so
 *.x
 *.lib
@@ -8,6 +9,7 @@ syntax: glob
 *.obj
 junk.txt
 MANIFEST
+.tup
 examples/arraytest/tsetup.py
 examples/hello/tsetup.py
 examples/inherit/tsetup.py
