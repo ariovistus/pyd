@@ -2,6 +2,7 @@
 # D.
 
 import distutils.core, os, sys
+import os.path
 
 import build_manifest
 
@@ -9,7 +10,7 @@ PACKAGE_NAME = 'celerid'
 
 isSourceDist = 'sdist' in [arg.lower() for arg in sys.argv]
 
-f = file('MANIFEST', 'wb')
+f = open('MANIFEST', 'w')
 try:
     build_manifest.buildManifest(f, isSourceDist)
 finally:
@@ -38,10 +39,10 @@ distutils.core.setup(
     package_dir={PACKAGE_NAME: os.curdir},
     packages=[PACKAGE_NAME],
 
-    version=file('version.txt').read().strip(),
-    url='http://pyd.dsource.org/',
-    maintainer='Kirk McDonald',
-    maintainer_email='kirklin.mcdonald@gmail.com',
+    version=open('version.txt').read().strip(),
+    url='https://bitbucket.org/ariovistus/pyd',
+    maintainer='Ellery Newcomer',
+    maintainer_email='ellery-newcomer@utulsa.edu',
     py_modules=packageModules,
     package_data={PACKAGE_NAME: packageDataFiles},
 )

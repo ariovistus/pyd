@@ -1,4 +1,7 @@
 import os, os.path
+import itertools
+import sys
+import re
 
 
 FORBIDDEN_EXTENSIONS = [
@@ -9,7 +12,7 @@ FORBIDDEN_EXTENSIONS = [
   ]
 
 FORBIDDEN_DIRECTORIES = [
-    lambda d: d.lower() in ('.svn', 'cvs', 'build', 'dist', '.hg', '.git'),
+    lambda d: d.lower() in ('.svn', 'cvs', 'build', 'dist', '.hg', '.git', '.tup'),
     lambda d: d.startswith('__'),
   ]
 
@@ -18,16 +21,43 @@ INCLUDE_ONLY_IN_SOURCE_DISTRIBUTION = [
     'setup.py',
   ]
 
-EXCLUDE_PATHS = [
-    'MANIFEST',
-  ]
+def split_complete(path):
+    folders = []
+    while True:
+        path, p2 = os.path.split(path)
+        if p2 != '':
+            folders.append(p2)
+        else:
+            if path!='':
+                folders.append(path)
+            break
+    return list(reversed(folders))
+def include_path(path):
+    pathsubs = split_complete(path)
+    assert pathsubs
+    filebase, ext = os.path.splitext(pathsubs[-1])
+    if pathsubs[0] == 'infrastructure':
+        if pathsubs == ['infrastructure','pyd','LICENSE']:
+            return True
+        if pathsubs == ['infrastructure','python','python.d']:
+            return False
+        if ext.lower() == '.d':
+            return True
+        if (sys.platform.lower().startswith('win') and
+                re.match("python.._digitalmars\\.lib",pathsubs[-1])):
+            return True
+        return False
+    if len(pathsubs) == 1 and ext.lower() == '.py':
+        return True
+    return False
 
 
 def buildManifest(outputStream, isForSourceDist):
     includedPaths, excludedPaths = listFiles(isForSourceDist)
     for path in includedPaths:
         # print >> outputStream, 'include "%s"' % convertPathToDistutilsStandard(path)
-        print >> outputStream, convertPathToDistutilsStandard(path)
+        outputStream.write(convertPathToDistutilsStandard(path))
+        outputStream.write("\n")
 
 
 def convertPathToDistutilsStandard(path):
@@ -66,10 +96,8 @@ def listFiles(isForSourceDist):
                 includedPaths.remove(path)
                 excludedPaths.append(path)
 
-    for path in EXCLUDE_PATHS:
-        if path in includedPaths:
-            includedPaths.remove(path)
-            excludedPaths.append(path)
+    excludedPaths.extend([path for path in includedPaths if not include_path(path)])
+    includedPaths = [path for path in includedPaths if include_path(path)]
 
     return includedPaths, excludedPaths
 
