@@ -8,7 +8,7 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
     '.'.join(str(v) for v in sys.version_info[:2])
 ))
 sys.path.append(os.path.abspath(libDir))
-print sys.path
+print (sys.path)
 use = "1" 
 if use == "1":
     import hello
@@ -27,7 +27,7 @@ try:
     elif use == 'both':
         hello.hello()
         hello2.hello()
-except Exception, e:
-    print e
-    print e.__dict__
+except Exception as e:
+    print (e)
+    print (e.__dict__)
 

@@ -43,7 +43,7 @@ private PyMethodDef[][string] module_methods;
 version(Python_3_0_Or_Later) {
     private PyModuleDef*[string] pyd_moduledefs;
 }
-private PyObject*[string] pyd_modules;
+PyObject*[string] pyd_modules;
 
 private void delegate()[string][string] pyd_module_classes;
 
@@ -247,6 +247,7 @@ string pyd_module_name;
 
 /// For embedding python
 void py_init() {
+    version(PydPythonExtension) assert(false, "py_init should only be called when embedding python");
     foreach(action; before_py_init_deferred_actions) {
         action();
     }
@@ -285,6 +286,7 @@ PyObject* module_init(string docstring="") {
         modl.m_size = -1;
         modl.m_methods = module_methods[""].ptr;
 
+        Py3_ModuleInit!"".func();
     }else {
         pyd_modules[""] = Py_INCREF(Py_InitModule3((name ~ "\0"), 
                     module_methods[""].ptr, (docstring ~ "\0")));

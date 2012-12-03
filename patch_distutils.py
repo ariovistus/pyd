@@ -43,7 +43,7 @@ def new_compiler(compiler=None, dry_run=0, force=0, **kwargs):
     elif compiler == 'gdc':
         return dcompiler.GDCDCompiler(None, dry_run, force)
     else:
-        raise RuntimeError, "Couldn't get a compiler..."
+        raise RuntimeError("Couldn't get a compiler...")
 
 cc.new_compiler = new_compiler
 

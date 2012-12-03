@@ -1,5 +1,10 @@
 include_rules
 
+ifeq (@(TUP_PLATFORM),win32)
+# Windows not supported by LDC
+else
+# Linuxen
+
 LDC = ldc2
 LIBS= -Wl,--no-as-needed -lphobos-ldc -ldruntime-ldc -lrt -lpthread -ldl -lm -lpython2.7
 
@@ -15,3 +20,5 @@ LIBS= -Wl,--no-as-needed -lphobos-ldc -ldruntime-ldc -lrt -lpthread -ldl -lm -lp
 : test3lib.c |> gcc -fPIC -shared %f -o %o |> libtest3.so
 
 : test3.o libtest3.so |> $(LDC) test3.o -L$(TUP_CWD)/libtest3.so -of %o |> test3.x
+
+endif

@@ -39,12 +39,13 @@ _isPlatWin = sys.platform.lower().startswith('win') or _isPlatCygwin
 
 _infraDir = os.path.join(os.path.dirname(__file__), 'infrastructure')
 
-from pyd_support import make_pydmain, make_pyddef
+from celerid.pyd_support import make_pydmain, make_pyddef
 
 _pydFiles = [
     'class_wrap.d',
     'ctor_wrap.d',
     'def.d',
+    'embedded.d',
     'exception.d',
     'extra.d',
     'func_wrap.d',
@@ -145,6 +146,20 @@ _deimosFiles = [
 _pyVerXDotY = '.'.join(str(v) for v in sys.version_info[:2]) # e.g., '2.4'
 _pyVerXY = _pyVerXDotY.replace('.', '') # e.g., '24'
 
+def spawn0(self, cmdElements):
+    import platform
+    if platform.python_version() < "2.6":
+        eval("""
+        try:
+            self.spawn(cmdElements)
+        except DistutilsExecError, msg:
+            raise CompileError(msg)
+        """)
+    else:
+        try:
+            self.spawn(cmdElements)
+        except DistutilsExecError as msg:
+            raise CompileError(msg)
 
 class DCompiler(cc.CCompiler):
 
@@ -188,13 +203,13 @@ class DCompiler(cc.CCompiler):
 
     def _initialize(self):
         # It is intended that this method be implemented by subclasses.
-        raise NotImplementedError, "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead."
+        raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead.")
 
     def _def_file(self, output_dir, output_filename):
         """A list of options used to tell the linker how to make a dll/so. In
         DMD, it is the .def file. In GDC, it is
         ['-shared', '-Wl,-soname,blah.so'] or similar."""
-        raise NotImplementedError, "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead."
+        raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead.")
 
     def _lib_file(self, libraries):
         return ''
@@ -331,11 +346,16 @@ class DCompiler(cc.CCompiler):
         #     // Do it the hard way...
         #   }
         def pvo(opt):
+            optf = 'Python_%d_%d_Or_Later'
+            def pv2(minor):
+                return [opt % 'PydPythonExtension'] + [opt % (optf % (2,m)) for m in range(4,minor+1)]
+            def pv3(minor):
+                return [opt % 'PydPythonExtension'] + [opt % (optf % (3,m)) for m in range(0,minor+1)]
             major = sys.version_info[0]
             minor = sys.version_info[1]
-            optf = 'Python_%d_%d_Or_Later'
-            return [opt % 'PydPythonExtension'] + [opt % (optf % (major,m)) for m in range(4,minor+1)]
-
+            if major == 2: return pv2(minor)
+            if major == 3: return  pv2(7) + pv3(minor)
+            assert False, "what python version is this, anyways?"
             
         pythonVersionOpts = pvo(self._versionOpt) 
 
@@ -349,7 +369,7 @@ class DCompiler(cc.CCompiler):
         else:
             optimizationOpts = self._defaultOptimizeOpts
 
-        print 'sources: ', [os.path.basename(s) for s, t in sources]
+        print ('sources: %s' % ([os.path.basename(s) for s, t in sources],))
 
         objFiles = []
         for source, source_type in sources:
@@ -372,10 +392,7 @@ class DCompiler(cc.CCompiler):
                 [_qp(source)] + extra_postargs
             )
             cmdElements = [el for el in cmdElements if el]
-            try:
-                self.spawn(cmdElements)
-            except DistutilsExecError, msg:
-                raise CompileError(msg)
+            spawn0(self,cmdElements)
         return objFiles
 
     def link (self,
@@ -416,12 +433,12 @@ class DCompiler(cc.CCompiler):
             output_filename = os.path.join(output_dir, output_filename)
         else:
             if not output_filename:
-                raise DistutilsFileError, 'Neither output_dir nor' \
-                    ' output_filename was specified.'
+                raise DistutilsFileError( 'Neither output_dir nor' \
+                    ' output_filename was specified.')
             output_dir = os.path.dirname(output_filename)
             if not output_dir:
-                raise DistutilsFileError, 'Unable to guess output_dir on the'\
-                    ' bases of output_filename "%s" alone.' % output_filename
+                raise DistutilsFileError( 'Unable to guess output_dir on the'\
+                    ' bases of output_filename "%s" alone.' % output_filename)
 
         # Format the output filename option
         # (-offilename in DMD, -o filename in GDC)
@@ -431,7 +448,7 @@ class DCompiler(cc.CCompiler):
             os.makedirs(output_dir)
 
         if not self._need_link(objects, output_filename):
-            print "All binary output files are up to date."
+            print ("All binary output files are up to date.")
             return
 
         # The .def file (on Windows) or -shared and -soname (on Linux)
@@ -449,9 +466,9 @@ class DCompiler(cc.CCompiler):
             )
 
         # Library linkage options
-        print "library_dirs:", library_dirs
-        print "runtime_library_dirs:", runtime_library_dirs
-        print "libraries:", libraries
+        print ("library_dirs: %s" % (library_dirs,))
+        print ("runtime_library_dirs: %s" % (runtime_library_dirs,))
+        print ("libraries: %s"% (libraries,))
         libOpts = gen_lib_options(self, library_dirs, runtime_library_dirs, libraries)
 
         # Optimization opts
@@ -471,10 +488,7 @@ class DCompiler(cc.CCompiler):
         )
         cmdElements = [el for el in cmdElements if el]
 
-        try:
-            self.spawn(cmdElements)
-        except DistutilsExecError, msg:
-            raise CompileError(msg)
+        spawn0(self,cmdElements)
 
 class DMDDCompiler(DCompiler):
     compiler_type = 'dmd'

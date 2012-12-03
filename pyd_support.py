@@ -1,6 +1,6 @@
 from distutils.errors import DistutilsPlatformError
 import sys
-from dcompiler import _infraDir
+from celerid.dcompiler import _infraDir
 import os.path
 
 def make_pydmain(outputFile, projname):
@@ -23,13 +23,13 @@ def make_pyddef(outputFile, projname):
         raise DistutilsFileError('Required def template file "%s" is'
             ' missing.' % defTemplatePath
         )
-    f = open(defTemplatePath, 'rb')
+    f = open(defTemplatePath)
     try:
         defTemplate = f.read()
     finally:
         f.close()
     defFileContent = defTemplate % projname
-    f = file(outputFile, 'wb')
+    f = open(outputFile, 'w')
     try:
         f.write(defFileContent)
     finally:

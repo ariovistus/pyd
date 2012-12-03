@@ -1,5 +1,7 @@
 
 include_rules
+ifeq (@(TUP_PLATFORM),win32)
+else
 BITSI = 32
 ifeq ($(BITSI),32)
 DMD_M=-m32
@@ -28,3 +30,4 @@ GCC=gcc $(GCC_M)
 : test3lib.c |> $(GCC) -fPIC -shared %f -o %o |> libtest3.so
 
 : test3.d libtest3.so |> $(DMD) test3.d -L$(TUP_CWD)/libtest3.so -of%o && rm test3.o |> test3.x
+endif
