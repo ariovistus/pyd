@@ -285,6 +285,7 @@ PyObject* module_init(string docstring="") {
         modl.m_doc = zcc(docstring);
         modl.m_size = -1;
         modl.m_methods = module_methods[""].ptr;
+        pyd_module_classes[""] = (void delegate()[string]).init;
 
         Py3_ModuleInit!"".func();
     }else {

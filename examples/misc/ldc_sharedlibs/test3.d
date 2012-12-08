@@ -6,7 +6,7 @@ extern(C) {
         int j;
         double d;
     }
-    export extern __gshared Foobar foo;
+    __gshared Foobar foo;
 }
 
 void main() {
