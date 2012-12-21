@@ -1,46 +1,36 @@
-/* This code is currently just a copy-n-paste from the Digital Mars DLL example
- * code at http://www.digitalmars.com/d/dll.html */
 
-version (Pyd_with_Tango) {
-    import tango.sys.windows.minwin;
-} else {
-    import std.c.windows.windows;
-}
+// Public Domain
 
-HINSTANCE g_hInst;
+import std.c.windows.windows;
+import core.sys.windows.dll;
 
-extern (C)
-{
-  void gc_init();
-  void gc_term();
-  void _minit();
-  void _moduleCtor();
-  void runModuleUnitTests();
-}
+__gshared HINSTANCE g_hInst;
 
 extern (Windows)
 BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved)
 {
-  switch (ulReason)
-  {
-    case DLL_PROCESS_ATTACH:
-      gc_init(); // initialize GC
-      _minit(); // initialize module list
-      _moduleCtor(); // run module constructors
-      runModuleUnitTests(); // run module unit tests
+    switch (ulReason)
+    {
+        case DLL_PROCESS_ATTACH:
+            g_hInst = hInstance;
+            dll_process_attach( hInstance, true );
+            break;
 
-      break;
+        case DLL_PROCESS_DETACH:
+            dll_process_detach( hInstance, true );
+            break;
 
-    case DLL_PROCESS_DETACH:
-      gc_term(); // shut down GC
-      break;
+        case DLL_THREAD_ATTACH:
+            dll_thread_attach( true, true );
+            break;
 
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-      // Multiple threads not supported yet
-      return false;
-      default:
-  }
-  g_hInst=hInstance;
-  return true;
+        case DLL_THREAD_DETACH:
+            dll_thread_detach( true, true );
+            break;
+
+	default:
+	    assert(0);
+    }
+
+    return true;
 }
