@@ -49,7 +49,6 @@ _pydFiles = [
     'exception.d',
     'extra.d',
     'func_wrap.d',
-    'iteration.d',
     'make_object.d',
     'make_wrapper.d',
     'op_wrap.d',
@@ -174,6 +173,14 @@ class DCompiler(cc.CCompiler):
     def __init__(self, *args, **kwargs):
         cc.CCompiler.__init__(self, *args, **kwargs)
         self.winonly = False
+        self.proj_name = None
+        self.build_exe = False
+        self.with_pyd = True
+        self.with_main = True
+        self.build_deimos = False
+        self.optimize = False
+        self.versionFlagsFromExt = []
+        self.debugFlagsFromExt = []
         # Get DMD/GDC specific info
         self._initialize()
         # _binpath
@@ -229,6 +236,32 @@ class DCompiler(cc.CCompiler):
 
         return None
 
+    def versionOpts(self):
+        # Python version option allows extension writer to take advantage of
+        # Python/C API features available only in recent version of Python with
+        # a version statement like:
+        #   version(Python_2_4_Or_Later) {
+        #     Py_ConvenientCallOnlyAvailableInPython24AndLater();
+        #   } else {
+        #     // Do it the hard way...
+        #   }
+        def pvo(opt):
+            optf = 'Python_%d_%d_Or_Later'
+            def pv2(minor):
+                ret = []
+                if not self.build_exe:
+                    ret.append(opt % 'PydPythonExtension')
+                ret.extend([opt % (optf % (2,m)) for m in range(4,minor+1)])
+                return ret
+            def pv3(minor):
+                return [opt % (optf % (3,m)) for m in range(0,minor+1)]
+            major = sys.version_info[0]
+            minor = sys.version_info[1]
+            if major == 2: return pv2(minor)
+            if major == 3: return  pv2(7) + pv3(minor)
+            assert False, "what python version is this, anyways?"
+        return pvo(self._versionOpt) + [self._unicodeOpt]
+
     def compile(self, sources,
         output_dir=None, macros=None, include_dirs=None, debug=0,
         extra_preargs=None, extra_postargs=None, depends=None
@@ -237,6 +270,8 @@ class DCompiler(cc.CCompiler):
         include_dirs = include_dirs or []
         extra_preargs = extra_preargs or []
         extra_postargs = extra_postargs or []
+            
+        pythonVersionOpts = self.versionOpts()
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -260,13 +295,7 @@ class DCompiler(cc.CCompiler):
             else:
                 sources.append((winpath(source, self.winonly), 'outside'))
 
-        # flags = (with_pyd, with_st, with_meta, with_main)
-        with_pyd, with_st, with_meta, with_main, build_deimos = [f for f, category in macros if category == 'aux'][0]
-        # And Pyd!
-        if with_pyd:
-            # If we're not using StackThreads, don't use iteration.d in Pyd
-            if not with_st or not self._st_support:
-                _pydFiles.remove('iteration.d');
+        if self.with_pyd:
             for file in _pydFiles:
                 filePath = os.path.join(_infraDir, 'pyd', file)
                 if not os.path.isfile(filePath):
@@ -281,7 +310,14 @@ class DCompiler(cc.CCompiler):
                         " missing." % filePath
                     )
                 sources.append((winpath(filePath,self.winonly), 'infra'))
-        if build_deimos:
+            for file in _metaFiles:
+                filePath = os.path.join(_infraDir, 'meta', file)
+                if not os.path.isfile(filePath):
+                    raise DistutilsPlatformError("Required meta source file"
+                        " '%s' is missing." % filePath
+                    )
+                sources.append((winpath(filePath,self.winonly), 'infra'))
+        if self.build_deimos:
             for file in _deimosFiles:
                 filePath = os.path.join(_infraDir, 'deimos', 'python', file)
                 if not os.path.isfile(filePath):
@@ -290,8 +326,10 @@ class DCompiler(cc.CCompiler):
                     )
                 sources.append((winpath(filePath,self.winonly), 'infra'))
         # If using PydMain, parse the template file
-        if with_main:
-            name = [n for n, category in macros if category == 'name'][0]
+        if self.build_exe:
+            pass
+        elif self.with_main:
+            name = self.proj_name
             # Store the finished pydmain.d file alongside the object files
             infra_output_dir = winpath(os.path.join(output_dir, 'infra'), self.winonly)
             if not os.path.exists(infra_output_dir):
@@ -299,72 +337,37 @@ class DCompiler(cc.CCompiler):
             mainFilename = os.path.join(infra_output_dir, 'pydmain.d')
             make_pydmain(mainFilename, name)
             sources.append((winpath(mainFilename,self.winonly), 'infra'))
-        # And meta
-        if with_meta:
-            for file in _metaFiles:
-                filePath = os.path.join(_infraDir, 'meta', file)
-                if not os.path.isfile(filePath):
-                    raise DistutilsPlatformError("Required meta source file"
-                        " '%s' is missing." % filePath
-                    )
-                sources.append((winpath(filePath,self.winonly), 'infra'))
-        # Add the infraDir to the include path for pyd, st, and meta.
+        # Add the infraDir to the include path for pyd, meta, and utils.
         includePathOpts += self._includeOpts
         includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
         
-        # Add DLL/SO boilerplate code file.
-        if _isPlatWin:
-            boilerplatePath = os.path.join(_infraDir, 'd',
-                'python_dll_windows_boilerplate.d'
-            )
+        if self.build_exe:
+            pass
         else:
-            boilerplatePath = os.path.join(_infraDir, 'd',
-                'python_so_linux_boilerplate.d'
-            )
-        if not os.path.isfile(boilerplatePath):
-            raise DistutilsFileError('Required supporting code file "%s"'
-                ' is missing.' % boilerplatePath
-            )
-        sources.append((winpath(boilerplatePath,self.winonly), 'infra'))
+            # Add DLL/SO boilerplate code file.
+            if _isPlatWin:
+                boilerplatePath = os.path.join(_infraDir, 'd',
+                    'python_dll_windows_boilerplate.d'
+                )
+            else:
+                boilerplatePath = os.path.join(_infraDir, 'd',
+                    'python_so_linux_boilerplate.d'
+                )
+            if not os.path.isfile(boilerplatePath):
+                raise DistutilsFileError('Required supporting code file "%s"'
+                    ' is missing.' % boilerplatePath
+                )
+            sources.append((winpath(boilerplatePath,self.winonly), 'infra'))
 
-        # Extension subclass DExtension will have packed any user-supplied
-        # version and debug flags into macros; we extract them and convert them
-        # into the appropriate command-line args.
-        versionFlags = [name for (name, category) in macros if category == 'version']
-        debugFlags = [name for (name, category) in macros if category == 'debug']
         userVersionAndDebugOpts = (
-              [self._versionOpt % v for v in versionFlags] +
-              [self._debugOpt   % v for v in debugFlags]
+              [self._versionOpt % v for v in self.versionFlagsFromExt] +
+              [self._debugOpt   % v for v in self.debugFlagsFromExt]
         )
 
-        # Python version option allows extension writer to take advantage of
-        # Python/C API features available only in recent version of Python with
-        # a version statement like:
-        #   version(Python_2_4_Or_Later) {
-        #     Py_ConvenientCallOnlyAvailableInPython24AndLater();
-        #   } else {
-        #     // Do it the hard way...
-        #   }
-        def pvo(opt):
-            optf = 'Python_%d_%d_Or_Later'
-            def pv2(minor):
-                return [opt % 'PydPythonExtension'] + [opt % (optf % (2,m)) for m in range(4,minor+1)]
-            def pv3(minor):
-                return [opt % 'PydPythonExtension'] + [opt % (optf % (3,m)) for m in range(0,minor+1)]
-            major = sys.version_info[0]
-            minor = sys.version_info[1]
-            if major == 2: return pv2(minor)
-            if major == 3: return  pv2(7) + pv3(minor)
-            assert False, "what python version is this, anyways?"
-            
-        pythonVersionOpts = pvo(self._versionOpt) 
-
         # Optimization opts
-        args = [a.lower() for a in sys.argv[1:]]
-        optimize = ('-o' in args or '--optimize' in args)
         if debug:
             optimizationOpts = self._debugOptimizeOpts
-        elif optimize:
+        elif self.optimize:
             optimizationOpts = self._releaseOptimizeOpts
         else:
             optimizationOpts = self._defaultOptimizeOpts
@@ -387,7 +390,7 @@ class DCompiler(cc.CCompiler):
             outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
             cmdElements = (
                 [binpath] + extra_preargs + compileOpts +
-                pythonVersionOpts+[ self._unicodeOpt] + optimizationOpts +
+                pythonVersionOpts + optimizationOpts +
                 includePathOpts + outOpts + userVersionAndDebugOpts +
                 [_qp(source)] + extra_postargs
             )
@@ -451,19 +454,25 @@ class DCompiler(cc.CCompiler):
             print ("All binary output files are up to date.")
             return
 
-        # The .def file (on Windows) or -shared and -soname (on Linux)
-        sharedOpts = self._def_file(build_temp, output_filename)
-
+        if self.build_exe:
+            sharedOpts = []
+            pythonLibOpt = []
+            if target_desc != cc.CCompiler.EXECUTABLE:
+                raise LinkError('This CCompiler implementation should be building'
+                    ' an executable'
+                )
+        else:
+            # The .def file (on Windows) or -shared and -soname (on Linux)
+            sharedOpts = self._def_file(build_temp, output_filename)
+            if target_desc != cc.CCompiler.SHARED_OBJECT:
+                raise LinkError('This CCompiler implementation should be building '
+                    ' a shared object'
+                )
         # The python .lib file, if needed
         pythonLibOpt = self._lib_file(libraries)
         if pythonLibOpt:
             pythonLibOpt = _qp(pythonLibOpt)
 
-        if target_desc != cc.CCompiler.SHARED_OBJECT:
-            raise LinkError('This CCompiler implementation does not know'
-                ' how to link anything except an extension module (that is, a'
-                ' shared object file).'
-            )
 
         # Library linkage options
         print ("library_dirs: %s" % (library_dirs,))
@@ -472,11 +481,9 @@ class DCompiler(cc.CCompiler):
         libOpts = gen_lib_options(self, library_dirs, runtime_library_dirs, libraries)
 
         # Optimization opts
-        args = [a.lower() for a in sys.argv[1:]]
-        optimize = ('-o' in args or '--optimize' in args)
         if debug:
             optimizationOpts = self._debugOptimizeOpts
-        elif optimize:
+        elif self.optimize:
             optimizationOpts = self._releaseOptimizeOpts
         else:
             optimizationOpts = self._defaultOptimizeOpts

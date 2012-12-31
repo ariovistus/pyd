@@ -9,7 +9,7 @@
 #   from celerid import patch_distutils
 
 from distutils import ccompiler as cc
-from distutils.command import build
+from distutils.command import build, build_ext
 
 from celerid import dcompiler
 
@@ -64,11 +64,10 @@ cc.get_default_compiler = get_default_compiler
 
 # Force the distutils build command to recognize the '--optimize' or '-O'
 # command-line option.
-build.build.user_options.append(
-    ('optimize', 'O',
+build.build.user_options.extend(
+    [('optimize', 'O',
       'Ask the D compiler to optimize the generated code, at the expense of'
-      ' safety features such as array bounds checks.'),
-  )
+      ' safety features such as array bounds checks.'), ])
 build.build.boolean_options.append('optimize')
 
 _old_initialize_options = build.build.initialize_options
@@ -76,3 +75,20 @@ def _new_initialize_options(self):
     _old_initialize_options(self)
     self.optimize = 0
 build.build.initialize_options = _new_initialize_options
+
+# Force build commands to actually send optimize option to D compilers
+
+_old_build_ext = build_ext.build_ext.build_extension
+
+def new_build_ext(self, ext):
+    if isinstance(self.compiler, dcompiler.DCompiler):
+        build = self.distribution.get_command_obj('build')
+        self.compiler.optimize = build.optimize or ext.pyd_optimize
+        self.compiler.with_pyd = ext.with_pyd
+        self.compiler.with_main = ext.with_main
+        self.compiler.build_deimos = ext.build_deimos
+        self.compiler.proj_name = ext.name
+        self.versionFlagsFromExt = ext.version_flags
+        self.debugFlagsFromExt = ext.debug_flags
+    _old_build_ext(self,ext)
+build_ext.build_ext.build_extension = new_build_ext
