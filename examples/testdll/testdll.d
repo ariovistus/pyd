@@ -60,8 +60,8 @@ class Foo {
         }
         return result;
     }
-    int i() { return m_i; }
-    void i(int j) { m_i = j; }
+    @property int i() { return m_i; }
+    @property void i(int j) { m_i = j; }
     void a() {}
     void b() {}
     void c() {}
@@ -148,22 +148,22 @@ extern(C) void PydMain() {
     ex_d_to_python(delegate int(A a) { return a.i; });
     ex_python_to_d(delegate A(int i) { A a; a.i = i; return a; });
 
-    def!(foo);
+    def!(foo)();
     // Python does not support function overloading. This requires us to wrap
     // an overloading function under a different name. Note that if the
     // overloaded function is not the lexically first, the type of the function
     // must be specified
-    def!(foo, PyName!"foo2", void function(int));
+    def!(foo, PyName!"foo2", void function(int))();
     pragma(msg, bar.mangleof);
-    def!(bar);
+    def!(bar)();
     // Default argument support - Now implicit!
-    def!(baz);
-    def!(spam);
-    def!(func_test);
-    def!(dg_test);
-    def!(throws);
-    def!(conv1);
-    def!(conv2);
+    def!(baz)();
+    def!(spam)();
+    def!(func_test)();
+    def!(dg_test)();
+    def!(throws)();
+    def!(conv1)();
+    def!(conv2)();
 
     module_init();
     wrap_class!(

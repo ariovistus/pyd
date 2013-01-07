@@ -35,9 +35,9 @@ extern(C) void PydMain() {
     for (int i=0; i<5; ++i) {
         global_array[i] = new Foo(i);
     }
-    def!(get);
-    def!(set);
-    def!(test);
+    def!(get)();
+    def!(set)();
+    def!(test)();
     module_init();
     wrap_class!(
         Foo,

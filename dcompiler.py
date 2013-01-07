@@ -179,8 +179,9 @@ class DCompiler(cc.CCompiler):
         self.with_main = True
         self.build_deimos = False
         self.optimize = False
-        self.versionFlagsFromExt = []
-        self.debugFlagsFromExt = []
+        self.version_flags_from_ext = []
+        self.debug_flags_from_ext = []
+        self.string_imports_from_ext = []
         # Get DMD/GDC specific info
         self._initialize()
         # _binpath
@@ -211,6 +212,19 @@ class DCompiler(cc.CCompiler):
     def _initialize(self):
         # It is intended that this method be implemented by subclasses.
         raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead.")
+
+    def init_d_opts(self, cmd, ext):
+            self.optimize = cmd.optimize or ext.pyd_optimize
+            self.with_pyd = ext.with_pyd
+            self.with_main = ext.with_main
+            self.build_deimos = ext.build_deimos
+            self.proj_name = ext.name
+            self.version_flags_from_ext = ext.version_flags
+            self.debug_flags_from_ext = ext.debug_flags
+            self.string_imports_from_ext = ext.string_imports
+            self.unittest_from_ext = ext.d_unittest
+            self.property_from_ext = ext.d_property
+
 
     def _def_file(self, output_dir, output_filename):
         """A list of options used to tell the linker how to make a dll/so. In
@@ -277,7 +291,10 @@ class DCompiler(cc.CCompiler):
             os.makedirs(output_dir)
 
         binpath = _qp(self._binpath)
-        compileOpts = self._compileOpts
+        if self.build_exe:
+            compileOpts = self._exeCompileOpts
+        else:
+            compileOpts = self._compileOpts
         outputOpts = self._outputOpts
 
         includePathOpts = []
@@ -359,9 +376,14 @@ class DCompiler(cc.CCompiler):
                 )
             sources.append((winpath(boilerplatePath,self.winonly), 'infra'))
 
+        for imp in self.string_imports_from_ext:
+            if not (os.path.isfile(imp) or os.path.isdir(imp)):
+                raise DistutilsFileError('String import file "%s" does not exist' %
+                        imp)
+
         userVersionAndDebugOpts = (
-              [self._versionOpt % v for v in self.versionFlagsFromExt] +
-              [self._debugOpt   % v for v in self.debugFlagsFromExt]
+              [self._versionOpt % v for v in self.version_flags_from_ext] +
+              [self._debugOpt   % v for v in self.debug_flags_from_ext]
         )
 
         # Optimization opts
@@ -388,8 +410,23 @@ class DCompiler(cc.CCompiler):
                 os.makedirs(os.path.dirname(objName))
             objFiles.append(winpath(objName,self.winonly))
             outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
+            unittestOpt = []
+            if self.unittest_from_ext:
+                unittestOpt.append(self._unittestOpt)
+            if self.property_from_ext:
+                unittestOpt.append(self._propertyOpt)
+            if self.string_imports_from_ext:
+                imps = set()
+                for imp in self.string_imports_from_ext:
+                    if os.path.isfile(imp):
+                        imps.add(os.path.dirname(os.path.abspath(imp)))
+                    else:
+                        imps.add(os.path.abspath(imp))
+                unittestOpt.extend([self._stringImportOpt % (imp,) 
+                    for imp in imps])
+
             cmdElements = (
-                [binpath] + extra_preargs + compileOpts +
+                [binpath] + extra_preargs + unittestOpt + compileOpts +
                 pythonVersionOpts + optimizationOpts +
                 includePathOpts + outOpts + userVersionAndDebugOpts +
                 [_qp(source)] + extra_postargs
@@ -456,6 +493,7 @@ class DCompiler(cc.CCompiler):
 
         if self.build_exe:
             sharedOpts = []
+            linkOpts = self._exeLinkOpts
             pythonLibOpt = []
             if target_desc != cc.CCompiler.EXECUTABLE:
                 raise LinkError('This CCompiler implementation should be building'
@@ -468,6 +506,7 @@ class DCompiler(cc.CCompiler):
                 raise LinkError('This CCompiler implementation should be building '
                     ' a shared object'
                 )
+            linkOpts = self._linkOpts
         # The python .lib file, if needed
         pythonLibOpt = self._lib_file(libraries)
         if pythonLibOpt:
@@ -489,7 +528,7 @@ class DCompiler(cc.CCompiler):
             optimizationOpts = self._defaultOptimizeOpts
 
         cmdElements = (
-            [binpath] + extra_preargs + self._linkOpts + optimizationOpts +
+            [binpath] + extra_preargs + linkOpts + optimizationOpts +
             outputOpts + [pythonLibOpt] + objectOpts + libOpts + sharedOpts +
             extra_postargs
         )
@@ -513,11 +552,11 @@ class DMDDCompiler(DCompiler):
     def _initialize(self):
         self.winonly = True
         # _compileOpts
-        self._compileOpts = ['-c']
+        self._exeCompileOpts = self._compileOpts = ['-c']
         # _outputOpts
         self._outputOpts = ['-of%s']
         # _linkOpts
-        self._linkOpts = []
+        self._exeLinkOpts = self._linkOpts = []
         # _includeOpts
         self._includeOpts = ['-I%s']
         # _versionOpt
@@ -526,12 +565,16 @@ class DMDDCompiler(DCompiler):
         self._debugOpt = '-debug=%s'
         # _defaultOptimizeOpts
         self._defaultOptimizeOpts = ['-debug']
+        # _stringImportOpt
+        self._stringImportOpt = '-J%s'
+        # _propertyOpt
+        self._propertyOpt = '-property'
+        # _unittestOpt
+        self._unittestOpt = '-unittest'
         # _debugOptimizeOpts
-        self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-unittest', '-g']
+        self._debugOptimizeOpts = self._defaultOptimizeOpts + [self._unittestOpt, '-g']
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-version=Optimized', '-release', '-O', '-inline']
-        # StackThreads support
-        self._st_support = True
 
     #def link_opts(self, 
 
@@ -612,10 +655,12 @@ class GDCDCompiler(DCompiler):
     _env_var = 'GDC_BIN'
 
     def _initialize(self):
+        self._exeCompileOpts = ['-c']
         # _compileOpts
         self._compileOpts = ['-fPIC', '-c']
         # _outputOpts
         self._outputOpts = ['-o', '%s']
+        self._exeLinkOpts = []
         # _linkOpts
         self._linkOpts = ['-fPIC', '-nostartfiles', '-shared']
         # _includeOpts
@@ -626,12 +671,16 @@ class GDCDCompiler(DCompiler):
         self._debugOpt = '-fdebug=%s'
         # _defaultOptimizeOpts
         self._defaultOptimizeOpts = ['-fdebug']
+        # _stringImportOpt
+        self._stringImportOpt = '-J%s' 
+        # _propertyOpt
+        self._propertyOpt = '-fproperty' 
+        # _unittestOpt
+        self._unittestOpt = '-funittest'
         # _debugOptimizeOpts
-        self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', '-funittest']
+        self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', self._unittestOpt]
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-fversion=Optimized', '-frelease', '-O3', '-finline-functions']
-        # StackThreads support
-        self._st_support = False
 
     def _def_file(self, output_dir, output_filename):
         return ['-Wl,-soname,' + os.path.basename(output_filename)]
@@ -661,11 +710,13 @@ class LDCDCompiler(DCompiler):
     _env_var = 'LDC_BIN'
 
     def _initialize(self):
+        self._exeCompileOpts = ['-c']
         # _compileOpts
         self._compileOpts = ['-relocation-model=pic', '-c']
         # _outputOpts
         self._outputOpts = ['-of', '%s']
         self._linkOutputOpts = ['-o', '%s']
+        self._exeLinkOpts = []
         # _linkOpts
         self._linkOpts = ['-nostartfiles', '-shared','-Wl,--no-as-needed','-lphobos-ldc','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
         # _includeOpts
@@ -676,12 +727,16 @@ class LDCDCompiler(DCompiler):
         self._debugOpt = '-d-debug=%s'
         # _defaultOptimizeOpts
         self._defaultOptimizeOpts = ['-d-debug']
+        # _stringImportOpt
+        self._stringImportOpt = '-J=%s'
+        # _propertyOpt
+        self._propertyOpt = '-property'
+        # _unittestOpt
+        self._unittestOpt = '-unittest'
         # _debugOptimizeOpts
-        self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', '-unittest']
+        self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', self._unittestOpt]
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-fversion=Optimized', '-release', '-O3', '-finline-functions']
-        # StackThreads support
-        self._st_support = False
 
     def _def_file(self, output_dir, output_filename):
         return ['-Wl,-soname,' + os.path.basename(output_filename)]

@@ -105,5 +105,9 @@ unittest {
     assert(!supportsNArgs!(Foo5.__ctor)(5));
 }
 
+import std.stdio;
+enum string msg = import("important_message.txt");
 
-void main() {}
+void main() {
+    writeln(msg);
+}

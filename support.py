@@ -42,6 +42,9 @@ class Extension(std_Extension):
         self.build_deimos = kwargs.pop('build_deimos', False)
         self.with_main = kwargs.pop('with_main', True)
         self.pyd_optimize = kwargs.pop('optimize', False)
+        self.d_unittest = kwargs.pop('d_unittest', False)
+        self.d_property = kwargs.pop('d_property', True)
+        self.string_imports = kwargs.pop('string_imports', [])
         if self.with_main and not self.with_pyd:
             # The special PydMain function should only be used when using Pyd
             self.with_main = False
@@ -114,13 +117,7 @@ class build_pyd_embedded_exe(Command):
             for ext in self.extensions:
                 self.per_ext(ext)
     def per_ext(self, ext):
-            self.compiler.optimize = self.optimize or ext.pyd_optimize
-            self.compiler.with_pyd = ext.with_pyd
-            self.compiler.with_main = ext.with_main
-            self.compiler.build_deimos = ext.build_deimos
-            self.compiler.proj_name = ext.name
-            self.versionFlagsFromExt = ext.version_flags
-            self.debugFlagsFromExt = ext.debug_flags
+            self.compiler.init_d_opts(self, ext)
             # mostly copied from distutils.command.build_ext
             sources = ext.sources
             if sources is None or type(sources) not in (list, tuple):

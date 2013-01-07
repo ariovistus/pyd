@@ -9,6 +9,6 @@ void hello() {
 }
 
 extern(C) void PydMain() {
-    def!(hello);
+    def!(hello)();
     module_init();
 }

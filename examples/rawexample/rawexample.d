@@ -21,13 +21,13 @@ struct Derived_object {
 extern(C)
 PyObject* Base_foo(PyObject* self, PyObject* args) {
     writefln("Base.foo");
-    return Py_INCREF(Py_None);
+    return Py_INCREF(Py_None());
 }
 
 extern(C)
 PyObject* Base_bar(PyObject* self, PyObject* args) {
     writefln("Base.bar");
-    return Py_INCREF(Py_None);
+    return Py_INCREF(Py_None());
 }
 
 PyMethodDef[] Base_methods = [
@@ -39,7 +39,7 @@ PyMethodDef[] Base_methods = [
 extern(C)
 PyObject* Derived_bar(PyObject* self, PyObject* args) {
     writefln("Derived.bar");
-    return Py_INCREF(Py_None);
+    return Py_INCREF(Py_None());
 }
 
 PyMethodDef[] Derived_methods = [
@@ -50,7 +50,7 @@ PyMethodDef[] Derived_methods = [
 extern(C)
 PyObject* hello(PyObject* self, PyObject* args) {
     writefln("Hello, world!");
-    return Py_INCREF(Py_None);
+    return Py_INCREF(Py_None());
 }
 
 PyMethodDef[] rawexample_methods = [

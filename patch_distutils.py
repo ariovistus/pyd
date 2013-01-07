@@ -83,12 +83,6 @@ _old_build_ext = build_ext.build_ext.build_extension
 def new_build_ext(self, ext):
     if isinstance(self.compiler, dcompiler.DCompiler):
         build = self.distribution.get_command_obj('build')
-        self.compiler.optimize = build.optimize or ext.pyd_optimize
-        self.compiler.with_pyd = ext.with_pyd
-        self.compiler.with_main = ext.with_main
-        self.compiler.build_deimos = ext.build_deimos
-        self.compiler.proj_name = ext.name
-        self.versionFlagsFromExt = ext.version_flags
-        self.debugFlagsFromExt = ext.debug_flags
+        self.compiler.init_d_opts(build, ext)
     _old_build_ext(self,ext)
 build_ext.build_ext.build_extension = new_build_ext

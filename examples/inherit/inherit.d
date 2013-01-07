@@ -38,9 +38,9 @@ Base return_poly_derived() {
 }
 
 extern(C) void PydMain() {
-    def!(call_poly);
-    def!(return_poly_base);
-    def!(return_poly_derived);
+    def!(call_poly)();
+    def!(return_poly_base)();
+    def!(return_poly_derived)();
 
     module_init();
 

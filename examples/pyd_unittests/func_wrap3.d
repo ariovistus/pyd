@@ -92,5 +92,9 @@ unittest {
 
 }
 
+import std.stdio;
+enum string msg = import("important_message.txt");
 
-void main() {}
+void main() {
+    writeln(msg);
+}
