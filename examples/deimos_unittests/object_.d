@@ -21,7 +21,6 @@ unittest {
     Py_XDECREF(cast(PyObject*) Py_None());
     // breaks linking?
     PyObject_TypeCheck(cast(PyObject*) Py_None(), &PyType_Type);
-    
 }
 
 

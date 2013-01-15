@@ -556,7 +556,8 @@ class DMDDCompiler(DCompiler):
         # _outputOpts
         self._outputOpts = ['-of%s']
         # _linkOpts
-        self._exeLinkOpts = self._linkOpts = []
+        self._exeLinkOpts = []
+        self._linkOpts = []
         # _includeOpts
         self._includeOpts = ['-I%s']
         # _versionOpt
@@ -703,7 +704,7 @@ class LDCDCompiler(DCompiler):
         'compiler'     : ['ldc2'],
         'compiler_so'  : ['ldc2'],
         'linker_so'    : ['gcc'],
-        'linker_exe'   : ['gcc'],
+        'linker_exe'   : ['ldc2'],
     }
 
     # this is not a env! (but it isn't GDC)
@@ -718,7 +719,8 @@ class LDCDCompiler(DCompiler):
         self._linkOutputOpts = ['-o', '%s']
         self._exeLinkOpts = []
         # _linkOpts
-        self._linkOpts = ['-nostartfiles', '-shared','-Wl,--no-as-needed','-lphobos-ldc','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
+        self._SharedLinkOpts = ['-nostartfiles', '-shared','-Wl,--no-as-needed','-lphobos-ldc','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
+        self._ExeLinkOpts = []
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt
@@ -742,21 +744,33 @@ class LDCDCompiler(DCompiler):
         return ['-Wl,-soname,' + os.path.basename(output_filename)]
 
     def library_dir_option(self, dir):
-        return '-L' + dir
+        if self.build_exe:
+            return "-L-L" + dir
+        else:
+            return '-L' + dir
 
     def runtime_library_dir_option(self, dir):
         return '-Wl,-R' + dir
 
     def library_option(self, lib):
-        return '-l' + lib
+        if self.build_exe:
+            return "-L-l" + lib
+        else:
+            return '-l' + lib
     def link (self, *args, **kwargs):
         target_desc = args[0]
-        if target_desc != cc.CCompiler.SHARED_OBJECT:
+        if target_desc == cc.CCompiler.SHARED_OBJECT:
+            self._binpath = self.executables['linker_so'][0]
+            self._linkOpts = self._SharedLinkOpts
+        elif target_desc == cc.CCompiler.EXECUTABLE:
+            self._binpath = self.executables['linker_exe'][0]
+            self._linkOpts = self._ExeLinkOpts
+            self._linkOutputOpts = self._outputOpts
+        else:
             raise LinkError('This CCompiler implementation does not know'
                 ' how to link anything except an extension module (that is, a'
                 ' shared object file).'
             )
-        self._binpath = self.executables['linker_so'][0]
         return DCompiler.link(self, *args, **kwargs)
         
 

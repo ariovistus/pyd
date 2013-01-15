@@ -1,44 +1,144 @@
 import sys
 import os, os.path
+import shutil
 import subprocess
+import platform
 from distutils.sysconfig import get_config_var
 here = os.getcwd()
+parts = [
+"hello",
+"arraytest",
+"inherit",
+"rawexample",
+"testdll",
+"deimos_unittests",
+"pyind",
+"pyd_unittests",
+]
+use_parts = set()
 exe_ext = get_config_var("EXE")
+verz_maj = platform.python_version_tuple()[0]
+print "%r" % (verz_maj,), verz_maj == 2
+if verz_maj == "3":
+    pass
+elif verz_maj == "2":
+    import optparse
+    oparser = optparse.OptionParser()
+    oparser.add_option("-b", action="store_true", dest="use_build")
+    oparser.add_option('-C',"--compiler", dest="compiler")
+    oparser.add_option('-c',"--clean", action="store_true",dest="clean")
+    (opts, args) = oparser.parse_args()
+else:
+    assert 0
+if args:
+    for arg in args:
+        if arg in parts:
+            use_parts.add(arg)
+else:
+    for arg in parts:
+        use_parts.add(arg)
+if opts.use_build:
+    build = os.path.abspath(os.path.join("build","lib"));
+    old_path = os.getenv("PYTHONPATH")
+    if not os.path.exists(build):
+        subprocess.check_call([sys.executable, "setup.py", "build"]);
+    print "using build: %r" % build
+    os.putenv("PYTHONPATH", build)
 
 def check_exe(cmd):
-    subprocess.check_call([cmd + exe_ext])
-os.chdir("examples")
-os.chdir("hello")
-subprocess.check_call([sys.executable, "setup.py", "build"])
-subprocess.check_call([sys.executable, "test.py"])
-os.chdir("..")
-os.chdir("arraytest")
-subprocess.check_call([sys.executable, "setup.py", "build"])
-subprocess.check_call([sys.executable, "test.py"])
-os.chdir("..")
-os.chdir("inherit")
-subprocess.check_call([sys.executable, "setup.py", "build"])
-subprocess.check_call([sys.executable, "test.py"])
-os.chdir("..")
-os.chdir("rawexample")
-subprocess.check_call([sys.executable, "setup.py", "build"])
-subprocess.check_call([sys.executable, "test.py"])
-os.chdir("..")
-os.chdir("testdll")
-subprocess.check_call([sys.executable, "setup.py", "build"])
-subprocess.check_call([sys.executable, "test.py"])
-os.chdir("..")
-os.chdir("pyind")
-subprocess.check_call([sys.executable, "setup.py", "pydexe"])
-subprocess.check_call(["pyind" + exe_ext])
-os.chdir("..")
-os.chdir("pyd_unittests")
-subprocess.check_call([sys.executable, "setup.py", "pydexe"])
-check_exe("class_wrap")
-check_exe("def")
-check_exe("embedded")
-check_exe("func_wrap")
-check_exe("make_object")
-check_exe("pydobject")
-check_exe("struct_wrap")
+    subprocess.check_call([os.path.join(".",cmd + exe_ext)])
+def remove_exe(cmd):
+    if os.path.exists(cmd + exe_ext):
+        os.remove(cmd+exe_ext)
+def pydexe():
+    cmds = [sys.executable, "setup.py", "pydexe"]
+    if opts.compiler:
+        cmds.append("--compiler="+opts.compiler)
+    subprocess.check_call(cmds)
+def check_py(scrpt):
+    subprocess.check_call([sys.executable, scrpt])
+def pybuild():
+    cmds = [sys.executable, "setup.py", "build"]
+    if opts.compiler:
+        cmds.append("--compiler="+opts.compiler)
+    subprocess.check_call(cmds)
+try:
+    os.chdir("examples")
+    if "deimos_unittests" in use_parts:
+        os.chdir("deimos_unittests")
+        exes = ["link", "object_"]
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+            for exe in exes: remove_exe(exe)
+        else:
+            pydexe()
+            for exe in exes:
+                check_exe(exe)
+        os.chdir("..")
+    if "pyind" in use_parts:
+        os.chdir("pyind")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+            remove_exe("pyind")
+        else:
+            pydexe()
+            check_exe("pyind")
+        os.chdir("..")
+    if "pyd_unittests" in use_parts:
+        os.chdir("pyd_unittests")
+        exes = ["class_wrap", "def", "embedded", "make_object", 
+                "pydobject", "struct_wrap"]
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+            for exe in exes:
+                remove_exe(exe)
+        else:
+            pydexe()
+            for exe in exes:
+                check_exe(exe)
+        os.chdir("..")
+    if "hello" in use_parts:
+        os.chdir("hello")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            check_py("test.py")
+        os.chdir("..")
+    if "arraytest" in use_parts:
+        os.chdir("arraytest")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            check_py("test.py")
+        os.chdir("..")
+    if "inherit" in use_parts:
+        os.chdir("inherit")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            check_py("test.py")
+        os.chdir("..")
+    if "rawexample" in use_parts:
+        os.chdir("rawexample")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            check_py("test.py")
+        os.chdir("..")
+    if "testdll" in use_parts:
+        os.chdir("testdll")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            check_py("test.py")
+        os.chdir("..")
+finally:
+    if opts.use_build and old_path is not None:
+        os.putenv("PYTHONPATH", old_path)
 
+    

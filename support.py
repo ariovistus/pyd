@@ -54,11 +54,17 @@ class build_pyd_embedded_exe(Command):
     description = "Build a D application that embeds python with Pyd"
 
     user_options = [
-            ("optimize", "O", "Ask the D compiler to optimize the generated code, at the expense of"
+        ('compiler=', 'c',
+         "specify the compiler type"),
+        ("optimize", "O", "Ask the D compiler to optimize the generated code, at the expense of"
                 " safety features such as array bounds checks."),
-            ("print-flags", None, "Don't build, just print out version flags for pyd") ]
+        ('debug', 'g',
+         "compile extensions and libraries with debugging information"),
+        ('force', 'f',
+         "forcibly build everything (ignore file timestamps)"),
+        ("print-flags", None, "Don't build, just print out version flags for pyd") ]
 
-    boolean_options = ['print-flags']
+    boolean_options = ['print-flags', 'debug', 'force']
 
     def initialize_options(self):
         self.print_flags = False
@@ -71,7 +77,7 @@ class build_pyd_embedded_exe(Command):
         self.libraries = None
         self.library_dirs = None
         self.link_objects = None
-        self.debug = 0
+        self.debug = None
         self.optimize = 0
         self.dry_run = 0
         self.verbose = 0
@@ -184,8 +190,22 @@ class build_pyd_embedded_exe(Command):
         return os.path.join(*ext_path) + exe_ext
 
     def get_libraries(self, ext):
-        return ext.libraries
-
+        # mostly copied from build_ext.get_libraries
+        if sys.platform == "win32":
+            return ext.libraries
+        elif sys.platform[:6] == "cygwin":
+            return ext.libraries
+        else:
+            from distutils import sysconfig
+            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
+                template = "python%d.%d"
+                pythonlib = (template %
+                             (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+                if sys.pydebug:
+                    pythonlib += '_d'
+                return ext.libraries + [pythonlib]
+            else:
+                return ext.libraries
 
 def setup(*args, **kwargs):
     if 'cmdclass' not in kwargs:

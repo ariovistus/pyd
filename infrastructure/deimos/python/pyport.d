@@ -67,8 +67,12 @@ template PyAPI_DATA(string decl) {
 
         // todo: why does ldc/linux not work this way? 
         //  --export-dynamic seems not to change anything
+        // export causes dmd to prepend symbols with _imp__, so no use.
+        // extern is not necessary for single-command builds
+        //               necessary for traditional per-file builds.
         enum PyAPI_DATA = (q{
             extern(C)
+            extern 
             __gshared
         } ~ decl ~ ";");
     }else{

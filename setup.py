@@ -12,7 +12,7 @@ isSourceDist = 'sdist' in [arg.lower() for arg in sys.argv]
 
 f = open('MANIFEST', 'w')
 try:
-    build_manifest.buildManifest(f, isSourceDist)
+    build_manifest.buildManifest(f, True)
 finally:
     f.close()
 

@@ -21,7 +21,7 @@ PYTHON_3_2 = -version=Python_3_2_Or_Later \
 	     -version=Python_2_5_Or_Later \
 	     -version=Python_2_4_Or_Later \
 	     -L-lpython3.2mu
-DC = dmd -m64 -unittest -property -debug  
+DC = dmd -unittest -property -debug -g 
 LDC = ldc2 -unittest -property 
 #DC = ldmd2 -unittest -property -debug -gc
 all: pyind pyind3

@@ -51,6 +51,8 @@ def include_path(path):
         return False
     if len(pathsubs) == 1 and ext.lower() == '.py':
         return True
+    if len(pathsubs) == 1 and pathsubs[0] == "version.txt":
+        return True
     return False
 
 

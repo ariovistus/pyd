@@ -20,6 +20,6 @@ clean:
 	rm -f *.o
 
 %.x: %.d
-	#$(DC) $(PYTHON_2_7) $< -of$@  -I$(PYD_DIR)
-	$(LDC) -of $@ $(PYTHON_2_7_LDC) $< -I$(PYD_DIR) $(PYD_FILES)
+	$(DC) $(PYTHON_2_7) $< -of$@  -I$(PYD_DIR) -v
+	#$(LDC) -of $@ $(PYTHON_2_7_LDC) $< -I$(PYD_DIR) $(PYD_FILES)
 
