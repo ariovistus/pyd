@@ -18,7 +18,7 @@ parts = [
 use_parts = set()
 exe_ext = get_config_var("EXE")
 verz_maj = platform.python_version_tuple()[0]
-print "%r" % (verz_maj,), verz_maj == 2
+print ("%r" % (verz_maj,), verz_maj == 2)
 if verz_maj == "3":
     pass
 elif verz_maj == "2":
@@ -42,7 +42,7 @@ if opts.use_build:
     old_path = os.getenv("PYTHONPATH")
     if not os.path.exists(build):
         subprocess.check_call([sys.executable, "setup.py", "build"]);
-    print "using build: %r" % build
+    print ("using build: %r" % build)
     os.putenv("PYTHONPATH", build)
 
 def check_exe(cmd):
