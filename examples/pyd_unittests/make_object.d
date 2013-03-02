@@ -204,7 +204,8 @@ unittest{
     auto t = Foo1(z);
     auto ix = t[0];
     z = t[1];
-    assert(ix == [0, 1]);
+    import std.conv;
+    assert(ix == [0, 1], to!string(ix));
     assert(equal(z, [2,3,4,5,6,7,8,9]));
 
 }
