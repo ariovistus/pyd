@@ -13,6 +13,7 @@
 import os, os.path, sys
 
 from distutils import ccompiler as cc
+from distutils.sysconfig import get_config_var 
 from distutils.ccompiler import gen_lib_options
 from distutils.errors import (
     DistutilsExecError, DistutilsFileError, DistutilsPlatformError,
@@ -35,6 +36,21 @@ def cygpath(path_, winonly):
         return stdout.strip()
     else:
         return path_
+
+def is_posix_static_python():
+    if (sys.platform == "win32" or 
+       sys.platform[:6] == "cygwin"):
+        return False
+    else:
+        return not get_config_var('Py_ENABLE_SHARED')
+def posix_static_python_opts():
+    ls = [l for l in get_config_var('LIBS').split(' ') if l]
+    ls.extend([l for l in get_config_var('MODLIBS').split(' ') if l])
+    return ls
+
+def posix_static_python_lib():
+    return os.path.join(get_config_var('LIBPL'),get_config_var('LIBRARY'))
+
 _isPlatWin = sys.platform.lower().startswith('win') or _isPlatCygwin
 
 _infraDir = os.path.join(os.path.dirname(__file__), 'infrastructure')
@@ -556,7 +572,11 @@ class DMDDCompiler(DCompiler):
         # _outputOpts
         self._outputOpts = ['-of%s']
         # _linkOpts
-        self._exeLinkOpts = []
+        if is_posix_static_python():
+            self._exeLinkOpts = ['-L'+l for l in posix_static_python_opts()]
+            self._exeLinkOpts.append(posix_static_python_lib())
+        else:
+            self._exeLinkOpts = []
         self._linkOpts = []
         # _includeOpts
         self._includeOpts = ['-I%s']
@@ -661,7 +681,11 @@ class GDCDCompiler(DCompiler):
         self._compileOpts = ['-fPIC', '-c']
         # _outputOpts
         self._outputOpts = ['-o', '%s']
-        self._exeLinkOpts = []
+        if is_posix_static_python():
+            self._exeLinkOpts = posix_static_python_opts()
+            self._exeLinkOpts.append(posix_static_python_lib())
+        else:
+            self._exeLinkOpts = []
         # _linkOpts
         self._linkOpts = ['-fPIC', '-nostartfiles', '-shared']
         # _includeOpts
@@ -717,10 +741,14 @@ class LDCDCompiler(DCompiler):
         # _outputOpts
         self._outputOpts = ['-of', '%s']
         self._linkOutputOpts = ['-o', '%s']
-        self._exeLinkOpts = []
+        # bloody ubuntu has to make things difficult
+        if is_posix_static_python():
+            self._exeLinkOpts = ['-L'+l for l in posix_static_python_opts()]
+            self._exeLinkOpts.append(posix_static_python_lib())
+        else:
+            self._exeLinkOpts = []
         # _linkOpts
         self._SharedLinkOpts = ['-nostartfiles', '-shared','-Wl,--no-as-needed','-lphobos-ldc','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
-        self._ExeLinkOpts = []
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt
@@ -764,7 +792,7 @@ class LDCDCompiler(DCompiler):
             self._linkOpts = self._SharedLinkOpts
         elif target_desc == cc.CCompiler.EXECUTABLE:
             self._binpath = self.executables['linker_exe'][0]
-            self._linkOpts = self._ExeLinkOpts
+            self._linkOpts = self._exeLinkOpts
             self._linkOutputOpts = self._outputOpts
         else:
             raise LinkError('This CCompiler implementation does not know'

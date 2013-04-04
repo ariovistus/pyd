@@ -198,10 +198,11 @@ class build_pyd_embedded_exe(Command):
         else:
             from distutils import sysconfig
             if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-                template = "python%d.%d"
-                pythonlib = (template %
-                             (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
-                if sys.pydebug:
+                pythonlib = "python{}.{}{}".format(
+                        sys.hexversion >> 24, 
+                        (sys.hexversion >> 16) & 0xff,
+                        '' if not hasattr(sys, 'abiflags') else sys.abiflags)
+                if hasattr(sys,'pydebug') and sys.pydebug:
                     pythonlib += '_d'
                 return ext.libraries + [pythonlib]
             else:

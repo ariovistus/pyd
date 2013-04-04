@@ -28,6 +28,7 @@ ext_modules = setup(
     ext_modules=[
         Extension(ext(e), [ext(e)+".d"],
             d_unittest=True,
+            build_deimos=True,
             string_imports = string_imports.get(e, [])
             )
             for e in exts 
