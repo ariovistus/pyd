@@ -30,9 +30,9 @@ clean:
 	rm -f *.x
 
 lib%.so: %.d boilerplate.d so_ctor.o
-	#$(DMD) -unittest -fPIC -defaultlib=phobos2so -shared $^ -of$@
-	$(DMD) -c -unittest -fPIC $< boilerplate.d -oftemp.o
-	$(DMD) -shared -defaultlib=phobos2so temp.o so_ctor.o -of$@
+	$(DMD) -unittest -fPIC -defaultlib=libphobos2.so -shared $^ -of$@
+	#$(DMD) -c -unittest -fPIC $< boilerplate.d -oftemp.o
+	#$(DMD) -shared -defaultlib=phobos2so temp.o so_ctor.o -of$@
 so_ctor.o: so_ctor.c
 	$(GCC) -c -fPIC so_ctor.c -o so_ctor.o
 

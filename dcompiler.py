@@ -582,7 +582,7 @@ class DMDDCompiler(DCompiler):
         if _isPlatWin:
             self._linkOpts = []
         else:
-            self._linkOpts = ['-shared','-defaultlib=phobos2so']
+            self._linkOpts = ['-shared','-defaultlib=libphobos2.so']
         # _includeOpts
         self._includeOpts = ['-I%s']
         # _versionOpt
