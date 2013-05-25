@@ -9,11 +9,11 @@ extern(C) {
     void rt_init();
     void rt_term();
 
-    void _init() {
+    void hacky_init() {
         rt_init();
     }
 
-    void _fini() {
+    void hacky_fini() {
         if(!_d_isHalting){
             rt_term();
         }

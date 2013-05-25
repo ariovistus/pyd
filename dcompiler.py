@@ -568,7 +568,9 @@ class DMDDCompiler(DCompiler):
     def _initialize(self):
         self.winonly = True
         # _compileOpts
-        self._exeCompileOpts = self._compileOpts = ['-c']
+        self._exeCompileOpts = ['-c']
+        self._compileOpts = ['-c']
+        if not _isPlatWin: self._compileOpts.append('-fPIC')
         # _outputOpts
         self._outputOpts = ['-of%s']
         # _linkOpts
@@ -577,7 +579,10 @@ class DMDDCompiler(DCompiler):
             self._exeLinkOpts.append(posix_static_python_lib())
         else:
             self._exeLinkOpts = []
-        self._linkOpts = []
+        if _isPlatWin:
+            self._linkOpts = []
+        else:
+            self._linkOpts = ['-shared','-defaultlib=phobos2so']
         # _includeOpts
         self._includeOpts = ['-I%s']
         # _versionOpt
@@ -661,6 +666,20 @@ class DMDDCompiler(DCompiler):
             return self.library_filename(lib)
         else:
             return '-L-l' + lib
+    def compile(self, *args, **kwargs):
+        if not _isPlatWin:
+            output_dir = kwargs.get('output_dir', '')
+            if not os.path.exists(output_dir):
+                os.makedirs(os.path.join(output_dir,'infra'))
+            src = os.path.join(_infraDir, 'd', 'so_ctor.c')
+            dsto = os.path.join(output_dir, 'infra', 'so_ctor.o')
+            spawn0(self,['gcc','-c', src, '-fPIC','-o',dsto])
+            self._dmd_so_ctor = dsto
+        return DCompiler.compile(self, *args, **kwargs)
+    def link (self, *args, **kwargs):
+        if not _isPlatWin: 
+            args[1].append(self._dmd_so_ctor)
+        return DCompiler.link(self, *args, **kwargs)
 
 class GDCDCompiler(DCompiler):
     compiler_type = 'gdc'

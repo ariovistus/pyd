@@ -34,5 +34,7 @@ s2.length = len("bricks")
 mystr = (doh.str_test(DString("world peace"),DString("world peace")))
 print mystr.length
 print mystr.ptr
+import pdb
+pdb.set_trace()
 
 

@@ -41,6 +41,8 @@ def include_path(path):
             return True
         if pathsubs == ['infrastructure','d','python_dll_def.def_template']:
             return True
+        if pathsubs == ['infrastructure','d','so_ctor.c']:
+            return True
         if pathsubs == ['infrastructure','python','python.d']:
             return False
         if ext.lower() == '.d':
