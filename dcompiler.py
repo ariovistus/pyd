@@ -576,7 +576,7 @@ class DMDDCompiler(DCompiler):
         # _linkOpts
         if is_posix_static_python():
             self._exeLinkOpts = ['-L'+l for l in posix_static_python_opts()]
-            self._exeLinkOpts.append(posix_static_python_lib())
+            self._exeLinkOpts.extend(['-L'+posix_static_python_lib(), '-L-ldl','-L-lutil'])
         else:
             self._exeLinkOpts = []
         if _isPlatWin:

@@ -8,6 +8,11 @@ LDC_PYTHON_2_7 = -d-version=Python_2_7_Or_Later \
 	     -d-version=Python_2_5_Or_Later \
 	     -d-version=Python_2_4_Or_Later \
 	     -L-lpython2.7
+PYTHON_2_7_static = -version=Python_2_7_Or_Later \
+             -version=Python_2_6_Or_Later \
+	     -version=Python_2_5_Or_Later \
+	     -version=Python_2_4_Or_Later \
+	     /usr/lib/python2.7/config/libpython2.7.a 
 PYTHON_2_7 = -version=Python_2_7_Or_Later \
              -version=Python_2_6_Or_Later \
 	     -version=Python_2_5_Or_Later \
