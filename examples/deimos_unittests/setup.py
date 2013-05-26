@@ -13,11 +13,13 @@ setup(
     ext_modules=[
     Extension("link", ['link.d'],
     build_deimos=True,
+    d_lump=True,
     d_unittest=True
         ),
     Extension("object_", ['object_.d'],
     build_deimos=True,
-    d_unittest=True
+    d_unittest=True,
+    d_lump=True
         )
     ],
 )

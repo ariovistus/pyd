@@ -194,6 +194,7 @@ class DCompiler(cc.CCompiler):
         self.with_pyd = True
         self.with_main = True
         self.build_deimos = False
+        self.lump = False
         self.optimize = False
         self.version_flags_from_ext = []
         self.debug_flags_from_ext = []
@@ -234,6 +235,7 @@ class DCompiler(cc.CCompiler):
             self.with_pyd = ext.with_pyd
             self.with_main = ext.with_main
             self.build_deimos = ext.build_deimos
+            self.lump = ext.d_lump
             self.proj_name = ext.name
             self.version_flags_from_ext = ext.version_flags
             self.debug_flags_from_ext = ext.debug_flags
@@ -412,8 +414,38 @@ class DCompiler(cc.CCompiler):
 
         print ('sources: %s' % ([os.path.basename(s) for s, t in sources],))
 
+        unittestOpt = []
+        if self.unittest_from_ext:
+            unittestOpt.append(self._unittestOpt)
+        if self.property_from_ext:
+            unittestOpt.append(self._propertyOpt)
+        if self.string_imports_from_ext:
+            imps = set()
+            for imp in self.string_imports_from_ext:
+                if os.path.isfile(imp):
+                    imps.add(os.path.dirname(os.path.abspath(imp)))
+                else:
+                    imps.add(os.path.abspath(imp))
+            unittestOpt.extend([self._stringImportOpt % (imp,) 
+                for imp in imps])
         objFiles = []
-        for source, source_type in sources:
+
+        if self.lump:
+            objName = os.path.join(output_dir,'infra','temp'+self.obj_extension)
+            objName = (winpath(objName,self.winonly))
+            outOpts = outputOpts[:]
+            outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
+            cmdElements = (
+                [binpath] + extra_preargs + unittestOpt + compileOpts +
+                pythonVersionOpts + optimizationOpts +
+                includePathOpts + outOpts + userVersionAndDebugOpts +
+                [_qp(source[0]) for source in sources] + extra_postargs
+            )
+            cmdElements = [el for el in cmdElements if el]
+            spawn0(self,cmdElements)
+            return [objName]
+        else:
+          for source, source_type in sources:
             outOpts = outputOpts[:]
             objFilename = cygpath(os.path.splitext(source)[0],self.winonly) + self.obj_extension
             if source_type == 'project':
@@ -426,20 +458,6 @@ class DCompiler(cc.CCompiler):
                 os.makedirs(os.path.dirname(objName))
             objFiles.append(winpath(objName,self.winonly))
             outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
-            unittestOpt = []
-            if self.unittest_from_ext:
-                unittestOpt.append(self._unittestOpt)
-            if self.property_from_ext:
-                unittestOpt.append(self._propertyOpt)
-            if self.string_imports_from_ext:
-                imps = set()
-                for imp in self.string_imports_from_ext:
-                    if os.path.isfile(imp):
-                        imps.add(os.path.dirname(os.path.abspath(imp)))
-                    else:
-                        imps.add(os.path.abspath(imp))
-                unittestOpt.extend([self._stringImportOpt % (imp,) 
-                    for imp in imps])
 
             cmdElements = (
                 [binpath] + extra_preargs + unittestOpt + compileOpts +

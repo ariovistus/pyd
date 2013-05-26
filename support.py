@@ -44,6 +44,7 @@ class Extension(std_Extension):
         self.pyd_optimize = kwargs.pop('optimize', False)
         self.d_unittest = kwargs.pop('d_unittest', False)
         self.d_property = kwargs.pop('d_property', True)
+        self.d_lump = kwargs.pop('d_lump', False)
         self.string_imports = kwargs.pop('string_imports', [])
         if self.with_main and not self.with_pyd:
             # The special PydMain function should only be used when using Pyd
