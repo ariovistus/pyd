@@ -177,7 +177,7 @@ PyObject* d_to_python(T) (T t) {
     } else static if (is(Unqual!T _unused : Complex!F, F)) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if(is(T == std.bigint.BigInt)) {
-        import std.string: format = xformat;
+        import std.string: format;
         string num_str = format("%s\0",t);
         return PyLong_FromString(num_str.dup.ptr, null, 10);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
@@ -595,7 +595,11 @@ if(isArray!T || IsStaticArrayPointer!T) {
                     format("length mismatch: %s vs %s", count, T.length));
     }
     // copy data, don't take slice
-    memcpy(_array.ptr, arr_o.ob_item, count*itemsize);
+    static if(isPointer!(typeof(_array))) {
+        memcpy((*_array).ptr, arr_o.ob_item, count*itemsize);
+    }else{
+        memcpy(_array.ptr, arr_o.ob_item, count*itemsize);
+    }
     //_array[] = cast(E[]) arr_o.ob_item[0 .. count*itemsize];
     return cast(T) _array;
 }

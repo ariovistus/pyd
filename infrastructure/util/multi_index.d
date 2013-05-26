@@ -1,794 +1,17 @@
-/**
-A port of Joaquín M López Muñoz' 
-<a 
-href="http://www.boost.org/doc/libs/1_48_0/libs/multi_index/doc/index.html"> 
-_multi_index </a>
-library.
-
-
-compilation options: $(BR)
-<b>version=PtrHackery</b> - In boost::_multi_index, Muñoz stores the color of a RB 
-Tree Node in the low bit of one of the pointers with the rationale that on 
-'many' architectures, pointers only point to even addresses.
-
-Source: $(LINK https://bitbucket.org/ariovistus/multi_index/src/)
-Macros: 
-TEXTWITHCOMMAS = $0
-Copyright: Red-black tree code copyright (C) 2008- by Steven Schveighoffer. 
-Other code copyright 2011- Ellery Newcomer. 
-All rights reserved by the respective holders.
-
-License: Distributed under the Boost Software License, Version 1.0.
-(See accompanying file LICENSE_1_0.txt or copy at $(WEB
-boost.org/LICENSE_1_0.txt)).
-
-Authors: Steven Schveighoffer, Ellery Newcomer
-
-Introduction:
-A standard container maintains its elements in a specific structure which 
-allows it to offer interesting or useful access to its elements. However,
-sometimes a programmer needs functionality which is not offered by a single
-collection type. Faced with such a need, a programmer must maintain auxiliary 
-containers, either of duplicated elements or of pointers to elements of the 
-primary container.
-In either solution, keeping the parallel containers synchronized quickly 
-becomes a pain, and may introduce inefficiencies in time or memory complexity.
-
-Into this use case steps multi_index. It allows the user to specify multiple
-<i>indeces</i> on the container elements, each of which provides interesting
-access functionality. A multi_index container will automatically keep all 
-indeces synchronized over insertion, removal, or replacement operations 
-performed on any one index.  
-
-Each index will typically require ($(D N * ptrsize * k)) additional bytes of 
-memory, for some k < 4
-
-$(B Quick Start):
-
-A MultiIndexContainer needs two things: a value type and a list of indeces. Put the list of indeces inside $(D IndexedBy). That way we can give MultiIndexContainer other lists, like signals and tags [later].
-
------
-alias MultiIndexContainer!(int, IndexedBy!(Sequenced!())) MyContainer;
-
-MyContainer c = new MyContainer;
------
-
-Generally you do not perform operations on a MultiIndexContainer, but on one of
-its indeces. MultiIndexContainer does define $(D empty) and $(D length), and 
-all indeces support these operations.
------
-// erg, not feeling inspired ..
-auto seq_index = c.get_index!0;
-writeln(seq_index.empty);
-seq_index.insert([1,2,3]); 
-writeln(seq_index.empty);
-writeln(seq_index.front);
------
-The following index types are provided:
-$(BOOKTABLE,
-
-$(TR $(TH $(D Sequenced)))
-
-$(TR  $(TD Provides a doubly linked list view - exposes 
-fast access to the front and back of the index.  Default insertion inserts to 
-the back of the index $(BR)
-
-$(TEXTWITHCOMMAS Complexities:)
-$(BOOKTABLE, $(TR $(TH) $(TH))
-$(TR $(TD Insertion) $(TD $(TEXTWITHCOMMAS 
-i(n) = 1 for front and back insertion
-))) 
-$(TR $(TD Removal) $(TD $(TEXTWITHCOMMAS 
-d(n) = 1 for front, back, and auxiliary removal
-)))
-$(TR $(TD Replacement) $(TD $(TEXTWITHCOMMAS 
-r(n) = 1 for auxiliary replacement 
-))))
-
-$(TEXTWITHCOMMAS Supported Operations:)
-$(BOOKTABLE, 
-$(TR  $(TD $(D
-C.Range
-))$(TD $(TEXTWITHCOMMAS 
-Sequenced Range type.
-)))
-$(TR  $(TD $(D
-c[]
-))$(TD $(TEXTWITHCOMMAS 
-Returns a bidirectional range iterating over the index.
-)))
-$(TR  $(TD $(D
-c.front
-))$(TD $(TEXTWITHCOMMAS 
-Returns the first element inserted into the index
-)))
-$(TR  $(TD $(D
-c.front = value
-))$(TD $(TEXTWITHCOMMAS 
-Replaces the front element in the index with value
-)))
-$(TR  $(TD $(D
-c.back
-))$(TD $(TEXTWITHCOMMAS 
-Returns the last element inserted into the index
-)))
-$(TR  $(TD $(D
-c.back = value
-))$(TD $(TEXTWITHCOMMAS 
-Replaces the last element in the index with value
-)))
-$(TR  $(TD $(D
-c.modify(r, mod)
-))$(TD $(TEXTWITHCOMMAS 
-Executes $(D mod(r.front)) and performs any necessary fixups to the 
-container's indeces. If the result of mod violates any index' invariant, 
-r.front is removed from the container.
-)))
-$(TR  $(TD $(D
-c.replace(r, value)
-))$(TD $(TEXTWITHCOMMAS 
-Replaces $(D r.front) with $(D value).
-)))
-$(TR  $(TD $(D
-c.insertFront(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff to the front of the index.
-)))
-$(TR  $(TD $(D
-c.insertBack(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff to the back of the index.
-)))
-$(TR  $(TD $(D
-c.insert(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff to the back of the index.
-)))
-$(TR  $(TD $(D
-c.removeFront()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the front of the index.
-)))
-$(TR  $(TD $(D
-c.removeBack()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the back of the index.
-)))
-$(TR  $(TD $(D
-c.removeAny()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the back of the index.
-)))
-$(TR  $(TD $(D
-c.remove(r)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the values in range $(D r) from the container.
-)))
-)
-
-))
-
-$(TR $(TH $(D RandomAccess)))
-$(TR $(TD Provides a random access view - exposes an
-array-like access to container elements. Default insertion inserts to the back of the index $(BR)
-
-$(TEXTWITHCOMMAS Complexities:)
-$(BOOKTABLE, $(TR $(TH) $(TH))
-$(TR $(TD Insertion) $(TD $(TEXTWITHCOMMAS 
-i(n) = 1 (amortized) for back insertion, n otherwise 
-))) 
-$(TR $(TD Removal) $(TD $(TEXTWITHCOMMAS 
-d(n) = 1 for back removal, n otherwise 
-)))
-$(TR $(TD Replacement) $(TD $(TEXTWITHCOMMAS 
-r(n) = 1 
-))))
-
-$(TEXTWITHCOMMAS Supported Operations:)
-$(BOOKTABLE, 
-$(TR  $(TD $(D
-C.Range
-))$(TD $(TEXTWITHCOMMAS 
-RandomAccess Range type.
-)))
-$(TR  $(TD $(D
-c[]
-))$(TD $(TEXTWITHCOMMAS 
-Returns a random access range iterating over the index.
-)))
-$(TR  $(TD $(D
-c[a,b]
-))$(TD $(TEXTWITHCOMMAS 
-Returns a random access range iterating over the subrange of the index.
-)))
-$(TR  $(TD $(D
-c.capacity
-))$(TD $(TEXTWITHCOMMAS 
-Returns the length of the underlying store of the index.
-)))
-$(TR  $(TD $(D
-c.reserve(c)
-))$(TD $(TEXTWITHCOMMAS 
-Ensures sufficient capacity to accommodate $(D c) elements
-)))
-$(TR  $(TD $(D
-c.front
-))$(TD $(TEXTWITHCOMMAS 
-Returns the first element inserted into the index
-)))
-$(TR  $(TD $(D
-c.front = value
-))$(TD $(TEXTWITHCOMMAS 
-Replaces the front element in the index with value
-)))
-$(TR  $(TD $(D
-c.back
-))$(TD $(TEXTWITHCOMMAS 
-Returns the last element inserted into the index
-)))
-$(TR  $(TD $(D
-c.back = value
-))$(TD $(TEXTWITHCOMMAS 
-Replaces the last element in the index with value
-)))
-$(TR  $(TD $(D
-c[i]
-))$(TD $(TEXTWITHCOMMAS 
-Provides const view random access to elements of the index.
-)))
-$(TR  $(TD $(D
-c[i] = value
-))$(TD $(TEXTWITHCOMMAS 
-Sets element $(D i) to $(D value), unless another index refuses it.
-)))
-$(TR  $(TD $(D
-c.swapAt(i,j)
-))$(TD $(TEXTWITHCOMMAS 
-Swaps elements' positions in this index only. This can be done without checks!
-)))
-$(TR  $(TD $(D
-c.modify(r, mod)
-))$(TD $(TEXTWITHCOMMAS 
-Executes $(D mod(r.front)) and performs any necessary fixups to the 
-container's indeces. If the result of mod violates any index' invariant, 
-r.front is removed from the container.
-)))
-$(TR  $(TD $(D
-c.replace(r, value)
-))$(TD $(TEXTWITHCOMMAS 
-Replaces $(D r.front) with $(D value).
-)))
-$(TR  $(TD $(D
-c.insertFront(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff to the front of the index.
-)))
-$(TR  $(TD $(D
-c.insertBack(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff to the back of the index.
-)))
-$(TR  $(TD $(D
-c.insert(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff to the back of the index.
-)))
-$(TR  $(TD $(D
-c.removeFront()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the front of the index.
-)))
-$(TR  $(TD $(D
-c.removeBack()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the back of the index.
-)))
-$(TR  $(TD $(D
-c.removeAny()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the back of the index.
-)))
-$(TR  $(TD $(D
-c.linearRemove(r)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the values in range $(D r) from the container.
-)))
-)
-
-))
-
-$(TR $(TH $(D Ordered, OrderedUnique, OrderedNonUnique))) 
-$(TR $(TD Provides a 
-red black tree view - keeps container elements in order defined by predicates 
-KeyFromValue and Compare. 
-Unique variant will cause the container to refuse 
-insertion of an item if an equivalent item already exists in the container.
-
-$(TEXTWITHCOMMAS Complexities:)
-$(BOOKTABLE, $(TR $(TH) $(TH))
-$(TR $(TD Insertion) $(TD $(TEXTWITHCOMMAS 
-i(n) = log(n) $(BR)
-))) 
-$(TR $(TD Removal) $(TD $(TEXTWITHCOMMAS 
-d(n) = log(n) $(BR)
-)))
-$(TR $(TD Replacement) $(TD $(TEXTWITHCOMMAS 
-r(n) = 1 if the element's position does not change, log(n) otherwise 
-))))
-
-$(TEXTWITHCOMMAS Supported Operations:)
-$(BOOKTABLE, 
-$(TR  $(TD $(D
-C.Range
-))$(TD $(TEXTWITHCOMMAS 
-Ordered Range type.
-)))
-$(TR  $(TD $(D
-c[]
-))$(TD $(TEXTWITHCOMMAS 
-Returns a bidirectional range iterating over the index.
-)))
-$(TR  $(TD $(D
-c.front
-))$(TD $(TEXTWITHCOMMAS 
-Returns the first element inserted into the index
-)))
-$(TR  $(TD $(D
-c.back
-))$(TD $(TEXTWITHCOMMAS 
-Returns the last element inserted into the index
-)))
-$(TR  $(TD $(D
-k in c
-))$(TD $(TEXTWITHCOMMAS 
-Checks if $(D k) is in the index, where $(D k) is either an element or a key
-)))
-$(TR  $(TD $(D
-c[k]
-))$(TD $(TEXTWITHCOMMAS 
-Provides const view indexed access to elements of the index. Available for Unique variant.
-)))
-$(TR  $(TD $(D
-c.modify(r, mod)
-))$(TD $(TEXTWITHCOMMAS 
-Executes $(D mod(r.front)) and performs any necessary fixups to the 
-container's indeces. If the result of mod violates any index' invariant, 
-r.front is removed from the container.
-)))
-$(TR  $(TD $(D
-c.replace(r, value)
-))$(TD $(TEXTWITHCOMMAS 
-Replaces $(D r.front) with $(D value).
-)))
-$(TR  $(TD $(D
-c.insert(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff into the index.
-)))
-$(TR  $(TD $(D
-c.removeFront()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the front of the index.
-)))
-$(TR  $(TD $(D
-c.removeBack()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the back of the index.
-)))
-$(TR  $(TD $(D
-c.removeAny()
-))$(TD $(TEXTWITHCOMMAS 
-Removes the value at the back of the index.
-)))
-$(TR  $(TD $(D
-c.remove(r)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the values in range $(D r) from the container.
-)))
-$(TR  $(TD $(D
-c.removeKey(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Removes values equivalent to the given values or keys. 
-)))
-$(TR  $(TD $(D
-c.upperBound(k)
-))$(TD $(TEXTWITHCOMMAS 
-Get a range with all elements $(D e) such that $(D e < k)
-)))
-$(TR  $(TD $(D
-c.lowerBound(k)
-))$(TD $(TEXTWITHCOMMAS 
-Get a range with all elements $(D e) such that $(D e > k)
-)))
-$(TR  $(TD $(D
-c.equalRange(k)
-))$(TD $(TEXTWITHCOMMAS 
-Get a range with all elements $(D e) such that $(D e == k)
-)))
-$(TR  $(TD $(D
-c.bounds!("[]")(lo,hi)
-))$(TD $(TEXTWITHCOMMAS 
-Get a range with all elements $(D e) such that $(D lo <= e <= hi). Boundaries parameter a la <a href="http://www.d-programming-language.org/phobos/std_random.html#uniform">std.random.uniform</a>!
-)))
-)
-
-))
-
-$(TR $(TH $(D Hashed, HashedUnique, HashedNonUnique))) 
-$(TR $(TD Provides a 
-hash table view - exposes fast access to every element of the container, 
-given key defined by predicates KeyFromValue, Hash, and Eq.
-Unique variant will cause the container to refuse 
-insertion of an item if an equivalent item already exists in the container.
-
-$(TEXTWITHCOMMAS Complexities:)
-$(BOOKTABLE, $(TR $(TH) $(TH))
-$(TR $(TD Insertion) $(TD $(TEXTWITHCOMMAS 
-i(n) = 1 average, n worst case $(BR)
-))) 
-$(TR $(TD Removal) $(TD $(TEXTWITHCOMMAS 
-d(n) = 1 for auxiliary removal, otherwise 1 average, n worst case $(BR)
-)))
-$(TR $(TD Replacement) $(TD $(TEXTWITHCOMMAS 
-r(n) = 1 if the element's position does not change, log(n) otherwise 
-))))
-
-$(TEXTWITHCOMMAS Supported Operations:)
-$(BOOKTABLE, 
-$(TR  $(TD $(D
-C.Range
-))$(TD $(TEXTWITHCOMMAS 
-Hashed Range type.
-)))
-$(TR  $(TD $(D
-c[]
-))$(TD $(TEXTWITHCOMMAS 
-Returns a forward range iterating over the index.
-)))
-$(TR  $(TD $(D
-c.front
-))$(TD $(TEXTWITHCOMMAS 
-Returns the first element in the hash. No, this isn't helpful.
-)))
-$(TR  $(TD $(D
-k in c
-))$(TD $(TEXTWITHCOMMAS 
-Checks if $(D k) is in the index, where $(D k) is either an element or a key
-)))
-$(TR  $(TD $(D
-c.contains(value)
-))$(TD $(TEXTWITHCOMMAS 
-Checks if $(D value) is in the index. $(BR) EMN: Wat? Wat is this doing in here?
-)))
-$(TR  $(TD $(D
-c[k]
-))$(TD $(TEXTWITHCOMMAS 
-Provides const view indexed access to elements of the index. Available for Unique variant.
-)))
-$(TR  $(TD $(D
-c.modify(r, mod)
-))$(TD $(TEXTWITHCOMMAS 
-Executes $(D mod(r.front)) and performs any necessary fixups to the 
-container's indeces. If the result of mod violates any index' invariant, 
-r.front is removed from the container.
-)))
-$(TR  $(TD $(D
-c.replace(r, value)
-))$(TD $(TEXTWITHCOMMAS 
-Replaces $(D r.front) with $(D value).
-)))
-$(TR  $(TD $(D
-c.insert(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff into the index.
-)))
-$(TR  $(TD $(D
-c.remove(r)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the values in range $(D r) from the container.
-)))
-$(TR  $(TD $(D
-c.removeKey(key)
-))$(TD $(TEXTWITHCOMMAS 
-Removes values equivalent to $(D key). 
-)))
-$(TR  $(TD $(D
-c.equalRange(k)
-))$(TD $(TEXTWITHCOMMAS 
-Get a range with all elements $(D e) such that $(D e == k)
-)))
-)
-
-))
-
-$(TR $(TH $(D Heap))) 
-$(TR $(TD Provides a max heap view - exposes fast access to 
-the largest element in the container as defined by predicates KeyFromValue 
-and Compare.
-
-$(TEXTWITHCOMMAS Complexities:)
-$(BOOKTABLE, $(TR $(TH) $(TH))
-$(TR $(TD Insertion) $(TD $(TEXTWITHCOMMAS 
-i(n) = log(n) 
-))) 
-$(TR $(TD Removal) $(TD $(TEXTWITHCOMMAS 
-d(n) = log(n)
-)))
-$(TR $(TD Replacement) $(TD $(TEXTWITHCOMMAS 
-r(n) = log(n) if the element's position does not change, log(n) otherwise 
-))))
-$(TEXTWITHCOMMAS Supported Operations:)
-$(BOOKTABLE, 
-$(TR  $(TD $(D
-C.Range
-))$(TD $(TEXTWITHCOMMAS 
-Heap Range type.
-)))
-$(TR  $(TD $(D
-c[]
-))$(TD $(TEXTWITHCOMMAS 
-Returns a bidirectional (EMN: wat? why?!) range iterating over the index.
-)))
-$(TR  $(TD $(D
-c.front
-))$(TD $(TEXTWITHCOMMAS 
-Returns the max element in the heap. 
-)))
-$(TR  $(TD $(D
-c.back
-))$(TD $(TEXTWITHCOMMAS 
-Returns some element of the heap.. probably not the max element...
-)))
-$(TR  $(TD $(D
-c.modify(r, mod)
-))$(TD $(TEXTWITHCOMMAS 
-Executes $(D mod(r.front)) and performs any necessary fixups to the 
-container's indeces. If the result of mod violates any index' invariant, 
-r.front is removed from the container.
-)))
-$(TR  $(TD $(D
-c.replace(r, value)
-))$(TD $(TEXTWITHCOMMAS 
-Replaces $(D r.front) with $(D value).
-)))
-$(TR  $(TD $(D
-c.capacity
-))$(TD $(TEXTWITHCOMMAS 
-Returns the length of the underlying store of the index.
-)))
-$(TR  $(TD $(D
-c.reserve(c)
-))$(TD $(TEXTWITHCOMMAS 
-Ensures sufficient capacity to accommodate $(D c) elements
-)))
-$(TR  $(TD $(D
-c.insert(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Inserts stuff into the index.
-)))
-$(TR  $(TD $(D
-c.removeFront(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the max element in the heap.
-)))
-$(TR  $(TD $(D
-c.removeAny(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the max element in the heap.
-)))
-$(TR  $(TD $(D
-c.removeBack(stuff)
-))$(TD $(TEXTWITHCOMMAS 
-Removes the back element in the heap. $(BR) EMN: what the heck was I smoking?
-)))
-)
-
-))
-
-)
-
-Mutability:
-Providing multiple indeces to the same data does introduce some complexities, 
-though. Consider:
------
-alias MultiIndexContainer!(Tuple!(int,string), IndexedBy!(RandomAccess!(), OrderedUnique!("a[1]"))) C;
-
-C c = new C;
-
-c.insert(tuple(1,"a"));
-c.insert(tuple(2,"b"));
-
-c[1][1] = "a"; // bad! index 1 now contains duplicates and is in invalid state! 
------
-In general, the container must either require the user 
-not to perform any damning operation on its elements (which likely will entail 
-paranoid and continual checking of the validity of its indeces), or else not 
-provide a mutable view of its elements. By default, multi_index chooses the 
-latter (with controlled exceptions). 
-
-Thus you are limited to modification operations for which the 
-indeces can detect and perform any fixups (or possibly reject). You can use 
-a remove/modify/insert workflow here, or functions modify and replace, which
-each index implements. 
-
-For modifications which are sure not to invalidate any index, you might simply 
-cast away the constness of the returned element. This will work, 
-but it is not recommended on the grounds of aesthetics (it's ew) and 
-maintainability (if the code changes, it's a ticking time bomb).
-
-Finally, if you just have to have a mutable view, include
-MutableView in the MultiIndexContainer specification. This is
-the least safe option (but see Signals and Slots), and you might make liberal
-use of the convenience function check provided by MultiIndexContainer, 
-which asserts the validity of each index.
-
-Efficiency:
-
-To draw on an example from boost::_multi_index, suppose a collection of 
-Tuple!(int,int) needs to be kept in sorted order by both elements of the tuple.
-This might be accomplished by the following:
-------
-import std.container;
-alias RedBlackTree!(Tuple!(int,int), "a[0] < b[0]") T1;
-alias RedBlackTree!(Tuple!(int,int)*, "(*a)[1] < (*b)[1]") T2;
-
-T1 tree1 = new T1;
-T2 tree2 = new T2;
-------
-
-Insertion remains straightforward
-------
-tree1.insert(item);
-tree2.insert(&item);
-------
-However removal introduces some inefficiency
-------
-tree1.remove(item);
-tree2.remove(&item); // requires a log(n) search, followed by a potential log(n) rebalancing
-------
-Muñoz suggests making the element type of T2 an iterator of T1 for to obviate
-the need for the second search. However, this is not possible in D, as D 
-espouses ranges rather than indeces. (As a side note, Muñoz proceeds to point 
-out that the iterator solution will require at minimum (N * ptrsize) more bytes 
-of memory than will _multi_index, so we needn't lament over this fact.)
-
-Our approach:
-------
-alias MultiIndexContainer!(Tuple!(int,int), 
-        IndexedBy!(OrderedUnique!("a[0]"), 
-            OrderedUnique!("a[1]"))) T;
-
-T t = new T;
-------
-
-makes insertion and removal somewhat simpler:
-
-------
-t.insert(item);
-t.remove(item);
-------
-
-and removal will not perform a log(n) search on the second index 
-(rebalancing can't be avoided).
-
-Signals and Slots:
-
-An experimental feature of multi_index. You can design your value type
-to be a signal, a la std.signals, and hook it up to your 
-MultiIndexContainer. (Note: std.signals won't work with multi_index,
-so don't bother trying)
-
-Example:
--------
-
-import multi_index;
-import std.algorithm: moveAll;
-
-class MyRecord{
-    int _i;
-
-    @property int i()const{ return _i; }
-    @property void i(int i1){
-        _i = i1;
-        emit(); // MultiIndexContainer is notified that this record's 
-                // position in indeces may need to be fixed
-    }
-
-    // signal impl - MultiIndexContainer will use these
-    // to connect. In this example, we actually only need
-    // a single slot. For a value type with M signals 
-    // (differentiated with mixin aliases), there will be 
-    // M slots connected.
-    void delegate()[] slots;
-
-    void connect(void delegate() slot){
-        slots ~= slot;
-    }
-    void disconnect(void delegate() slot){
-        size_t index = slots.length;
-        foreach(i, slot1; slots){
-            if(slot is slot1){
-                index = i;
-                moveAll(slots[i+1 .. $], slots[i .. $-1]);
-                slots.length-=1;
-                break;
-            }
-        }
-    }
-    void emit(){
-        foreach(slot; slots){
-            slot();
-        }
-    }
-}
-
-alias MultiIndexContainer!(MyRecord,
-    IndexedBy!(OrderedUnique!("a.i")),
-    SignalOnChange!(ValueSignal!(0)), // this tells MultiIndexContainer that you want
-                                      // it to use the signal defined in MyRecord.
-                                      // you just need to pass in the index number.
-    MutableView,
-) MyContainer;
-
-MyContainer c = new MyContainer;
-
-// populate c
-
-MyRecord v = c.front();
-
-v.i = 22; // v's position in c is automatically fixed
--------
-
-Thus, MultiIndexContainers can be kept valid automatically PROVIDED no
-modifications occur other than those which call emit.
-
-But what happens if a modification breaks, for example, a uniqueness 
-constraint? Well, you have two options: remove the offending element 
-silently, or remove it loudly (throw an exception). multi_index chooses
-the latter in this case.
-
-$(B Thread Safety):
-
-multi_index is not designed to be used in multithreading.
-Find yourself a relational database.
-
-$(B Memory Allocation)
-
-In C++, memory allocators are used to control how a container allocates memory. D does not have this (but will soon). Until it does, multi_index will use a
-simple allocator protocol to regulate allocation of container structures. 
-Define a struct with two static methods:
-
-------
-struct MyAllocator{
- T* allocate(T)(size_t i); // return pointer to chunk of memory containing i*T.sizeof bytes 
- void deallocate(T)(T* t); // release chunk of memory at t
-}
-------
-Pass the struct type in to MultiIndexContainer:
-------
-alias MultiIndexContainer!(int,IndexedBy!(Sequenced!()), MyAllocator) G;
-------
-Two allocators are predefined in multi_index: $(B GCAllocator) (default), and $(B MallocAllocator)
-
-
- */
 module util.multi_index;
 
 /**
  * TODO:
- *  ordered index
- *   compatible sorting criteria
- *   special constructor for SortedRange?
  *  random access index
  *   insertAfter ? insertBefore ?
  *  fix BitHackery
  *  make MutableView a per index thing?
  *  modify(r, mod, rollback)
- *  tagging
+ *  contain const/immutable value types
  *  other indeces? 
  *  dup
  *  make reserve perform reserve on all appropriate indeces?
- *  
+ *  ensure MultiIndexContainer is strongly exception safe.  
  */
 
 version = BucketHackery;
@@ -797,13 +20,12 @@ import std.array;
 import std.range;
 import std.exception: enforce;
 import std.algorithm: find, swap, copy, fill, max, startsWith, moveAll;
+import std.algorithm: move, sort, map;
 import std.traits: isImplicitlyConvertible, isDynamicArray;
-import std.metastrings: Format, toStringNow;
 import util.replace: Replace;
-import std.typetuple: TypeTuple, staticMap, NoDuplicates, staticIndexOf;
+import std.typetuple: TypeTuple, staticMap, NoDuplicates, staticIndexOf, allSatisfy;
 import std.functional: unaryFun, binaryFun;
 import std.string: format;
-import std.typetuple: allSatisfy;
 version(PtrHackery){
     import core.bitop: bt, bts, btr;
 }
@@ -910,10 +132,24 @@ template Sequenced() {
 Defines the index' primary range, which embodies a
 bidirectional range 
 */
-        struct Range{
-            ThisContainer c;
-            ThisNode* _front, _back;
-            alias _front node;
+        struct SequencedRange(bool is_const) {
+            static if(is_const) {
+                alias const(ThisNode) Node;
+                alias const(ThisContainer) Container;
+            }else {
+                alias ThisContainer Container;
+                alias ThisNode Node;
+            }
+            Container c;
+            Node* _front, _back;
+            alias _front front_node;
+            alias _back back_node;
+
+            this(Container _c, Node* f, Node* b) {
+                c = _c;
+                _front = f;
+                _back = b;
+            }
 
             @property bool empty() {
                 return 
@@ -921,14 +157,14 @@ bidirectional range
                     _front !is _back.index!N.next &&
                     _back !is _front.index!N.prev);
             }
-            @property ValueView front(){
+            @property front(){
                 return _front.value;
             }
-            @property ValueView back(){
+            @property back(){
                 return _back.value;
             }
 
-            Range save(){ return this; }
+            @property save(){ return this; }
 
             void popFront()
             in{
@@ -940,33 +176,9 @@ bidirectional range
             void popBack(){
                 _back = _back.index!N.prev;
             }
-
-/**
-Pops front and removes it from the container.
-Does not invalidate this range.
-Preconditions: !empty
-Complexity: $(BIGOH d(n)), $(BR) $(BIGOH 1) for this index
-*/
-            void removeFront(){
-                ThisNode* node = _front;
-                popFront();
-                c._RemoveAll(node);
-            }
-
-/**
-Pops back and removes it from the container.
-Does not invalidate this range.
-Preconditions: !empty
-Complexity: $(BIGOH d(n)), $(BR) $(BIGOH 1) for this index
-*/
-            void removeBack(){
-                ThisNode* node = _back;
-                popBack();
-                c._RemoveAll(node);
-            }
         }
 
-        alias TypeTuple!(N,Range) IndexTuple;
+        alias TypeTuple!(N,SequencedRange) IndexTuple;
         alias TypeTuple!(N) NodeTuple;
 
         // node implementation 
@@ -1039,7 +251,7 @@ Complexity: $(BIGOH d(n)), $(BR) $(BIGOH 1) for this index
                 }
         }
 
- /// index implementation 
+ /// Sequenced index implementation 
  ///
  /// Requirements: the following symbols must be  
  /// defined in the scope in which this index is mixed in:
@@ -1047,9 +259,16 @@ Complexity: $(BIGOH d(n)), $(BR) $(BIGOH 1) for this index
  // dangit, ddoc, show my single starting underscore!
  /// ThisNode, Value, __InsertAllBut!N, __InsertAll,  __Replace, 
  /// __RemoveAllBut!N, node_count
-        mixin template IndexMixin(size_t N, Range_0){
+        mixin template IndexMixin(size_t N, alias Range_0){
             ThisNode* _front, _back;
-            alias Range_0 Range;
+            alias Range_0!false SeqRange;
+            alias Range_0!true ConstSeqRange;
+
+            template IsMyRange(T) {
+                enum bool IsMyRange = 
+                    is(T == SeqRange) || 
+                    is(T == ConstSeqRange);
+            }
 
 /**
 Returns the number of elements in the container.
@@ -1066,7 +285,7 @@ elements.
 
 Complexity: $(BIGOH 1)
 */
-            @property bool empty(){
+            @property bool empty() const{
                 return node_count == 0;
             }
 
@@ -1075,14 +294,18 @@ Fetch a range that spans all the elements in the container.
 
 Complexity: $(BIGOH 1)
 */
-            Range opSlice(){
-                return Range(this, _front, _back);
+            SeqRange opSlice(){
+                return SeqRange(this, _front, _back);
+            }
+
+            ConstSeqRange opSlice() const{
+                return ConstSeqRange(this, _front, _back);
             }
 
 /**
 Complexity: $(BIGOH 1)
 */ 
-            @property ValueView front(){
+            @property front() inout{
                 return _front.value;
             }
 
@@ -1097,7 +320,7 @@ Complexity: $(BIGOH r(n)); $(BR) $(BIGOH 1) for this index
             /**
              * Complexity: $(BIGOH 1)
              */
-            @property ValueView back() {
+            @property back() inout{
                 return _back.value;
             }
 
@@ -1118,17 +341,33 @@ Complexity: $(BIGOH r(n)); $(BR) $(BIGOH 1) for this index
 /**
 Moves moveme.front to the position before tohere.front and inc both ranges.
 Probably not safe to use either range afterwards, but who knows. 
-Preconditions: moveme and tohere are both ranges of the same container
+Preconditions: moveme and tohere are both ranges of the same container.
+Postconditions: moveme.front is incremented
 Complexity: $(BIGOH 1)
 */
-            void relocateFront(ref Range moveme, Range tohere)
+            void relocateFront(PosRange)(ref PosRange moveme, PosRange tohere)
+            if(is(ElementType!PosRange == Position!(ThisNode)) ||
+               is(PosRange == SeqRange))
             in{
-                assert(moveme.c == tohere.c);
-                assert(moveme.node);
-                assert(tohere.node);
+                // rubbish, now we can't ensure two ranges are from same 
+                // index, container
+                static if(is(PosRange == SeqRange)) {
+                    // well, do it if you can
+                    assert(moveme.c == tohere.c);
+                    assert(moveme.front_node);
+                    assert(tohere.front_node);
+                }else {
+                    assert(moveme.front.node);
+                    assert(tohere.front.node);
+                }
             }body{
-                ThisNode* m = moveme._front;
-                ThisNode* n = tohere._front;
+                static if(is(PosRange == SeqRange)) {
+                    ThisNode* m = moveme.front_node;
+                    ThisNode* n = tohere.front_node;
+                }else {
+                    ThisNode* m = moveme.front.node;
+                    ThisNode* n = tohere.front.node;
+                }
                 moveme.popFront();
                 if (m is n) return; //??
                 if (m is n.index!N.prev) return; //??
@@ -1140,16 +379,29 @@ Complexity: $(BIGOH 1)
 Moves moveme.back to the position after tohere.back and dec both ranges.
 Probably not safe to use either range afterwards, but who knows. 
 Preconditions: moveme and tohere are both ranges of the same container
+Postconditions: moveme.back is decremented
 Complexity: $(BIGOH 1)
 */
-            void relocateBack(ref Range moveme, Range tohere)
+            void relocateBack(PosRange)(ref PosRange moveme, PosRange tohere)
+            if(is(ElementType!PosRange == Position!(ThisNode)) ||
+               is(PosRange == SeqRange))
             in{
-                assert(moveme.c == tohere.c);
-                assert(moveme.node);
-                assert(tohere.node);
+                static if(is(PosRange == SeqRange)) {
+                    assert(moveme.c == tohere.c);
+                    assert(moveme.back_node);
+                    assert(tohere.back_node);
+                }else {
+                    assert(moveme.back.node);
+                    assert(tohere.back.node);
+                }
             }body{
-                ThisNode* m = moveme._back;
-                ThisNode* n = tohere._back;
+                static if(is(PosRange == SeqRange)) {
+                    ThisNode* m = moveme.back_node;
+                    ThisNode* n = tohere.back_node;
+                }else{
+                    ThisNode* m = moveme.back.node;
+                    ThisNode* n = tohere.back.node;
+                }
                 moveme.popBack();
                 if (m is n) return; //??
                 if (m is n.index!N.next) return; //??
@@ -1158,24 +410,18 @@ Complexity: $(BIGOH 1)
                 if(n is _back) _back = m;
             }
 
-/**
-Perform mod on r.front and performs any necessary fixups to container's 
-indeces. If the result of mod violates any index' invariant, r.front is
-removed from the container.
-Preconditions: !r.empty, $(BR)
-mod is a callable of the form void mod(ref Value) 
-Complexity: $(BIGOH m(n)), $(BR) $(BIGOH 1) for this index 
-*/
-
             void modify(SomeRange, Modifier)(SomeRange r, Modifier mod)
-            if(is(SomeRange == Range) || 
-                    is(SomeRange == typeof(retro(Range.init)))) {
-                static if(is(SomeRange == Range)){
-                    ThisNode* node = r.node;
-                }else{
-                    ThisNode* node = r.source._back;
+            if(is(SomeRange == SeqRange) || 
+               is(ElementType!SomeRange == Position!(ThisNode))) {
+                while(!r.empty) {
+                    static if(is(SomeRange == SeqRange)){
+                        ThisNode* node = r.front_node;
+                    }else{
+                        ThisNode* node = r.front.node;
+                    }
+                    _Modify(node, mod);
+                    r.popFront();
                 }
-                _Modify(node, mod);
             }
 
 /**
@@ -1183,15 +429,9 @@ Replaces r.front with value
 Returns: whether replacement succeeded
 Complexity: ??
 */
-            bool replace(SomeRange)(SomeRange r, Value value)
-            if(is(SomeRange == Range) || 
-                    is(SomeRange == typeof(retro(Range.init)))){
-                static if(is(SomeRange == Range)){
-                    ThisNode* node = r.node;
-                }else{
-                    ThisNode* node = r.source._back;
-                }
-                return _Replace(node, value);
+            bool replace(Position!ThisNode r, Value value)
+            {
+                return _Replace(r.node, value);
             }
 
             bool _insertFront(ThisNode* node) nothrow
@@ -1241,6 +481,7 @@ this index
                         isImplicitlyConvertible!(ElementType!SomeRange, 
                             ValueView))
                 {
+                    import std.array;
                     if(stuff.empty) return 0;
                     size_t count = 0;
                     ThisNode* prev;
@@ -1368,20 +609,46 @@ Removes the values of r from the container.
 Preconditions: r came from this index
 Complexity: $(BIGOH n $(SUB r) * d(n)), $(BR) $(BIGOH n $(SUB r)) for this index
 +/
-            Range remove(R)(R r)
-            if(is(R == Range) || is(R == Take!Range))
+            SeqRange remove(R)(R r)
+            if(is(R == SeqRange) || 
+               is(ElementType!R == Position!ThisNode))
             {
                 while(!r.empty){
-                    static if(is(R == Range)){
-                        ThisNode* f = r._front;
+                    static if(is(R == SeqRange)){
+                        ThisNode* f = r.front_node;
                     }else{
-                        ThisNode* f = r.source._front;
+                        ThisNode* f = r.front.node;
+                        r.front.obliterated = true;
                     }
                     r.popFront();
                     _RemoveAll(f);
                 }
-                return Range(null,null);
+                return SeqRange(this,null,null);
             }
+              // in: old is from this index
+              // out: old is disconnected from this index and replaced by newnode
+              void _NodeReplace(ThisNode* old, ThisNode* newnode) {
+                  ThisNode* next = old.index!N.next;
+                  ThisNode* prev = old.index!N.prev;
+                  newnode.index!N.next = next;
+                  newnode.index!N.prev = prev;
+                  if(next) {
+                      next.index!N.prev = newnode;
+                  }else {
+                      assert(old is _back);
+                      _back = newnode;
+                  }
+                  if(prev) {
+                      prev.index!N.next = newnode;
+                  }else{
+                      assert(old is _front);
+                      _front = newnode;
+                  }
+  
+                  old.index!N.prev = null;
+                  old.index!N.next = null;
+              }
+  
 
             void _Check(){
             }
@@ -1397,8 +664,8 @@ Complexity: $(BIGOH n $(SUB r) * d(n)), $(BR) $(BIGOH n $(SUB r)) for this index
                 return r;
             }
 
-            private Range fromNode(ThisNode* n){
-                return Range(this, n, this.index!N._back);
+            private SeqRange fromNode(ThisNode* n){
+                return SeqRange(this, n, this.index!N._back);
             }
         }
 
@@ -1414,8 +681,8 @@ template RandomAccess() {
         alias TypeTuple!(N,ThisContainer) IndexTuple;
 
         // node implementation 
-        // all the overhead is in the index
         mixin template NodeMixin(){
+            size_t _index;
         }
 
         /// index implementation 
@@ -1431,69 +698,103 @@ template RandomAccess() {
 
             /// Defines the index' primary range, which embodies a
             /// random access range 
-            struct Range{
-                ThisContainer c;
+            struct RARangeT(bool is_const) {
+                static if(is_const) {
+                    alias const(ThisNode) Node;
+                    alias const(ThisContainer) Container;
+                }else {
+                    alias ThisContainer Container;
+                    alias ThisNode Node;
+                }
+                Container c;
                 size_t s, e;
 
-                @property ThisNode* node(){
-                    return c.index!N.ra[s];
+                this(Container _c, size_t _s, size_t _e) {
+                    c = _c;
+                    s = _s;
+                    e = _e;
                 }
 
-                @property ValueView front(){ 
+                private @property Node* front_node(){
                     assert(s < e && e <= c.index!N.length);
-                    return c.index!N.ra[s].value; 
+                    return c.index!N.ra[s];
+                }
+                private @property Node* back_node() {
+                    assert(s < e && e <= c.index!N.length);
+                    return c.index!N.ra[e-1];
+                }
+
+                @property front(){ 
+                    assert(s < e && e <= c.index!N.length);
+                    return front_node.value;
                 }
 
                 void popFront(){ s++; }
 
-/**
-Pops front and removes it from the container.
-Does not invalidate this range.
-Preconditions: !empty
-Complexity: $(BIGOH d(n)), $(BR) $(BIGOH n) for this index
-*/
-                void removeFront(){
-                    ThisNode* node = c.index!N.ra[s];
-                    c._RemoveAll(node);
-                    // c will shift everything down
-                    e--;
-                }
-
                 @property bool empty()const{ return s >= e; }
                 @property size_t length()const { return s <= e ? e-s : 0; }
 
-                @property ValueView back(){ 
-                    assert(s < e && e <= c.index!N.length);
-                    return c.index!N.ra[e-1].value;
+                @property back(){ 
+                    return back_node.value;
                 }
 
                 void popBack(){ e--; }
 
-/**
-Pops front and removes it from the container.
-Does not invalidate this range.
-Preconditions: !empty
-Complexity: $(BIGOH d(n)), $(BR) $(BIGOH n) for this index
-*/
-                void removeBack(){ 
-                    ThisNode* node = c.index!N.ra[e-1];
-                    c._RemoveAll(node);
-                    // c will shift everything down
-                    e--;
+                @property save(){ return this; }
+
+                auto opIndex(size_t i){ return nth_node(i).value; }
+
+                private auto nth_node(size_t i) { return c.index!N.ra[i]; }
+
+                auto opSlice(size_t a, size_t b) {
+                    assert(a <= b && b < length);
+                    return RARangeT(c, s+a, s+b);
                 }
 
-                Range save(){ return this; }
-
-                ValueView opIndex(size_t i){ return c.index!N.ra[i].value; }
+                static if(!is_const) {
+                    private @property front_node(ThisNode* n) {
+                        assert(s < e && e <= c.index!N.length);
+                        c.index!N.ra[s] = n;
+                    }
+                }
             }
+
+
+            alias RARangeT!true ConstRARange;
+            alias RARangeT!false RARange;
+
+            /*
+    static assert(is(typeof(
+    {
+        RARange r = void;       // can define a range object
+        if (r.empty) {}   // can test for empty
+        r.popFront();     // can invoke popFront()
+        auto h = r.front; // can get the front of the range
+    })));
+
+            static assert(isInputRange!RARange);
+            static assert(isForwardRange!RARange);
+            static assert(isBidirectionalRange!RARange);
+            static assert(isRandomAccessRange!RARange);
+            */
+
+            template IsMyRange(T) {
+                enum bool IsMyRange = 
+                    is(T == RARange) || 
+                    is(T == ConstRARange);
+            }
+
 
 /**
 Fetch a range that spans all the elements in the container.
 
 Complexity: $(BIGOH 1)
 */
-            Range opSlice (){
-                return Range(this, 0, node_count);
+            RARange opSlice (){
+                return RARange(this, 0, node_count);
+            }
+            ConstRARange opSlice () const{
+                return ConstRARange(this, 0, node_count);
             }
 
 /**
@@ -1503,9 +804,13 @@ Preconditions: a <= b && b <= length
 
 Complexity: $(BIGOH 1)
 */
-            Range opSlice(size_t a, size_t b){
+            RARange opSlice(size_t a, size_t b){
                 enforce(a <= b && b <= length);
-                return Range(this, a, b);
+                return RARange(this, a, b);
+            }
+            ConstRARange opSlice(size_t a, size_t b) const{
+                enforce(a <= b && b <= length);
+                return ConstRARange(this, a, b);
             }
 
 /**
@@ -1522,7 +827,7 @@ Property returning $(D true) if and only if the container has no elements.
 
 Complexity: $(BIGOH 1)
 */
-            @property bool empty() {
+            @property bool empty() const{
                 return node_count == 0;
             }
 
@@ -1530,7 +835,7 @@ Complexity: $(BIGOH 1)
 Returns the _capacity of the index, which is the length of the
 underlying store 
 */
-            @property size_t capacity(){
+            @property size_t capacity() const{
                 return ra.length;
             }
 
@@ -1555,7 +860,7 @@ otherwise $(BIGOH 1).
 /**
 Complexity: $(BIGOH 1)
 */
-            @property ValueView front(){
+            @property front() inout{
                 return ra[0].value;
             }
 
@@ -1569,7 +874,7 @@ Complexity: $(BIGOH r(n)); $(BR) $(BIGOH 1) for this index
 /**
 Complexity: $(BIGOH 1)
 */
-            @property ValueView back(){
+            @property back() inout{
                 return ra[node_count-1].value;
             }
 
@@ -1593,7 +898,7 @@ Complexity: $(BIGOH r(n)); $(BR) $(BIGOH 1) for this index
 Preconditions: i < length
 Complexity: $(BIGOH 1)
 */
-            ValueView opIndex(size_t i){
+            auto opIndex(size_t i) inout{
                 enforce(i < length);
                 return ra[i].value;
             }
@@ -1617,6 +922,7 @@ Complexity: $(BIGOH 1)
             void swapAt( size_t i, size_t j){
                 enforce(i < length && j < length);
                 swap(ra[i], ra[j]);
+                swap(ra[i].index!N._index, ra[j].index!N._index);
             }
 
 /**
@@ -1633,13 +939,12 @@ Complexity: $(BIGOH d(n)); $(BR) $(BIGOH 1) for this index
             alias removeBack removeAny;
 
             void _Remove(ThisNode* n){
-                foreach(i, item; ra[0 .. node_count]){
-                    if(item is n){
-                        copy(ra[i+1 .. node_count], ra[i .. node_count-1]);
-                        ra[node_count-1] = null;
-                        return;
-                    }
-                }
+                size_t i = n.index!N._index;
+                copy(ra[i+1 .. node_count], ra[i .. node_count-1]);
+                foreach(k,r; ra[i .. node_count-1]) 
+                    r.index!N._index = i+k;
+                ra[node_count-1] = null;
+                return;
             }
 
 /**
@@ -1684,6 +989,7 @@ for this index
                     reserve(max(ra.length * 2 + 1, node_count+1));
                 }
                 ra[node_count] = node;
+                ra[node_count].index!N._index = node_count;
             }
 
 /**
@@ -1703,54 +1009,97 @@ Complexity: $(BIGOH m(n)), $(BR) $(BIGOH 1) for this index
 */
 
             void modify(SomeRange, Modifier)(SomeRange r, Modifier mod)
-            if(is(SomeRange == Range) || 
-                    is(SomeRange == typeof(retro(Range.init)))) {
-                static if(is(SomeRange == Range)){
-                    ThisNode* node = r.node;
-                }else{
-                    ThisNode* node = ra[r.source.e-1];
+            if(is(SomeRange == RARange) || 
+               is(ElementType!SomeRange == Position!(ThisNode))) {
+                while(!r.empty) {
+                    static if(is(SomeRange == RARange)){
+                        ThisNode* node = r.front_node;
+                    }else{
+                        ThisNode* node = r.front.node;
+                    }
+                    _Modify(node, mod);
+                    r.popFront();
                 }
-                _Modify(node, mod);
             }
 /**
 Replaces r.front with value
 Returns: whether replacement succeeded
 Complexity: ??
 */
-            bool replace(SomeRange)(SomeRange r, ValueView value)
-            if(is(SomeRange == Range) || 
-                    is(SomeRange == typeof(retro(Range.init)))){
-                static if(is(SomeRange == Range)){
-                    ThisNode* node = r.node;
-                }else{
-                    ThisNode* node = ra[r.source.e-1];
-                }
-                return _Replace(node, cast(Value) value);
+            bool replace(Position!ThisNode r, ValueView value) {
+                return _Replace(r.node, cast(Value) value);
             }
 
+            static bool _RemovePred(Position!ThisNode a, Position!ThisNode b) {
+                return a.node.index!N._index < b.node.index!N._index;
+            }
+            static size_t _RemoveUn(Position!ThisNode a) {
+                return a.node.index!N._index;
+            }
+            static size_t _RemoveUn2(ThisNode* a) {
+                return a.index!N._index;
+            }
 /**
 removes elements of r from this container.
 Complexity: $(BIGOH n $(SUB r) * d(n)), $(BR) $(BIGOH n)
 for this index
 */
-            Range linearRemove(Range r){
-                size_t _length = node_count;
-                size_t s = r.s;
-                size_t e = r.e;
-                size_t newlen = _length - (e-s);
-                while(!r.empty){
-                    ThisNode* node = r.node;
-                    _RemoveAllBut!N(node);
-                    dealloc(node);
-                    r.popFront();
+            RARange remove(Range)(Range r)
+            if(is(Range == RARange) ||
+               is(ElementType!Range == Position!ThisNode)) {
+                static if(is(Range == RARange)) {
+                    // definitely contiguous
+                    size_t _length = node_count;
+                    size_t s = r.front_node.index!N._index;
+                    size_t e = r.back_node.index!N._index+1;
+                    size_t newlen = _length - (e-s);
+                    while(!r.empty){
+                        ThisNode* node = r.front_node;
+                        _RemoveAllBut!N(node);
+                        dealloc(node);
+                        r.popFront();
+                    }
+                    copy(ra[e .. _length], ra[s .. newlen]);
+                    foreach(k, rx; ra[s .. newlen]) {
+                        rx.index!N._index = s+k;
+                    }
+                    fill(ra[newlen .. _length], cast(ThisNode*) null);
+                    _length -= e-s;
+                }else {
+                    // maybe not contiguous
+                    // need to be efficient with moving chunks
+                    auto arr = allocatedArray!Allocator(r);
+                    sort!_RemovePred(arr);
+                    if(arr.length == 1) _RemoveAll(arr[0].node);
+                    else{
+                        auto ixs = map!_RemoveUn(arr);
+                        auto ab = zip(ixs, chain(drop(ixs, 1), [node_count]));
+                        size_t p = ixs.front;
+                        foreach(a,b; ab) {
+                            auto pstart = p;
+                            p += b-a-1;
+                            _RemoveAllBut!N(ra[a]);
+                            dealloc(ra[a]);
+                            copy(ra[a+1 .. b], ra[pstart .. p]);
+                            foreach(k, n; arr[pstart .. p]) 
+                                n.node.index!N._index = pstart+k;
+                        }
+                        fill(ra[p .. $], cast(ThisNode*) null);
+                    }
+                    foreach(p; arr) p.obliterated = true;
                 }
-                copy(ra[e .. _length], ra[s .. newlen]);
-                fill(ra[newlen .. _length], cast(ThisNode*) null);
-                _length -= e-s;
-                return Range(this, s, _length);
+                return RARange(this, 0, 0);
+            }
+
+            void _NodeReplace(ThisNode* old, ThisNode* newnode) {
+                move(newnode, ra[old.index!N._index]);
+                newnode.index!N._index = old.index!N._index;
             }
 
             void _Check(){
+                foreach(i, n; ra[0 .. node_count]) {
+                    assert(n.index!N._index == i);
+                }
             }
 
             string toString0(){
@@ -1764,16 +1113,9 @@ for this index
                 return r;
             }
 
-            private Range fromNode(ThisNode* n){
-                // Oh NO! linear search!
-                size_t ix = -1;
-                foreach(i,_n; this.index!N.ra){
-                    if(_n is n){
-                        ix = i;
-                        break;
-                    }
-                }
-                return Range(this, ix, this.node_count);
+            private RARange fromNode(ThisNode* n){
+                size_t ix = n.index!N._index;
+                return RARange(this, ix, this.node_count);
             }
         }
     }
@@ -1830,7 +1172,7 @@ version(PtrHackery){
     /**
      * Get the left child
      */
-    @property Node left()
+    @property inout(typeof(this))* left() inout
     {
         return _left;
     }
@@ -1838,7 +1180,7 @@ version(PtrHackery){
     /**
      * Get the right child
      */
-    @property Node right()
+    @property inout(typeof(this))* right() inout
     {
         return _right;
     }
@@ -2275,9 +1617,9 @@ version(PtrHackery){
     /**
      * Return the leftmost descendant of this node.
      */
-    @property Node leftmost()
+    @property leftmost() inout
     {
-        Node result = &this;
+        typeof(this)* result = &this;
         while(result.index!N._left !is null)
             result = result.index!N._left;
         return result;
@@ -2286,9 +1628,9 @@ version(PtrHackery){
     /**
      * Return the rightmost descendant of this node
      */
-    @property Node rightmost()
+    @property rightmost() inout
     {
-        Node result = &this;
+        auto result = &this;
         while(result.index!N._right !is null)
             result = result.index!N._right;
         return result;
@@ -2308,12 +1650,12 @@ version(PtrHackery){
      * You should never call this on the marker node, as it is assumed that
      * there is a valid next node.
      */
-    @property Node next()
+    @property inout(typeof(this))* next() inout
     in{
         debug assert( &this !is this.index!N.parentmost.index!N.rightmost, 
             "calling prev on _end.rightmost");
     }body{
-        Node n = &this;
+        auto n = &this;
         if(n.index!N.right is null)
         {
             while(!n.index!N.isLeftNode)
@@ -2330,17 +1672,18 @@ version(PtrHackery){
      * You should never call this on the leftmost node of the tree as it is
      * assumed that there is a valid previous node.
      */
-    @property Node prev()
+    @property inout(typeof(this))* prev() inout
     in{
         debug assert( &this !is this.index!N.parentmost.index!N.leftmost, 
             "calling prev on _end.leftmost");
     }body{
-        Node n = &this;
+        auto n = &this;
         if(n.index!N.left is null)
         {
             while(n.index!N.isLeftNode)
                 n = n.index!N._parent;
-            return n.index!N._parent;
+            n = n.index!N._parent;
+            return n;
         }
         else
             return n.index!N.left.index!N.rightmost;
@@ -2357,6 +1700,97 @@ mixin template OrderedIndex(size_t N, bool allowDuplicates, alias KeyFromValue, 
     alias binaryFun!Compare _less;
     alias unaryFun!KeyFromValue key;
     alias typeof(key(Value.init)) KeyType;
+
+    /**
+     * The range type for this index, which embodies a bidirectional range
+     */
+    struct OrderedRangeT(bool is_const)
+    {
+        static if(is_const) {
+            alias const(ThisNode) Node;
+            alias const(ThisContainer) Container;
+        }else {
+            alias ThisContainer Container;
+            alias ThisNode Node;
+        }
+        Container c;   
+        private Node* _begin;
+        private Node* _end;
+
+        this(Container _c, Node* b, Node* e) {
+            c = _c;
+            _begin = b;
+            _end = e;
+        }
+
+        /**
+         * Returns $(D true) if the range is _empty
+         */
+        @property bool empty() const
+        {
+            return _begin is _end;
+        }
+
+        @property front_node() {
+            return _begin;
+        };
+
+        @property back_node() {
+            return _end.index!N.prev;
+        }
+        /**
+         * Returns the first element in the range
+         */
+        @property front() 
+        {
+            return front_node.value;
+        }
+
+        /**
+         * Returns the last element in the range
+         */
+        @property back() 
+        {
+            return back_node.value;
+        }
+
+        /**
+         * pop the front element from the range
+         *
+         * complexity: amortized $(BIGOH 1)
+         */
+        void popFront()
+        {
+            _begin = _begin.index!N.next;
+        }
+
+        /**
+         * pop the back element from the range
+         *
+         * complexity: amortized $(BIGOH 1)
+         */
+        void popBack()
+        {
+            _end = _end.index!N.prev;
+        }
+
+        /**
+         * Trivial _save implementation, needed for $(D isForwardRange).
+         */
+        @property save()
+        {
+            return this;
+        }
+    }
+
+    alias OrderedRangeT!true ConstOrderedRange;
+    alias OrderedRangeT!false OrderedRange;
+
+    template IsMyRange(T) {
+        enum bool IsMyRange = 
+            is(T == OrderedRange) || 
+            is(T == ConstOrderedRange);
+    }
 
     auto _add(Node n)
     {
@@ -2453,103 +1887,19 @@ mixin template OrderedIndex(size_t N, bool allowDuplicates, alias KeyFromValue, 
 
     }
 
-    /**
-     * The range type for this index, which embodies a bidirectional range
-     */
-    struct Range
-    {
-        ThisContainer c;   
-        private Node _begin;
-        alias _begin node;
-        private Node _end;
-
-        /**
-         * Returns $(D true) if the range is _empty
-         */
-        @property bool empty() const
-        {
-            return _begin is _end;
-        }
-
-        /**
-         * Returns the first element in the range
-         */
-        @property Elem front()
-        {
-            return _begin.value;
-        }
-
-        /**
-         * Returns the last element in the range
-         */
-        @property Elem back()
-        {
-            return _end.index!N.prev.value;
-        }
-
-        /**
-         * pop the front element from the range
-         *
-         * complexity: amortized $(BIGOH 1)
-         */
-        void popFront()
-        {
-            _begin = _begin.index!N.next;
-        }
-
-        /**
-         * pop the back element from the range
-         *
-         * complexity: amortized $(BIGOH 1)
-         */
-        void popBack()
-        {
-            _end = _end.index!N.prev;
-        }
-/**
-Pops front and removes it from the container.
-Does not invalidate this range.
-Preconditions: !empty
-Complexity: $(BIGOH d(n)), $(BR) $(BIGOH log(n)) for this index
-*/
-        void removeFront(){
-            Node node = _begin;
-            popFront();
-            c._RemoveAll(node);
-        }
-/**
-Pops back and removes it from the container.
-Does not invalidate this range.
-Preconditions: !empty
-Complexity: $(BIGOH d(n)), $(BR) $(BIGOH log(n)) for this index
-*/
-        void removeBack(){
-            Node node = _end.index!N.prev;
-            popBack();
-            c._RemoveAllBut!N(node);
-            _end = c.index!N._Remove(node);
-        }
-
-        /**
-         * Trivial _save implementation, needed for $(D isForwardRange).
-         */
-        @property Range save()
-        {
-            return this;
-        }
-    }
 
     // if k exists in this index, returns par such that eq(key(par.value),k), 
     // and returns true
     // if k !exists in this index, returns par such that k value belongs either
     // as par.left or par.right. remember to setColor! returns false.
-    private bool _find2(KeyType k, out Node par)
+    private bool _find2(KeyType k, out inout(ThisNode)* par) inout
     {
-        Node cur = _end.index!N.left;
+        auto cur = _end.index!N.left;
         par = null;
         while(cur)
         {
-            auto ck = key(cur.value);
+            // BAD!!! TODO: figure out unaryFun & inout
+            auto ck = key(cast() cur.value);
             par = cur;
             if(_less(ck, k)){
                 cur = cur.index!N.right;
@@ -2585,7 +1935,7 @@ Complexity: $(BIGOH d(n)), $(BR) $(BIGOH log(n)) for this index
      * one element exists.
      * Complexity: $(BIGOH 1)
      */
-    @property bool empty()
+    @property bool empty() const
     {
         return node_count == 0;
     }
@@ -2595,7 +1945,7 @@ Returns the number of elements in the container.
 
 Complexity: $(BIGOH 1).
 +/
-        @property size_t length()const
+        @property size_t length() const
         {
             return node_count;
         }
@@ -2605,9 +1955,13 @@ Complexity: $(BIGOH 1).
      *
      * Complexity: $(BIGOH log(n))
      */
-    Range opSlice()
+    OrderedRange opSlice()
     {
-        return Range(this,_end.index!N.leftmost, _end);
+        return OrderedRange(this,_end.index!N.leftmost, _end);
+    }
+
+    ConstOrderedRange opSlice() const{
+        return ConstOrderedRange(this,_end.index!N.leftmost, _end);
     }
 
     /**
@@ -2615,7 +1969,7 @@ Complexity: $(BIGOH 1).
      *
      * Complexity: $(BIGOH log(n))
      */
-    @property Elem front()
+    @property front() inout
     {
         return _end.index!N.leftmost.value;
     }
@@ -2625,7 +1979,7 @@ Complexity: $(BIGOH 1).
      *
      * Complexity: $(BIGOH log(n))
      */
-    @property Elem back()
+    @property back() inout
     {
         return _end.index!N.prev.value;
     }
@@ -2636,7 +1990,8 @@ Complexity: $(BIGOH 1).
 
         Complexity: $(BIGOH log(n))
         +/
-        bool opBinaryRight(string op)(Elem e) if (op == "in")
+        bool opBinaryRight(string op)(Elem e) const
+        if (op == "in") 
         {
             Node p;
             return _find2(key(e),p);
@@ -2676,7 +2031,7 @@ Available for Unique variant.
 Complexity:
 $(BIGOH log(n))
 */
-        ValueView opIndex(KeyType k){
+        ValueView opIndex(KeyType k) inout{
             Node n; 
             enforce(_find2(k,n));
             return n.value;
@@ -2693,18 +2048,25 @@ Complexity: $(BIGOH m(n)), $(BR) $(BIGOH log(n)) for this index
 */
 
     void modify(SomeRange, Modifier)(SomeRange r, Modifier mod)
-    if(is(SomeRange == Range)) {
-        Node node = r.node;
-        _Modify(node, mod);
+    if(is(SomeRange == OrderedRange) ||
+       is(ElementType!SomeRange == Position!ThisNode)) {
+        while(!r.empty) {
+            static if(is(SomeRange == OrderedRange)) {
+                Node node = r.front_node;
+            }else {
+                Node node = r.front.node;
+            }
+            r.popFront();
+            _Modify(node, mod);
+        }
     }
 /**
 Replaces r.front with value
 Returns: whether replacement succeeded
 Complexity: ??
 */
-    bool replace(Range r, ValueView value) {
-        ThisNode* node = r.node;
-        return _Replace(node, cast(Value) value);
+    bool replace(Position!ThisNode r, ValueView value) {
+        return _Replace(r.node, cast(Value) value);
     }
 
     KeyType _NodePosition(ThisNode* node){
@@ -2721,7 +2083,7 @@ Complexity: ??
         if(!_less(newPosition, oldPosition) && 
            !_less(oldPosition, newPosition)) return true;
         Node next = _end.index!N.rightmost is node ? null : node.index!N.next;
-        Node prev = _end.index!N.leftmost  is node ? null : node.index!N.prev;
+        auto prev = _end.index!N.leftmost is node ? null : node.index!N.prev;
         
         // case 2: key has changed, but relative position hasn't
         bool outOfBounds = (next && next != _end &&
@@ -2918,45 +2280,23 @@ Complexity: ??
         Complexity:$(BIGOH n $(SUB r) * d(n)); $(BR) $(BIGOH n $(SUB r) * 
                 log(n)) for this index
     +/
-    Range remove(Range r)
+    OrderedRange remove(R)(R r)
+    if(is(R == OrderedRange) || 
+       is(ElementType!R == Position!ThisNode))
     out(r){
         version(RBDoChecks) _Check();
     }body{
-        auto b = r._begin;
-        auto e = r._end;
-        while(b !is e)
-        {
-            b = _RemoveAll!N(b);
+        while(!r.empty) {
+            static if(is(R == OrderedRange)) {
+                auto node = r.front_node;
+            }else{
+                auto node = r.front.node;
+                r.front.obliterated = true;
+            }
+            r.popFront(); 
+            _RemoveAll!N(node);
         }
-        return Range(this, e, _end);
-    }
-
-    /++
-        Removes the given $(D Take!Range) from the container
-
-        Returns: A range containing all of the elements that were after the
-        given range.
-
-        Complexity: $(BIGOH n $(SUB r) * d(n)); $(BR) $(BIGOH n $(SUB r) * 
-                log(n)) for this index 
-    +/
-    Range remove(Take!Range r)
-    out(r){
-        version(RBDoChecks) _Check();
-    }body{
-        auto b = r.source._begin;
-
-        while(!r.empty)
-            r.popFront(); // move take range to its last element
-
-        auto e = r.source._begin;
-
-        while(b != e)
-        {
-            b = _RemoveAll!N(b);
-        }
-
-        return Range(this, e, _end);
+        return OrderedRange(this, _end, _end);
     }
 
     /++
@@ -2986,10 +2326,13 @@ Complexity: ??
         version(RBDoChecks) _Check();
     }body{
         // stack allocation - is ok
-        KeyType[Keys.length] toRemove;
-        foreach(i,k; keys)
-            toRemove[i] = k;
-        return removeKey(toRemove[]);
+        Unqual!KeyType[Keys.length] toRemove;
+        foreach(i,k; keys) {
+            Unqual!KeyType k2 = k;
+            move(k2, toRemove[i]);
+        }
+            
+        return removeKey(cast(KeyType[])(toRemove[]));
     }
 
     size_t removeKey(Key)(Key[] keys)
@@ -3036,15 +2379,35 @@ Complexity: ??
     }
 
     // find the first node where the value is > k
-    private Node _firstGreater(U)(U k)
+    private inout(ThisNode)* _firstGreater(U)(U k) inout
     if(isImplicitlyConvertible!(U, KeyType))
     {
         // can't use _find, because we cannot return null
-        auto cur = _end.index!N.left;
-        auto result = _end;
+        typeof(return) cur = _end.index!N.left;
+        typeof(return) result = _end;
         while(cur)
         {
-            if(_less(k, key(cur.value)))
+            // TODO: figure out unaryFun & inout
+            if(_less(k, key(cast() cur.value)))
+            {
+                result = cur;
+                cur = cur.index!N.left;
+            }
+            else
+                cur = cur.index!N.right;
+        }
+        return result;
+    }
+    private inout(ThisNode)* 
+        _firstGreater(CompatibleLess, CompatibleKey)
+        (CompatibleKey k) inout {
+        // can't use _find, because we cannot return null
+        typeof(return) cur = _end.index!N.left;
+        typeof(return) result = _end;
+        while(cur)
+        {
+            // TODO: figure out unaryFun & inout
+            if(CompatibleLess.ck_less(k, key(cast() cur.value)))
             {
                 result = cur;
                 cur = cur.index!N.left;
@@ -3056,15 +2419,38 @@ Complexity: ??
     }
 
     // find the first node where the value is >= k
-    private Node _firstGreaterEqual(U)(U k)
+    private inout(ThisNode)* _firstGreaterEqual(U)(U k) inout
     if(isImplicitlyConvertible!(U, KeyType))
     {
         // can't use _find, because we cannot return null.
-        auto cur = _end.index!N.left;
-        auto result = _end;
+        typeof(return) cur = _end.index!N.left;
+        typeof(return) result = _end;
         while(cur)
         {
-            if(_less(key(cur.value), k))
+            // TODO: figure out unaryFun & inout
+            if(_less(key(cast() cur.value), k))
+                cur = cur.index!N.right;
+            else
+            {
+                result = cur;
+                cur = cur.index!N.left;
+            }
+
+        }
+        return result;
+    }
+
+    // find the first node where the value is >= k
+    private inout(ThisNode)* 
+        _firstGreaterEqual(CompatibleLess, CompatibleKey)
+        (CompatibleKey k) inout {
+        // can't use _find, because we cannot return null.
+        typeof(return) cur = _end.index!N.left;
+        typeof(return) result = _end;
+        while(cur)
+        {
+            // TODO: figure out unaryFun & inout
+            if(CompatibleLess.kc_less(key(cast() cur.value), k))
                 cur = cur.index!N.right;
             else
             {
@@ -3077,27 +2463,56 @@ Complexity: ??
     }
 
     /**
-     * Get a range from the container with all elements that are < k according
-     * to the less comparator
-     *
-     * Complexity: $(BIGOH log(n))
-     */
-    Range upperBound(U)(U k)
-    if(isImplicitlyConvertible!(U, KeyType))
-    {
-        return Range(this,_firstGreater(k), _end);
-    }
-
-    /**
      * Get a range from the container with all elements that are > k according
      * to the less comparator
      *
      * Complexity: $(BIGOH log(n))
      */
-    Range lowerBound(U)(U k)
+    auto upperBound(U)(U k) 
     if(isImplicitlyConvertible!(U, KeyType))
     {
-        return Range(this,_end.index!N.leftmost, _firstGreaterEqual(k));
+        return OrderedRange(this,_firstGreater(k), _end);
+    }
+    auto upperBound(U)(U k) const 
+    if(isImplicitlyConvertible!(U, KeyType))
+    {
+        return ConstOrderedRange(this,_firstGreater(k), _end);
+    }
+    auto upperBound(CompatibleLess, CompatibleKey)(CompatibleKey k) 
+    {
+        return OrderedRange(this,_firstGreater!CompatibleLess(k), _end);
+    }
+    auto upperBound(CompatibleLess, CompatibleKey)(CompatibleKey k) const 
+    {
+        return ConstOrderedRange(this,_firstGreater!CompatibleLess(k), _end);
+    }
+
+    /**
+     * Get a range from the container with all elements that are < k according
+     * to the less comparator
+     *
+     * Complexity: $(BIGOH log(n))
+     */
+    auto lowerBound(U)(U k) 
+    if(isImplicitlyConvertible!(U, KeyType))
+    {
+        return OrderedRange(this,_end.index!N.leftmost, _firstGreaterEqual(k));
+    }
+    auto lowerBound(U)(U k) const
+    if(isImplicitlyConvertible!(U, KeyType))
+    {
+        return ConstOrderedRange(this,_end.index!N.leftmost, _firstGreaterEqual(k));
+    }
+
+    auto lowerBound(CompatibleLess, CompatibleKey)(CompatibleKey k) 
+    {
+        return OrderedRange(this,_end.index!N.leftmost, 
+                _firstGreaterEqual!CompatibleLess(k));
+    }
+    auto lowerBound(CompatibleLess, CompatibleKey)(CompatibleKey k) const 
+    {
+        return ConstOrderedRange(this,_end.index!N.leftmost, 
+                _firstGreaterEqual!CompatibleLess(k));
     }
 
     /**
@@ -3106,23 +2521,62 @@ Complexity: ??
      *
      * Complexity: $(BIGOH log(n))
      */
-    Range equalRange(U)(U k)
+    // TODO: compact these back into one
+    auto equalRange(U)(U k)
     if(isImplicitlyConvertible!(U, KeyType))
     {
         auto beg = _firstGreaterEqual(k);
         if(beg is _end || _less(k, key(beg.value)))
             // no values are equal
-            return Range(this,beg, beg);
+            return OrderedRange(this,beg, beg);
         static if(allowDuplicates)
         {
-            return Range(this,beg, _firstGreater(k));
+            return OrderedRange(this,beg, _firstGreater(k));
         }
         else
         {
             // no sense in doing a full search, no duplicates are allowed,
             // so we just get the next node.
-            return Range(this,beg, beg.index!N.next);
+            return OrderedRange(this,beg, beg.index!N.next);
         }
+    }
+    auto equalRange(U)(U k) const
+    if(isImplicitlyConvertible!(U, KeyType))
+    {
+        auto beg = _firstGreaterEqual(k);
+        if(beg is _end || _less(k, key(beg.value)))
+            // no values are equal
+            return ConstOrderedRange(this,beg, beg);
+        static if(allowDuplicates)
+        {
+            return ConstOrderedRange(this,beg, _firstGreater(k));
+        }
+        else
+        {
+            // no sense in doing a full search, no duplicates are allowed,
+            // so we just get the next node.
+            return ConstOrderedRange(this,beg, beg.index!N.next);
+        }
+    }
+
+    // @@@BUG@@@ dmd issue 8440 prevents us frem naming this function equalRange
+    OrderedRange cEqualRange(CompatibleLess, CompatibleKey)(CompatibleKey k)
+    if(IsCompatibleLess!(CompatibleLess, KeyType, CompatibleKey))
+    {
+        auto beg = _firstGreaterEqual!CompatibleLess(k);
+        if(beg is _end || CompatibleLess.ck_less(k, key(beg.value)))
+            // no values are equal
+            return OrderedRange(this,beg, beg);
+        return OrderedRange(this,beg, _firstGreater!CompatibleLess(k));
+    }
+    ConstOrderedRange cEqualRange(CompatibleLess, CompatibleKey)(CompatibleKey k) const
+    if(IsCompatibleLess!(CompatibleLess, KeyType, CompatibleKey))
+    {
+        auto beg = _firstGreaterEqual!CompatibleLess(k);
+        if(beg is _end || CompatibleLess.ck_less(k, key(beg.value)))
+            // no values are equal
+            return ConstOrderedRange(this,beg, beg);
+        return ConstOrderedRange(this,beg, _firstGreater!CompatibleLess(k));
     }
 
 /++
@@ -3130,21 +2584,52 @@ Get a range of values bounded below by lower and above by upper, with
 inclusiveness defined by boundaries.
 Complexity: $(BIGOH log(n))
 +/
-    Range bounds(string boundaries = "[]", U)(U lower, U upper)
+    auto bounds(string boundaries = "[]", U)(U lower, U upper)
     if(isImplicitlyConvertible!(U, KeyType))
     in{
-        static if(boundaries == "[]") assert(!_less(upper,lower),format("nonsensical bounds %s%s,%s%s",boundaries[0], lower, upper, boundaries[1]));
-        else assert(_less(lower,upper), format("nonsensical bounds %s%s,%s%s",boundaries[0], lower, upper, boundaries[1]));
+        static if(boundaries == "[]") assert(!_less(upper,lower),
+                format("nonsensical bounds %s%s,%s%s",
+                    boundaries[0], lower, upper, boundaries[1]));
+        else assert(_less(lower,upper), 
+                format("nonsensical bounds %s%s,%s%s",
+                    boundaries[0], lower, upper, boundaries[1]));
     }body{
-        static if(boundaries == "[]"){
-            return Range(this,_firstGreaterEqual(lower), _firstGreater(upper));
-        }else static if(boundaries == "[)"){
-            return Range(this, _firstGreaterEqual(lower), _firstGreaterEqual(upper));
-        }else static if(boundaries == "(]"){
-            return Range(this, _firstGreater(lower), _firstGreater(upper));
-        }else static if(boundaries == "()"){
-            return Range(this, _firstGreater(lower), _firstGreaterEqual(upper));
-        }else static assert(false, "waht is this " ~ boundaries ~ " bounds?!");
+        static if(boundaries[0] == '[') {
+            auto n_lower = _firstGreaterEqual(lower);
+        }else static if(boundaries[0] == '('){
+            auto n_lower = _firstGreater(lower);
+        }else static assert(false);
+        static if(boundaries[1] == ']') {
+            auto n_upper = _firstGreater(upper);
+        }else static if(boundaries[1] == ')'){
+            auto n_upper = _firstGreaterEqual(upper);
+        }else static assert(false);
+        return OrderedRange(this, n_lower, n_upper);
+    }
+
+    auto cbounds(CompatibleLess,string boundaries = "[]", CompatibleKey)
+        (CompatibleKey lower, CompatibleKey upper)
+    if(IsCompatibleLess!(CompatibleLess, KeyType, CompatibleKey))
+    in{
+        static if(boundaries == "[]") 
+            assert(!CompatibleLess.cc_less(upper,lower),
+                    format("nonsensical bounds %s%s,%s%s",
+                        boundaries[0], lower, upper, boundaries[1]));
+        else assert(CompatibleLess.cc_less(lower,upper), 
+                format("nonsensical bounds %s%s,%s%s",
+                    boundaries[0], lower, upper, boundaries[1]));
+    }body{
+        static if(boundaries[0] == '[') {
+            auto n_lower = _firstGreaterEqual!CompatibleLess(lower);
+        }else static if(boundaries[0] == '('){
+            auto n_lower = _firstGreater!CompatibleLess(lower);
+        }else static assert(false);
+        static if(boundaries[1] == ']') {
+            auto n_upper = _firstGreater!CompatibleLess(upper);
+        }else static if(boundaries[1] == ')'){
+            auto n_upper = _firstGreaterEqual!CompatibleLess(upper);
+        }else static assert(false);
+        return OrderedRange(this, n_lower, n_upper);
     }
 
         /*
@@ -3172,6 +2657,35 @@ Complexity: $(BIGOH log(n))
             if(indent is 0)
                 writeln();
         }
+        void _NodeReplace(ThisNode* old, ThisNode* newnode) {
+            ThisNode* lch = old.index!N.left;
+            ThisNode* rch = old.index!N.right;
+            ThisNode* p = old.index!N.parent;
+
+            newnode.index!N.left = lch;
+            if(lch) {
+                lch.index!N._parent = newnode;
+            }
+            newnode.index!N.right = rch;
+            if(rch) {
+                rch.index!N._parent = newnode;
+            }
+            newnode.index!N._parent = p;
+            if(p) {
+                if(p.index!N.left is old) {
+                    p.index!N.left = newnode;
+                }else if(p.index!N.right is old) {
+                    p.index!N.right = newnode;
+                }
+            }else if(old is _end) {
+                _end = newnode;
+            }
+
+            newnode.index!N.left = null;
+            newnode.index!N.right = null;
+            newnode.index!N._parent = null;
+        }
+
 
         /*
          * Check the tree for validity.  This is called after every add or remove.
@@ -3244,8 +2758,8 @@ Complexity: $(BIGOH log(n))
             return r;
         }
         
-        private Range fromNode(ThisNode* n){
-            return Range(this,n, this.index!N._end);
+        private OrderedRange fromNode(ThisNode* n){
+            return OrderedRange(this,n, this.index!N._end);
         }
 }
 
@@ -3301,6 +2815,73 @@ template Heap(alias KeyFromValue = "a", alias Compare = "a<b") {
             alias binaryFun!Compare less;
             alias typeof(key((Value).init)) KeyType;
 
+            /// The primary range of the index, which embodies a bidirectional
+            /// range. 
+            ///
+            /// Ends up performing a breadth first traversal (I think..)
+            ///
+            /// removeFront and removeBack are not possible.
+            struct HeapRangeT(bool is_const) {
+                static if(is_const) {
+                    alias const(ThisNode) Node;
+                    alias const(ThisContainer) Container;
+                }else {
+                    alias ThisContainer Container;
+                    alias ThisNode Node;
+                }
+                Container c;
+                size_t s,e;
+
+                this(Container _c, size_t _s, size_t _e) {
+                    c = _c;
+                    s = _s;
+                    e = _e;
+                }
+
+                @property Node* front_node() {
+                    return c.index!N._heap[s];
+                }
+
+                @property front(){ 
+                    return front_node.value;
+                }
+
+                void popFront(){ 
+                    s++;
+                }
+
+                @property back_node(){
+                    return c.index!N._heap[e-1]; 
+                }
+
+                @property back(){
+                    return back_node.value;
+                }
+                void popBack(){ 
+                    e--;
+                }
+
+                @property bool empty()const{ 
+                    assert(e <= c.index!N.length);
+                    return s >= c.index!N.length; 
+                }
+                @property size_t length()const{ 
+                    assert(e <= c.index!N.length);
+                    return s <= e ? e - s : 0;
+                }
+
+                @property save(){ return this; }
+            }
+
+            alias HeapRangeT!true ConstHeapRange;
+            alias HeapRangeT!false HeapRange;
+
+            template IsMyRange(T) {
+                enum bool IsMyRange = 
+                    is(T == ConstHeapRange) ||
+                    is(T == HeapRange);
+            }
+
             ThisNode*[] _heap;
 
             static size_t p(size_t n) pure{
@@ -3330,60 +2911,18 @@ template Heap(alias KeyFromValue = "a", alias Compare = "a<b") {
                 }else 
                     while(l(n) < node_count){ 
                         auto ch = l(n);
-                        auto chk = key(_heap[ch].value);
+                        auto lk = key(_heap[ch].value);
+                        if(!less(k, lk)) break;
                         if (r(n) < node_count){
                             auto rk = key(_heap[r(n)].value);
-                            if(less(chk, rk)){
-                                chk = rk;
+                            if(less(lk, rk)){
+                                if(!less(k, rk)) break;
                                 ch = r(n);
                             }
                         }
-                        if(!less(k, chk)) break;
                         swapAt(n, ch);
                         n = ch;
                     }
-            }
-
-
-            /// The primary range of the index, which embodies a bidirectional
-            /// range. 
-            ///
-            /// Ends up performing a breadth first traversal (I think..)
-            ///
-            /// removeFront and removeBack are not possible.
-            struct Range{
-                ThisContainer c;
-                size_t s,e;
-
-                @property ThisNode* node(){
-                    return c.index!N._heap[s];
-                }
-
-                @property ValueView front(){ 
-                    return c.index!N._heap[s].value; 
-                }
-
-                void popFront(){ 
-                    s++;
-                }
-
-                @property ValueView back(){
-                    return c.index!N._heap[e-1].value; 
-                }
-                void popBack(){ 
-                    e--;
-                }
-
-                @property bool empty()const{ 
-                    assert(e <= c.index!N.length);
-                    return s >= c.index!N.length; 
-                }
-                @property size_t length()const{ 
-                    assert(e <= c.index!N.length);
-                    return s <= e ? e - s : 0;
-                }
-
-                Range save(){ return this; }
             }
 
 /**
@@ -3391,8 +2930,11 @@ Fetch a range that spans all the elements in the container.
 
 Complexity: $(BIGOH 1)
 */
-            Range opSlice(){
-                return Range(this,0, node_count);
+            HeapRange opSlice() {
+                return HeapRange(this,0, node_count);
+            }
+            ConstHeapRange opSlice() const{
+                return ConstHeapRange(this,0, node_count);
             }
 
 /**
@@ -3418,14 +2960,14 @@ Complexity: $(BIGOH 1)
 Returns: the max element in this index
 Complexity: $(BIGOH 1)
 */ 
-            @property ValueView front(){
+            @property front() inout{
                 return _heap[0].value;
             }
 /**
 Returns: the back of this index
 Complexity: $(BIGOH 1)
 */ 
-            @property ValueView back(){
+            @property back() inout{
                 return _heap[node_count-1].value;
             }
 
@@ -3439,29 +2981,23 @@ Complexity: $(BIGOH 1)
                 _Clear();
             }
 
-/**
-Perform mod on r.front and performs any necessary fixups to container's 
-indeces. If the result of mod violates any index' invariant, r.front is
-removed from the container.
-Preconditions: !r.empty, $(BR)
-mod is a callable of the form void mod(ref Value) 
-Complexity: $(BIGOH m(n)), $(BR) $(BIGOH log(n)) for this index 
-*/
-
             void modify(SomeRange, Modifier)(SomeRange r, Modifier mod)
-                if(is(SomeRange == Range)) {
-                    ThisNode* node = r.node;
-                    _Modify(node, mod);
-                }
-/**
-Replaces r.front with value
-Returns: whether replacement succeeded
-Complexity: ??
-*/
-            bool replace(Range r, ValueView value)
+                if(is(SomeRange == HeapRange) ||
+                   is(ElementType!SomeRange == Position!ThisNode)) {
+                    while(!r.empty) {
+                        static if(is(SomeRange == HeapRange)) {
+                            ThisNode* node = r.front_node;
+                        }else{
+                            ThisNode* node = r.front.node;
+                        }
+                        r.popFront();
+                        _Modify(node, mod);
+                    }
+            }
+
+            bool replace(Position!ThisNode r, ValueView value)
             {
-                ThisNode* node = r.node;
-                return _Replace(node, cast(Value) value);
+                return _Replace(r.node, cast(Value) value);
             }
 
             KeyType _NodePosition(ThisNode* node){
@@ -3581,18 +3117,20 @@ Complexity: $(BIGOH d(n)); $(BR) $(BIGOH 1) for this index
                 _RemoveAll(node);
             }
 
-            Range remove(R)(R r)
-            if (is(R == Range) || is(R == Take!Range)){
+            HeapRange remove(R)(R r)
+            if (is(R == HeapRange) || 
+                is(ElementType!R == Position!ThisNode)){
                 while(!r.empty){
-                    static if(is(R == Range)){
-                        ThisNode* node = r.node;
+                    static if(is(R == HeapRange)){
+                        ThisNode* node = r.front_node;
                     }else{
-                        ThisNode* node = r.source.node;
+                        ThisNode* node = r.front.node;
+                        r.front.obliterated = true;
                     }
                     r.popFront();
                     _RemoveAll(node);
                 }
-                return Range(this,0,0);
+                return HeapRange(this,0,0);
             }
 
             bool isLe(size_t a, size_t b){
@@ -3611,6 +3149,11 @@ Complexity: $(BIGOH d(n)); $(BR) $(BIGOH 1) for this index
                     result &= (isLe(r(i), i));
                 }
                 return result;
+            }
+
+            void _NodeReplace(ThisNode* old, ThisNode* newnode) {
+                move(newnode, _heap[old.index!N._index]);
+                newnode.index!N._index = old.index!N._index;
             }
 
             void _Check(){
@@ -3649,8 +3192,8 @@ Complexity: $(BIGOH d(n)); $(BR) $(BIGOH 1) for this index
                 return r;
             }
 
-            private Range fromNode(ThisNode* n){
-                return Range(this, n.index!N._index, this.node_count);
+            private HeapRange fromNode(ThisNode* n){
+                return HeapRange(this, n.index!N._index, this.node_count);
             }
         }
     }
@@ -3687,7 +3230,7 @@ static if(size_t.sizeof == 4){
         13835058055282163729uL, 18446744073709551557uL
     ];
 }else static assert(false, 
-        Format!("waht is this weird sizeof(size_t) == %s?", size_t.sizeof));
+        Replace!("waht is this weird sizeof(size_t) == %s?", "%s",size_t.sizeof));
 
 /// a hash table index
 /// KeyFromValue(value) = key of type KeyType
@@ -3715,7 +3258,7 @@ template Hashed(bool allowDuplicates = false, alias KeyFromValue="a",
 
         alias TypeTuple!(N) NodeTuple;
         alias TypeTuple!(N,KeyFromValue, _Hash, Eq, allowDuplicates, 
-                Sequenced!().Inner!(ThisContainer, ThisNode,Value,ValueView,N,Allocator).Range, 
+                Sequenced!().Inner!(ThisContainer, ThisNode,Value,ValueView,N,Allocator).SequencedRange, 
                 ThisContainer) IndexTuple;
         // node implementation 
         // could be singly linked, but that would make aux removal more 
@@ -3730,11 +3273,69 @@ template Hashed(bool allowDuplicates = false, alias KeyFromValue="a",
 
         /// index implementation
         mixin template IndexMixin(size_t N, alias KeyFromValue, alias Hash, 
-                alias Eq, bool allowDuplicates, ListRange, ThisContainer){
+                alias Eq, bool allowDuplicates, alias SeqRange, ThisContainer){
             alias unaryFun!KeyFromValue key;
             alias typeof(key((Value).init)) KeyType;
             alias unaryFun!Hash hash;
             alias binaryFun!Eq eq;
+            alias SeqRange!false BucketSeqRange;
+            alias SeqRange!true ConstBucketSeqRange;
+
+            /// the primary range for this index, which embodies a forward 
+            /// range. iteration has time complexity O(n) 
+            struct HashedRangeT(bool is_const) {
+                static if(is_const) {
+                    alias const(ThisNode) Node;
+                    alias const(ThisContainer) Container;
+                }else {
+                    alias ThisContainer Container;
+                    alias ThisNode Node;
+                }
+                Container c;
+                Node* node;
+                alias node front_node;
+                size_t n;
+
+                this(Container _c, Node* _node, size_t _n) {
+                    c = _c;
+                    node = _node;
+                    n = _n;
+                }
+
+                @property bool empty()/*const*/{
+                    return n >= c.index!N.hashes.length;
+                }
+
+                @property front() {
+                    return node.value;
+                }
+
+                void popFront(){
+                    node = node.index!N.next;
+                    if(!node){
+                        do n++;
+                        while(n < c.index!N.hashes.length && !c.index!N.hashes[n]);
+                        if( n < c.index!N.hashes.length ){
+                            node = c.index!N.hashes[n];
+                        }
+                    }
+                }
+
+                @property save(){
+                    return this;
+                }
+            }
+
+            alias HashedRangeT!true ConstHashedRange;
+            alias HashedRangeT!false HashedRange;
+
+            template IsMyRange(T) {
+                enum bool IsMyRange = 
+                    is(T == HashedRange) || 
+                    is(T == ConstHashedRange) || 
+                    is(T == BucketSeqRange) ||
+                    is(T == ConstBucketSeqRange);
+            }
 
             ThisNode*[] hashes;
             ThisNode* _first;
@@ -3802,42 +3403,6 @@ template Hashed(bool allowDuplicates = false, alias KeyFromValue="a",
                 }
             }
 
-            /// the primary range for this index, which embodies a forward 
-            /// range. iteration has time complexity O(n) 
-            struct Range{
-                ThisContainer c;
-                ThisNode* node;
-                size_t n;
-
-                @property bool empty()/*const*/{
-                    return n >= c.index!N.hashes.length;
-                }
-
-                @property ValueView front()/*const*/{
-                    return node.value;
-                }
-
-                void popFront(){
-                    node = node.index!N.next;
-                    if(!node){
-                        do n++;
-                        while(n < c.index!N.hashes.length && !c.index!N.hashes[n]);
-                        if( n < c.index!N.hashes.length ){
-                            node = c.index!N.hashes[n];
-                        }
-                    }
-                }
-
-                void removeFront(){
-                    ThisNode* n = node;
-                    popFront();
-                    c._RemoveAll(n);
-                }
-
-                Range save(){
-                    return this;
-                }
-            }
 
 /**
 Returns the number of elements in the container.
@@ -3862,7 +3427,7 @@ Complexity: $(BIGOH 1)
 Preconditions: !empty
 Complexity: $(BIGOH 1) 
 */ 
-            @property ValueView front(){
+            @property front() inout{
                 return _first.value;
             }
     
@@ -3881,10 +3446,16 @@ Complexity: $(BIGOH 1)
 Gets a range of all elements in container.
 Complexity: $(BIGOH 1)
 */
-            Range opSlice(){
-                if(empty) return Range(this, null, hashes.length);
+            HashedRange opSlice(){
+                if(empty) return HashedRange(this, null, hashes.length);
                 auto ix = hash(key(_first.value))%hashes.length;
-                return Range(this, _first, ix);
+                return HashedRange(this, _first, ix);
+            }
+            ConstHashedRange opSlice() const{
+                if(empty) 
+                    return ConstHashedRange(this, null, hashes.length);
+                auto ix = hash(key(_first.value))%hashes.length;
+                return ConstHashedRange(this, _first, ix);
             }
 
             // returns true iff k was found.
@@ -3894,14 +3465,15 @@ Complexity: $(BIGOH 1)
             // node = null -> put value of k in hashes[ix]
             // or node is last node in hashes[ix] chain -> 
             //  put value of k in node.next 
-            bool _find(KeyType k, out ThisNode* node, out size_t index){
+            bool _find(KeyType k, out inout(ThisNode)* node, out size_t index) inout{
                 index = hash(k)%hashes.length;
                 if(!hashes[index]){
                     node = null;
                     return false;
                 }
                 node = hashes[index];
-                while(!eq(k, key(node.value))){
+                // TODO: figure out unaryFun & inout
+                while(!eq(k, key(cast()node.value))){
                     if (node.index!N.next is null){
                         return false;
                     }
@@ -3916,7 +3488,7 @@ Available for Unique variant.
 Complexity:
 $(BIGOH n) ($(BIGOH 1) on a good day)
 */
-                ValueView opIndex ( KeyType k ){
+                ValueView opIndex ( KeyType k ) const{
                     ThisNode* node;
                     size_t index;
                     enforce(_find(k, node, index));
@@ -3930,7 +3502,8 @@ Complexity:
 $(BIGOH n) ($(BIGOH 1) on a good day)
  */
             static if(!isImplicitlyConvertible!(KeyType, ValueView)){
-                bool opBinaryRight(string op)(KeyType k) if (op == "in")
+                bool opBinaryRight(string op)(KeyType k) const
+                if (op == "in")
                 {
                     ThisNode* node;
                     size_t index;
@@ -3943,7 +3516,8 @@ Reports whether value exists in this collection.
 Complexity:
 $(BIGOH n) ($(BIGOH n 1) on a good day)
  */
-            bool opBinaryRight(string op)(ValueView value) if (op == "in")
+            bool opBinaryRight(string op)(ValueView value) const
+            if (op == "in")
             {
                 ThisNode* node;
                 size_t index;
@@ -3955,42 +3529,36 @@ Reports whether value exists in this collection
 Complexity:
 $(BIGOH n) ($(BIGOH n 1) on a good day)
  */
-            bool contains(ValueView value){
+            bool contains(ValueView value) const{
                 ThisNode* node;
                 size_t index;
                 auto r =  _find(key(value), node,index);
                 return r;
             }
 
-            bool contains(KeyType k){
+            ///ditto
+            bool contains(KeyType k) const{
                 ThisNode* node;
                 size_t index;
                 return _find(k, node,index);
             }
 
-/**
-Perform mod on r.front and performs any necessary fixups to container's 
-indeces. If the result of mod violates any index' invariant, r.front is
-removed from the container.
-Preconditions: !r.empty, $(BR)
-mod is a callable either of the form void mod(ref Value) or Value mod(Value)
-Complexity: $(BIGOH m(n)), $(BR) $(BIGOH n) for this index ($(BIGOH 1) on a good day)
-*/
-
             void modify(SomeRange, Modifier)(SomeRange r, Modifier mod)
-            if(is(SomeRange == Range) || is(SomeRange == ListRange)) {
-                ThisNode* node = r.node;
-                _Modify(node, mod);
+            if(is(SomeRange == HashedRange) ||
+               is(ElementType!SomeRange == Position!ThisNode)) {
+                while(!r.empty) {
+                    static if(is(SomeRange == HashedRange)) {
+                        ThisNode* node = r.front_node;
+                    }else{
+                        ThisNode* node = r.front.node;
+                    }
+                    r.popFront();
+                    _Modify(node, mod);
+                }
             }
-/**
-Replaces r.front with value
-Returns: whether replacement succeeded
-Complexity: ??
-*/
-            bool replace(SomeRange)(SomeRange r, ValueView value)
-            if(is(SomeRange == Range) || is(SomeRange == ListRange)){
-                ThisNode* node = r.node;
-                return _Replace(node, cast(Value) value);
+
+            bool replace(Position!ThisNode r, ValueView value) {
+                return _Replace(r.node, cast(Value) value);
             }
 
             KeyType _NodePosition(ThisNode* node){
@@ -4074,21 +3642,39 @@ Returns a range of all elements with eq(key(elem), k).
 Complexity:
 $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
  */
-            ListRange equalRange( KeyType k ){
+            // TODO: compact these back into one
+            BucketSeqRange equalRange( KeyType k ){
                 ThisNode* node;
                 size_t index;
                 if(!_find(k, node,index)){
-                    return ListRange(null,null);
+                    return BucketSeqRange(this,null,null);
                 }
                 static if(!allowDuplicates){
-                    return ListRange(this,node, node);
+                    return BucketSeqRange(this,node,node);
                 }else{
                     ThisNode* node2 = node;
                     while(node2.index!N.next !is null && 
                             eq(k, key(node2.index!N.next.value))){
                         node2 = node2.index!N.next;
                     }
-                    return ListRange(this, node, node2);
+                    return BucketSeqRange(this, node, node2);
+                }
+            }
+            ConstBucketSeqRange equalRange( KeyType k ) const{
+                ThisNode* node;
+                size_t index;
+                if(!_find(k, node,index)){
+                    return ConstBucketSeqRange(this,null,null);
+                }
+                static if(!allowDuplicates){
+                    return ConstBucketSeqRange(this,node,node);
+                }else{
+                    ThisNode* node2 = node;
+                    while(node2.index!N.next !is null && 
+                            eq(k, key(node2.index!N.next.value))){
+                        node2 = node2.index!N.next;
+                    }
+                    return ConstBucketSeqRange(this, node, node2);
                 }
             }
 
@@ -4134,13 +3720,23 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                 }
             }
 
-            size_t maxLoad(size_t n){
+            @property loadFactor() const{
+                return load_factor;
+            }
+
+            @property loadFactor(size_t _load_factor) {
+                load_factor = load_factor;
+                // TODO: what else do we do here?
+                assert(0);
+            }
+
+            size_t maxLoad(size_t n) const{
                 double load = n * load_factor;
                 if(load > size_t.max) return size_t.max;
                 return cast(size_t) load;
             }
 
-            @property size_t capacity() {
+            @property size_t capacity() const{
                 return hashes.length;
             }
 
@@ -4163,13 +3759,13 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                 ThisNode* newfirst;
                 size_t newfindex = -1;
                 while(!r.empty){
-                    ThisNode* node = r.node;
+                    ThisNode* node = r.front_node;
                     ThisNode* node2 = node;
                     auto k = key(node.value);
                     size_t index = hash(key(node.value))%newhashes.length;
                     r.popFront();
                     while(!r.empty && eq(k, key(r.front))){
-                        node2 = r.node;
+                        node2 = r.front_node;
                         r.popFront();
                     }
                     version(BucketHackery){
@@ -4281,20 +3877,20 @@ Complexity:
 $(BIGOH n $(SUB r) * d(n)), $(BR)
 $(BIGOH n $(SUB r)) for this index
 */
-            Range remove(R)( R r )
-            if( is(R == Range) || is(R == ListRange) ||
-                is(R == Take!Range) || is(R == Take!ListRange)){
+            HashedRange remove(R)( R r )
+            if(is(R == HashedRange) || is(R == BucketSeqRange) ||
+               is(ElementType!R == Position!ThisNode)){
                 while(!r.empty){
-                    static if( is(R == Range) || is(R == ListRange)){
-                        ThisNode* node = r.node;
-                    }else static if(
-                            is(R == Take!Range) || is(R == Take!ListRange)){
-                        ThisNode* node = r.source.node;
-                    }else static assert(false);
+                    static if(IsMyRange!R){
+                        ThisNode* node = r.front_node;
+                    }else{
+                        ThisNode* node = r.front.node;
+                        r.front.obliterated = true;
+                    }
                     r.popFront();
                     _RemoveAll(node);
                 }
-                return Range(this, null, hashes.length);
+                return HashedRange(this, null, hashes.length);
             }
 
 /** 
@@ -4305,7 +3901,7 @@ Complexity:
 $(BIGOH n $(SUB k) * d(n)), $(BR)
 $(BIGOH n + n $(SUB k)) for this index ($(BIGOH n $(SUB k)) on a good day)
 */
-version(OldWay){
+            version(OldWay){
             size_t removeKey(KeyType k){
                 auto r = equalRange(k);
                 size_t count = 0;
@@ -4317,14 +3913,16 @@ version(OldWay){
                 }
                 return count;
             }
-}else{
+            }else{
 
             size_t removeKey(Keys...)(Keys keys)
             if(allSatisfy!(implicitlyConverts,Keys)) {
-                KeyType[Keys.length] toRemove;
-                foreach(i,k; keys)
-                    toRemove[i] = k;
-                return removeKey(toRemove[]);
+                Unqual!KeyType[Keys.length] toRemove;
+                foreach(i,k; keys) {
+                    Unqual!KeyType k2 = k;
+                    toRemove[i] = k2;
+                }
+                return removeKey(cast(KeyType[]) (toRemove[]));
             }
 
             size_t removeKey(Key)(Key[] keys)
@@ -4364,7 +3962,26 @@ version(OldWay){
                 Allocator.deallocate(stuffy.ptr);
                 return res;
             }
-}
+            }
+
+            void _NodeReplace(ThisNode* old, ThisNode* newnode) {
+                  ThisNode* next = old.index!N.next;
+                  ThisNode* prev = old.index!N.prev;
+                  newnode.index!N.next = next;
+                  newnode.index!N.prev = prev;
+                  if(next) {
+                      next.index!N.prev = newnode;
+                  }
+                  if(prev) {
+                      prev.index!N.next = newnode;
+                  }
+                  if(old is _first) {
+                      _first = newnode;
+                  }
+  
+                  old.index!N.prev = null;
+                  old.index!N.next = null;
+            }
 
             void _Check(){
                 bool first = true;
@@ -4403,9 +4020,9 @@ version(OldWay){
                 return r;
             }
 
-            private Range fromNode(ThisNode* n){
+            private HashedRange fromNode(ThisNode* n){
                 auto ix = hash(key(n.value))%this.index!N.hashes.length;
-                return Range(this, n, ix);
+                return HashedRange(this, n, ix);
             }
         }
     }
@@ -4422,8 +4039,111 @@ template HashedNonUnique(alias KeyFromValue="a",
     alias Hashed!(true, KeyFromValue, Hash, Eq) HashedNonUnique;
 }
 
+
+class Position(MNode) {
+    alias MNode.ThisContainer.ValueView ValueView;
+
+    @property ValueView v() {
+        return node.value;
+    }
+
+    private:
+        bool obliterated = true;
+        MNode* _node;
+
+        this(MNode* _node) {
+            obliterated = false;
+            this._node = _node;
+        }
+
+        @property node() {
+            enforce(!obliterated, 
+                    "this position no longer exists in container");
+            return _node;
+        }
+}
+
+auto PSR(Range)(Range rng) 
+{
+    alias Position!(typeof(*rng.front_node)) Pos;
+
+    struct PositionRange {
+
+        Range source;
+
+        @property empty() {
+            return source.empty();
+        }
+
+        @property Pos front() {
+            return new Pos(source.front_node);
+        }
+
+        void popFront() {
+            source.popFront();
+        }
+
+        static if(isBidirectionalRange!Range) {
+            @property Pos back() {
+                return new Pos(source.back_node);
+            }
+
+            void popBack() {
+                source.popBack();
+            }
+        }
+
+        static if(isForwardRange!Range) {
+            @property save() {
+                return PositionRange(source.save());
+            }
+        }
+
+        static if(isRandomAccessRange!Range) {
+            auto opIndex(size_t i) {
+                return source.nth_node(i);
+            }
+
+            @property length() {
+                return source.length;
+            }
+
+            @property front(typeof(source.front_node) n) {
+                source.front_node = n;
+            }
+
+            @property opSlice(size_t a, size_t b) {
+                return PositionRange(source[a .. b]);
+            }
+        }
+    }
+
+    return PositionRange(rng);
+}
+
 struct IndexedBy(L...)
 {
+    template _inner(size_t index, List...) {
+        static if(List.length <= 1) {
+            alias TypeTuple!() names;
+            alias TypeTuple!() name_indeces;
+            alias TypeTuple!(List) indeces;
+        }else static if(IsIndex!(List[0]) && is(typeof(List[1]) == string)) {
+            alias _inner!(index+1,List[2 .. $]) next;
+            alias TypeTuple!(List[1], next.names) names;
+            alias TypeTuple!(index, next.name_indeces) name_indeces;
+            alias TypeTuple!(List[0], next.indeces) indeces;
+        }else {
+            alias _inner!(index+1,List[1 .. $]) next;
+            alias next.names names;
+            alias next.name_indeces name_indeces;
+            alias TypeTuple!(List[0], next.indeces) indeces;
+        }
+    }
+
+    alias _inner!(0, L).names Names;
+    alias _inner!(0, L).name_indeces NameIndeces;
+    alias _inner!(0, L).indeces Indeces;
     alias L List;
 }
 
@@ -4495,7 +4215,7 @@ A signal can be shared by multiple indeces; however do not associate a signal
 to the same index more than once.
 */
 
-struct SignalOnChange(L...) {
+struct ValueChangedSlots(L...) {
     struct Inner(IndexedBy){
         // by some forward referencing error or other, (issue 6475)
         // I can't seem to get a hold of inner in, but
@@ -4505,17 +4225,21 @@ struct SignalOnChange(L...) {
             Inner i;
             return i;
         }
-        enum N = IndexedBy.List.length;
-        alias L List;
+        enum N = IndexedBy.Indeces.length;
+        alias ExpandStarSignals!(IndexedBy,L) List;
 
 
         template GetIndex(valueSignal){
             static if(__traits(compiles,valueSignal.Index)){
                 enum GetIndex = valueSignal.Index;
             }else{
-                static assert(__traits(compiles,List[i].Tag));
-                static assert(false, 
-                        "implement me (when you implement tagging)");
+                static assert(__traits(compiles,valueSignal.Tag));
+                static if(valueSignal.Tag == "*") {
+                    static assert(false, "you bad, bad person");
+                }else {
+                    enum _TagIndex = staticIndexOf!(valueSignal.Tag, IndexedBy.Names);
+                    enum GetIndex = IndexedBy.NameIndeces[_TagIndex];
+                }
             }
         }
 
@@ -4527,7 +4251,7 @@ struct SignalOnChange(L...) {
             static if(i < List.length){
                 static if(List[i].MixinAlias == mixinAlias){
                     enum index = GetIndex!(List[i]);
-                    static if(IndexedBy.List[index].BenefitsFromSignals){
+                    static if(IndexedBy.Indeces[index].BenefitsFromSignals){
                         enum size_t[] result = 
                             FindIndeces!(mixinAlias, i+1, 
                                     OU!(size_t).orderedUniqueInsert(
@@ -4627,6 +4351,28 @@ struct SignalOnChange(L...) {
     }
 }
 
+template ExpandStarSignals(IndexedBy, L...) {
+    static if(L.length == 0) {
+        alias TypeTuple!() ExpandStarSignals;
+    }else static if(__traits(compiles,L[0].Tag) && L[0].Tag == "*") {
+        alias TypeTuple!(ExpandStarSignal!(IndexedBy, 0, L[0]), 
+            ExpandStarSignals!(IndexedBy, L[1 .. $])) ExpandStarSignals;
+    }else{
+        alias TypeTuple!(L[0], ExpandStarSignals!(IndexedBy, L[1 .. $]))
+            ExpandStarSignals;
+    }
+}
+
+template ExpandStarSignal(IndexedBy, size_t i, ProtoSignal) {
+    static if(i >= IndexedBy.Indeces.length) {
+        alias TypeTuple!() ExpandStarSignal;
+    }else {
+        alias TypeTuple!(ValueSignal!(i, ProtoSignal.MixinAlias),
+            ExpandStarSignal!(IndexedBy, i+1, ProtoSignal)) ExpandStarSignal;
+    }
+
+}
+
 /// _
 struct ValueSignal(size_t index, string mixinAlias = "")
 {
@@ -4668,7 +4414,8 @@ n2.index!1 .next = n1;
 n1.index!2 .left = n2;
 ----
 +/
-struct MNode(ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
+struct MNode(_ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
+    alias _ThisContainer ThisContainer;
     Value value;
 
     static if(Signals.AllSignals.length > 0) {
@@ -4703,17 +4450,18 @@ struct MNode(ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
             }
         }
 
-        mixin(ForEachSignal!(0).stuff);
+        enum signal_stuff = ForEachSignal!(0).stuff;
+        mixin(signal_stuff);
     }
 
 
     template ForEachIndex(size_t N,L...){
         static if(L.length > 0){
-            enum indexN = Format!("index%s",N);
+            enum indexN = Replace!("index%s","%s", N);
             //alias L[0] L0;
             enum result = 
                 Replace!(q{
-                    alias IndexedBy.List[$N] L$N;
+                    alias IndexedBy.Indeces[$N] L$N;
                     alias L$N.Inner!(ThisContainer, typeof(this),Value,ValueView,$N, Allocator) M$N;
                     mixin M$N.NodeMixin!(M$N.NodeTuple) index$N;
                     template index(size_t n) if(n == $N){ alias index$N index; }
@@ -4724,7 +4472,7 @@ struct MNode(ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
         }
     }
 
-    enum stuff = ForEachIndex!(0, IndexedBy.List).result;
+    enum stuff = ForEachIndex!(0, IndexedBy.Indeces).result;
     mixin(stuff);
 }
 
@@ -4734,7 +4482,7 @@ struct MutableView{}
 template IsIndexedBy(alias x) {
     // test x.stringof in case we have a bare Sequenced!() or somesuch
     enum bool IsIndexedBy = __traits(compiles, x.stringof) &&
-        x.stringof.startsWith("IndexedBy") &&
+        x.stringof.startsWith("IndexedBy!") &&
         __traits(compiles, x.List);
 }
 
@@ -4751,16 +4499,18 @@ int IndexedByCount(X...)() {
     }
     return r;
 }
-/// erm. returns list of nonindeces in IndexedBy
 size_t[] IndexedByAllIndeces(X)() {
+    // erm. returns list of nonindeces in IndexedBy
     size_t[] res = [];
     foreach(i,x; X.List){
-        static if(!IsIndex!(x)) {
+        static if(!IsIndex!x && 
+                (i == 0 || !IsIndex!(X.List[i-1]) || !is(typeof(x) == string))) {
             res ~= i;
         }
     }
     return res;
 }
+
 
 template FindIndexedBy(Args...) {
     static if(IsIndexedBy!(Args[0])) {
@@ -4770,28 +4520,28 @@ template FindIndexedBy(Args...) {
     }
 }
 
-template IsSignalOnChange(alias X) {
-    enum bool IsSignalOnChange = __traits(compiles, X.stringof) && 
-        X.stringof.startsWith("SignalOnChange");
+template IsValueChangedSlots(alias X) {
+    enum bool IsValueChangedSlots = __traits(compiles, X.stringof) && 
+        X.stringof.startsWith("ValueChangedSlots!");
 }
 
-int SignalOnChangeCount(Args...)() {
+int ValueChangedSlotsCount(Args...)() {
     int r = 0;
     foreach(i,x; Args){
-        static if(__traits(compiles,IsSignalOnChange!x) && IsSignalOnChange!x) {
+        static if(__traits(compiles,IsValueChangedSlots!x) && IsValueChangedSlots!x) {
             r++;
         }
     }
     return r;
 }
 
-template FindSignalOnChange(Args...) {
+template FindValueChangedSlots(Args...) {
     static if(Args.length == 0) {
-        alias SignalOnChange!() FindSignalOnChange;
-    }else static if(IsSignalOnChange!(Args[0])) {
-        alias Args[0] FindSignalOnChange;
+        alias ValueChangedSlots!() FindValueChangedSlots;
+    }else static if(IsValueChangedSlots!(Args[0])) {
+        alias Args[0] FindValueChangedSlots;
     }else {
-        alias FindSignalOnChange!(Args[1 .. $]) FindSignalOnChange;
+        alias FindValueChangedSlots!(Args[1 .. $]) FindValueChangedSlots;
     }
 }
 
@@ -4822,7 +4572,7 @@ template FindConstnessView(Args...) {
 int AllocatorCount(Args...)() {
     int r = 0;
     foreach(i,x; Args){
-        static if(IsAllocator!x) {
+        static if(__traits(compiles, IsAllocator!x) && IsAllocator!x) {
             r++;
         }
     }
@@ -4839,17 +4589,99 @@ template FindAllocator(Args...) {
     }
 }
 
-size_t[] indexGarbage(Args...)() {
+size_t[] IndexGarbage(Args...)() {
     size_t[] res = [];
     foreach(i,x; Args){
         static if(!(__traits(compiles,IsIndexedBy!x) && IsIndexedBy!x) &&
-                !(__traits(compiles,IsSignalOnChange!x) && IsSignalOnChange!x) &&
+                !(__traits(compiles,IsValueChangedSlots!x) && IsValueChangedSlots!x) &&
                 !(__traits(compiles,IsConstnessView!x) && IsConstnessView!x) &&
                 !(__traits(compiles,IsAllocator!x) && IsAllocator!x)) {
             res ~= i;
         }
     }
     return res;
+}
+
+
+struct ComparisonEx(alias _key, alias _less) {
+    alias _less _less_;
+    alias binaryFun!_less less;
+    alias unaryFun!_key key;
+}
+
+struct DefaultComparison(alias _less) {
+    alias _less less;
+}
+
+template MultiCompare(F...) {
+    template NormComps(size_t i = 0, alias Dflt = "a<b") {
+        static if(i == F.length) {
+            alias TypeTuple!() NormComps;
+        }else {
+            static if(F[i].stringof.startsWith("DefaultComparison!") &&
+                    __traits(compiles, F[i].less)) {
+                alias NormComps!(i+1, F[i].less) NormComps;
+            }else{
+                static if (F[i].stringof.startsWith("ComparisonEx!") &&
+                        __traits(compiles, F[i].less) &&
+                        __traits(compiles, F[i].key)) {
+                    alias F[i] Cmp;
+                }else {
+                    alias ComparisonEx!(F[i], Dflt) Cmp;
+                }
+                alias TypeTuple!(Cmp, NormComps!(i+1, Dflt)) NormComps;
+            }
+        }
+    }
+
+    alias NormComps!() Comps;
+
+    bool MultiCompare(T)(T a, T b) {
+        foreach(i, cmp; Comps) {
+            auto a1 = cmp.key(a);
+            auto b1 = cmp.key(b);
+            auto less = cmp.less(a1,b1);
+            if(less) return true;
+            auto gtr = cmp.less(b1,a1);
+            if(gtr) return false;
+            static if(i == Comps.length-1) {
+                return false;
+            }
+        }
+        assert(0);
+    }
+}
+
+template IsCompatibleLess(Less, Key, CKey) {
+    enum bool IsCompatibleLess = is(typeof({
+                Less less;
+                auto c = CKey.init;
+                auto k = Key.init;
+                less.cc_less(c,c);
+                less.kc_less(k,c);
+                less.ck_less(c,k);
+                }));
+}
+
+struct CriterionFromKey(MultiIndex, size_t index, 
+        alias CompatibleKeyFromKey,
+        alias CompatibleLess = "a<b") {
+    alias binaryFun!CompatibleLess less;
+    alias MultiIndex.index!(index).key key;
+    alias MultiIndex.index!(index).KeyType KeyType;
+    alias unaryFun!CompatibleKeyFromKey ckey;
+    alias typeof(ckey(MultiIndex.ValueView.init)) CompatibleKeyType;
+
+    static:
+        bool kc_less(KeyType a, CompatibleKeyType b) {
+            return less(ckey(a),b);
+        }
+        bool ck_less(CompatibleKeyType a, KeyType b) {
+            return less(a, ckey(b));
+        }
+        bool cc_less(CompatibleKeyType a, CompatibleKeyType b) {
+            return less(a, b);
+        }
 }
 
 // error sinks 
@@ -4886,14 +4718,14 @@ if(IndexedByAllIndeces!(FindIndexedBy!Args)().length != 0) {
     // @@@ PHOBOS ISSUE 8320 @@@
     /+
     static assert (false, 
-            Format!(/*"IndexedBy contains non-index at indeces*/" %s", 
+            Replace!(/*"IndexedBy contains non-index at indeces*/" %s", "%s", 
                 IndexedByAllIndeces!(FindIndexedBy!Args)()));
 +/
 }
 
 class MultiIndexContainer(Value, Args...)
-if(SignalOnChangeCount!(Args)() > 1) {
-    static assert(false, "Multiple SignalOnChange specifications are not allowed");
+if(ValueChangedSlotsCount!(Args)() > 1) {
+    static assert(false, "Multiple ValueChangedSlots specifications are not allowed");
 }
 
 class MultiIndexContainer(Value, Args...)
@@ -4907,9 +4739,9 @@ if(AllocatorCount!(Args)() > 1) {
 }
 
 class MultiIndexContainer(Value, Args...)
-if(indexGarbage!(Args)().length != 0) {
+if(IndexGarbage!(Args)().length != 0) {
     import std.conv;
-    enum lst = indexGarbage!(Args)();
+    enum lst = IndexGarbage!(Args)();
     pragma(msg, "MultiIndexContainer unknown arguments at");
     mixin template Frch(size_t i) {
         static if(i < lst.length) {
@@ -4926,29 +4758,56 @@ if(indexGarbage!(Args)().length != 0) {
     // @@@ PHOBOS ISSUE 8320 @@@
     /+
     static assert (false, 
-            Format!(/*"IndexedBy contains non-index at indeces*/" %s", 
+            Replace!(/*"IndexedBy contains non-index at indeces*/" %s", "%s", 
                 IndexedByAllIndeces!(FindIndexedBy!Args)()));
 +/
 }
 
+template _AllUnique(Thing...) {
+    enum _AllUnique = NoDuplicates!Thing .length == Thing.length;
+}
+class MultiIndexContainer(Value, Args...)
+if(!_AllUnique!(FindIndexedBy!Args .Names)) {
+    static assert(false, "duplicates!");
+}
+
+
+
 // end error sinks
 
 /++ 
-The container
+The container. Don't call any index methods from this container directly; use
+a reference to an individual index, which can be obtained via
+---
+container.get_index!N
+---
+or
+---
+container.name
+---
+for named indeces.
+
+If you have a range into an index of this container, you can convert it to a 
+range of index N via
+---
+container.to_range!N(range)
+---
+This is equivalent to c++ multi_index' project
 +/
 class MultiIndexContainer(Value, Args...) 
 if(IndexedByCount!(Args)() == 1 &&
    FindIndexedBy!Args .List.length != 0 &&
    IndexedByAllIndeces!(FindIndexedBy!Args)().length == 0 &&
-   SignalOnChangeCount!(Args)() <= 1 &&
+   _AllUnique!(FindIndexedBy!Args .Names) &&
+   ValueChangedSlotsCount!(Args)() <= 1 &&
    ConstnessViewCount!(Args)() <= 1 &&
    AllocatorCount!(Args)() <= 1 &&
-   indexGarbage!(Args)().length == 0) {
+   IndexGarbage!(Args)().length == 0) {
 
     alias FindIndexedBy!Args IndexedBy;
     // @@@ DMD ISSUE 6475 @@@ following gives forward reference error
-    //alias FindSignalOnChange!Args .Inner!(IndexedBy) NormSignals;
-    alias typeof(FindSignalOnChange!Args .Inner!(IndexedBy).exposeType()) NormSignals;
+    //alias FindValueChangedSlots!Args .Inner!(IndexedBy) NormSignals;
+    alias typeof(FindValueChangedSlots!Args .Inner!(IndexedBy).exposeType()) NormSignals;
     alias FindConstnessView!Args ConstnessView;
     alias FindAllocator!Args Allocator;
 
@@ -4961,8 +4820,8 @@ if(IndexedByCount!(Args)() == 1 &&
 
     /+
     template IndexedByList0(size_t i, stuff...){
-        static if(i < IndexedBy.List.length){
-            alias typeof(IndexedBy.List[i].Inner!(typeof(this), ThisNode, Value, i).exposeType()) x;
+        static if(i < IndexedBy.Indeces.length){
+            alias typeof(IndexedBy.Indeces[i].Inner!(typeof(this), ThisNode, Value, i).exposeType()) x;
             alias IndexedByList0!(i+1, stuff, x).result result;
         }else{
             alias stuff result;
@@ -4975,10 +4834,10 @@ if(IndexedByCount!(Args)() == 1 &&
     size_t node_count;
 
     template ForEachCtorMixin(size_t i){
-        static if(i < IndexedBy.List.length){
-            static if(is(typeof(IndexedBy.List[i].Inner!(typeof(this), 
+        static if(i < IndexedBy.Indeces.length){
+            static if(is(typeof(IndexedBy.Indeces[i].Inner!(typeof(this), 
                                 ThisNode,Value,ValueView,i,Allocator).IndexCtorMixin))){
-                enum result =  IndexedBy.List[i].Inner!(typeof(this), 
+                enum result =  IndexedBy.Indeces[i].Inner!(typeof(this), 
                         ThisNode,Value, ValueView,i,Allocator).IndexCtorMixin ~ 
                     ForEachCtorMixin!(i+1).result;
             }else enum result = ForEachCtorMixin!(i+1).result;
@@ -5016,10 +4875,90 @@ if(IndexedByCount!(Args)() == 1 &&
         Allocator.deallocate(p);
     }
 
+    template ForEachIndex(size_t N,L...){
+        static if(L.length > 0){
+            enum result = 
+                Replace!(q{
+                    alias IndexedBy.Indeces[$N] L$N;
+                    alias L$N.Inner!(typeof(this),ThisNode,Value, ValueView,$N,Allocator) M$N;
+                    mixin M$N.IndexMixin!(M$N.IndexTuple) index$N;
+                    template index(size_t n) if(n == $N){ alias index$N index; }
+                    class Index$N{
+
+                        // grr opdispatch not handle this one
+                        auto opSlice(T...)(T ts){
+                            return this.outer.index!($N).opSlice(ts);
+                        }
+
+                        // grr opdispatch not handle this one
+                        auto opIndex(T...)(T ts){
+                            return this.outer.index!($N).opIndex(ts);
+                        }
+
+                        // grr opdispatch not handle this one
+                        auto opIndexAssign(T...)(T ts){
+                            return this.outer.index!($N).opIndexAssign(ts);
+                        }
+
+                        // grr opdispatch not handle this one
+                        auto opBinaryRight(string op, T...)(T ts){
+                            return this.outer.index!($N).opBinaryRight!(op)(ts);
+                        }
+
+                        // grr opdispatch not handle this one
+                        auto bounds(string bs = "[]", T)(T t1, T t2){
+                            return this.outer.index!($N).bounds!(bs,T)(t1,t2);
+                        }
+                        // grr opdispatch not handle this one
+                        auto bounds(V, string bs = "[]", T)(T t1, T t2){
+                            return this.outer.index!($N).cbounds!(V,bs,T)(t1,t2);
+                        }
+                        // grr opdispatch not handle this one
+                        auto cEqualRange(L, K)(K k)
+                        {
+                            return this.outer.index!($N).cEqualRange!(L, K).equalRange(k);
+                        }
+                        // grr opdispatch not handle this one
+                        auto cEqualRange(L, K)(K k) const
+                        {
+                            return this.outer.index!($N).cEqualRange!(L, K).equalRange(k);
+                        }
+
+                        auto opDispatch(string s, T...)(T args){
+                            mixin("return this.outer.index!($N)."~s~"(args);");
+                        }
+                    }
+                    @property Index$N get_index(size_t n)() if(n == $N){
+                        return this.new Index$N();
+                    }
+                },  "$N", N) ~ 
+                ForEachIndex!(N+1, L[1 .. $]).result;
+        }else{
+            enum result = "";
+        }
+    }
+
+    enum stuff = (ForEachIndex!(0, IndexedBy.Indeces).result);
+    mixin(stuff);
+
+    template ForEachNamedIndex(size_t i){
+        static if(i >= IndexedBy.Names.length) {
+            enum result = "";
+        }else {
+            enum result = Replace!(q{
+                alias get_index!$N $name;
+            }, "$N", IndexedBy.NameIndeces[i], "$name", IndexedBy.Names[i]) ~
+            ForEachNamedIndex!(i+1).result;
+        }
+    }
+
+    enum named_stuff = ForEachNamedIndex!0 .result;
+    mixin(named_stuff);
+
+
     template ForEachCheckInsert(size_t i, size_t N){
-        static if(i < IndexedBy.List.length){
-            static if(i != N && is(typeof({ ThisNode* p; 
-                            index!i._DenyInsertion(p,p);}))){
+        static if(i < IndexedBy.Indeces.length){
+            static if(i != N && __traits(hasMember, index!i,"_DenyInsertion")){
                 enum result = (Replace!(q{
                         ThisNode* aY; 
                         bool bY = index!(Y)._DenyInsertion(node,aY);
@@ -5030,10 +4969,10 @@ if(IndexedByCount!(Args)() == 1 &&
     }
 
     template ForEachDoInsert(size_t i, size_t N){
-        static if(i < IndexedBy.List.length){
+        static if(i < IndexedBy.Indeces.length){
             static if(i != N){
-                static if(is(typeof({ ThisNode* p; 
-                                index!i._DenyInsertion(p,p);}))){
+                import std.traits;
+                static if(ParameterTypeTuple!(index!i._Insert).length == 2){
                     enum result = Replace!(q{
                         index!(Y)._Insert(node,aY);
                     }, "Y", i) ~ ForEachDoInsert!(i+1,N).result;
@@ -5048,7 +4987,13 @@ if(IndexedByCount!(Args)() == 1 &&
 
     ThisNode* _InsertAllBut(size_t N)(Value value){
         ThisNode* node = Allocator.allocate!(ThisNode)(1);
-        node.value = value;
+        enum bool mutable = (__traits(compiles, {node.value = value;}));
+        static if(mutable) {
+            node.value = value;
+        }else{
+            auto t = ThisNode(value);
+            move(t, *node);
+        }
 
         // connect signals to slots
         foreach(i, x; NormSignals.Mixin2Index){
@@ -5092,7 +5037,7 @@ denied:
     }
 
     template ForEachDoRemove(size_t i, size_t N){
-        static if(i < IndexedBy.List.length){
+        static if(i < IndexedBy.Indeces.length){
             static if(i != N){
                 enum result = Replace!(q{
                     index!(Y)._Remove(node);
@@ -5101,17 +5046,17 @@ denied:
         }else enum result = "";
     }
 
-    /// disattach node from all indeces except index N
+    // disattach node from all indeces except index N
     void _RemoveAllBut(size_t N)(ThisNode* node){
         mixin(ForEachDoRemove!(0, N).result);
         node_count --;
     }
 
-    /// disattach node from all indeces.
-    /// @@@BUG@@@ cannot pass length directly to _RemoveAllBut
+    // disattach node from all indeces.
+    // @@@BUG@@@ cannot pass length directly to _RemoveAllBut
     auto _RemoveAll(size_t N = -1)(ThisNode* node){
         static if(N == -1) {
-            enum _grr_bugs = IndexedBy.List.length;
+            enum _grr_bugs = IndexedBy.Indeces.length;
             _RemoveAllBut!(_grr_bugs)(node);
         }else {
             _RemoveAllBut!N(node);
@@ -5125,7 +5070,7 @@ denied:
     }
 
     template ForEachIndexPosition(size_t i){
-        static if(i < IndexedBy.List.length){
+        static if(i < IndexedBy.Indeces.length){
             static if(is(typeof(index!i ._NodePosition((ThisNode*).init)))){
                 enum ante = Replace!(q{
                     auto pos$i = index!$i ._NodePosition(node);
@@ -5150,20 +5095,46 @@ denied:
         }
     }
 
+    template ForEachNodeReplace(string old, string newnode, size_t i) {
+        static if(i < IndexedBy.Indeces.length) {
+            enum ForEachNodeReplace = Replace!(q{
+                index!$i ._NodeReplace($old, $new);
+            }, "$i", i, "$old", old, "$new", newnode) ~ 
+            ForEachNodeReplace!(old, newnode,i+1);
+        }else{
+            enum ForEachNodeReplace = "";
+        }
+    }
+
 
     bool _Replace(ThisNode* node, Value value){
         mixin(ForEachIndexPosition!0 .ante);
         Value old = node.value;
-        node.value = value;
+        enum bool mutable = __traits(compiles, {node.value = value;});
+        static if(mutable) {
+            node.value = value;
+        }else {
+            ThisNode newnode_v = ThisNode(value);
+            ThisNode* newnode = Allocator.allocate!(ThisNode)(1);
+            move(newnode_v, *newnode);
+            mixin(ForEachNodeReplace!("node", "newnode", 0));
+        }
+        
         mixin(ForEachIndexPosition!0 .post);
         mixin(ForEachIndexPosition!0 .postpost);
+        static if(!mutable) dealloc(node);
         return true;
 denied:
-        node.value = old;
+        static if(mutable) {
+            node.value = old;
+        }else{
+            mixin(ForEachNodeReplace!("newnode", "node", 0));
+            dealloc(newnode);
+        }
         return false;
     }
 
-/**
+/*
 Perform mod on node.value and perform any necessary fixups to this container's 
 indeces. mod may be of the form void mod(ref Value), in which case mod directly modifies the value in node. If the result of mod violates any index' invariant,
 the node is removed from the container. 
@@ -5181,7 +5152,7 @@ denied:
     }
 
     template ForEachClear(size_t i){
-        static if(i < IndexedBy.List.length){
+        static if(i < IndexedBy.Indeces.length){
             enum string result = Replace!(q{
                 index!$i ._ClearIndex();
             }, "$i", i) ~ ForEachClear!(i+1).result;
@@ -5191,7 +5162,7 @@ denied:
     void _Clear(){
         auto r = index!0 .opSlice();
         while(!r.empty){
-            ThisNode* node = r.node;
+            ThisNode* node = r.front_node;
             r.popFront();
             dealloc(node);
         }
@@ -5200,7 +5171,7 @@ denied:
     }
 
     template ForEachCheck(size_t i){
-        static if(i < IndexedBy.List.length){
+        static if(i < IndexedBy.Indeces.length){
             enum result = Replace!(q{
                 index!($i)._Check();
             },"$i", i) ~ ForEachCheck!(i+1).result;
@@ -5224,82 +5195,52 @@ denied:
         }
     }
 
-    template ForEachIndex(size_t N,L...){
-        static if(L.length > 0){
-            enum result = 
-                Replace!(q{
-                    alias IndexedBy.List[$N] L$N;
-                    alias L$N.Inner!(typeof(this),ThisNode,Value, ValueView,$N,Allocator) M$N;
-                    mixin M$N.IndexMixin!(M$N.IndexTuple) index$N;
-                    template index(size_t n) if(n == $N){ alias index$N index; }
-                    class Index$N{
 
-                        // grr opdispatch not handle this one
-                        auto opSlice(T...)(T ts){
-                            return this.outer.index!($N).opSlice(ts);
-                        }
-
-                        // grr opdispatch not handle this one
-                        auto opIndex(T...)(T ts){
-                            return this.outer.index!($N).opIndex(ts);
-                        }
-
-                        // grr opdispatch not handle this one
-                        auto opIndexAssign(T...)(T ts){
-                            return this.outer.index!($N).opIndexAssign(ts);
-                        }
-
-                        // grr opdispatch not handle this one
-                        auto opBinaryRight(string op, T...)(T ts){
-                            return this.outer.index!($N).opBinaryRight!(op)(ts);
-                        }
-
-                        // grr opdispatch not handle this one
-                        auto bounds(string bs = "[]", T)(T t1, T t2){
-                            return this.outer.index!($N).bounds!(bs,T)(t1,t2);
-                        }
-
-                        auto opDispatch(string s, T...)(T args){
-                            mixin("return this.outer.index!($N)."~s~"(args);");
-                        }
-                    }
-                    @property Index$N get_index(size_t n)() if(n == $N){
-                        return this.new Index$N();
-                    }
-                },  "$N", N) ~ 
-                ForEachIndex!(N+1, L[1 .. $]).result;
-        }else{
-            enum result = "";
-        }
-    }
-
-    enum stuff = (ForEachIndex!(0, IndexedBy.List).result);
-    mixin(stuff);
-
-    /+
-    @property auto to_range(size_t N, Range)(Range r)
-    if(RangeIndexNo!RangeY != -1){
-        static if(N == RangeIndexNo!Range){
+    @property auto to_range(size_t N, Range0)(Range0 r)
+    if(RangeIndexNo!Range0 != -1){
+        static if(N == RangeIndexNo!Range0){
             return r;
         }else{
-            return index!N.fromNode(r.node);
+            return index!N.fromNode(r.front_node);
         }
     }
-    +/
 
     private template RangeIndexNo(R){
         template IndexNoI(size_t i){
-            static if(i == IndexedBy.List.length){
+            static if(i == IndexedBy.Indeces.length){
                 enum size_t IndexNoI = -1;
-            }else static if(is(index!(i).Range == R)){
-                pragma(msg, Format!("%s is index!%s.Range (%s)",R.stringof,i, (index!(i).Range).stringof));
+            }else static if(index!(i).IsMyRange!(R)){
                 enum size_t IndexNoI = i;
             }else{
-                pragma(msg, Format!("%s is not index!%s.Range (%s)",R.stringof,i,(index!(i).Range).stringof));
                 enum IndexNoI = IndexNoI!(i+1);
             }
         }
         enum size_t RangeIndexNo = IndexNoI!(0);
+    }
+}
+
+/// simple Slot implementation
+mixin template Slots() {
+    void delegate()[] slots;
+
+    void connect(void delegate() slot){
+        slots ~= slot;
+    }
+    void disconnect(void delegate() slot){
+        size_t index = slots.length;
+        foreach(i, slot1; slots){
+            if(slot is slot1){
+                index = i;
+                moveAll(slots[i+1 .. $], slots[i .. $-1]);
+                slots.length-=1;
+                break;
+            }
+        }
+    }
+    void emit(){
+        foreach(slot; slots){
+            slot();
+        }
     }
 }
 
@@ -5345,8 +5286,20 @@ void main(){
             IndexedBy!(Sequenced!(),
                 OrderedUnique!("a.s")
                 ),
-            SignalOnChange!(ValueSignal!(1))) C;
+            ValueChangedSlots!(ValueSignal!(1))) C;
 
     C i = new C;
 
+    alias MultiIndexContainer!(const(S1),
+        IndexedBy!(OrderedUnique!("a.s"))
+        ) CCC;
+        CCC c2 = new CCC;
+        c2.insert(cast(const)S1("abc", 22));
+        pragma(msg, typeof(c2[]));
+        pragma(msg, ElementType!(typeof(c2[])));
+        foreach(const(S1) thing; c2[]) {
+        }
+
+        auto pr = PSR(c2[]);
+        c2.replace(pr.front, const(S1)("def", 44)); 
 }

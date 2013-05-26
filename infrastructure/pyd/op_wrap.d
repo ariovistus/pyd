@@ -26,7 +26,7 @@ import deimos.python.Python;
 import std.algorithm: startsWith, endsWith;
 import std.traits;
 import std.exception: enforce;
-import std.string: format = xformat;
+import std.string: format;
 import std.conv: to;
 import pyd.class_wrap;
 import pyd.func_wrap;

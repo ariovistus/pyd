@@ -34,7 +34,7 @@ import std.exception: enforce;
 import std.functional;
 import std.metastrings;
 import std.typetuple;
-import std.string: format = xformat;
+import std.string: format;
 import std.typecons: Tuple;
 import util.typelist;
 import util.multi_index;

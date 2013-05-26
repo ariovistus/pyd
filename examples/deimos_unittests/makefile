@@ -4,6 +4,15 @@ PYTHON_2_7 = -version=Python_2_7_Or_Later \
 	     -version=Python_2_5_Or_Later \
 	     -version=Python_2_4_Or_Later \
 	     -L-lpython2.7
+PYTHON_3_3 = -version=Python_3_3_Or_Later \
+	     -version=Python_3_2_Or_Later \
+	     -version=Python_3_1_Or_Later \
+	     -version=Python_3_0_Or_Later \
+	     -version=Python_2_7_Or_Later \
+             -version=Python_2_6_Or_Later \
+	     -version=Python_2_5_Or_Later \
+	     -version=Python_2_4_Or_Later \
+	     -L-lpython3.3m
 PYTHON_2_7_LDC = -d-version=Python_2_7_Or_Later \
              -d-version=Python_2_6_Or_Later \
 	     -d-version=Python_2_5_Or_Later \
@@ -20,6 +29,6 @@ clean:
 	rm -f *.o
 
 %.x: %.d
-	$(DC) $(PYTHON_2_7) $< -of$@  -I$(PYD_DIR) -v
+	$(DC) $(PYTHON_3_3) $< -of$@  -I$(PYD_DIR) 
 	#$(LDC) -of $@ $(PYTHON_2_7_LDC) $< -I$(PYD_DIR) $(PYD_FILES)
 

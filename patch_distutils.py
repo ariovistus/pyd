@@ -30,7 +30,7 @@ def new_compiler(compiler=None, dry_run=0, force=0, **kwargs):
         if dcompiler._isPlatWin:
             compiler = 'dmd'
         else:
-            compiler = 'ldc'
+            compiler = 'dmd'
 
     if compiler not in ('dmd', 'gdc','ldc'):
         return _old_new_compiler(compiler=compiler,
@@ -58,7 +58,7 @@ def get_default_compiler(*args, **kwargs):
     if dcompiler._isPlatWin:
         return 'dmd'
     else:
-        return 'gdc'
+        return 'dmd'
 
 cc.get_default_compiler = get_default_compiler
 

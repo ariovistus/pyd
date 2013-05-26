@@ -42,7 +42,6 @@ if opts.use_build:
         subprocess.check_call([sys.executable, "setup.py", "build"]);
     print ("using build: %r" % build)
     os.putenv("PYTHONPATH", build)
-
 def check_exe(cmd):
     subprocess.check_call([os.path.join(".",cmd + exe_ext)])
 def remove_exe(cmd):
@@ -85,7 +84,7 @@ try:
             remove_exe("pyind")
         else:
             pydexe()
-            check_exe("pyind")
+            check_exe("pyind" + ("3" if verz_maj == "3" else ""))
         os.chdir("..")
     if "pyd_unittests" in use_parts:
         os.chdir("pyd_unittests")
@@ -98,7 +97,7 @@ try:
         else:
             pydexe()
             for exe in exes:
-                check_exe(exe)
+                check_exe(exe + ("3" if verz_maj == "3" else ""))
         os.chdir("..")
     if "hello" in use_parts:
         os.chdir("hello")

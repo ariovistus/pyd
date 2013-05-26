@@ -1,6 +1,33 @@
 module util.replace;
-import std.metastrings;
+//import std.metastrings;
+import std.conv;
 
+/**
+Performs compile time string replacements on $(D base)
+
+Parameters:
+
+T = replacement specs, alternating between string to be replaced and $(D toStringNow)-able object to replace with.
+
+Example:
+---
+import std.metastrings;
+import std.stdio;
+
+void main()
+{
+  string s = Replace!(q{$ret func(T)(T t){ return new $ret(t+$i); }},
+    "$ret", "C",
+    "$i", 5000);
+  writeln(s); // "C func(T)(T t){ return new C(t+5000); }"
+}
+---
+If there is ambiguity between two substrings to replace, the longer one is preferred:
+---
+enum s = Replace!("boy eats boysenberry", "boy", "girl", "boysenberry", "plum");
+writeln(s) // "girl eats plum"
+---
+ */
 template Replace(string base, T...) 
 {
     import std.algorithm;
@@ -44,7 +71,7 @@ template Replace(string base, T...)
     static if(N.ti == -1)
         enum Replace = base;
     else
-        enum Replace = base[0 .. N.at] ~ toStringNow!(T[N.ti+1]) ~ 
+        enum Replace = base[0 .. N.at] ~ to!string(T[N.ti+1]) ~ 
             Replace!(base[N.at + T[N.ti].length .. $], T);
 }
 

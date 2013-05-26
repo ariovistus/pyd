@@ -42,7 +42,7 @@ class Foo5{
 
 unittest {
     static assert(getparams!foo1 == "int i, int j");
-    static assert(getparams!foo2 == "int i, double j = 2");
+    static assert(getparams!foo2.startsWith("int i, double j = 2"));
     static assert(getparams!foo3 == "...");
     static assert(getparams!foo4 == "int[] i...");
     auto fn = &call_ctor!(Foo2, Init!(int, double)).func;
