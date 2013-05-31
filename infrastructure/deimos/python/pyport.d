@@ -60,6 +60,7 @@ version(Python_2_5_Or_Later){
 }
 
 version(linux) version(DigitalMars) version = dmd_linux;
+version(OSX) version(DigitalMars) version = dmd_osx;
 template PyAPI_DATA(string decl) {
     
     version(dmd_linux) {
@@ -75,7 +76,13 @@ template PyAPI_DATA(string decl) {
             extern 
             __gshared
         } ~ decl ~ ";");
-    }else{
+    } else version(dmd_osx) {
+        enum PyAPI_DATA = (q{
+            extern(C)
+            extern 
+            __gshared
+        } ~ decl ~ ";");
+    } else {
         enum PyAPI_DATA = (q{
             extern(C)
             extern
