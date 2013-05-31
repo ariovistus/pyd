@@ -52,6 +52,7 @@ def posix_static_python_lib():
     return os.path.join(get_config_var('LIBPL'),get_config_var('LIBRARY'))
 
 _isPlatWin = sys.platform.lower().startswith('win') or _isPlatCygwin
+_isPlatOSX = sys.platform.lower() == 'darwin'
 
 _infraDir = os.path.join(os.path.dirname(__file__), 'infrastructure')
 
@@ -599,6 +600,8 @@ class DMDDCompiler(DCompiler):
             self._exeLinkOpts = []
         if _isPlatWin:
             self._linkOpts = []
+        elif _isPlatOSX:
+            self._linkOpts = ['-shared', '-L/usr/local/Cellar/python/2.7.5/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config/libpython2.7.a']
         else:
             self._linkOpts = ['-shared','-defaultlib=libphobos2.so']
         # _includeOpts
