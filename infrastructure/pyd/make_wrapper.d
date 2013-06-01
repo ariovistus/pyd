@@ -28,58 +28,6 @@ import pyd.exception;
 import pyd.func_wrap;
 import std.traits;
 
-template T(A ...) {
-    alias A T;
-}
-template opFuncs() {
-    alias T!("opNeg", "opPos", "opCom", "opAdd", "opSub", "opMul", "opDiv", "opMod", "opAnd", "opOr", "opXor", "opShl", "opShr", "opCat", "opAddAssign", "opSubAssign", "opMulAssign", "opDivAssign", "opModAssign", "opAndAssign", "opOrAssign", "opXorAssign", "opShlAssign", "opShrAssign", "opCatAssign", "opIn_r", "opCmp", "opCall", "opApply", "opIndex", "opIndexAssign", "opSlice", "opSliceAssign", "length") opFuncs;
-}
-
-template funcTypes() {
-    alias T!("UNI", "UNI", "UNI", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "BIN", "UNSUPPORTED", "CMP", "CALL", "APPLY", "INDEX", "INDEXASS", "SLICE", "SLICEASS", "LEN") funcTypes;
-}
-template pyOpFuncs() {
-    alias T!("__neg__", "__pos__", "__invert__", "__add__", "__sub__", "__mul__", "__div__", "__mod__", "__and__", "__or__", "__xor__", "__lshift__", "__rshift__", "__add__", "__iadd__", "__isub__", "__imul__", "__idiv__", "__imod__", "__iand__", "__ior__", "__ixor__", "__ilshift__", "__irshift__", "__iadd__", "UNSUPPORTED", "__cmp__", "__call__", "__iter__", "__getitem__", "__setitem__", "UNSUPPORTED", "UNSUPPORTED", "__len__") pyOpFuncs;
-}
-
-template opFunc(uint i) {
-    enum string opFunc = opFuncs!()[i];
-}
-
-template funcType(uint i) {
-    enum string funcType = funcTypes!()[i];
-}
-
-template pyOpFunc(uint i) {
-    enum string pyOpFunc = pyOpFuncs!()[i];
-}
-
-template op_shim(uint i) {
-    static if (funcType!(i) == "UNI" || funcType!(i) == "BIN" || funcType!(i) == "CMP" || funcType!("CALL")) {
-        enum string op_shim =
-            "    ReturnType!(T."~opFunc!(i)~") "~opFunc!(i)~"(ParameterTypeTuple!(T."~opFunc!(i)~") t) {\n"
-            "        return __pyd_get_overload!(\""~opFunc!(i)~"\", typeof(&T."~opFunc!(i)~")).func(\""~pyOpFunc!(i)~"\", t);\n"
-            "    }\n";
-    } else static if (funcType!(i) == "APPLY") {
-        enum string op_shim =
-            "    int opApply(ParameterTypeTuple!(T.opApply)[0] dg) {\n"
-            "        return __pyd_apply_wrapper(dg);\n"
-            "    }\n";
-    } else static assert(false, "Unsupported operator overload " ~ opFunc!(i));
-}
-
-template op_shims(uint i, T) {
-    static if (i < opFuncs!().length) {
-        static if (is(typeof(mixin("&T."~opFunc!(i)))) && opFunc!(i) != "UNSUPPORTED") {
-            enum string op_shims = op_shim!(i) ~ op_shims!(i+1, T);
-        } else {
-            enum string op_shims = op_shims(i+1, T);
-        }
-    } else {
-        enum string op_shims = "";
-    }
-}
-
 template OverloadShim() {
     // If this is actually an instance of a Python subclass, return the
     // PyObject associated with the object. Otherwise, return null.
@@ -177,7 +125,6 @@ template make_wrapper(T, Params...) {
     "class wrapper : T {\n"~
     "    mixin OverloadShim;\n"~
     pyd.make_wrapper.class_decls!(0, T, Params)~"\n"~
-//    op_shims!(0, T)~
     "}\n";
     pragma(msg, cls);
     mixin(cls);

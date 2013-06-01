@@ -50,15 +50,22 @@ class Foo {
         return new Foo(m_i + f.m_i); 
     }
 
-    int opApply(int delegate(ref int, ref int) dg) {
-        int result = 0;
-        int j;
-        for (int i=0; i<10; ++i) {
-            j = i+1;
-            result = dg(i, j);
-            if (result) break;
+    struct Range {
+        int i = 0;
+
+        @property bool empty() {
+            return i >= 10;
         }
-        return result;
+        @property int front() {
+            return i+1;
+        }
+        void popFront() {
+            i++;
+        }
+    }
+
+    Range opSlice() {
+        return Range();
     }
     @property int i() { return m_i; }
     @property void i(int j) { m_i = j; }
@@ -101,14 +108,6 @@ class Bar {
     int[] m_a;
     this() { }
     this(int[] i ...) { m_a = i; }
-    int opApply(int delegate(ref int) dg) {
-        int result = 0;
-        for (int i=0; i<m_a.length; ++i) {
-            result = dg(m_a[i]);
-            if (result) break;
-        }
-        return result;
-    }
 }
 
 struct S {
@@ -174,6 +173,7 @@ extern(C) void PydMain() {
         Init!(int, int),
         Property!(Foo.i, Docstring!"A sample property of Foo."),
         OpBinary!("+"),
+        Def!(Foo.opSlice, PyName!"__iter__", Foo.Range function()),
         Def!(Foo.foo, Docstring!"A sample method of Foo."),
         Def!(Foo.a),
         Def!(Foo.b),

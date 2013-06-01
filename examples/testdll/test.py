@@ -49,12 +49,9 @@ print a.i
 print "Testing operator overloading"
 print a+a
 
-print "Testing opApply wrapping:"
-try:
-    for i in a:
-        print i
-except TypeError, e:
-    print "opApply not supported on this platform"
+print "Testing range iteration wrapping:"
+for i in a:
+    print i
 
 print
 

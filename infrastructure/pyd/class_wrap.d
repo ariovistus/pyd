@@ -1348,13 +1348,15 @@ struct Iterator(Params...) {
     enum bool needs_shim = false;
     static void call(T)() {
         alias wrapped_class_type!T type;
-        static if(Iters.length == 1 && Nexts.length == 1) {
+        import std.range;
+        static if(Iters.length == 1 && (Nexts.length == 1 || isInputRange!(ReturnType!(Iters[0].func)))) {
             version(Python_3_0_Or_Later) {
             }else{
                 type.tp_flags |= Py_TPFLAGS_HAVE_ITER;
             }
             type.tp_iter = &opiter_wrap!(T, Iters[0].func).func;
-            type.tp_iternext = &opiter_wrap!(T, Nexts[0].func).func;
+            static if(Nexts.length == 1)
+                type.tp_iternext = &opiter_wrap!(T, Nexts[0].func).func;
         }
     }
 }
