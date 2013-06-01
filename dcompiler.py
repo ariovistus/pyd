@@ -601,7 +601,7 @@ class DMDDCompiler(DCompiler):
         if _isPlatWin:
             self._linkOpts = []
         elif _isPlatOSX:
-            self._linkOpts = ['-shared', '-L/usr/local/Cellar/python/2.7.5/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config/libpython2.7.a']
+            self._linkOpts = ['-shared', '-L'+posix_static_python_lib()]
         else:
             self._linkOpts = ['-shared','-defaultlib=libphobos2.so']
         # _includeOpts
