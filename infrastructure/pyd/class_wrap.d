@@ -246,17 +246,18 @@ struct property_parts(alias p, string _mode) {
     alias ID!(__traits(parent, p)) Parent;
     enum nom = __traits(identifier, p);
     alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
-    static if(_mode == "" || countUntil(_mode, "r") != 1) {
+    static if(_mode == "" || countUntil(_mode, "r") != -1) {
         alias Filter!(IsGetter,Overloads) Getters;
         static if(_mode == "" && Getters.length == 0) {
             enum isgproperty = false;
             enum rmode = "";
-        }else{
+        }else {
+            import std.string;
             static assert(Getters.length != 0, 
-                    Format!("can't find property %s.%s getter", 
+                    format!("can't find property %s.%s getter", 
                         Parent.stringof, nom));
             static assert(Getters.length == 1, 
-                    Format!("can't handle property overloads of %s.%s getter (types %s)", 
+                    format!("can't handle property overloads of %s.%s getter (types %s)", 
                         Parent.stringof, nom, staticMap!(ReturnType,Getters).stringof));
             alias Getters[0] GetterFn;
             alias typeof(&GetterFn) getter_type;
@@ -297,6 +298,12 @@ struct property_parts(alias p, string _mode) {
     }else{
         enum issproperty = false;
         enum wmode = "";
+    }
+
+    static if(rmode != "") {
+        alias ReturnType!(GetterFn) Type;
+    }else static if(wmode != "") {
+        alias ParameterTypeTuple!(SetterFn)[0] Type;
     }
 
     enum mode = rmode ~ wmode;
@@ -476,7 +483,7 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
     alias property_parts!(fn, _mode) parts;
     pragma(msg, "property: ", parts.nom);
     static if(parts.isproperty) {
-        mixin _Member!(parts.nom, pyname, parts.mode, docstring);
+        mixin _Member!(parts.nom, pyname, parts.mode, docstring, parts);
 
         template shim(size_t i, T) {
             enum shim = "";

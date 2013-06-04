@@ -24,8 +24,8 @@ static this() {
             ModuleName!"testing",
             Init!(int,int,int),
             Member!("i"),
-            Member!("j"),
-            Member!("k"),
+            Member!("j", Mode!"r"),
+            Member!("k", Mode!"w"),
             Def!(Foo1.bar),
             )();
     }, PyInitOrdering.After);

@@ -62,6 +62,9 @@ shared static this() {
             ModuleName!"testing",
             Init!(int,double,string),
             Def!(Bizzy5.a),
+            Property!(Bizzy5.b, Mode!"r"),
+            Property!(Bizzy5.c, Mode!"rw"),
+            Property!(Bizzy5.e, Mode!"w"),
     )();
     }, PyInitOrdering.After);
 
@@ -227,6 +230,15 @@ class Bizzy5 {
         import std.string;
         return format("<%s, %s, '%s'>", i,d,s);
     }
+
+    @property string b() const { return "abc"; }
+
+    @property string c() { return "abc"; }
+    @property void c(string _val) { }
+
+    @property void e(string _val) { }
+
+
 }
 
 unittest {

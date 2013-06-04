@@ -35,29 +35,34 @@ import pyd.make_object;
 // It is intended that all of these templates accept a pointer-to-struct type
 // as a template parameter, rather than the struct type itself.
 
-template wrapped_member(T, string name, _M=void) {
+template wrapped_member(T, string name, string mode, PropertyParts...) {
     alias wrapped_class_type!(T) type;
     alias wrapped_class_object!(T) obj;
-    static if (is(_M == void)) {
+    static if(PropertyParts.length != 0) {
+        alias PropertyParts[0] ppart0;
+        alias ppart0.Type M;
+    }else {
         mixin("alias typeof(T."~name~") M;");
-    } else {
-        alias _M M;
-    }
-    extern(C)
-    PyObject* get(PyObject* self, void* closure) {
-        return exception_catcher(delegate PyObject*() {
-            T t = (cast(obj*)self).d_obj;
-            mixin("return d_to_python(t."~name~");");
-        });
+    } 
+    static if(countUntil(mode, "r") != -1) {
+        extern(C)
+            PyObject* get(PyObject* self, void* closure) {
+            return exception_catcher(delegate PyObject*() {
+                T t = (cast(obj*)self).d_obj;
+                mixin("return d_to_python(t."~name~");");
+            });
+        }
     }
 
-    extern(C)
-    int set(PyObject* self, PyObject* value, void* closure) {
-        return exception_catcher(delegate int() {
-            T t = (cast(obj*)self).d_obj;
-            mixin("t."~name~" = python_to_d!(M)(value);");
-            return 0;
-        });
+    static if(countUntil(mode, "w") != -1) {
+        extern(C)
+        int set(PyObject* self, PyObject* value, void* closure) {
+            return exception_catcher(delegate int() {
+                T t = (cast(obj*)self).d_obj;
+                mixin("t."~name~" = python_to_d!(M)(value);");
+                return 0;
+            });
+        }
     }
 }
 
@@ -78,7 +83,7 @@ struct Member(string name, Options...) {
     mixin _Member!(name, args.pyname, args.mode, args.docstring);
 }
 
-template _Member(string realname, string pyname, string mode, string docstring) {
+template _Member(string realname, string pyname, string mode, string docstring, parts...) {
     static const bool needs_shim = false;
     static void call(string classname, T) () {
         pragma(msg, "struct.member: " ~ pyname);
@@ -86,10 +91,10 @@ template _Member(string realname, string pyname, string mode, string docstring) 
         alias wrapped_prop_list!(T) list;
         list[$-1].name = (pyname ~ "\0").dup.ptr;
         static if(countUntil(mode, "r") != -1) {
-            list[$-1].get = &wrapped_member!(T, realname).get;
+            list[$-1].get = &wrapped_member!(T, realname, mode, parts).get;
         }
         static if(countUntil(mode, "w") != -1) {
-            list[$-1].set = &wrapped_member!(T, realname).set;
+            list[$-1].set = &wrapped_member!(T, realname, mode, parts).set;
         }
         list[$-1].doc = (docstring~"\0").dup.ptr;
         list[$-1].closure = null;
