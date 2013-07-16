@@ -101,6 +101,27 @@ void setWrongArgsError(Py_ssize_t gotArgs, size_t minArgs, size_t maxArgs, strin
     PyErr_SetString(PyExc_TypeError, (str ~ "\0").dup.ptr);
 }
 
+// compose a tuple without cast-breaking constness
+// example:
+// ----------
+// alias TupleComposer!(immutable(int), immutable(string)) T1;
+// T1* t = new T1(1);
+// t = t.put!1("foo");
+// // t.fields is a thing now
+struct TupleComposer(Ts...) {
+    Ts fields;
+
+    TupleComposer!Ts* put(size_t i)(Ts[i] val) {
+        static if(isAssignable!(Ts[i])) {
+            fields[i] = val;
+            return &this;
+        }else{
+            return new TupleComposer(fields[0 .. i], val);
+        }
+
+    }
+}
+
 // Calls callable alias fn with PyTuple args.
 // kwargs may be null, args may not
 ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObject* kwargs) {
@@ -134,8 +155,8 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
             return fn();
         }
     }
-    MaxArgs.ps t;
-    foreach(i, arg; t) {
+    auto t = new TupleComposer!(MaxArgs.ps)();
+    foreach(i, arg; t.fields) {
         enum size_t argNum = i+1;
         static if(MaxArgs.vstyle == Variadic.no) {
             alias ParameterDefaultValueTuple!fn Defaults;
@@ -143,11 +164,11 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
                 auto bpobj =  PyTuple_GetItem(args, i);
                 if(bpobj) {
                     auto pobj = Py_XINCREF(bpobj);
-                    t[i] = python_to_d!(typeof(arg))(pobj);
+                    t = t.put!i(python_to_d!(typeof(arg))(pobj));
                     Py_DECREF(pobj);
                 }else{
                     static if(!is(Defaults[i] == void)) {
-                        t[i] = Defaults[i];
+                        t = t.put!i(Defaults[i]);
                     }else{
                         // should never happen
                         enforce(0, "python non-keyword arg is NULL!");
@@ -157,28 +178,28 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
             static if (argNum >= MIN_ARGS && 
                     (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
                 if (argNum == argCount) {
-                    return fn(t[0 .. argNum]);
+                    return fn(t.fields[0 .. argNum]);
                     break;
                 }
             }
         }else static if(MaxArgs.vstyle == Variadic.typesafe) {
-            static if (argNum < t.length) {
+            static if (argNum < t.fields.length) {
                 auto pobj = Py_XINCREF(PyTuple_GetItem(args, i));
-                t[i] = python_to_d!(typeof(arg))(pobj);
+                t = t.put!i(python_to_d!(typeof(arg))(pobj));
                 Py_DECREF(pobj);
-            }else static if(argNum == t.length) {
-                alias Unqual!(ElementType!(typeof(t[i]))) elt_t;
+            }else static if(argNum == t.fields.length) {
+                alias Unqual!(ElementType!(typeof(t.fields[i]))) elt_t;
                 auto varlen = argCount-i;
                 if(varlen == 1) {
                     auto  pobj = Py_XINCREF(PyTuple_GetItem(args, i));
                     if(PyList_Check(pobj)) {
                         try{
-                            t[i] = cast(typeof(t[i])) python_to_d!(elt_t[])(pobj);
+                            t = t.put!i(cast(typeof(t.fields[i])) python_to_d!(elt_t[])(pobj));
                         }catch(PythonException e) {
-                            t[i] = cast(typeof(t[i])) [python_to_d!elt_t(pobj)];
+                            t = t.put!i(cast(typeof(t.fields[i])) [python_to_d!elt_t(pobj)]);
                         }
                     }else{
-                        t[i] = cast(typeof(t[i])) [python_to_d!elt_t(pobj)];
+                        t = t.put!i(cast(typeof(t.fields[i])) [python_to_d!elt_t(pobj)]);
                     }
                     Py_DECREF(pobj);
                 }else{
@@ -188,9 +209,9 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
                         vars[j-i] = python_to_d!(elt_t)(pobj);
                         Py_DECREF(pobj);
                     }
-                    t[i] = cast(typeof(t[i])) vars;
+                    t = t.put!i(cast(typeof(t.fields[i])) vars);
                 }
-                return fn(t);
+                return fn(t.fields);
                 break;
             }
         }else static assert(0);
@@ -305,6 +326,10 @@ template method_wrap(C, alias real_fn, string fname) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
                 return null;
             }
+            if(!constnessMatch!(C, real_fn)(instance)) {
+                return null;
+            }
+            
             Py_ssize_t arglen = args is null ? 0 : PyObject_Length(args);
             enforce(arglen != -1);
             PyObject* self_and_args = PyTuple_New(arglen+1);
@@ -350,18 +375,41 @@ template method_dgwrap(C, alias real_fn) {
 
 template memberfunc_to_func(T, alias memfn) {
     alias ReturnType!memfn Ret;
-    enum params = getparams!memfn;
     alias ParameterTypeTuple!memfn PS;
     alias ParameterIdentifierTuple!memfn ids;
+    alias ParameterDefaultValueTuple!memfn dfs;
+    enum params = getparams!(memfn,"PS","dfs");
+    enum t = gensym!ids();
         
     mixin(Replace!(q{
-        Ret func(T t, $params) {
-            auto dg = dg_wrapper(t, &memfn);
+        Ret func(T $t, $params) {
+            auto dg = dg_wrapper($t, &memfn);
             return dg($ids);
         }
-    }, "$params", params, "$fn", __traits(identifier, memfn), 
+    }, "$params", params, "$fn", __traits(identifier, memfn), "$t",t,
        "$ids",Join!(",",ids)));
 
+}
+
+string gensym(Taken...)() {
+    bool ok(string s) {
+        bool _ok = true;
+        foreach(t; Taken) {
+            if(s == t) _ok = false;
+        }
+        return _ok;
+    }
+    foreach(c; 'a' .. 'z'+1) {
+        string s = to!string(cast(char)c);
+        if (ok(s)) return s;
+    }
+    // teh heck? wat kind of function takes more than 26 user-typed params?
+    int i = 0;
+    while(true) {
+        string s = format("_%s",i);
+        if (ok(s)) return s;
+        i++;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -385,16 +433,19 @@ Dg PydCallable_AsDelegate(Dg) (PyObject* c) {
     return _pycallable_asdgT!(Dg).func(c);
 }
 
-private template _pycallable_asdgT(Dg) {
+private template _pycallable_asdgT(Dg) if(is(Dg == delegate)) {
     alias ParameterTypeTuple!(Dg) Info;
     alias ReturnType!(Dg) Tr;
 
     Dg func(PyObject* c) {
         auto f = new PydWrappedFunc(c);
-        // compiler bug 7572 preventing
-        // return &f.fn!(Tr,Info)
-        // which is probably cleaner than
-        return delegate Tr(Info i){return f.fn!(Tr, Info)(i);};
+        static if(isImmutableFunction!Dg) {
+            return &f.fn_i!(Tr,Info);
+        }else static if(isConstFunction!Dg) {
+            return &f.fn_c!(Tr,Info);
+        }else{
+            return &f.fn!(Tr,Info);
+        }
     }
 }
 
@@ -411,6 +462,18 @@ class PydWrappedFunc {
         scope(exit) Py_DECREF(ret);
         return python_to_d!(Tr)(ret);
     }
+    Tr fn_c(Tr, T ...) (T t) const {
+        PyObject* ret = call_c(t);
+        if (ret is null) handle_exception();
+        scope(exit) Py_DECREF(ret);
+        return python_to_d!(Tr)(ret);
+    }
+    Tr fn_i(Tr, T ...) (T t) immutable {
+        PyObject* ret = call_i(t);
+        if (ret is null) handle_exception();
+        scope(exit) Py_DECREF(ret);
+        return python_to_d!(Tr)(ret);
+    }
 
     PyObject* call(T ...) (T t) {
         enum size_t ARGS = T.length;
@@ -418,6 +481,20 @@ class PydWrappedFunc {
         if (pyt is null) return null;
         scope(exit) Py_DECREF(pyt);
         return PyObject_CallObject(callable, pyt);
+    }
+    PyObject* call_c(T ...) (T t) const {
+        enum size_t ARGS = T.length;
+        PyObject* pyt = PyTuple_FromItems(t);
+        if (pyt is null) return null;
+        scope(exit) Py_DECREF(pyt);
+        return PyObject_CallObject(cast(PyObject*) callable, pyt);
+    }
+    PyObject* call_i(T ...) (T t) immutable {
+        enum size_t ARGS = T.length;
+        PyObject* pyt = PyTuple_FromItems(t);
+        if (pyt is null) return null;
+        scope(exit) Py_DECREF(pyt);
+        return PyObject_CallObject(cast(PyObject*) callable, pyt);
     }
 }
 
@@ -546,28 +623,120 @@ bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
 }
 
 /**
-  Get the parameters of function as a string
+  Get the parameters of function as a string.
+
+  pt_alias refers to an alias of ParameterTypeTuple!fn
+  visible to wherever you want to mix in the results.
+  pd_alias refers to an alias of ParameterDefaultValueTuple!fn
+  visible to wherever you want to mix in the results.
 Example:
 ---
-void foo(int i, double j=2.0) {
+void foo(int i, int j=2) {
 }
 
-static assert(getparams!foo == "int i, double j = 2");
+static assert(getparams!(foo,"P","Pd") == "P[0] i, P[1] j = Pd[1]");
 ---
   */
-template getparams(alias fn) {
-    enum raw_str = typeof(fn).stringof;
-    enum ret_str = ReturnType!fn.stringof;
-    enum iret = countUntil(raw_str, ret_str);
-    static assert(iret != -1);
-    static assert(countUntil(raw_str[0 .. iret], "(") == -1);
-    enum noret_str = raw_str[iret + ret_str.length .. $];
-    enum open_p = countUntil(noret_str, "(");
-    static assert(open_p != -1);
-    enum close_p = countUntil(retro(noret_str), ")");
-    static assert(close_p != -1);
-    enum getparams = noret_str[open_p+1 .. $-1-close_p];
+template getparams(alias fn, string pt_alias, string pd_alias) {
+    alias ParameterIdentifierTuple!fn Pi;
+    alias ParameterDefaultValueTuple!fn Pd;
+    enum var = variadicFunctionStyle!fn;
 
+    string inner() {
+        static if(var == Variadic.c || var == Variadic.d) {
+            return "...";
+        }else{
+            string ret = "";
+            foreach(size_t i, id; Pi) {
+                ret ~= format("%s[%s] %s", pt_alias, i, id);
+                static if(!is(Pd[i] == void)) {
+                    ret ~= format(" = %s[%s]", pd_alias, i);
+                }
+                static if(i != Pi.length-1) {
+                    ret ~= ", ";
+                }
+            }
+            static if(var == Variadic.typesafe) {
+                ret ~= "...";
+            } 
+            return ret;
+        }
+    }
+
+    enum getparams = inner();
+
+}
+
+template isImmutableFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isImmutableFunction = is(func_t == immutable);
+}
+template isConstFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isConstFunction = is(func_t == const);
+}
+template isMutableFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isMutableFunction = !is(func_t == inout) && !is(func_t == const) && !is(func_t == immutable);
+}
+template isWildcardFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isWildcardFunction = is(func_t == inout);
+}
+template isSharedFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isSharedFunction = is(func_t == shared);
+}
+
+template funcTarget(T...) if(T.length == 1) {
+    static if(isPointer!(T[0]) && is(pointerTarget!(T[0]) == function)) {
+        alias pointerTarget!(T[0]) funcTarget;
+    }else static if(is(T[0] == function)) {
+        alias T[0] funcTarget;
+    }else static if(is(T[0] == delegate)) {
+        alias pointerTarget!(typeof((T[0]).init.funcptr)) funcTarget;
+    }else static assert(false);
+}
+
+string tattrs_to_string(fn_t)() {
+    string s;
+    if(isConstFunction!fn_t) {
+        s ~= " const";
+    }
+    if(isImmutableFunction!fn_t) {
+        s ~= " immutable";
+    }
+    if(isSharedFunction!fn_t) {
+        s ~= " shared";
+    }
+    if(isWildcardFunction!fn_t) {
+        s ~= " inout";
+    }
+    return s;
+}
+
+bool constnessMatch2(fn...)(Constness c) if(fn.length == 1) {
+    static if(isImmutableFunction!(fn)) return c == Constness.Immutable;
+    static if(isMutableFunction!(fn)) return c == Constness.Mutable; 
+    static if(isConstFunction!(fn)) return c != Constness.Wildcard;
+    else return false;
+}
+
+bool constnessMatch(C, alias real_fn)(C inst) {
+    static if(is(C == class)) {
+        auto range = wrapped_gc_objects.equalRange(cast(void*) inst);
+        auto c = range.front.constness;
+        if(!constnessMatch2!(typeof(real_fn))(c)) {
+            PyErr_SetString(PyExc_ValueError, 
+                    ("constness mismatch: method " ~ 
+                     C.stringof ~ "." ~ __traits(identifier, real_fn) ~ 
+                     " of type " ~ 
+                     typeof(real_fn).stringof ~ " cannot be called with " ~ 
+                     constness_ToString(c) ~ " " ~ C.stringof).ptr);
+            return false;
+        }
+    }
+    return true;
 }
 
 /*
@@ -580,7 +749,7 @@ template fn_to_dgT(Fn) {
     alias ParameterTypeTuple!(Fn) T;
     alias ReturnType!(Fn) Ret;
 
-    alias Ret delegate(T) type;
+    mixin("alias Ret delegate(T) " ~ tattrs_to_string!(Fn)() ~ " type;");
 }
 
 /**

@@ -41,10 +41,10 @@ class Foo5{
 }
 
 unittest {
-    static assert(getparams!foo1 == "int i, int j");
-    static assert(getparams!foo2.startsWith("int i, double j = 2"));
-    static assert(getparams!foo3 == "...");
-    static assert(getparams!foo4 == "int[] i...");
+    static assert(getparams!(foo1,"A","B") == "A[0] i, A[1] j");
+    static assert(getparams!(foo2, "A","B") == "A[0] i, A[1] j = B[1]");
+    static assert(getparams!(foo3, "A","B") == "...");
+    static assert(getparams!(foo4, "A","B") == "A[0] i...");
     auto fn = &call_ctor!(Foo2, Init!(int, double)).func;
     //pragma(msg, typeof(fn));
     //fn(1);

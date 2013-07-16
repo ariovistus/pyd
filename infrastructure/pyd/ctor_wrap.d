@@ -31,8 +31,10 @@ import pyd.make_object;
 import meta.Nameof;
 
 template call_ctor(T, init) {
-    enum params = getparams!(init.Inner!T.FN);
+    alias ParameterTypeTuple!(init.Inner!T.FN) paramtypes;
     alias ParameterIdentifierTuple!(init.Inner!T.FN) paramids;
+    alias ParameterDefaultValueTuple!(init.Inner!T.FN) dfs;
+    enum params = getparams!(init.Inner!T.FN, "paramtypes", "dfs");
     mixin(Replace!(q{
     T func($params) {
         return new $T($ids);

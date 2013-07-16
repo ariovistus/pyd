@@ -48,3 +48,4 @@ template Not(alias Pred) {
         enum Not = !Pred!(Stuff[0]);
     }
 }
+

@@ -58,7 +58,25 @@ template shim_class(T) {
 // This is split out in case I ever want to make a subtype of a wrapped class.
 template PydWrapObject_HEAD(T) {
     mixin PyObject_HEAD;
-    T d_obj;
+    static if(isMutable!T) {
+        T _d_obj;
+        @property d_obj() {
+            return _d_obj;
+        }
+        @property d_obj(T t) {
+            _d_obj = t;
+        }
+    }else{
+        T* _d_obj;
+        @property d_obj() {
+            if (!_d_obj) return T.init;
+            return *_d_obj;
+        }
+        @property d_obj(T t) {
+            _d_obj = &t;
+        }
+    }
+
 }
 
 // The class object, a subtype of PyObject
@@ -81,6 +99,19 @@ template wrapped_class_object(T) {
             }
     }
 }
+string attrs_to_string(uint attrs) {
+    string s = "";
+    with(FunctionAttribute) {
+        if(attrs & pure_) s ~= " pure";
+        if(attrs & nothrow_) s ~= " nothrow";
+        if(attrs & ref_) s ~= " ref";
+        if(attrs & property) s ~= " @property";
+        if(attrs & trusted) s ~= " @trusted";
+        if(attrs & safe) s ~= " @safe";
+    }
+    return s;
+}
+
 
 void init_PyTypeObject(T)(ref PyTypeObject tipo) {
     Py_SET_REFCNT(&tipo, 1);
@@ -101,8 +132,42 @@ template wrapped_class_type(T) {
     }
 }
 
+enum Constness {
+    Mutable,
+    Const,
+    Immutable,
+    Wildcard
+}
+
+string constness_ToString(Constness c) {
+    switch(c){
+        case Constness.Mutable:
+            return "mutable";
+        case Constness.Const:
+            return "const";
+        case Constness.Immutable:
+            return "immutable";
+        case Constness.Wildcard:
+            return "inout";
+        default:
+            assert(0);
+    }
+}
+
+template constness(T) {
+    static if(is(T == immutable)) {
+        enum constness = Constness.Immutable;
+    }else static if(is(T == const)) {
+        enum constness = Constness.Const;
+    }else static if(is(T == inout)) {
+        enum constness = Constness.Wildcard;
+    }else {
+        enum constness = Constness.Mutable;
+    }
+}
+
 // A mapping of all class references that are being held by Python.
-alias Tuple!(void*,"d",PyObject*,"py") D2Py;
+alias Tuple!(void*,"d",PyObject*,"py", Constness, "constness") D2Py;
 alias MultiIndexContainer!(D2Py, IndexedBy!(HashedUnique!("a.d")), 
         MallocAllocator, MutableView) WrappedObjectMap;
 
@@ -120,7 +185,7 @@ template Dt2Py(dg_t) {
 }
 
 // A mapping of all GC references that are being held by Python.
-template wrapped_gc_references(dg_t) {
+template wrapped_gc_references(dg_t) if(isPointer!dg_t || isDelegate!dg_t) {
     alias MultiIndexContainer!(Dt2Py!dg_t, IndexedBy!(HashedUnique!("a.d")), 
             MallocAllocator, MutableView) WrappedReferenceMap;
     WrappedReferenceMap _wrapped_gc_references;
@@ -142,6 +207,8 @@ template is_wrapped(T) {
     static if(hasFunctionAttrs!T) {
         alias is_wrapped!(SetFunctionAttributes!(T, functionLinkage!T, 
                     FunctionAttribute.none)) is_wrapped;
+    }else static if(is(T == class) && !isMutable!T) {
+        alias is_wrapped!(Unqual!T) is_wrapped;
     }else {
         bool is_wrapped = false;
     }
@@ -400,11 +467,13 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
     template shim(size_t i, T) {
         enum shim = Replace!(q{    
             alias Params[$i] __pyd_p$i;
-            $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) {
-                return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func("$name", t);
+            $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
+                return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func!(ParameterTypeTuple!(__pyd_p$i.func_t))("$name", t);
             }
             alias T.$realname $realname;
-        }, "$i",i,"$realname",realname, "$name", name, "$override", 
+        }, "$i",i,"$realname",realname, "$name", name, 
+        "$attrs", attrs_to_string(functionAttributes!func_t) ~ " " ~ tattrs_to_string!(func_t)(),
+        "$override", 
         // todo: figure out what's going on here
         (variadicFunctionStyle!func == Variadic.no ? "override":""));
     }
@@ -599,11 +668,16 @@ struct Init(cps ...) {
                 Format!("%s: Cannot find constructor with params %s", 
                     T.stringof, CtorParams.stringof));
         alias VOverloads[0] FN;
+
+        alias ParameterTypeTuple!FN Pt;
+        alias ParameterDefaultValueTuple!FN Pd;
     }
     static void call(string classname, T)() {
     }
     template shim(size_t i, T) {
-        enum params = getparams!(Inner!T.FN);
+        enum params = getparams!(Inner!T.FN,
+                format("__pyd_p%s.Inner!T.Pt",i),
+                format("__pyd_p%s.Inner!T.Pd",i));
         alias ParameterIdentifierTuple!(Inner!T.FN) paramids;
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
@@ -1645,7 +1719,7 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
 
 // If the passed D reference has an existing Python object, return a borrowed
 // reference to it. Otherwise, return null.
-PyObject_BorrowedRef* get_existing_reference(T) (T t) {
+PyObject_BorrowedRef* get_existing_reference(T) (T t) if(is(T == class) || isPointer!T || isDelegate!T) {
     static if (is(T == class)) {
         auto range = wrapped_gc_objects.equalRange(cast(void*) t);
         if(range.empty) return null;
@@ -1669,20 +1743,20 @@ void drop_reference(T) (T t) {
 // Add the passed D reference to the pool of held references.
 void add_reference(T) (T t, PyObject* o) {
     static if (is(T == class)) {
-        wrapped_gc_objects.insert(D2Py(cast(void*)t, o));
+        wrapped_gc_objects.insert(D2Py(cast(void*)t, o, constness!T));
     } else {
         wrapped_gc_references!(T).insert(Dt2Py!T(t, o));
     }
 }
 
-PyObject* WrapPyObject_FromObject(T) (T t) {
+PyObject* WrapPyObject_FromObject(T) (T t) if(is(T == class) || isPointer!T || isDelegate!T) {
     return WrapPyObject_FromTypeAndObject(&wrapped_class_type!(T), t);
 }
 
 /*
  * Returns a new Python object of a wrapped type.
  */
-PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) {
+PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) if(is(T == class) || isPointer!T || isDelegate!T) {
     //alias wrapped_class_object!(T) wrapped_object;
     //alias wrapped_class_type!(T) type;
     if (is_wrapped!(T)) {
@@ -1744,18 +1818,6 @@ T WrapPyObject_AsObject(T) (PyObject* _self) {
             // same type or only casting away attrs - ok!
             return cast(T) self.d_obj;
         }else{
-            string attrs_to_string(uint attrs) {
-                string s = "";
-                with(FunctionAttribute) {
-                    if(attrs & pure_) s ~= " pure";
-                    if(attrs & nothrow_) s ~= " nothrow";
-                    if(attrs & ref_) s ~= " ref";
-                    if(attrs & property) s ~= " @property";
-                    if(attrs & trusted) s ~= " @trusted";
-                    if(attrs & safe) s ~= " @safe";
-                }
-                return s;
-            }
             throw new Exception(format(
                         "trying to convert %s%s to %s",
                         SetFunctionAttributes!(T, 

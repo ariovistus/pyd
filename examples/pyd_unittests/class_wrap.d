@@ -56,6 +56,7 @@ shared static this() {
             ModuleName!"testing",
             Property!(Bizzy4.i),
             Repr!(Bizzy4.repr),
+            Def!(Bizzy4.foo),
             Len!(),
     )();
     wrap_class!(Bizzy5,
@@ -215,6 +216,9 @@ class Bizzy4 {
     @property void i(int n) { _i = n; }
     @property size_t length() { return 5; }
     @property string repr() { return "cowabunga"; }
+
+    void foo(Bizzy4 other) {
+    }
 }
 
 class Bizzy5 {
@@ -231,13 +235,12 @@ class Bizzy5 {
         return format("<%s, %s, '%s'>", i,d,s);
     }
 
-    @property string b() const { return "abc"; }
+    @property string b() { return "abc"; }
 
     @property string c() { return "abc"; }
     @property void c(string _val) { }
 
     @property void e(string _val) { }
-
 
 }
 

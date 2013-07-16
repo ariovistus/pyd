@@ -9,7 +9,7 @@ maj = platform.python_version_tuple()[0]
 
 projName = 'pyd_unittests'
 exts = [
-'pydobject','make_object','embedded','func_wrap','class_wrap','def','struct_wrap'
+'pydobject','make_object','embedded','func_wrap','class_wrap','def','struct_wrap', 'const'
         ];
 string_imports = {
         'func_wrap': ["important_message.txt"]
@@ -29,6 +29,7 @@ ext_modules = setup(
         Extension(ext(e), [ext(e)+".d"],
             d_unittest=True,
             build_deimos=True,
+            d_lump=True,
             string_imports = string_imports.get(e, [])
             )
             for e in exts 

@@ -26,10 +26,19 @@ PYTHON_3_2 = -version=Python_3_2_Or_Later \
 	     -version=Python_2_5_Or_Later \
 	     -version=Python_2_4_Or_Later \
 	     -L-lpython3.2mu
+PYTHON_3_3 = -version=Python_3_3_Or_Later \
+	     -version=Python_3_2_Or_Later \
+	     -version=Python_3_1_Or_Later \
+	     -version=Python_3_0_Or_Later \
+	     -version=Python_2_7_Or_Later \
+             -version=Python_2_6_Or_Later \
+	     -version=Python_2_5_Or_Later \
+	     -version=Python_2_4_Or_Later \
+	     -L-lpython3.3m
 DC = dmd -unittest -property -debug -gc
 LDC = ldc2 -unittest -property -d-debug -gc -oq
 
-all: pydobject.x pydobject3.x make_object.x make_object3.x embedded.x embedded3.x func_wrap.x func_wrap3.x class_wrap.x class_wrap3.x def.x def3.x struct_wrap.x threading.x
+all: pydobject.x pydobject3.x make_object.x make_object3.x embedded.x embedded3.x func_wrap.x func_wrap3.x class_wrap.x class_wrap3.x def.x def3.x struct_wrap.x threading.x const.x
 	./pydobject.x
 	./pydobject3.x
 	./make_object.x
@@ -44,14 +53,15 @@ all: pydobject.x pydobject3.x make_object.x make_object3.x embedded.x embedded3.
 	./def.x
 	./def3.x
 	./threading.x
+	./const.x
 
 clean:
 	rm -f *.x
 	rm -f *.o
 
 %3.x: %3.d
-	$(DC) $(PYTHON_3_2) $(PYD_FILES) $^ -of$@ -I$(PYD_DIR)
+	$(DC) $(PYTHON_3_3) $(PYD_FILES) $^ -of$@ -I$(PYD_DIR)
 %.x: %.d
-	#$(DC) $(PYTHON_2_7) $(PYD_FILES) $^ -of$@ -I$(PYD_DIR)
-	$(LDC) $(LDC_PYTHON_2_7) $(PYD_FILES) $^ -of $@ -I$(PYD_DIR)
+	$(DC) $(PYTHON_2_7) $(PYD_FILES) $^ -of$@ -I$(PYD_DIR)
+	#$(LDC) $(LDC_PYTHON_2_7) $(PYD_FILES) $^ -of $@ -I$(PYD_DIR)
 

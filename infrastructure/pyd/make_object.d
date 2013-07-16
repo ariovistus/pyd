@@ -245,8 +245,9 @@ PyObject* d_to_python(T) (T t) {
         return t;
     // Convert wrapped type to a PyObject*
     } else static if (is(T == class)) {
+        alias Unqual!T Tu;
         // But only if it actually is a wrapped type. :-)
-        PyTypeObject** type = t.classinfo in wrapped_classes;
+        PyTypeObject** type = Tu.classinfo in wrapped_classes;
         if (type) {
             return WrapPyObject_FromTypeAndObject(*type, t);
         }

@@ -31,12 +31,18 @@ import std.traits;
 template OverloadShim() {
     // If this is actually an instance of a Python subclass, return the
     // PyObject associated with the object. Otherwise, return null.
-    PyObject* __pyd_get_pyobj() {
+    PyObject* __pyd_get_pyobj(Constness c = Constness.Mutable) const {
         auto range = wrapped_gc_objects.equalRange(cast(void*) this);
         PyTypeObject** _pytype = this.classinfo in wrapped_classes;
         if (range.empty || _pytype is null || range.front.py.ob_type != *_pytype) {
             return null;
         } else {
+            if (range.front.constness != c && 
+                    c != Constness.Const) {
+                throw new Exception("constness mismatch required:" ~ 
+                        constness_ToString(c) ~ ", found: " ~ 
+                        constness_ToString(range.front.constness));
+            }
             return range.front.py;
         }
     }
@@ -57,6 +63,39 @@ template OverloadShim() {
         }
     }
     template __pyd_get_overload(string realname, fn_t) {
+        static if(isImmutableFunction!fn_t) {
+        ReturnType!(fn_t) func(T ...) (string name, T t) immutable {
+            PyObject* _pyobj = this.__pyd_get_pyobj();
+            if (_pyobj !is null) {
+                // If this object's type is not the wrapped class's type (that is,
+                // if this object is actually a Python subclass of the wrapped
+                // class), then call the Python object.
+                PyObject* method = PyObject_GetAttrString(_pyobj, (name ~ "\0").dup.ptr);
+                if (method is null) handle_exception();
+                auto pydg = PydCallable_AsDelegate!(fn_to_dg!(fn_t))(method);
+                Py_DECREF(method);
+                return pydg(t);
+            } else {
+                mixin("return super."~realname~"(t);");
+            }
+        }
+        } else static if(isConstFunction!fn_t) {
+        ReturnType!(fn_t) func(T ...) (string name, T t) const {
+            PyObject* _pyobj = this.__pyd_get_pyobj();
+            if (_pyobj !is null) {
+                // If this object's type is not the wrapped class's type (that is,
+                // if this object is actually a Python subclass of the wrapped
+                // class), then call the Python object.
+                PyObject* method = PyObject_GetAttrString(_pyobj, (name ~ "\0").dup.ptr);
+                if (method is null) handle_exception();
+                auto pydg = PydCallable_AsDelegate!(fn_to_dg!(fn_t))(method);
+                Py_DECREF(method);
+                return pydg(t);
+            } else {
+                mixin("return super."~realname~"(t);");
+            }
+        }
+        }else{
         ReturnType!(fn_t) func(T ...) (string name, T t) {
             PyObject* _pyobj = this.__pyd_get_pyobj();
             if (_pyobj !is null) {
@@ -71,6 +110,7 @@ template OverloadShim() {
             } else {
                 mixin("return super."~realname~"(t);");
             }
+        }
         }
     }
     int __pyd_apply_wrapper(dg_t) (dg_t dg) {
