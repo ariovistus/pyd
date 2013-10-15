@@ -206,8 +206,8 @@ struct PyDateTime_CAPI {
 enum DATETIME_API_MAGIC = 0x414548d5;
 
 /// _
+static PyDateTime_CAPI* PyDateTimeAPI;
 PyDateTime_CAPI* PyDateTime_IMPORT()() {
-    static PyDateTime_CAPI* PyDateTimeAPI;
     if (PyDateTimeAPI == null) {
         PyDateTimeAPI = cast(PyDateTime_CAPI *)
             PyCObject_Import("datetime", "datetime_CAPI");
@@ -264,12 +264,12 @@ PyObject* PyDate_FromDate()(int year, int month, int day) {
 /// _
 PyObject* PyDateTime_FromDateAndTime()(int year, int month, int day, int hour, int min, int sec, int usec) {
     return PyDateTimeAPI.DateTime_FromDateAndTime(year, month, day, hour,
-            min, sec, usec, Py_None, PyDateTimeAPI.DateTimeType);
+            min, sec, usec, cast(PyObject *) Py_None(), PyDateTimeAPI.DateTimeType);
 }
 /// _
 PyObject* PyTime_FromTime()(int hour, int minute, int second, int usecond) {
     return PyDateTimeAPI.Time_FromTime(hour, minute, second, usecond,
-            Py_None, PyDateTimeAPI.TimeType);
+            cast(PyObject *) Py_None(), PyDateTimeAPI.TimeType);
 }
 /// _
 PyObject* PyDelta_FromDSU()(int days, int seconds, int useconds) {
