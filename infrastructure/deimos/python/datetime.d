@@ -3,9 +3,24 @@
   */
 module deimos.python.datetime;
 
+version(Python_3_1_Or_Later) {
+    version = PyCapsule;
+}else version(Python_3_0_Or_Later) {
+    version = PyCObject;
+}else version(Python_2_7_Or_Later) {
+    version = PyCapsule;
+}else {
+    version = PyCObject;
+}
+
 import deimos.python.object;
 import deimos.python.pyport;
-import deimos.python.cobject;
+version(PyCapsule) {
+    import deimos.python.pycapsule;
+}else version(PyCObject) {
+    import deimos.python.cobject;
+}else static assert(0);
+
 
 extern(C):
 // Python-header-file: Include/datetime.h:
@@ -205,12 +220,21 @@ struct PyDateTime_CAPI {
 // went away in python 3. who cares?
 enum DATETIME_API_MAGIC = 0x414548d5;
 
+version(PyCapsule) {
+    enum PyDateTime_CAPSULE_NAME = "datetime.datetime_CAPI";
+}
+
 /// _
 static PyDateTime_CAPI* PyDateTimeAPI;
 PyDateTime_CAPI* PyDateTime_IMPORT()() {
     if (PyDateTimeAPI == null) {
-        PyDateTimeAPI = cast(PyDateTime_CAPI *)
-            PyCObject_Import("datetime", "datetime_CAPI");
+        version(PyCapsule) {
+            PyDateTimeAPI = cast(PyDateTime_CAPI *)
+                PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+        }else {
+            PyDateTimeAPI = cast(PyDateTime_CAPI *)
+                PyCObject_Import("datetime", "datetime_CAPI");
+        }
     }
     return PyDateTimeAPI;
 }

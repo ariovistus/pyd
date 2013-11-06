@@ -20,7 +20,14 @@ module deimos.python.pycapsule;
 import deimos.python.pyport;
 import deimos.python.object;
 
-version(Python_2_7_Or_Later) {
+version(Python_3_1_Or_Later) {
+    version = PyCapsule;
+}else version(Python_3_0_Or_Later) {
+}else version(Python_2_7_Or_Later) {
+    version = PyCapsule;
+}
+
+version(PyCapsule) {
 extern(C):
 // Python-header-file: Include/pycapsule.h:
 
