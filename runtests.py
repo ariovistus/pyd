@@ -14,17 +14,18 @@ parts = [
 "deimos_unittests",
 "pyind",
 "pyd_unittests",
+"d_and_c",
 ]
 use_parts = set()
 exe_ext = get_config_var("EXE")
 verz_maj = platform.python_version_tuple()[0]
-print ("%r" % (verz_maj,), verz_maj == 2)
 if verz_maj == "3" or verz_maj == "2":
     import optparse
     oparser = optparse.OptionParser()
     oparser.add_option("-b", action="store_true", dest="use_build")
     oparser.add_option('-C',"--compiler", dest="compiler")
     oparser.add_option('-c',"--clean", action="store_true",dest="clean")
+    oparser.add_option('-g','--debug',action="store_true",dest="debug")
     (opts, args) = oparser.parse_args()
 else:
     assert 0
@@ -52,6 +53,8 @@ def pydexe():
         cmds = [sys.executable, "setup.py", "pydexe"]
         if opts.compiler:
             cmds.append("--compiler="+opts.compiler)
+        if opts.debug:
+            cmds.append("-g")
         subprocess.check_call(cmds)
     except:
         import os
@@ -139,6 +142,15 @@ try:
         else:
             pybuild()
             check_py("test.py")
+        os.chdir("..")
+    if "d_and_c" in use_parts:
+        os.chdir("misc/d_and_c")
+        print "cwd: ", os.getcwd()
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            #check_py("test.py")
         os.chdir("..")
 finally:
     if opts.use_build and old_path is not None:

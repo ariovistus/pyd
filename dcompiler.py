@@ -690,7 +690,7 @@ class DMDDCompiler(DCompiler):
     def compile(self, *args, **kwargs):
         if not _isPlatWin and not self.build_exe:
             output_dir = kwargs.get('output_dir', '')
-            if not os.path.exists(output_dir):
+            if not os.path.exists(os.path.join(output_dir,'infra')):
                 os.makedirs(os.path.join(output_dir,'infra'))
             src = os.path.join(_infraDir, 'd', 'so_ctor.c')
             dsto = os.path.join(output_dir, 'infra', 'so_ctor.o')
