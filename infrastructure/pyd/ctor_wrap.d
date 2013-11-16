@@ -48,7 +48,7 @@ template wrapped_init(T) {
     extern(C)
     int init(PyObject* self, PyObject* args, PyObject* kwds) {
         return exception_catcher({
-            WrapPyObject_SetObj(self, new T);
+            set_pyd_mapping(self, new T);
             return 0;
         });
     }
@@ -63,7 +63,7 @@ template wrapped_struct_init(T) {
             static if (is(T S : S*)) {
                 pragma(msg, "wrapped_struct_init, S is '" ~ prettynameof!(S) ~ "'");
                 T t = new S;
-                WrapPyObject_SetObj(self, t);
+                set_pyd_mapping(self, t);
             }
             return 0;
         });
@@ -88,7 +88,7 @@ template wrapped_ctors(string classname, T,Shim, C ...) {
             // Default ctor
             static if (is(typeof(new T))) {
                 if (len == 0) {
-                    WrapPyObject_SetObj(self, new T);
+                    set_pyd_mapping(self, new T);
                     return 0;
                 }
             }
@@ -101,7 +101,7 @@ template wrapped_ctors(string classname, T,Shim, C ...) {
                         PyErr_SetString(PyExc_RuntimeError, "Class ctor redirect didn't return a class instance!");
                         return -1;
                     }
-                    WrapPyObject_SetObj(self, t);
+                    set_pyd_mapping(self, t);
                     return 0;
                 }
             }

@@ -3465,7 +3465,7 @@ Complexity: $(BIGOH 1)
             // node = null -> put value of k in hashes[ix]
             // or node is last node in hashes[ix] chain -> 
             //  put value of k in node.next 
-            bool _find(KeyType k, out inout(ThisNode)* node, out size_t index) inout{
+            bool _find(const(KeyType) k, out inout(ThisNode)* node, out size_t index) inout{
                 index = hash(k)%hashes.length;
                 if(!hashes[index]){
                     node = null;
@@ -3558,6 +3558,7 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
             }
 
             bool replace(Position!ThisNode r, ValueView value) {
+                assert(r.node !is null);
                 return _Replace(r.node, cast(Value) value);
             }
 
@@ -3590,6 +3591,8 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
                 static if(allowDuplicates){
                     if(cursor){
                         _Remove(node);
+                        node.index!N.prev = null;
+                        node.index!N.next = null;
                         _Insert(node);
                     }
                 }else{
@@ -4042,6 +4045,15 @@ template HashedNonUnique(alias KeyFromValue="a",
 
 class Position(MNode) {
     alias MNode.ThisContainer.ValueView ValueView;
+    alias MNode.ThisContainer.Allocator Allocator;
+
+    new(size_t sz) {
+        void* p = Allocator.allocate!void(sz);
+        return p;
+    }
+    delete(void* p) {
+        Allocator.deallocate(p);
+    }
 
     @property ValueView v() {
         return node.value;
@@ -4067,7 +4079,7 @@ auto PSR(Range)(Range rng)
 {
     alias Position!(typeof(*rng.front_node)) Pos;
 
-    struct PositionRange {
+    static struct PositionRange {
 
         Range source;
 
@@ -4416,7 +4428,34 @@ n1.index!2 .left = n2;
 +/
 struct MNode(_ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
     alias _ThisContainer ThisContainer;
-    Value value;
+    static if(MutableValue!(MNode, Value)) {
+        Value value;
+    }else{
+        // do a dumb tail const sort of thing
+        struct Capsule {
+            Value value;
+        }
+        Capsule* val_ptr;
+
+        @property Value value() pure inout { return val_ptr.value; }
+        @property void value(Value v) {
+            if(val_ptr != null) {
+                Allocator.deallocate(val_ptr);
+            }
+            val_ptr = Allocator.allocate!(Capsule)(1);
+            Capsule c = Capsule(v);
+            move(c, *val_ptr);
+        }
+        this(Value val) {
+            this.value = val;
+        }
+        ~this() {
+            if(val_ptr != null) {
+                Allocator.deallocate(val_ptr);
+                val_ptr = null;
+            }
+        }
+    }
 
     static if(Signals.AllSignals.length > 0) {
         // notifications need to go somewhere
@@ -4763,6 +4802,10 @@ if(IndexGarbage!(Args)().length != 0) {
 +/
 }
 
+template MutableValue(Node, Value) {
+    enum MutableValue = __traits(compiles, { Value value; value = Value.init; });
+}
+
 template _AllUnique(Thing...) {
     enum _AllUnique = NoDuplicates!Thing .length == Thing.length;
 }
@@ -4987,8 +5030,7 @@ if(IndexedByCount!(Args)() == 1 &&
 
     ThisNode* _InsertAllBut(size_t N)(Value value){
         ThisNode* node = Allocator.allocate!(ThisNode)(1);
-        enum bool mutable = (__traits(compiles, {node.value = value;}));
-        static if(mutable) {
+        static if(MutableValue!(ThisNode, Value)) {
             node.value = value;
         }else{
             auto t = ThisNode(value);
@@ -5072,65 +5114,38 @@ denied:
     template ForEachIndexPosition(size_t i){
         static if(i < IndexedBy.Indeces.length){
             static if(is(typeof(index!i ._NodePosition((ThisNode*).init)))){
-                enum ante = Replace!(q{
+                enum getNodePositions = Replace!(q{
                     auto pos$i = index!$i ._NodePosition(node);
-                }, "$i", i) ~ ForEachIndexPosition!(i+1).ante;
-                enum post = Replace!(q{
+                }, "$i", i) ~ ForEachIndexPosition!(i+1).getNodePositions;
+                enum gotoDeniedOnInvalid = Replace!(q{
                     ThisNode* node$i;
                     if(!index!$i ._PositionFixable(node, pos$i, node$i)) 
                         goto denied;
-                }, "$i", i) ~ ForEachIndexPosition!(i+1).post;
-                enum postpost = Replace!(q{
+                }, "$i", i) ~ ForEachIndexPosition!(i+1).gotoDeniedOnInvalid;
+                enum fixupIndeces = Replace!(q{
                     index!$i ._FixPosition(node, pos$i, node$i);
-                }, "$i", i) ~ ForEachIndexPosition!(i+1).postpost;
+                }, "$i", i) ~ ForEachIndexPosition!(i+1).fixupIndeces;
             }else{
-                enum ante = ForEachIndexPosition!(i+1).ante;
-                enum post = ForEachIndexPosition!(i+1).post;
-                enum postpost = ForEachIndexPosition!(i+1).postpost;
+                enum getNodePositions = ForEachIndexPosition!(i+1).getNodePositions;
+                enum gotoDeniedOnInvalid = ForEachIndexPosition!(i+1).gotoDeniedOnInvalid;
+                enum fixupIndeces = ForEachIndexPosition!(i+1).fixupIndeces;
             }
         }else{
-            enum ante = "";
-            enum post = "";
-            enum postpost = "";
+            enum getNodePositions = "";
+            enum gotoDeniedOnInvalid = "";
+            enum fixupIndeces = "";
         }
     }
-
-    template ForEachNodeReplace(string old, string newnode, size_t i) {
-        static if(i < IndexedBy.Indeces.length) {
-            enum ForEachNodeReplace = Replace!(q{
-                index!$i ._NodeReplace($old, $new);
-            }, "$i", i, "$old", old, "$new", newnode) ~ 
-            ForEachNodeReplace!(old, newnode,i+1);
-        }else{
-            enum ForEachNodeReplace = "";
-        }
-    }
-
 
     bool _Replace(ThisNode* node, Value value){
-        mixin(ForEachIndexPosition!0 .ante);
+        mixin(ForEachIndexPosition!0 .getNodePositions);
         Value old = node.value;
-        enum bool mutable = __traits(compiles, {node.value = value;});
-        static if(mutable) {
-            node.value = value;
-        }else {
-            ThisNode newnode_v = ThisNode(value);
-            ThisNode* newnode = Allocator.allocate!(ThisNode)(1);
-            move(newnode_v, *newnode);
-            mixin(ForEachNodeReplace!("node", "newnode", 0));
-        }
-        
-        mixin(ForEachIndexPosition!0 .post);
-        mixin(ForEachIndexPosition!0 .postpost);
-        static if(!mutable) dealloc(node);
+        node.value = value;
+        mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);
+        mixin(ForEachIndexPosition!0 .fixupIndeces);
         return true;
 denied:
-        static if(mutable) {
-            node.value = old;
-        }else{
-            mixin(ForEachNodeReplace!("newnode", "node", 0));
-            dealloc(newnode);
-        }
+        node.value = old;
         return false;
     }
 
@@ -5142,10 +5157,10 @@ Preconditions: mod is a callable of the form void mod(ref Value)
 Complexity: $(BIGOH m(n)) 
 */
     void _Modify(Modifier)(ThisNode* node, Modifier mod){
-        mixin(ForEachIndexPosition!0 .ante);
+        mixin(ForEachIndexPosition!0 .getNodePositions);
         mod(node.value);
-        mixin(ForEachIndexPosition!0 .post);
-        mixin(ForEachIndexPosition!0 .postpost);
+        mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);
+        mixin(ForEachIndexPosition!0 .fixupIndeces);
         return;
 denied:
         _RemoveAll(node);

@@ -256,14 +256,16 @@ PyObject* d_to_python(T) (T t) {
     } else static if (is(T == struct) && isInputRange!T) {
         return d_to_python(wrap_range(t));
     } else static if (is(T == struct)) {
-        if (is_wrapped!(T*)) {
-            T* temp = new T;
-            *temp = t;
-            return WrapPyObject_FromObject(temp);
+        alias Unqual!T Tu;
+        if (is_wrapped!(Tu*)) {
+            Tu* temp = new Tu;
+            *temp = cast(Tu) t;
+            return WrapPyObject_FromObject(cast(T*)temp);
         }
     // If converting a struct by reference, wrap the thing directly
     } else static if (is(typeof(*t) == struct)) {
-        if (is_wrapped!(T)) {
+        alias Unqual!T Tu;
+        if (is_wrapped!(Tu)) {
             if (t is null) {
                 return Py_INCREF(Py_None());
             }
@@ -378,22 +380,25 @@ T python_to_d(T) (PyObject* o) {
         // we can only convert the object if it is the wrapped type.
         if (
             is_wrapped!(T) &&
-            PyObject_IsInstance(o, cast(PyObject*)&wrapped_class_type!(T)) &&
-            cast(T)((cast(wrapped_class_object!(Object)*)o).d_obj) !is null
-        ) {
-            return WrapPyObject_AsObject!(T)(o);
+            PyObject_IsInstance(o, cast(PyObject*)&wrapped_class_type!(T)) )
+        {
+            alias wrapped_class_object!(ApplyConstness!(Object, constness!T))
+                wrapped_obj;
+            if ( get_d_reference!T(o) !is null) {
+                return get_d_reference!(T)(o);
+            }
         }
         // Otherwise, throw up an exception.
         //could_not_convert!(T)(o);
     } else static if (is(T == struct)) { // struct by value
         // struct is wrapped
         if (is_wrapped!(T*) && PyObject_TypeCheck(o, &wrapped_class_type!(T*))) { 
-            return *WrapPyObject_AsObject!(T*)(o);
+            return *get_d_reference!(T*)(o);
         }
         // or struct is wrapped range
         if(PyObject_IsInstance(o, 
                     cast(PyObject*)&wrapped_class_type!(RangeWrapper*))) {
-            RangeWrapper* wrapper = WrapPyObject_AsObject!(RangeWrapper*)(o);
+            RangeWrapper* wrapper = get_d_reference!(RangeWrapper*)(o);
             if(typeid(T) != wrapper.tid) {
                 could_not_convert!T(o, format("typeid mismatch: %s vs %s", 
                             wrapper.tid, typeid(T)));
@@ -404,12 +409,12 @@ T python_to_d(T) (PyObject* o) {
     } else static if (isPointer!T && is(pointerTarget!T == struct)) { 
         // pointer to struct   
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
-            return WrapPyObject_AsObject!(T)(o);
+            return get_d_reference!(T)(o);
         }// else could_not_convert!(T)(o);
     } else static if (is(T == delegate)) {
         // Get the original wrapped delegate out if this is a wrapped delegate
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
-            return WrapPyObject_AsObject!(T)(o);
+            return get_d_reference!(T)(o);
         // Otherwise, wrap the PyCallable with a delegate
         } else if (PyCallable_Check(o)) {
             return PydCallable_AsDelegate!(T)(o);
@@ -418,7 +423,7 @@ T python_to_d(T) (PyObject* o) {
         // We can only make it a function pointer if we originally wrapped a
         // function pointer.
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &wrapped_class_type!(T))) {
-            return WrapPyObject_AsObject!(T)(o);
+            return get_d_reference!(T)(o);
         }// else could_not_convert!(T)(o);
     } else static if (isSomeString!T) {
         alias Unqual!(typeof(T.init[0])) C;

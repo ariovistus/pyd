@@ -37,8 +37,7 @@ template OverloadShim() {
         if (range.empty || _pytype is null || range.front.py.ob_type != *_pytype) {
             return null;
         } else {
-            if (range.front.constness != c && 
-                    c != Constness.Const) {
+            if (!constCompatible(range.front.constness, c)) {
                 throw new Exception("constness mismatch required:" ~ 
                         constness_ToString(c) ~ ", found: " ~ 
                         constness_ToString(range.front.constness));

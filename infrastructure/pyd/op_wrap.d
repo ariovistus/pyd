@@ -78,7 +78,7 @@ template binop_wrap(T, _lop, _rop) {
                 }
                 static if(mode.startsWith("l")) {
 op:
-                    auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    auto dgl = get_dgl(get_d_reference!T(o1), &lfn);
                     static if(lop[0].op.endsWith("=")) {
                         dgl(python_to_d!LOtherT(o2));
                         // why?
@@ -95,7 +95,7 @@ op:
                 }
                 static if(mode.endsWith("r")) {
 rop:
-                    auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
+                    auto dgr = get_dgr(get_d_reference!T(o2), &rfn);
                     static if (is(RRet == void)) {
                         dgr(python_to_d!ROtherT(o1));
                         return Py_INCREF(Py_None());
@@ -116,7 +116,7 @@ template binopasg_wrap(T, alias fn) {
 
     extern(C)
     PyObject* func(PyObject* self, PyObject* o2) {
-        auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+        auto dg = get_dg(get_d_reference!T(self), &fn);
         dg(python_to_d!OtherT(o2));
         // why?
         // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
@@ -166,7 +166,7 @@ template powop_wrap(T, _lop, _rop) {
                 }
                 static if(mode.startsWith("l")) {
 op:
-                    auto dgl = get_dgl((cast(wrap_object*)o1).d_obj, &lfn);
+                    auto dgl = get_dgl(get_d_reference!T(o1), &lfn);
                     static if (is(LRet == void)) {
                         dgl(python_to_d!LOtherT(o2));
                         return Py_INCREF(Py_None());
@@ -176,7 +176,7 @@ op:
                 }
                 static if(mode.endsWith("r")) {
 rop:
-                    auto dgr = get_dgr((cast(wrap_object*)o2).d_obj, &rfn);
+                    auto dgr = get_dgr(get_d_reference!T(o2), &rfn);
                     static if (is(RRet == void)) {
                         dgr(python_to_d!ROtherT(o1));
                         return Py_INCREF(Py_None());
@@ -197,7 +197,7 @@ template powopasg_wrap(T, alias fn) {
 
     extern(C)
     PyObject* func(PyObject* self, PyObject* o2, PyObject* o3) {
-        auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+        auto dg = get_dg(get_d_reference!T(self), &fn);
         dg(python_to_d!OtherT(o2));
         // why?
         // http://stackoverflow.com/questions/11897597/implementing-nb-inplace-add-results-in-returning-a-read-only-buffer-object
@@ -222,7 +222,7 @@ template opcall_wrap(T, alias fn) {
                 PyErr_SetString(PyExc_TypeError, "OpCall didn't get a 'self' parameter.");
                 return null;
             }
-            T instance = (cast(wrapped_class_object!(T)*)self).d_obj;
+            T instance = get_d_reference!T(self);
             if (instance is null) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
                 return null;
@@ -270,7 +270,7 @@ template opindex_wrap(T, alias fn) {
         extern(C)
         PyObject* func(PyObject* self, PyObject* key) {
             return exception_catcher(delegate PyObject*() {
-                auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+                auto dg = get_dg(get_d_reference!T(self), &fn);
                 return d_to_python(dg(python_to_d!KeyT(key)));
             });
         }
@@ -331,7 +331,7 @@ template opindexassign_wrap(T, alias fn) {
         extern(C)
         int func(PyObject* self, PyObject* key, PyObject* val) {
             return exception_catcher(delegate int() {
-                auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+                auto dg = get_dg(get_d_reference!T(self), &fn);
                 dg(python_to_d!ValT(val), python_to_d!KeyT(key));
                 return 0;
             });
@@ -352,7 +352,7 @@ template inop_wrap(T, _lop, _rop) {
     extern(C)
     int func(PyObject* o1, PyObject* o2) {
         return exception_catcher(delegate int() {
-            auto dg = get_dgr((cast(wrap_object*)o1).d_obj, &rfn);
+            auto dg = get_dgr(get_d_reference!T(o1), &rfn);
             return dg(python_to_d!ROtherT(o2));
         });
     }
@@ -365,7 +365,7 @@ template opcmp_wrap(T, alias fn) {
     extern(C)
     int func(PyObject* self, PyObject* other) {
         return exception_catcher(delegate int() {
-            int result = (cast(wrap_object*)self).d_obj.opCmp(python_to_d!OtherT(other));
+            int result = get_d_reference!T(self).opCmp(python_to_d!OtherT(other));
             // The Python API reference specifies that tp_compare must return
             // -1, 0, or 1. The D spec says opCmp may return any integer value,
             // and just compares it with zero.
@@ -385,7 +385,7 @@ template rich_opcmp_wrap(T, alias fn) {
     extern(C)
     PyObject* func(PyObject* self, PyObject* other, int op) {
         return exception_catcher(delegate PyObject*() {
-            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            auto dg = get_dg(get_d_reference!T(self), &fn);
             auto dother = python_to_d!OtherT(other);
             int result = dg(dother);
             bool pyresult;
@@ -426,7 +426,7 @@ template length_wrap(T, alias fn) {
     extern(C)
     Py_ssize_t func(PyObject* self) {
         return exception_catcher(delegate Py_ssize_t() {
-            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            auto dg = get_dg(get_d_reference!T(self), &fn);
             return dg();
         });
     }
@@ -438,7 +438,7 @@ template opslice_wrap(T,alias fn) {
     extern(C)
     PyObject* func(PyObject* self, Py_ssize_t i1, Py_ssize_t i2) {
         return exception_catcher(delegate PyObject*() {
-            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            auto dg = get_dg(get_d_reference!T(self), &fn);
             return d_to_python(dg(i1, i2));
         });
     }
@@ -453,7 +453,7 @@ template opsliceassign_wrap(T, alias fn) {
     extern(C)
     int func(PyObject* self, Py_ssize_t i1, Py_ssize_t i2, PyObject* o) {
         return exception_catcher(delegate int() {
-            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            auto dg = get_dg(get_d_reference!T(self), &fn);
             dg(python_to_d!AssignT(o), i1, i2);
             return 0;
         });

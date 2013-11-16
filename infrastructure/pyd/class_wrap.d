@@ -53,31 +53,7 @@ version(Pyd_with_StackThreads) static assert(0, "sorry - stackthreads are gone")
 PyTypeObject*[ClassInfo] wrapped_classes;
 template shim_class(T) {
     PyTypeObject* shim_class;
-}
-
-// This is split out in case I ever want to make a subtype of a wrapped class.
-template PydWrapObject_HEAD(T) {
-    mixin PyObject_HEAD;
-    static if(isMutable!T) {
-        T _d_obj;
-        @property d_obj() {
-            return _d_obj;
-        }
-        @property d_obj(T t) {
-            _d_obj = t;
-        }
-    }else{
-        T* _d_obj;
-        @property d_obj() {
-            if (!_d_obj) return T.init;
-            return *_d_obj;
-        }
-        @property d_obj(T t) {
-            _d_obj = &t;
-        }
-    }
-
-}
+} 
 
 // The class object, a subtype of PyObject
 template wrapped_class_object(T) {
@@ -90,7 +66,7 @@ template wrapped_class_object(T) {
     }else {
         extern(C)
             struct wrapped_class_object {
-                mixin PydWrapObject_HEAD!(T);
+                mixin PyObject_HEAD;
 
                 static if(isFunctionPointer!T || isDelegate!T) {
                     uint functionAttributes;
@@ -126,6 +102,8 @@ template wrapped_class_type(T) {
         alias wrapped_class_type!(
                 SetFunctionAttributes!(T, functionLinkage!T, 
                     FunctionAttribute.none)) wrapped_class_type;
+    }else static if(is(T == class) && !isMutable!T) {
+        alias wrapped_class_type!(Unqual!T) wrapped_class_type;
     }else {
         // The type object, an instance of PyType_Type
         static PyTypeObject wrapped_class_type;
@@ -166,9 +144,31 @@ template constness(T) {
     }
 }
 
+bool constCompatible(Constness c1, Constness c2) {
+    return c1 == c2 || 
+        c1 == Constness.Const && c2 != Constness.Wildcard ||
+        c2 == Constness.Const && c1 != Constness.Wildcard;
+}
+
+template ApplyConstness(T, Constness constness) {
+    alias Unqual!T Tu;
+    static if(constness == Constness.Mutable) {
+        alias Tu ApplyConstness;
+    }else static if(constness == Constness.Const) {
+        alias const(Tu) ApplyConstness;
+    }else static if(constness == Constness.Wildcard) {
+        alias inout(Tu) ApplyConstness;
+    }else static if(constness == Constness.Immutable) {
+        alias immutable(Tu) ApplyConstness;
+    }else {
+        static assert(0);
+    }
+
+}
+
 // A mapping of all class references that are being held by Python.
 alias Tuple!(void*,"d",PyObject*,"py", Constness, "constness") D2Py;
-alias MultiIndexContainer!(D2Py, IndexedBy!(HashedUnique!("a.d")), 
+alias MultiIndexContainer!(D2Py, IndexedBy!(HashedUnique!("a.d"), HashedUnique!("a.py")), 
         MallocAllocator, MutableView) WrappedObjectMap;
 
 WrappedObjectMap _wrapped_gc_objects = null;
@@ -181,19 +181,31 @@ WrappedObjectMap _wrapped_gc_objects = null;
 }
 
 template Dt2Py(dg_t) {
-    alias Tuple!(dg_t,"d",PyObject*,"py") Dt2Py;
+    static if(hasFunctionAttrs!dg_t) {
+        alias Dt2Py!(
+                SetFunctionAttributes!(dg_t, functionLinkage!dg_t, 
+                    FunctionAttribute.none)) Dt2Py;
+    }else{
+        alias Tuple!(dg_t,"d",PyObject*,"py", Constness, "constness") Dt2Py;
+    }
 }
 
 // A mapping of all GC references that are being held by Python.
 template wrapped_gc_references(dg_t) if(isPointer!dg_t || isDelegate!dg_t) {
-    alias MultiIndexContainer!(Dt2Py!dg_t, IndexedBy!(HashedUnique!("a.d")), 
-            MallocAllocator, MutableView) WrappedReferenceMap;
-    WrappedReferenceMap _wrapped_gc_references;
+    static if(hasFunctionAttrs!dg_t) {
+        alias wrapped_gc_references!(
+                SetFunctionAttributes!(dg_t, functionLinkage!dg_t, 
+                    FunctionAttribute.none)) wrapped_gc_references;
+    } else {
+        alias MultiIndexContainer!(Dt2Py!dg_t, IndexedBy!(HashedUnique!("a.d"), HashedUnique!("a.py")), 
+                MallocAllocator, MutableView) WrappedReferenceMap;
+        WrappedReferenceMap _wrapped_gc_references;
 
-    @property wrapped_gc_references() {
-        if(!_wrapped_gc_references) 
-            _wrapped_gc_references = new WrappedReferenceMap();
-        return _wrapped_gc_references;
+        @property wrapped_gc_references() {
+            if(!_wrapped_gc_references) 
+                _wrapped_gc_references = new WrappedReferenceMap();
+            return _wrapped_gc_references;
+        }
     }
 }
 
@@ -207,7 +219,7 @@ template is_wrapped(T) {
     static if(hasFunctionAttrs!T) {
         alias is_wrapped!(SetFunctionAttributes!(T, functionLinkage!T, 
                     FunctionAttribute.none)) is_wrapped;
-    }else static if(is(T == class) && !isMutable!T) {
+    }else static if((is(T == class) || isPointer!T && is(pointerTarget!T == struct)) && !isMutable!T) {
         alias is_wrapped!(Unqual!T) is_wrapped;
     }else {
         bool is_wrapped = false;
@@ -240,12 +252,7 @@ template wrapped_methods(T) {
     PyObject* wrapped_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
         return exception_catcher(delegate PyObject*() {
             wrap_object* self;
-
             self = cast(wrap_object*)type.tp_alloc(type, 0);
-            if (self !is null) {
-                self.d_obj = null;
-            }
-
             return cast(PyObject*)self;
         });
     }
@@ -260,13 +267,13 @@ template wrapped_methods(T) {
         static struct StackDelegate{
             PyObject* x;
             void dg() {
-                WrapPyObject_SetObj!(T)(x, cast(T)null);
+                set_pyd_mapping!(T)(x, cast(T)null);
                 x.ob_type.tp_free(x);
             }
         }
         StackDelegate x;
         x.x = self;
-        exception_catcher(&x.dg);
+        exception_catcher_nogc(&x.dg);
     }
 }
 
@@ -277,7 +284,7 @@ template wrapped_repr(T, alias fn) {
     extern(C)
     PyObject* repr(PyObject* self) {
         return exception_catcher(delegate PyObject*() {
-            auto dg = get_dg((cast(wrap_object*)self).d_obj, &fn);
+            auto dg = get_dg(get_d_reference!T(self), &fn);
             return d_to_python(dg());
         });
     }
@@ -1719,33 +1726,97 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
 
 // If the passed D reference has an existing Python object, return a borrowed
 // reference to it. Otherwise, return null.
-PyObject_BorrowedRef* get_existing_reference(T) (T t) if(is(T == class) || isPointer!T || isDelegate!T) {
+PyObject_BorrowedRef* get_python_reference(T) (T t) if(is(T == class) || isPointer!T || isDelegate!T) {
     static if (is(T == class)) {
-        auto range = wrapped_gc_objects.equalRange(cast(void*) t);
+        auto range = wrapped_gc_objects.index!(0).equalRange(cast(void*) t);
         if(range.empty) return null;
         return borrowed(range.front.py);
     } else {
-        auto range = wrapped_gc_references!(T).equalRange(t);
+        auto range = wrapped_gc_references!(T).index!(0).equalRange(t);
         if(range.empty) return null;
         return borrowed(range.front.py);
     }
 }
 
-// Drop the passed D reference from the pool of held references.
-void drop_reference(T) (T t) {
-    static if (is(T == class)) {
-        wrapped_gc_objects.removeKey(cast(void*)t);
-    } else {
-        wrapped_gc_references!(T).removeKey(t);
+/*
+ * Returns the object contained in a Python wrapped type.
+ */
+T get_d_reference(T) (PyObject* _self) {
+    alias wrapped_class_object!(T) wrapped_object;
+    if (!is_wrapped!(T)) {
+        throw new Exception(format(
+                    "Error extracting D object: Type %s is not wrapped.",
+                    typeid(T).toString()));
     }
-}
-
-// Add the passed D reference to the pool of held references.
-void add_reference(T) (T t, PyObject* o) {
+    if (_self is null) {
+        throw new Exception("Error extracting D object: 'self' was null!");
+    }
     static if (is(T == class)) {
-        wrapped_gc_objects.insert(D2Py(cast(void*)t, o, constness!T));
+        auto range = wrapped_gc_objects.get_index!(1).equalRange(_self);
     } else {
-        wrapped_gc_references!(T).insert(Dt2Py!T(t, o));
+        auto range = wrapped_gc_references!(T).get_index!(1).equalRange(_self);
+    }
+    if (range.empty) {
+        import std.stdio;
+        static if(!is(T == class)) {
+            int s = 0;
+            foreach(entry; wrapped_gc_references!(T).get_index!(0).opSlice()) {
+                writefln(" t=%x, py=%x, constness=%s", entry.d, entry.py, constness_ToString(entry.constness));
+                s++;
+            }
+            if(!s) {
+                writefln(" no entries for T=%s", T.stringof);
+            }
+        }else{
+            foreach(entry; wrapped_gc_objects.get_index!(0).opSlice()) {
+                writefln(" t=%x, py=%x, constness=%s,T=%s", entry.d, entry.py, constness_ToString(entry.constness), T.stringof);
+            }
+        }
+        throw new Exception("Error extracting D object: reference not found!");
+    }
+    if (!constCompatible(range.front.constness, constness!T)) {
+        throw new Exception("constness mismatch required:" ~ 
+                constness_ToString(constness!T) ~ ", found: " ~ 
+                constness_ToString(range.front.constness));
+    }
+    static if (is(T == class)) {
+        if (cast(Object)(range.front.d) is null) {
+            throw new Exception(
+                    "Error extracting D object: "
+                    "Reference was not castable to Object!");
+        }
+        if (cast(T)(range.front.d) is null) {
+            throw new Exception(format(
+                        "Error extracting D object: "
+                        "Object was not castable to type %s.",
+                        typeid(T).toString()));
+        }
+    }
+    wrapped_object* self = cast(wrapped_object*) _self;
+    static if(hasFunctionAttrs!T) {
+        // check that casting is safe enough
+        if(self.linkage != functionLinkage!T) {
+            // can't cast away linkage!
+            // TODO: should we wrap this somehow?
+            throw new Exception(format(
+                        "trying to convert a extern(\"%s\") "
+                        "%s to extern(\"%s\")",
+                        self.linkage, (isDelegate!T ? "delegate":"function"),
+                        functionLinkage!T));
+        }else if((~self.functionAttributes & functionAttributes!T) == 0) {
+            // same type or only casting away attrs - ok!
+            return cast(T) range.front.d;
+        }else{
+            throw new Exception(format(
+                        "trying to convert %s%s to %s",
+                        SetFunctionAttributes!(T, 
+                            functionLinkage!T, 
+                            FunctionAttribute.none).stringof,
+                        attrs_to_string(self.functionAttributes),
+                        T.stringof));
+        }
+    }else {
+        return cast(T) range.front.d;
     }
 }
 
@@ -1761,14 +1832,14 @@ PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) if(is(T ==
     //alias wrapped_class_type!(T) type;
     if (is_wrapped!(T)) {
         // If this object is already wrapped, get the existing object.
-        PyObject_BorrowedRef* obj_p = get_existing_reference(t);
+        PyObject_BorrowedRef* obj_p = get_python_reference(t);
         if (obj_p) {
             return Py_INCREF(obj_p);
         }
         // Otherwise, allocate a new object
         PyObject* obj = type.tp_new(type, null, null);
         // Set the contained instance
-        WrapPyObject_SetObj(obj, t);
+        set_pyd_mapping(obj, t);
         return obj;
     } else {
         PyErr_SetString(PyExc_RuntimeError, ("Type " ~ typeid(T).toString() ~ " is not wrapped by Pyd.").ptr);
@@ -1776,78 +1847,57 @@ PyObject* WrapPyObject_FromTypeAndObject(T) (PyTypeObject* type, T t) if(is(T ==
     }
 }
 
-/*
- * Returns the object contained in a Python wrapped type.
- */
-T WrapPyObject_AsObject(T) (PyObject* _self) {
-    alias wrapped_class_object!(T) wrapped_object;
-    alias wrapped_class_type!(T) type;
-    wrapped_object* self = cast(wrapped_object*)_self;
-    if (!is_wrapped!(T)) {
-        throw new Exception(format(
-                    "Error extracting D object: Type %s is not wrapped.",
-                    typeid(T).toString()));
-    }
-    if (self is null) {
-        throw new Exception("Error extracting D object: 'self' was null!");
-    }
-    static if (is(T == class)) {
-        if (cast(Object)(self.d_obj) is null) {
-            throw new Exception(
-                    "Error extracting D object: "
-                    "Reference was not castable to Object!");
-        }
-        if (cast(T)cast(Object)(self.d_obj) is null) {
-            throw new Exception(format(
-                        "Error extracting D object: "
-                        "Object was not castable to type %s.",
-                        typeid(T).toString()));
-        }
-    }
-    static if(hasFunctionAttrs!T && !is(typeof(self.d_obj) == T)) {
-        // check that casting is safe enough
-        if(self.linkage != functionLinkage!T) {
-            // can't cast away linkage!
-            // TODO: should we wrap this somehow?
-            throw new Exception(format(
-                        "trying to convert a extern(\"%s\") "
-                        "%s to extern(\"%s\")",
-                        self.linkage, (isDelegate!T ? "delegate":"function"),
-                        functionLinkage!T));
-        }else if((~self.functionAttributes & functionAttributes!T) == 0) {
-            // same type or only casting away attrs - ok!
-            return cast(T) self.d_obj;
-        }else{
-            throw new Exception(format(
-                        "trying to convert %s%s to %s",
-                        SetFunctionAttributes!(T, 
-                            functionLinkage!T, 
-                            FunctionAttribute.none).stringof,
-                        attrs_to_string(self.functionAttributes),
-                        T.stringof));
-        }
-    }else {
-        return self.d_obj;
-    }
-}
 
 /*
  * Sets the contained object in self to t.
  */
-void WrapPyObject_SetObj(T) (PyObject* _self, T t) {
+void set_pyd_mapping(T) (PyObject* _self, T t) {
+    import std.stdio;
     alias wrapped_class_object!(T) obj;
     obj* self = cast(obj*)_self;
     static if(isFunctionPointer!T || isDelegate!T) {
         self.functionAttributes = functionAttributes!T;
         self.linkage = functionLinkage!T;
     }
-    if (t is self.d_obj) return;
-    // Clean up the old object, if there is one
-    if (self.d_obj !is null) {
-        drop_reference(self.d_obj);
+    static if (is(T == class)) {
+        auto range = wrapped_gc_objects.get_index!(1).equalRange(_self);
+    } else {
+        auto range = wrapped_gc_references!(T).get_index!(1).equalRange(_self);
     }
-    self.d_obj = t;
-    // Handle the new one, if there is one
-    if (t !is null) add_reference(self.d_obj, _self);
+    if (range.empty) {
+        static if (is(T == class)) {
+            size_t count = wrapped_gc_objects.get_index!(0).insert(D2Py(cast(void*)t, _self, constness!T));
+        } else {
+            size_t count = wrapped_gc_references!(T).get_index!(0).insert(Dt2Py!T(t, _self, constness!T));
+        }
+        if(count == 0) {
+            throw new Exception(format("could not add py reference %x for T=%s, t=%x", _self, T.stringof, cast(void*) t));
+        }else{
+            writefln("added py reference %x for T=%s, t=%x", _self,T.stringof, cast(void*) t);
+        }
+    }else{
+        static if (is(T == class)) {
+            size_t count = wrapped_gc_objects.get_index!(0).replace(PSR(range).front, D2Py(cast(void*)t, _self, constness!T));
+        } else {
+            size_t count = wrapped_gc_references!(T).get_index!(0).replace(PSR(range).front, Dt2Py!T(t, _self, constness!T));
+        }
+        if(count == 0) {
+            static if (is(T == class)) {
+                writeln("durr.. could not find pyref all class entries:");
+                foreach(entry; wrapped_gc_objects.get_index!(0).opSlice()) {
+                    writefln(" t=%x, py=%x, constness=%s", entry.d, entry.py, constness_ToString(entry.constness));
+                }
+            }else{
+                writeln("durr.. could not find pyref all class entries:");
+                foreach(entry; wrapped_gc_references!T.get_index!(0).opSlice()) {
+                    writefln(" t=%x, py=%x, constness=%s", entry.d, entry.py, constness_ToString(entry.constness));
+                }
+            }
+            throw new Exception(format("could not update py reference %x for T=%s, t=%x",_self, T.stringof, cast(void*) t));
+        }else {
+            writefln("could update py reference %x for T=%s, t=%x", _self, T.stringof, cast(void*) t);
+        }
+    }
 }
+
 

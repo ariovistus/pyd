@@ -104,6 +104,7 @@ class build_pyd_embedded_exe(Command):
                 dry_run=self.dry_run,
                 force=self.force)
         from celerid import dcompiler
+        print self.compiler
         assert isinstance(self.compiler, dcompiler.DCompiler)
         self.compiler.build_exe = True
         self.compiler.optimize = self.optimize

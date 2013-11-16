@@ -41,4 +41,9 @@ assert foo1.i == 2
             }","testing");
 }
 
+unittest {
+    const(Foo1) fooboo;
+    d_to_python(fooboo);
+}
+
 void main(){}

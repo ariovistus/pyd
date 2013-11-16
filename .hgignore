@@ -28,3 +28,11 @@ syntax: regexp
 ^examples/pyind/pyind3
 ^examples/pyind/build/
 ^examples/pyd_unittests/build/
+^examples/pyd_unittests/class_wrap
+^examples/pyd_unittests/const
+^examples/pyd_unittests/def
+^examples/pyd_unittests/embedded
+^examples/pyd_unittests/func_wrap
+^examples/pyd_unittests/make_object
+^examples/pyd_unittests/pydobject
+^examples/pyd_unittests/struct_wrap

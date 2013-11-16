@@ -48,7 +48,7 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
         extern(C)
             PyObject* get(PyObject* self, void* closure) {
             return exception_catcher(delegate PyObject*() {
-                T t = (cast(obj*)self).d_obj;
+                T t = get_d_reference!T(self);
                 mixin("return d_to_python(t."~name~");");
             });
         }
@@ -58,7 +58,7 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
         extern(C)
         int set(PyObject* self, PyObject* value, void* closure) {
             return exception_catcher(delegate int() {
-                T t = (cast(obj*)self).d_obj;
+                T t = get_d_reference!T(self);
                 mixin("t."~name~" = python_to_d!(M)(value);");
                 return 0;
             });

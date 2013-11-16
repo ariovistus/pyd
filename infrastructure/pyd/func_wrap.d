@@ -285,7 +285,9 @@ template wrapped_func_call(fn_t) {
             return null;
         }
 
-        fn_t fn = (cast(wrapped_class_object!(fn_t)*)self).d_obj;
+        import std.stdio;
+        writefln("get_d_reference!(%s)(%x)", fn_t.stringof, self);
+        fn_t fn = get_d_reference!fn_t(self);
 
         return exception_catcher(delegate PyObject*() {
             return pyApplyToDelegate(fn, args);
@@ -321,7 +323,7 @@ template method_wrap(C, alias real_fn, string fname) {
                 PyErr_SetString(PyExc_TypeError, "Wrapped method didn't get a 'self' parameter.");
                 return null;
             }
-            C instance = (cast(wrapped_class_object!(C)*)self).d_obj;
+            C instance = get_d_reference!C(self);
             if (instance is null) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
                 return null;
@@ -361,7 +363,7 @@ template method_dgwrap(C, alias real_fn) {
                 PyErr_SetString(PyExc_TypeError, "Wrapped method didn't get a 'self' parameter.");
                 return null;
             }
-            C instance = (cast(wrapped_class_object!(C)*)self).d_obj;
+            C instance = get_d_reference!C(self);
             if (instance is null) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
                 return null;
