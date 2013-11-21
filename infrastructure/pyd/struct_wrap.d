@@ -27,6 +27,7 @@ module pyd.struct_wrap;
 
 import deimos.python.Python;
 
+import pyd.references;
 import pyd.def;
 import pyd.class_wrap;
 import pyd.exception;
@@ -36,7 +37,7 @@ import pyd.make_object;
 // as a template parameter, rather than the struct type itself.
 
 template wrapped_member(T, string name, string mode, PropertyParts...) {
-    alias wrapped_class_type!(T) type;
+    alias PydTypeObject!(T) type;
     alias wrapped_class_object!(T) obj;
     static if(PropertyParts.length != 0) {
         alias PropertyParts[0] ppart0;
@@ -99,7 +100,7 @@ template _Member(string realname, string pyname, string mode, string docstring, 
         list[$-1].doc = (docstring~"\0").dup.ptr;
         list[$-1].closure = null;
         list ~= empty;
-        wrapped_class_type!(T).tp_getset = list.ptr;
+        PydTypeObject!(T).tp_getset = list.ptr;
     }
 }
 

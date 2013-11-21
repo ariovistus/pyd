@@ -23,7 +23,9 @@ module pyd.ctor_wrap;
 
 import std.traits;
 import util.typelist: Join;
+import util.typeinfo;
 import deimos.python.Python;
+import pyd.references;
 import pyd.class_wrap;
 import pyd.exception;
 import pyd.func_wrap;
@@ -54,18 +56,14 @@ template wrapped_init(T) {
     }
 }
 
-// The __init__ slot for wrapped structs. T is of the type of a pointer to the
-// struct.
-template wrapped_struct_init(T) {
+// The __init__ slot for wrapped structs. 
+template wrapped_struct_init(T) if (is(T == struct)){
     extern(C)
     int init(PyObject* self, PyObject* args, PyObject* kwds) {
         return exception_catcher({
-            static if (is(T S : S*)) {
-                pragma(msg, "wrapped_struct_init, S is '" ~ prettynameof!(S) ~ "'");
-                T t = new S;
+                T* t = new T;
                 set_pyd_mapping(self, t);
-            }
-            return 0;
+                return 0;
         });
     }
 }
@@ -73,9 +71,11 @@ template wrapped_struct_init(T) {
 //import std.stdio;
 // This template accepts a tuple of function pointer types, which each describe
 // a ctor of T, and  uses them to wrap a Python tp_init function.
-template wrapped_ctors(string classname, T,Shim, C ...) {
+template wrapped_ctors(string classname, T,Shim, C ...) 
+if(is(T == class) || (isPointer!T && is(pointerTarget!T == struct))) {
     //alias shim_class T;
     alias wrapped_class_object!(T) wrap_object;
+    alias NewParamT!T U;
 
     extern(C)
     static int func(PyObject* self, PyObject* args, PyObject* kwargs) {
@@ -86,9 +86,9 @@ template wrapped_ctors(string classname, T,Shim, C ...) {
 
         return exception_catcher({
             // Default ctor
-            static if (is(typeof(new T))) {
+            static if (is(typeof(new U))) {
                 if (len == 0) {
-                    set_pyd_mapping(self, new T);
+                    set_pyd_mapping(self, new U);
                     return 0;
                 }
             }

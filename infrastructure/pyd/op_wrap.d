@@ -28,6 +28,9 @@ import std.traits;
 import std.exception: enforce;
 import std.string: format;
 import std.conv: to;
+import util.typeinfo;
+
+import pyd.references;
 import pyd.class_wrap;
 import pyd.func_wrap;
 import pyd.exception;
@@ -41,8 +44,7 @@ import pyd.make_object;
 template binop_wrap(T, _lop, _rop) {
     alias _lop.C lop;
     alias _rop.C rop;
-    alias wrapped_class_type!T wtype;
-    alias wrapped_class_object!(T) wrap_object;
+    alias PydTypeObject!T wtype;
     static if(lop.length) {
         alias lop[0] lop0;
         alias lop0.Inner!T.FN lfn;
@@ -108,8 +110,7 @@ rop:
 }
 
 template binopasg_wrap(T, alias fn) {
-    alias wrapped_class_type!T wtype;
-    alias wrapped_class_object!(T) wrap_object;
+    alias PydTypeObject!T wtype;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
     alias ParameterTypeTuple!(fn)[0] OtherT;
     alias ReturnType!(fn) Ret;
@@ -130,8 +131,7 @@ template binopasg_wrap(T, alias fn) {
 template powop_wrap(T, _lop, _rop) {
     alias _lop.C lop;
     alias _rop.C rop;
-    alias wrapped_class_type!T wtype;
-    alias wrapped_class_object!(T) wrap_object;
+    alias PydTypeObject!T wtype;
     static if(lop.length) {
         alias lop[0] lop0;
         alias lop0.Inner!T.FN lfn;
@@ -189,8 +189,7 @@ rop:
 }
 
 template powopasg_wrap(T, alias fn) {
-    alias wrapped_class_type!T wtype;
-    alias wrapped_class_object!(T) wrap_object;
+    alias PydTypeObject!T wtype;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
     alias ParameterTypeTuple!(fn)[0] OtherT;
     alias ReturnType!(fn) Ret;
@@ -208,8 +207,10 @@ template powopasg_wrap(T, alias fn) {
 }
 
 template opcall_wrap(T, alias fn) {
-    alias wrapped_class_type!T wtype;
-    alias wrapped_class_object!(T) wrap_object;
+    static assert(constCompatible(constness!T, constness!(typeof(fn))), 
+            format("constness mismatch instance: %s function: %s", 
+                T.stringof, typeof(fn).stringof));
+    alias PydTypeObject!T wtype;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
     alias ParameterTypeTuple!(fn)[0] OtherT;
     alias ReturnType!(fn) Ret;
@@ -259,7 +260,6 @@ template opiter_wrap(T, alias fn){
 }
 
 template opindex_wrap(T, alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!fn Params;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
 
@@ -294,7 +294,6 @@ template opindex_wrap(T, alias fn) {
 }
 
 template opindexassign_wrap(T, alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!(fn) Params;
 
     static if (Params.length > 2) {
@@ -341,7 +340,6 @@ template opindexassign_wrap(T, alias fn) {
 
 template inop_wrap(T, _lop, _rop) {
     alias _rop.C rop;
-    alias wrapped_class_object!(T) wrap_object;
     static if(rop.length) {
         alias rop[0] rop0;
         alias rop0.Inner!T.FN rfn;
@@ -359,7 +357,9 @@ template inop_wrap(T, _lop, _rop) {
 }
 
 template opcmp_wrap(T, alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
+    static assert(constCompatible(constness!T, constness!(typeof(fn))), 
+            format("constness mismatch instance: %s function: %s", 
+                T.stringof, typeof(fn).stringof));
     alias ParameterTypeTuple!(fn) Info;
     alias Info[0] OtherT;
     extern(C)
@@ -378,7 +378,9 @@ template opcmp_wrap(T, alias fn) {
 }
 
 template rich_opcmp_wrap(T, alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
+    static assert(constCompatible(constness!T, constness!(typeof(fn))), 
+            format("constness mismatch instance: %s function: %s", 
+                T.stringof, typeof(fn).stringof));
     alias ParameterTypeTuple!(fn) Info;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
     alias Info[0] OtherT;
@@ -421,7 +423,6 @@ template rich_opcmp_wrap(T, alias fn) {
 // Dispatch //
 //----------//
 template length_wrap(T, alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
     extern(C)
     Py_ssize_t func(PyObject* self) {
@@ -433,7 +434,6 @@ template length_wrap(T, alias fn) {
 }
 
 template opslice_wrap(T,alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;
     extern(C)
     PyObject* func(PyObject* self, Py_ssize_t i1, Py_ssize_t i2) {
@@ -445,7 +445,6 @@ template opslice_wrap(T,alias fn) {
 }
 
 template opsliceassign_wrap(T, alias fn) {
-    alias wrapped_class_object!(T) wrap_object;
     alias ParameterTypeTuple!fn Params;
     alias Params[0] AssignT;
     alias dg_wrapper!(T, typeof(&fn)) get_dg;

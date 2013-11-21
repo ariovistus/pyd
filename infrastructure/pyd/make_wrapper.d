@@ -23,6 +23,8 @@ module pyd.make_wrapper;
 
 import deimos.python.Python;
 
+import util.typeinfo;
+import pyd.references;
 import pyd.class_wrap;
 import pyd.exception;
 import pyd.func_wrap;
@@ -31,18 +33,13 @@ import std.traits;
 template OverloadShim() {
     // If this is actually an instance of a Python subclass, return the
     // PyObject associated with the object. Otherwise, return null.
-    PyObject* __pyd_get_pyobj(Constness c = Constness.Mutable) const {
-        auto range = wrapped_gc_objects.equalRange(cast(void*) this);
+    PyObject* __pyd_get_pyobj() const{
+        auto py = cast(PyObject*) get_python_reference(this);
         PyTypeObject** _pytype = this.classinfo in wrapped_classes;
-        if (range.empty || _pytype is null || range.front.py.ob_type != *_pytype) {
+        if (_pytype is null || py.ob_type != *_pytype) {
             return null;
         } else {
-            if (!constCompatible(range.front.constness, c)) {
-                throw new Exception("constness mismatch required:" ~ 
-                        constness_ToString(c) ~ ", found: " ~ 
-                        constness_ToString(range.front.constness));
-            }
-            return range.front.py;
+            return py;
         }
     }
     template __pyd_abstract_call(fn_t) {

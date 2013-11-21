@@ -71,6 +71,7 @@ _pydFiles = [
     'op_wrap.d',
     'pyd.d',
     'pydobject.d',
+    'references.d',
     'struct_wrap.d',
 ]
 
@@ -81,6 +82,7 @@ _metaFiles = [
 
 _utilFiles = [
     'conv.d',
+    'typeinfo.d',
     'typelist.d',
     'multi_index.d',
     'replace.d',

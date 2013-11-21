@@ -32,7 +32,9 @@ import std.exception: enforce;
 import std.range;
 import std.conv;
 import util.typelist;
+import util.typeinfo;
 
+import pyd.references;
 import pyd.class_wrap;
 import pyd.exception;
 import pyd.make_object;
@@ -57,7 +59,7 @@ void PydWrappedFunc_Ready(S)() {
     }else{
         alias S T;
     }
-    alias wrapped_class_type!(T) type;
+    alias PydTypeObject!(T) type;
     alias wrapped_class_object!(T) obj;
     if (!is_wrapped!(T)) {
         init_PyTypeObject!T(type);
@@ -312,6 +314,9 @@ template function_wrap(alias real_fn, string fnname) {
 // Wraps a member function alias with a PyCFunction.
 // func's args and kwargs may each be null.
 template method_wrap(C, alias real_fn, string fname) {
+    static assert(constCompatible(constness!C, constness!(typeof(real_fn))), 
+            format("constness mismatch instance: %s function: %s", 
+                C.stringof, typeof(real_fn).stringof));
     alias ParameterTypeTuple!real_fn Info;
     enum size_t ARGS = Info.length;
     alias ReturnType!real_fn RT;
@@ -326,9 +331,6 @@ template method_wrap(C, alias real_fn, string fname) {
             C instance = get_d_reference!C(self);
             if (instance is null) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
-                return null;
-            }
-            if(!constnessMatch!(C, real_fn)(instance)) {
                 return null;
             }
             
@@ -722,23 +724,6 @@ bool constnessMatch2(fn...)(Constness c) if(fn.length == 1) {
     static if(isMutableFunction!(fn)) return c == Constness.Mutable; 
     static if(isConstFunction!(fn)) return c != Constness.Wildcard;
     else return false;
-}
-
-bool constnessMatch(C, alias real_fn)(C inst) {
-    static if(is(C == class)) {
-        auto range = wrapped_gc_objects.equalRange(cast(void*) inst);
-        auto c = range.front.constness;
-        if(!constnessMatch2!(typeof(real_fn))(c)) {
-            PyErr_SetString(PyExc_ValueError, 
-                    ("constness mismatch: method " ~ 
-                     C.stringof ~ "." ~ __traits(identifier, real_fn) ~ 
-                     " of type " ~ 
-                     typeof(real_fn).stringof ~ " cannot be called with " ~ 
-                     constness_ToString(c) ~ " " ~ C.stringof).ptr);
-            return false;
-        }
-    }
-    return true;
 }
 
 /*

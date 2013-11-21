@@ -9,7 +9,7 @@ maj = platform.python_version_tuple()[0]
 
 projName = 'pyd_unittests'
 exts = [
-'pydobject','make_object','embedded','func_wrap','class_wrap','def','struct_wrap', 'const'
+'pydobject','make_object','embedded','func_wrap','class_wrap','def','struct_wrap', 'typeinfo', 'const', 
         ];
 string_imports = {
         'func_wrap': ["important_message.txt"]

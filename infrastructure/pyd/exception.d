@@ -108,13 +108,15 @@ T exception_catcher_nogc(T) (T delegate() dg) {
     }
     // A D exception was raised and should be translated into a meaningful
     // Python exception.
-    catch (Exception e) {
-        PyErr_SetString(PyExc_RuntimeError, ("Some D Exception\0").ptr);
-        return error_code!(T)();
-    }
-    // Some other D object was thrown. Deal with it.
-    catch (Throwable o) {
-        PyErr_SetString(PyExc_RuntimeError, ("some thrown D Object\0").ptr);
+    catch (Throwable e) {
+        //auto clz1 = e.classinfo;
+        //const(char)* clz = e.classinfo.name.ptr;
+        //const(char)* msg = e.msg.ptr;
+        //const(char)* file = e.file.ptr;
+        PyObject* p = PyBytes_FromFormat("some thrown D object:\0", 
+                /*clz, msg, file, e.line*/);
+        PyErr_SetObject(PyExc_RuntimeError, p);
+        Py_DECREF(p); // PyErr_SetObject has ownership of it now
         return error_code!(T)();
     }
 }
