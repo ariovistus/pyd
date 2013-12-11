@@ -19,7 +19,6 @@ parts = [
 use_parts = set()
 exe_ext = get_config_var("EXE")
 verz_maj = platform.python_version_tuple()[0]
-print ("%r" % (verz_maj,), verz_maj == 2)
 if verz_maj == "3" or verz_maj == "2":
     import optparse
     oparser = optparse.OptionParser()

@@ -99,7 +99,8 @@ class build_pyd_embedded_exe(Command):
         from distutils.ccompiler import new_compiler
         if not self.extensions:
             return
-        self.compiler = new_compiler(compiler=self.compiler,
+        self.compiler = new_compiler(
+                compiler=self.compiler or patch_distutils.get_default_compiler(),
                 verbose=self.verbose,
                 dry_run=self.dry_run,
                 force=self.force)

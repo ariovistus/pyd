@@ -26,12 +26,6 @@ def new_compiler(compiler=None, dry_run=0, force=0, **kwargs):
     if compiler is not None:
         compiler = compiler.lower()
 
-    if compiler is None:
-        if dcompiler._isPlatWin:
-            compiler = 'dmd'
-        else:
-            compiler = 'dmd'
-
     if compiler not in ('dmd', 'gdc','ldc'):
         return _old_new_compiler(compiler=compiler,
             dry_run=dry_run, force=force, **kwargs
@@ -46,22 +40,12 @@ def new_compiler(compiler=None, dry_run=0, force=0, **kwargs):
         raise RuntimeError("Couldn't get a compiler...")
 
 cc.new_compiler = new_compiler
-
-
-# A user's setup.py wouldn't have imported this module unless it intended to
-# compile D code, so override the default compiler setting to point to DMD.
-# This allows a user to compile a D extension with the command line
-#   python setup.py build
-# instead of needing
 #   python setup.py build --compiler=dmd
 def get_default_compiler(*args, **kwargs):
     if dcompiler._isPlatWin:
         return 'dmd'
     else:
         return 'dmd'
-
-cc.get_default_compiler = get_default_compiler
-
 # Force the distutils build command to recognize the '--optimize' or '-O'
 # command-line option.
 build.build.user_options.extend(
@@ -81,6 +65,10 @@ build.build.initialize_options = _new_initialize_options
 _old_build_ext = build_ext.build_ext.build_extension
 
 def new_build_ext(self, ext):
+    lang = ext.language or self.compiler.detect_language(ext.sources)
+    # we handle d default compiler here now
+    if lang == 'd' and not isinstance(self.compiler, dcompiler.DCompiler):
+        self.compiler = new_compiler('dmd')
     if isinstance(self.compiler, dcompiler.DCompiler):
         build = self.distribution.get_command_obj('build')
         self.compiler.init_d_opts(build, ext)

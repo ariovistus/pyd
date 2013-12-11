@@ -50,6 +50,10 @@ protected:
 public:
     /**
      * Wrap an owned PyObject*.
+     * This should typically only be used in conjuction with functions
+     * in the deimos API that return PyObject* (they return new references).
+     * Otherwise, wrap the incoming PyObject* with borrowed.
+     * -------
      */
     this(PyObject* o) {
         if (o is null) handle_exception();

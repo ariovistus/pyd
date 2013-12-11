@@ -20,6 +20,11 @@ setup(
     build_deimos=True,
     d_unittest=True,
     d_lump=True
+        ),
+    Extension("datetime", ['datetime.d'],
+    build_deimos=True,
+    d_unittest=True,
+    d_lump=True
         )
     ],
 )
