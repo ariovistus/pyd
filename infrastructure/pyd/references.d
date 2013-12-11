@@ -256,22 +256,11 @@ void set_pyd_mapping(T) (PyObject* _self, T t) {
         enforce(count != 0,
                 format("could not add py reference %x for T=%s, t=%s", 
                     _self, T.stringof,  Mapping.DKey(t)));
-        writefln("added py reference %x for T=%s, t=%s", 
-                _self,T.stringof, Mapping.DKey(t));
     }else{
         auto count = py_index.replace(PSR(range).front, mapping);
-        if(count == 0) {
-            writeln("durr.. could not find pyref all class entries:");
-            foreach(entry; py_index[]) {
-                writefln(" t=%x, py=%x, constness=%s", 
-                        entry.d, entry.py, constness_ToString(entry.constness));
-            }
-        }
         enforce(count != 0,
                 format("could not update py reference %x for T=%s, t=%s",
                     _self, T.stringof,  Mapping.DKey(t)));
-        writefln("could update py reference %x for T=%s, t=%s", 
-                _self, T.stringof, Mapping.DKey(t));
     }
 }
 
@@ -281,7 +270,6 @@ void remove_pyd_mapping(T)(PyObject* self) {
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
     
-    writefln("removing py=%x",self);
     auto py_index = container.get_index!1;
     auto range = py_index.equalRange(self);
     if(!range.empty) {

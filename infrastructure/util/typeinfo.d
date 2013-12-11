@@ -76,6 +76,21 @@ template ApplyConstness(T, Constness constness) {
     }
 }
 
+template ApplyConstness2(T, Constness constness) {
+    alias Unqual!T Tu;
+    static if(constness == Constness.Mutable) {
+        alias Tu ApplyConstness2;
+    }else static if(constness == Constness.Const) {
+        alias const(Tu) ApplyConstness2;
+    }else static if(constness == Constness.Wildcard) {
+        alias Tu ApplyConstness2;
+    }else static if(constness == Constness.Immutable) {
+        alias immutable(Tu) ApplyConstness2;
+    }else {
+        static assert(0);
+    }
+}
+
 string attrs_to_string(uint attrs) {
     string s = "";
     with(FunctionAttribute) {
@@ -95,3 +110,30 @@ template NewParamT(T) {
         alias PointerTarget!T NewParamT;
     else alias T NewParamT;
 }
+
+template StripSafeTrusted(F) {
+    enum attrs = functionAttributes!F ; 
+    enum desired_attrs = attrs & ~FunctionAttribute.safe & ~FunctionAttribute.trusted;
+    enum linkage = functionLinkage!F;
+    alias SetFunctionAttributes!(F, linkage, desired_attrs) unqual_F;
+    static if(isFunctionPointer!F) {
+        enum constn = constness!(pointerTarget!F);
+        alias ApplyConstness!(pointerTarget!unqual_F, constn)* StripSafeTrusted;
+    }else static if(isDelegate!F) {
+        enum constn = constness!(F);
+        alias ApplyConstness!(unqual_F, constn) StripSafeTrusted;
+    }else{
+        enum constn = constness!(F);
+        alias ApplyConstness!(unqual_F, constn) StripSafeTrusted;
+    }
+
+
+}
+
+class Z {
+    void a() immutable
+    {
+    }
+}
+//static assert(is(StripSafeTrusted!(typeof(&Z.a)) == typeof(&Z.a) ));
+//static assert(is(StripSafeTrusted!(typeof(&Z.init.a)) == typeof(&Z.init.a) ));

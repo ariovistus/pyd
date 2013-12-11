@@ -287,8 +287,6 @@ template wrapped_func_call(fn_t) {
             return null;
         }
 
-        import std.stdio;
-        writefln("get_d_reference!(%s)(%x)", fn_t.stringof, self);
         fn_t fn = get_d_reference!fn_t(self);
 
         return exception_catcher(delegate PyObject*() {

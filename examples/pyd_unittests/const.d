@@ -15,6 +15,12 @@ shared static this() {
             Def!(T1.c),
             Def!(T1.d),
             Def!(T1.e),
+            Def!(T1.v1),
+            Def!(T1.im1),
+            Property!(T1.p1),
+            Property!(T1.p1i),
+            Property!(T1.p1c),
+            Property!(T1.p1w),
     )();
     }, PyInitOrdering.After);
 
@@ -40,6 +46,31 @@ class T1 {
     }
     void e(T1 t) {
     }
+
+    @property void p1(int i) {
+    }
+    @property int p1() {
+        return 100;
+    }
+
+    @property int p1i() immutable {
+        return 200;
+    }
+
+    @property int p1c() const {
+        return 300;
+    }
+
+    @property int p1w() inout {
+        return 400;
+    }
+
+    void v1() {
+        int i = 1 + 2;
+    }
+
+    void im1(immutable(T1) tz) {
+    }
 }
 
 unittest {
@@ -48,6 +79,8 @@ unittest {
     c.py_stmts("boozy = T1()");
     assert(collectException!PythonException(c.py_eval!string("boozy.a()")));
     assert(c.py_eval!string("boozy.b()") == "def");
+    assert(collectException!PythonException(c.py_eval!string("z = boozy.p1i")));
+    assert(c.py_eval!int("boozy.p1c") == 300);
 }
 
 unittest {
@@ -65,9 +98,13 @@ unittest {
     c.a = a;
     c.py_stmts("a.c(a)");
     c.py_stmts("a.e(a)");
-    // ??
-    //assert(false, "that should not have worked");
-
+    try {
+        c.py_stmts("a.im1(a)");
+        assert(false, "that should have required an immutable param");
+    }catch(PythonException ex) {
+        string msg ="constness mismatch required: immutable, found: mutable";
+        assert(countUntil(ex.py_message, msg) != -1);
+    }
 }
 
 void main() {}

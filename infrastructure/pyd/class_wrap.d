@@ -293,7 +293,13 @@ struct Def(alias fn, Options...) {
 template _Def(alias _fn, string name, fn_t, string docstring) {
     alias def_selector!(_fn,fn_t).FN func;
     static assert(!__traits(isStaticFunction, func)); // TODO
-    alias fn_t func_t;
+    static assert((functionAttributes!fn_t & (
+                    FunctionAttribute.nothrow_| 
+                    FunctionAttribute.pure_| 
+                    FunctionAttribute.trusted|
+                    FunctionAttribute.safe)) == 0, 
+            "pyd currently does not support pure, nothrow, @trusted, or @safe member functions");
+    alias /*StripSafeTrusted!*/fn_t func_t;
     enum realname = __traits(identifier,func);
     enum funcname = name;
     enum min_args = minArgs!(func);
@@ -356,11 +362,11 @@ struct StaticDef(alias fn, Options...) {
 mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
     alias def_selector!(fn,fn_t).FN func;
     static assert(__traits(isStaticFunction, func)); // TODO
-    alias fn_t func_t;
+    alias /*StripSafeTrusted!*/fn_t func_t;
     enum funcname = name;
     enum bool needs_shim = false;
     static void call(string classname, T) () {
-        pragma(msg, "class.static_def: " ~ name);
+        //pragma(msg, "class.static_def: " ~ name);
         static PyMethodDef empty = { null, null, 0, null };
         alias wrapped_method_list!(T) list;
         list[$-1].ml_name = (name ~ "\0").ptr;
@@ -398,7 +404,7 @@ struct Property(alias fn, Options...) {
 
 template _Property(alias fn, string pyname, string _mode, string docstring) {
     alias property_parts!(fn, _mode) parts;
-    pragma(msg, "property: ", parts.nom);
+    //pragma(msg, "property: ", parts.nom);
     static if(parts.isproperty) {
         mixin _Member!(parts.nom, pyname, parts.mode, docstring, parts);
 
@@ -416,7 +422,6 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
         enum funcname = pyname;
         enum bool needs_shim = false;
         static void call(string classname, T) () {
-            pragma(msg, "class.prop: " ~ pyname);
             static PyGetSetDef empty = { null, null, null, null, null };
             wrapped_prop_list!(T)[$-1].name = (pyname ~ "\0").dup.ptr;
             static if (countUntil(parts.mode, "r") != -1) {
@@ -1469,12 +1474,12 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
     import std.conv;
     import util.typelist;
     static if (is(_T == class)) {
-        pragma(msg, "wrap_class: " ~ name);
+        //pragma(msg, "wrap_class: " ~ name);
         alias pyd.make_wrapper.make_wrapper!(_T, Params).wrapper shim_class;
         //alias W.wrapper shim_class;
         alias _T T;
     } else {
-        pragma(msg, "wrap_struct: '" ~ name ~ "'");
+        //pragma(msg, "wrap_struct: '" ~ name ~ "'");
         alias void shim_class;
         alias _T* T;
     }

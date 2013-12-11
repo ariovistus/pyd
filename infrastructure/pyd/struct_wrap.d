@@ -25,8 +25,10 @@ SOFTWARE.
   */
 module pyd.struct_wrap;
 
+import std.traits;
 import deimos.python.Python;
 
+import util.typeinfo;
 import pyd.references;
 import pyd.def;
 import pyd.class_wrap;
@@ -42,14 +44,22 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
     static if(PropertyParts.length != 0) {
         alias PropertyParts[0] ppart0;
         alias ppart0.Type M;
+        // const setters make no sense. getters though..
+        static if(ppart0.isgproperty) {
+            alias ApplyConstness2!(T,constness!(FunctionTypeOf!(ppart0.GetterFn)))
+                GT;
+        }
     }else {
+        alias T GT;
         mixin("alias typeof(T."~name~") M;");
     } 
     static if(countUntil(mode, "r") != -1) {
+        static if(PropertyParts.length != 0) {
+        }
         extern(C)
             PyObject* get(PyObject* self, void* closure) {
             return exception_catcher(delegate PyObject*() {
-                T t = get_d_reference!T(self);
+                GT t = get_d_reference!GT(self);
                 mixin("return d_to_python(t."~name~");");
             });
         }
@@ -87,7 +97,7 @@ struct Member(string name, Options...) {
 template _Member(string realname, string pyname, string mode, string docstring, parts...) {
     static const bool needs_shim = false;
     static void call(string classname, T) () {
-        pragma(msg, "struct.member: " ~ pyname);
+        //pragma(msg, "struct.member: " ~ pyname);
         static PyGetSetDef empty = {null, null, null, null, null};
         alias wrapped_prop_list!(T) list;
         list[$-1].name = (pyname ~ "\0").dup.ptr;
