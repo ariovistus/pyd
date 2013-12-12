@@ -3558,7 +3558,6 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
             }
 
             bool replace(Position!ThisNode r, ValueView value) {
-                assert(r.node !is null);
                 return _Replace(r.node, cast(Value) value);
             }
 
@@ -4926,53 +4925,54 @@ if(IndexedByCount!(Args)() == 1 &&
                     alias L$N.Inner!(typeof(this),ThisNode,Value, ValueView,$N,Allocator) M$N;
                     mixin M$N.IndexMixin!(M$N.IndexTuple) index$N;
                     template index(size_t n) if(n == $N){ alias index$N index; }
-                    class Index$N{
+                    struct Index$N{
+                        MultiIndexContainer _this;
 
                         // grr opdispatch not handle this one
                         auto opSlice(T...)(T ts){
-                            return this.outer.index!($N).opSlice(ts);
+                            return _this.index!($N).opSlice(ts);
                         }
 
                         // grr opdispatch not handle this one
                         auto opIndex(T...)(T ts){
-                            return this.outer.index!($N).opIndex(ts);
+                            return _this.index!($N).opIndex(ts);
                         }
 
                         // grr opdispatch not handle this one
                         auto opIndexAssign(T...)(T ts){
-                            return this.outer.index!($N).opIndexAssign(ts);
+                            return _this.index!($N).opIndexAssign(ts);
                         }
 
                         // grr opdispatch not handle this one
                         auto opBinaryRight(string op, T...)(T ts){
-                            return this.outer.index!($N).opBinaryRight!(op)(ts);
+                            return _this.index!($N).opBinaryRight!(op)(ts);
                         }
 
                         // grr opdispatch not handle this one
                         auto bounds(string bs = "[]", T)(T t1, T t2){
-                            return this.outer.index!($N).bounds!(bs,T)(t1,t2);
+                            return _this.index!($N).bounds!(bs,T)(t1,t2);
                         }
                         // grr opdispatch not handle this one
                         auto bounds(V, string bs = "[]", T)(T t1, T t2){
-                            return this.outer.index!($N).cbounds!(V,bs,T)(t1,t2);
+                            return _this.index!($N).cbounds!(V,bs,T)(t1,t2);
                         }
                         // grr opdispatch not handle this one
                         auto cEqualRange(L, K)(K k)
                         {
-                            return this.outer.index!($N).cEqualRange!(L, K).equalRange(k);
+                            return _this.index!($N).cEqualRange!(L, K).equalRange(k);
                         }
                         // grr opdispatch not handle this one
                         auto cEqualRange(L, K)(K k) const
                         {
-                            return this.outer.index!($N).cEqualRange!(L, K).equalRange(k);
+                            return _this.index!($N).cEqualRange!(L, K).equalRange(k);
                         }
 
                         auto opDispatch(string s, T...)(T args){
-                            mixin("return this.outer.index!($N)."~s~"(args);");
+                            mixin("return _this.index!($N)."~s~"(args);");
                         }
                     }
                     @property Index$N get_index(size_t n)() if(n == $N){
-                        return this.new Index$N();
+                        return Index$N(this);
                     }
                 },  "$N", N) ~ 
                 ForEachIndex!(N+1, L[1 .. $]).result;
@@ -5096,8 +5096,8 @@ denied:
 
     // disattach node from all indeces.
     // @@@BUG@@@ cannot pass length directly to _RemoveAllBut
-    auto _RemoveAll(size_t N = -1)(ThisNode* node){
-        static if(N == -1) {
+    auto _RemoveAll(size_t N = size_t.max)(ThisNode* node){
+        static if(N == size_t.max) {
             enum _grr_bugs = IndexedBy.Indeces.length;
             _RemoveAllBut!(_grr_bugs)(node);
         }else {
@@ -5106,7 +5106,7 @@ denied:
         }
         dealloc(node);
 
-        static if(N != -1) {
+        static if(N != size_t.max) {
             return res;
         }
     }
