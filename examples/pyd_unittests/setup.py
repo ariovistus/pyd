@@ -29,7 +29,7 @@ ext_modules = setup(
         Extension(ext(e), [ext(e)+".d"],
             d_unittest=True,
             build_deimos=True,
-            d_lump=True,
+            d_lump=False,
             string_imports = string_imports.get(e, [])
             )
             for e in exts 

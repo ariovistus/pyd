@@ -9,13 +9,27 @@ extern(C) {
     void rt_init();
     void rt_term();
 
-    void hacky_init() {
-        rt_init();
-    }
+    version(LDC) {
+        pragma(LDC_global_crt_ctor)
+            void hacky_init() {
+                rt_init();
+            }
 
-    void hacky_fini() {
-        if(!_d_isHalting){
-            rt_term();
+        pragma(LDC_global_crt_dtor)
+            void hacky_fini() {
+                if(!_d_isHalting){
+                    rt_term();
+                }
+            }
+    }else{
+        void hacky_init() {
+            rt_init();
+        }
+
+        void hacky_fini() {
+            if(!_d_isHalting){
+                rt_term();
+            }
         }
     }
 

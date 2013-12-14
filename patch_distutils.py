@@ -64,13 +64,34 @@ build.build.initialize_options = _new_initialize_options
 
 _old_build_ext = build_ext.build_ext.build_extension
 
+def reinit_compiler(ext):
+    # build_ext.run initializes compiler then calls build_extensions.
+    # we don't want that last part..
+    old_build_exts = ext.build_extensions
+    ext.compiler = None
+    def durp(): pass
+    ext.build_extensions = durp
+    ext.build_extensions()
+    try:
+        ext.run()
+    finally:
+        ext.build_extensions = old_build_exts
+
 def new_build_ext(self, ext):
+    old_compiler = None
     lang = ext.language or self.compiler.detect_language(ext.sources)
     # we handle d default compiler here now
     if lang == 'd' and not isinstance(self.compiler, dcompiler.DCompiler):
         self.compiler = new_compiler('dmd')
+    if lang != 'd' and isinstance(self.compiler, dcompiler.DCompiler):
+        # probably user put --compiler=somedcompiler in the command line.
+        # welp, lets try to rerun the compiler initializer for this extension
+        old_compiler = self.compiler
+        reinit_compiler(self)
     if isinstance(self.compiler, dcompiler.DCompiler):
         build = self.distribution.get_command_obj('build')
         self.compiler.init_d_opts(build, ext)
     _old_build_ext(self,ext)
+    if old_compiler:
+        self.compiler = old_compiler
 build_ext.build_ext.build_extension = new_build_ext

@@ -718,6 +718,9 @@ class GDCDCompiler(DCompiler):
     _env_var = 'GDC_BIN'
 
     def _initialize(self):
+        if not self.build_exe:
+            print("gdc does not support building shared libraries, so python extensions are out of the question")
+            sys.exit(1)
         self._exeCompileOpts = ['-c']
         # _compileOpts
         self._compileOpts = ['-fPIC', '-c']
@@ -769,7 +772,7 @@ class LDCDCompiler(DCompiler):
         'preprocessor' : None,
         'compiler'     : ['ldc2'],
         'compiler_so'  : ['ldc2'],
-        'linker_so'    : ['gcc'],
+        'linker_so'    : ['ldc2'],
         'linker_exe'   : ['ldc2'],
     }
 
@@ -782,7 +785,7 @@ class LDCDCompiler(DCompiler):
         self._compileOpts = ['-relocation-model=pic', '-c']
         # _outputOpts
         self._outputOpts = ['-of', '%s']
-        self._linkOutputOpts = ['-o', '%s']
+        self._linkOutputOpts = ['-of', '%s']
         # bloody ubuntu has to make things difficult
         if is_posix_static_python():
             self._exeLinkOpts = ['-L'+l for l in posix_static_python_opts()]
@@ -790,7 +793,7 @@ class LDCDCompiler(DCompiler):
         else:
             self._exeLinkOpts = []
         # _linkOpts
-        self._SharedLinkOpts = ['-nostartfiles', '-shared','-Wl,--no-as-needed','-lphobos-ldc','-ldruntime-ldc', '-lrt','-lpthread','-ldl','-lm']
+        self._SharedLinkOpts = ['-shared'] 
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt
@@ -811,22 +814,16 @@ class LDCDCompiler(DCompiler):
         self._releaseOptimizeOpts = ['-fversion=Optimized', '-release', '-O3', '-finline-functions']
 
     def _def_file(self, output_dir, output_filename):
-        return ['-Wl,-soname,' + os.path.basename(output_filename)]
+        return [] 
 
     def library_dir_option(self, dir):
-        if self.build_exe:
-            return "-L-L" + dir
-        else:
-            return '-L' + dir
+        return "-L-L" + dir
 
     def runtime_library_dir_option(self, dir):
         return '-Wl,-R' + dir
 
     def library_option(self, lib):
-        if self.build_exe:
-            return "-L-l" + lib
-        else:
-            return '-l' + lib
+        return "-L-l" + lib
     def link (self, *args, **kwargs):
         target_desc = args[0]
         if target_desc == cc.CCompiler.SHARED_OBJECT:

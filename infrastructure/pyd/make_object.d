@@ -254,7 +254,9 @@ PyObject* d_to_python(T) (T t) {
         }
         // If it's not a wrapped type, fall through to the exception.
     // If converting a struct by value, create a copy and wrap that
-    } else static if (is(T == struct) && isInputRange!T) {
+    } else static if (is(T == struct) && 
+            !is(T == RangeWrapper) && 
+            isInputRange!T) {
         return d_to_python(wrap_range(t));
     } else static if (is(T == struct)) {
         alias Unqual!T Tu;
@@ -836,6 +838,7 @@ if (isArray!T || IsStaticArrayPointer!T) {
   Does not work for UFCS ranges (e.g. arrays), classes
   */
 auto wrap_range(Range)(Range range) if(is(Range == struct)) {
+    static assert(!is(Range == RangeWrapper));
     import core.memory;
     RangeWrapper wrap;
     // the hackery! the hackery!
@@ -843,12 +846,12 @@ auto wrap_range(Range)(Range range) if(is(Range == struct)) {
     std.algorithm.move(range, *keeper);
     wrap.range = cast(void*) keeper;
     wrap.tid = typeid(Range);
-    wrap.empty = cast(int delegate(void*)) dg_wrapper(keeper, &Range.empty);
-    wrap.popFront = cast(void delegate(void*)) dg_wrapper(keeper, &Range.popFront);
-    auto front_dg = cast(ElementType!Range delegate(Range*)) 
+    wrap.empty = dg_wrapper(keeper, &Range.empty);
+    wrap.popFront = dg_wrapper(keeper, &Range.popFront);
+    auto front_dg = 
         dg_wrapper(keeper, cast(ElementType!Range function()) &Range.front);
-    wrap.front = delegate PyObject*(void* a) {
-        return d_to_python(front_dg(cast(Range*)a));
+    wrap.front = delegate PyObject*() {
+        return d_to_python(front_dg());
     };
     return wrap;
 }
@@ -860,20 +863,20 @@ auto wrap_range(Range)(Range range) if(is(Range == struct)) {
   */
 struct RangeWrapper {
     void* range;
-    void delegate(void*) popFront;
-    PyObject* delegate(void*) front;
-    int delegate(void*) empty;
+    void delegate() popFront;
+    PyObject* delegate() front;
+    bool delegate() empty;
     TypeInfo tid;
 
     RangeWrapper* iter() {
         return &this;
     }
     PyObject* next() {
-        if(this.empty(range)) {
+        if(this.empty()) {
             return null;
         }else {
-            auto result = d_to_python(this.front(range));
-            this.popFront(range);
+            auto result = d_to_python(this.front());
+            this.popFront();
             return result;
         }
     }

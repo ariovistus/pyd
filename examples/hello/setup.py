@@ -8,7 +8,7 @@ setup(
     ext_modules=[
     Extension(projName, ['hello.d'],
         build_deimos=True,
-        d_lump=True
+        d_lump=False
         )
     ],
 )

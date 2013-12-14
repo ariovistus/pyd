@@ -18,15 +18,15 @@ clean:
 	rm -f *.so
 	rm -f *.x
 
-LIBS= -Wl,--no-as-needed -lphobos-ldc -ldruntime-ldc -lrt -lpthread -ldl -lm -lpython2.7
+LIBS= -L--no-as-needed -L-lphobos-ldc -L-ldruntime-ldc -L-lrt -L-lpthread -L-ldl -L-lm -L-lpython2.7
 
 %.o: %.d
 	echo "building $@"
-	$(LDC) -relocation-model=pic -c $^ -of $@
+	$(LDC) -unittest -relocation-model=pic -c $^ -of $@
 
 lib%.so: %.o boilerplate.o
 	echo "building $@"
-	gcc -nostartfiles -shared $(LIBS) $^ -o $@ 
+	ldc2 -shared $(LIBS) $^ -of $@ 
 
 test1.x: test1.c libtest1.so
 	echo "building $@"

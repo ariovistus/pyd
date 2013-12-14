@@ -47,7 +47,7 @@ unittest {
 }
 
 unittest {
-    py_stmts(q"{from array import array; a = array('i', [44,33,22,11]);}", "testing");
+    py_stmts(`from array import array; a = array('i', [44,33,22,11]);`, "testing");
     assert(py_eval!(int[])("a", "testing") == [44,33,22,11]);
     assert(py_eval!(int[4])("a", "testing") == [44,33,22,11]);
     double[] g = [5.5,4.5,3.5];
@@ -192,7 +192,7 @@ unittest {
 
 // test arbirary ranges
 unittest{
-    auto z = iota(10);
+    auto z = (iota(10));
     alias typeof(z) Z;
     alias py_def!(
             "def foozit(a):\n"
