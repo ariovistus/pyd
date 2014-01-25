@@ -20,42 +20,45 @@ unittest {
     assert(func1(3) == 7);    
 }
 
-// py_stmts
-unittest {
-    // futures do not persist across py_stmts calls
-    py_stmts(
-            "a = 3 / 4;"
-            ,
-            "testing");
-    assert(py_eval!double("a", "testing") == 0);
-    py_stmts(
-            "from __future__ import division\n"
-            "b = 3 / 4;"
-            ,
-            "testing");
-    assert(py_eval!double("b", "testing") == 0.75);
-    py_stmts(
-            "a = 3 / 4;"
-            ,
-            "testing");
-    assert(py_eval!double("a", "testing") == 0);
+version(Python_3_0_Or_Later) {
+}else{
+    // py_stmts
+    unittest {
+        // futures do not persist across py_stmts calls
+        py_stmts(
+                "a = 3 / 4;"
+                ,
+                "testing");
+        assert(py_eval!double("a", "testing") == 0);
+        py_stmts(
+                "from __future__ import division\n"
+                "b = 3 / 4;"
+                ,
+                "testing");
+        assert(py_eval!double("b", "testing") == 0.75);
+        py_stmts(
+                "a = 3 / 4;"
+                ,
+                "testing");
+        assert(py_eval!double("a", "testing") == 0);
 
-    // but they do across contextual py_stmts calls.
-    InterpContext c = new InterpContext();
-    c.py_stmts(
-            "import testing\n"
-            "a = 3 / 4;"
-            );
-    assert(c.py_eval!double("a") == 0);
-    c.py_stmts(
-            "from __future__ import division\n"
-            "b = 3 / 4;"
-            );
-    assert(c.py_eval!double("b") == 0.75);
-    c.py_stmts(
-            "a = 3 / 4;"
-            );
-    assert(c.py_eval!double("a") == 0.75);
+        // but they do across contextual py_stmts calls.
+        InterpContext c = new InterpContext();
+        c.py_stmts(
+                "import testing\n"
+                "a = 3 / 4;"
+                );
+        assert(c.py_eval!double("a") == 0);
+        c.py_stmts(
+                "from __future__ import division\n"
+                "b = 3 / 4;"
+                );
+        assert(c.py_eval!double("b") == 0.75);
+        c.py_stmts(
+                "a = 3 / 4;"
+                );
+        assert(c.py_eval!double("a") == 0.75);
+    }
 }
 unittest {
     // py_stmts with modulename executes within that module

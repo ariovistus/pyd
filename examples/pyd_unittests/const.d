@@ -103,7 +103,7 @@ unittest {
         assert(false, "that should have required an immutable param");
     }catch(PythonException ex) {
         string msg ="constness mismatch required: immutable, found: mutable";
-        assert(countUntil(ex.py_message, msg) != -1);
+        assert(countUntil(ex.toString(), msg) != -1);
     }
 }
 

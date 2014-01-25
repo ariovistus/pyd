@@ -135,7 +135,6 @@ template make_wrapper(T, Params...) {
     "    mixin OverloadShim;\n"~
     pyd.make_wrapper.class_decls!(0, T, Params)~"\n"~
     "}\n";
-    pragma(msg, cls);
     mixin(cls);
 }
 

@@ -10,37 +10,71 @@ static this() {
 // PydObject as dict
 unittest {
     auto g = py(["a":"b"]);
-    assert((g.keys()).toString() == "[u'a']");
-    assert((g.values()).toString() == "[u'b']");
-    assert(g.items().toString() == "[(u'a', u'b')]");
-    assert(g["a"].toString()  == "b");
-    g["b"] = py("truck");
-    assert(g.items().toString() == "[(u'a', u'b'), (u'b', u'truck')]" ||
-            g.items().toString() == "[(u'b', u'truck'), (u'a', u'b')]");
-    foreach(key, val; g) {
-        if (key.toString() == "a") assert(val.toString() == "b");
-        else if (key.toString() == "b") assert(val.toString() == "truck");
-        else assert(false);
+    version(Python_3_0_Or_Later) {
+        assert((g.keys()).toString() == "['a']");
+        assert((g.values()).toString() == "['b']");
+        assert(g.items().toString() == "[('a', 'b')]");
+        assert(g["a"].toString()  == "b");
+        g["b"] = py("truck");
+        assert(g.items().toString() == "[('a', 'b'), ('b', 'truck')]" ||
+                g.items().toString() == "[('b', 'truck'), ('a', 'b')]");
+        foreach(key, val; g) {
+            if (key.toString() == "a") assert(val.toString() == "b");
+            else if (key.toString() == "b") assert(val.toString() == "truck");
+            else assert(false);
+        }
+        g.del_item("b");
+        assert((g.items()).toString() == "[('a', 'b')]");
+        auto g2 = g.copy();
+        assert((g2.items()).toString() == "[('a', 'b')]");
+        g2.del_item("a");
+        assert((g2.items()).toString() == "[]");
+        assert((g.items()).toString() == "[('a', 'b')]");
+        g2 = py(["k":"z", "a":"f"]);
+        g.merge(g2);
+        assert(g.items().toString() == "[('k', 'z'), ('a', 'f')]" ||
+                g.items().toString() == "[('a', 'f'), ('k', 'z')]");
+        g = py(["a":"b"]);
+        g.merge(g2,false);
+        assert(g.items().toString() == "[('k', 'z'), ('a', 'b')]" ||
+                g.items().toString() == "[('a', 'b'), ('k', 'z')]");
+        assert("k" in g);
+        assert("a" in g);
+        assert(g.has_key("k"));
+        assert(g.has_key("a"));
+    }else{
+        assert((g.keys()).toString() == "[u'a']");
+        assert((g.values()).toString() == "[u'b']");
+        assert(g.items().toString() == "[(u'a', u'b')]");
+        assert(g["a"].toString()  == "b");
+        g["b"] = py("truck");
+        assert(g.items().toString() == "[(u'a', u'b'), (u'b', u'truck')]" ||
+                g.items().toString() == "[(u'b', u'truck'), (u'a', u'b')]");
+        foreach(key, val; g) {
+            if (key.toString() == "a") assert(val.toString() == "b");
+            else if (key.toString() == "b") assert(val.toString() == "truck");
+            else assert(false);
+        }
+        g.del_item("b");
+        assert((g.items()).toString() == "[(u'a', u'b')]");
+        auto g2 = g.copy();
+        assert((g2.items()).toString() == "[(u'a', u'b')]");
+        g2.del_item("a");
+        assert((g2.items()).toString() == "[]");
+        assert((g.items()).toString() == "[(u'a', u'b')]");
+        g2 = py(["k":"z", "a":"f"]);
+        g.merge(g2);
+        assert(g.items().toString() == "[(u'k', u'z'), (u'a', u'f')]" ||
+                g.items().toString() == "[(u'a', u'f'), (u'k', u'z')]");
+        g = py(["a":"b"]);
+        g.merge(g2,false);
+        assert(g.items().toString() == "[(u'k', u'z'), (u'a', u'b')]" ||
+                g.items().toString() == "[(u'a', u'b'), (u'k', u'z')]");
+        assert("k" in g);
+        assert("a" in g);
+        assert(g.has_key("k"));
+        assert(g.has_key("a"));
     }
-    g.del_item("b");
-    assert((g.items()).toString() == "[(u'a', u'b')]");
-    auto g2 = g.copy();
-    assert((g2.items()).toString() == "[(u'a', u'b')]");
-    g2.del_item("a");
-    assert((g2.items()).toString() == "[]");
-    assert((g.items()).toString() == "[(u'a', u'b')]");
-    g2 = py(["k":"z", "a":"f"]);
-    g.merge(g2);
-    assert(g.items().toString() == "[(u'k', u'z'), (u'a', u'f')]" ||
-            g.items().toString() == "[(u'a', u'f'), (u'k', u'z')]");
-    g = py(["a":"b"]);
-    g.merge(g2,false);
-    assert(g.items().toString() == "[(u'k', u'z'), (u'a', u'b')]" ||
-            g.items().toString() == "[(u'a', u'b'), (u'k', u'z')]");
-    assert("k" in g);
-    assert("a" in g);
-    assert(g.has_key("k"));
-    assert(g.has_key("a"));
 
     g = py([5:7, 8:10]);
     g.clear();
@@ -50,6 +84,7 @@ unittest {
 // PydObject as list
 unittest {
     auto g = py(["a","b","c","e"]);
+    assert(py("a") in g);
     assert("a" in g);
     assert("e" in g);
     foreach(i,x; g) {
@@ -103,7 +138,11 @@ unittest {
     n = n * py(12);
     assert(n == py(36));
     n = n / py(5);
-    assert(n == py(7));
+    version(Python_3_0_Or_Later) {
+        assert(n == py(7.2));
+    }else{
+        assert(n == py(7));
+    }
     n = py(36).floor_div(py(5));
     assert(n == py(7));
     n = py(36).true_div(py(5));
@@ -135,7 +174,13 @@ unittest {
     n *= py(7);
     assert(n == py(14));
     n /= py(3);
-    assert(n == py(4));
+    version(Python_3_0_Or_Later) {
+        assert(n == py(14./3)); // 4.6bar
+        assert(n.as_long() == py(4));
+        n = py(4);
+    }else{
+        assert(n == py(4));
+    }
     n %= py(3);
     assert(n == py(1));
     n <<= py(4);

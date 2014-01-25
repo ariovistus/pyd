@@ -5141,8 +5141,10 @@ denied:
         mixin(ForEachIndexPosition!0 .getNodePositions);
         Value old = node.value;
         node.value = value;
-        mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);
-        mixin(ForEachIndexPosition!0 .fixupIndeces);
+        {
+            mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);
+            mixin(ForEachIndexPosition!0 .fixupIndeces);
+        }
         return true;
 denied:
         node.value = old;

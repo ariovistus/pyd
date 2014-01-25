@@ -1,4 +1,5 @@
 import os.path, sys
+import platform
 import distutils.util
 
 # Append the directory in which the binaries were placed to Python's sys.path,
@@ -12,75 +13,85 @@ import testdll
 
 testdll.foo()
 
-print
+print ()
 
-print testdll.bar(12)
+print (testdll.bar(12))
 
-print
+print ()
 
-print "testdll.baz():"
+print ("testdll.baz():")
 testdll.baz()
-print "testdll.baz(20):"
+print ("testdll.baz(20):")
 testdll.baz(20)
-print "testdll.baz(30, 'cat'):"
+print ("testdll.baz(30, 'cat'):")
 testdll.baz(30, 'cat')
 
-print
+print ()
 
-print "Testing callback support"
+print ("Testing callback support")
 def foo():
-    print "Callback works!"
+    print ("Callback works!")
 testdll.dg_test(foo)
-print "Testing delegate wrapping"
+print ("Testing delegate wrapping")
 dg = testdll.func_test()
 dg()
 
-print
+print ()
 
-print "Testing class wrapping"
+print ("Testing class wrapping")
 a = testdll.Foo(10)
-print "Class instantiated!"
-print "Testing method wrapping:"
+print ("Class instantiated!")
+print ("Testing method wrapping:")
 a.foo()
-print "Testing property wrapping:"
-print a.i
+print ("Testing property wrapping:")
+print (a.i)
 a.i = 50
-print a.i
-print "Testing operator overloading"
-print a+a
+print (a.i)
+print ("Testing operator overloading")
+print (a+a)
 
-print "Testing range iteration wrapping:"
+print ("Testing range iteration wrapping:")
 for i in a:
-    print i
+    print (i)
 
-print
+print ()
 
-print "Testing exception wrapping"
-try:
-    testdll.throws()
-except RuntimeError, e:
-    print "Success: Exception caught!"
-    print e
+print ("Testing exception wrapping")
+print ("patform: ", platform.python_version())
+if platform.python_version() < "2.6":
+    eval("""
+    try:
+        testdll.throws()
+    except RuntimeError, e:
+        print ("Success: Exception caught!")
+        print (e)
+        """)
+else:
+    try:
+        testdll.throws()
+    except RuntimeError as e:
+        print ("Success: Exception caught!")
+        print (e)
 
-print
+print ()
 
 S = testdll.S
 s = S()
-print "s.s = 'hello'"
-s.s = 'hello'
-print "s.s"
-print s.s
-print "s.write_s()"
+print ("s.s = 'hello'")
+s.s = ('hello')
+print ("s.s")
+print (s.s)
+print ("s.write_s()")
 s.write_s()
 
-print
+print ()
 
-print "Testing custom conversion function"
-print testdll.conv1()
+print ("Testing custom conversion function")
+print (testdll.conv1())
 testdll.conv2(20)
 
-print
+print ()
 
-print '--------'
-print 'SUCCESS'
-print '--------'
+print ('--------')
+print ('SUCCESS')
+print ('--------')

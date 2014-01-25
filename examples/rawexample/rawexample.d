@@ -58,29 +58,78 @@ PyMethodDef[] rawexample_methods = [
     {null, null, 0, null}
 ];
 
-extern(C)
-export void initrawexample() {
-    PyObject* m = Py_INCREF(Py_InitModule("rawexample", rawexample_methods.ptr));
+version(Python_3_0_Or_Later) {
+    PyModuleDef rawmodule = {
+        // in lieu of PyModuleDef_HEAD_INIT
+        m_base: {
+            ob_base: {
+                ob_refcnt:1,
+                ob_type:null,
+            },
+            m_init:null,
+            m_index:0,
+            m_copy:null
+        },
+        m_name: "rawexample",
+        m_doc: null,
+        m_size: -1,
+    };
+}
 
-    Base_type.ob_type = &PyType_Type;
-    Base_type.tp_basicsize = Base_object.sizeof;
-    Base_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    Base_type.tp_methods = Base_methods.ptr;
-    Base_type.tp_name = "rawexample.Base";
-    Base_type.tp_new = &PyType_GenericNew;
-    PyType_Ready(&Base_type);
-    Py_INCREF(cast(PyObject*)&Base_type);
-    PyModule_AddObject(m, "Base", cast(PyObject*)&Base_type);
+version(Python_3_0_Or_Later) {
+    extern(C) 
+    export PyObject* PyInit_rawexample () {
+        rawmodule.m_methods = rawexample_methods.ptr;
+        PyObject* m = PyModule_Create(&rawmodule);
 
-    Derived_type.ob_type = &PyType_Type;
-    Derived_type.tp_basicsize = Derived_object.sizeof;
-    Derived_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    Derived_type.tp_methods = Derived_methods.ptr;
-    Derived_type.tp_name = "rawexample.Derived";
-    Derived_type.tp_new = &PyType_GenericNew;
-    Derived_type.tp_base = &Base_type;
-    PyType_Ready(&Derived_type);
-    Py_INCREF(cast(PyObject*)&Derived_type);
-    PyModule_AddObject(m, "Derived", cast(PyObject*)&Derived_type);
+        Py_SET_TYPE(&Base_type, &PyType_Type);
+        Base_type.tp_basicsize = Base_object.sizeof;
+        Base_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        Base_type.tp_methods = Base_methods.ptr;
+        Base_type.tp_name = "rawexample.Base";
+        Base_type.tp_new = &PyType_GenericNew;
+        PyType_Ready(&Base_type);
+        Py_INCREF(cast(PyObject*)&Base_type);
+        PyModule_AddObject(m, "Base", cast(PyObject*)&Base_type);
+
+        Py_SET_TYPE(&Derived_type, &PyType_Type);
+        Derived_type.tp_basicsize = Derived_object.sizeof;
+        Derived_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        Derived_type.tp_methods = Derived_methods.ptr;
+        Derived_type.tp_name = "rawexample.Derived";
+        Derived_type.tp_new = &PyType_GenericNew;
+        Derived_type.tp_base = &Base_type;
+        PyType_Ready(&Derived_type);
+        Py_INCREF(cast(PyObject*)&Derived_type);
+        PyModule_AddObject(m, "Derived", cast(PyObject*)&Derived_type);
+
+        return m;
+    }
+}else{
+    extern(C)
+    export void initrawexample() {
+        PyObject* m = Py_INCREF(Py_InitModule("rawexample", rawexample_methods.ptr));
+
+        Py_SET_TYPE(&Base_type, &PyType_Type);
+        Base_type.tp_basicsize = Base_object.sizeof;
+        Base_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        Base_type.tp_methods = Base_methods.ptr;
+        Base_type.tp_name = "rawexample.Base";
+        Base_type.tp_new = &PyType_GenericNew;
+        PyType_Ready(&Base_type);
+        Py_INCREF(cast(PyObject*)&Base_type);
+        PyModule_AddObject(m, "Base", cast(PyObject*)&Base_type);
+
+        Py_SET_TYPE(&Derived_type, &PyType_Type);
+        Derived_type.tp_basicsize = Derived_object.sizeof;
+        Derived_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        Derived_type.tp_methods = Derived_methods.ptr;
+        Derived_type.tp_name = "rawexample.Derived";
+        Derived_type.tp_new = &PyType_GenericNew;
+        Derived_type.tp_base = &Base_type;
+        PyType_Ready(&Derived_type);
+        Py_INCREF(cast(PyObject*)&Derived_type);
+        PyModule_AddObject(m, "Derived", cast(PyObject*)&Derived_type);
+    }
 }
 

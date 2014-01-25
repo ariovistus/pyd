@@ -9,24 +9,19 @@ maj = platform.python_version_tuple()[0]
 
 projName = 'pyd_unittests'
 exts = [
-'pydobject','make_object','embedded','func_wrap','class_wrap','def','struct_wrap', 'typeinfo', 'const', 
-        ];
+        'pydobject','make_object','embedded','func_wrap','class_wrap',
+        'def','struct_wrap', 'typeinfo', 'const', 
+];
+
 string_imports = {
-        'func_wrap': ["important_message.txt"]
+        'func_wrap': ["important_message.txt"],
         }
-def ext(e):
-    if maj == "3":
-        return "%s3" % e
-    elif maj == "2":
-        return e
-    else:
-        assert False, "want python 2 or python 3"
 
 ext_modules = setup(
     name=projName,
     version='1.0',
     ext_modules=[
-        Extension(ext(e), [ext(e)+".d"],
+        Extension(e, [e+".d"],
             d_unittest=True,
             build_deimos=True,
             d_lump=False,

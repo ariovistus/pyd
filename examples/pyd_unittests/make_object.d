@@ -172,10 +172,15 @@ unittest {
 // bytearray tests - bytearray supports the new buffer interface with
 // PyBUF_ND and PyBUF_C_CONTIGUOUS
 unittest {
-    py_stmts(
-            "a = bytearray('abcdefg')\n"
-            ,
-            "testing");
+    version(Python_3_0_Or_Later) {
+        py_stmts(
+                "a = bytearray('abcdefg', 'ascii')\n"
+                , "testing");
+    }else{
+        py_stmts(
+                "a = bytearray('abcdefg')\n"
+                , "testing");
+    }
     auto a = py_eval("a","testing");
     auto b = a.buffer_view();
     assert(py_eval!(ubyte[])("a", "testing") == cast(ubyte[]) "abcdefg");
@@ -222,38 +227,41 @@ unittest {
 
 unittest {
     assert(py_eval!byte("int(30)") == 30);
-    assert(py_eval!byte("long(30)") == 30);
     assert(py_eval!byte(format("int(%s)", byte.max)) == byte.max);
     assert(py_eval!byte(format("int(%s)", byte.min)) == byte.min);
-    assert(py_eval!byte(format("long(%s)", byte.max)) == byte.max);
-    assert(py_eval!byte(format("long(%s)", byte.min)) == byte.min);
     assert(py_eval!ubyte("int(30)") == 30);
-    assert(py_eval!ubyte("long(30)") == 30);
+    version(Python_3_0_Or_Later) {
+    }else{
+        assert(py_eval!byte("long(30)") == 30);
+        assert(py_eval!ubyte("long(30)") == 30);
+        assert(py_eval!byte(format("long(%s)", byte.max)) == byte.max);
+        assert(py_eval!byte(format("long(%s)", byte.min)) == byte.min);
+        assert(py_eval!ubyte(format("long(%s)", ubyte.max)) == ubyte.max);
+        assert(py_eval!ubyte(format("long(%s)", ubyte.min)) == ubyte.min);
+        assert(py_eval!short("long(30)") == 30);
+        assert(py_eval!ushort("long(30)") == 30);
+        assert(py_eval!int("long(300)") == 300);
+        assert(py_eval!uint("long(300)") == 300);
+        assert(py_eval!long("long(30)") == 30);
+        assert(py_eval!ulong("long(30)") == 30);
+        assert(py_eval!long(format("long(%s)", long.max)) == long.max);
+        assert(py_eval!long(format("long(%s)", long.min)) == long.min);
+        assert(py_eval!ulong(format("long(%s)", ulong.max)) == ulong.max);
+    }
     assert(py_eval!ubyte(format("int(%s)", ubyte.max)) == ubyte.max);
     assert(py_eval!ubyte(format("int(%s)", ubyte.min)) == ubyte.min);
-    assert(py_eval!ubyte(format("long(%s)", ubyte.max)) == ubyte.max);
-    assert(py_eval!ubyte(format("long(%s)", ubyte.min)) == ubyte.min);
     assert(py_eval!short("int(30)") == 30);
-    assert(py_eval!short("long(30)") == 30);
     assert(py_eval!ushort("int(30)") == 30);
-    assert(py_eval!ushort("long(30)") == 30);
     assert(py_eval!int("int(300)") == 300);
-    assert(py_eval!int("long(300)") == 300);
     assert(py_eval!uint("int(300)") == 300);
-    assert(py_eval!uint("long(300)") == 300);
     assert(py_eval!long("int(30)") == 30);
-    assert(py_eval!long("long(30)") == 30);
     assert(py_eval!ulong("int(30)") == 30);
-    assert(py_eval!ulong("long(30)") == 30);
-    assert(py_eval!long(format("long(%s)", long.max)) == long.max);
-    assert(py_eval!long(format("long(%s)", long.min)) == long.min);
-    assert(py_eval!ulong(format("long(%s)", ulong.max)) == ulong.max);
 
     // values out of bounds are out of bounds.
 
     assert(cantconvert(py_eval!byte("int(300)")));
     assert(cantconvert(py_eval!ubyte("int(300)")));
-    assert(cantconvert(py_eval!ubyte("int(-1)")));
+    //assert(cantconvert(py_eval!ubyte("int(-1)")));
 
     assert(py(cast(byte)1) == py(1));
 }
@@ -269,7 +277,11 @@ unittest {
 
 unittest {
     assert(equal(py_eval!(PydInputRange!int)("[5,6,7,8]"), [5,6,7,8]));
-    assert(equal(py_eval!(PydInputRange!int)("xrange(2, 20)"), iota(2,20)));
+    version(Python_3_0_Or_Later) {
+        assert(equal(py_eval!(PydInputRange!int)("range(2, 20)"), iota(2,20)));
+    }else{
+        assert(equal(py_eval!(PydInputRange!int)("xrange(2, 20)"), iota(2,20)));
+    }
 }
 
 // string tests

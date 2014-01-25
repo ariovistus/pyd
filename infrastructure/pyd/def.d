@@ -45,6 +45,8 @@ version(Python_3_0_Or_Later) {
 }
 PyObject*[string] pyd_modules;
 
+// this appears to be a python3-only thing that holds instantiators
+// for wrapped classes and structs
 private void delegate()[string][string] pyd_module_classes;
 
 private void ready_module_methods(string modulename) {
@@ -248,14 +250,10 @@ string pyd_module_name;
 /// For embedding python
 void py_init() {
     version(PydPythonExtension) assert(false, "py_init should only be called when embedding python");
-    foreach(action; before_py_init_deferred_actions) {
-        action();
-    }
+    doActions(PyInitOrdering.Before);
     Py_Initialize();
     py_init_called = true;
-    foreach(action; after_py_init_deferred_actions) {
-        action();
-    }
+    doActions(PyInitOrdering.After);
     version(Python_3_0_Or_Later) {
         // stinking python 3 lazy initializes modules.
         import pyd.embedded;
@@ -292,17 +290,16 @@ PyObject* module_init(string docstring="") {
         pyd_modules[""] = Py_INCREF(Py_InitModule3((name ~ "\0"), 
                     module_methods[""].ptr, (docstring ~ "\0")));
     }
-    foreach(action; before_py_init_deferred_actions ~ 
-            after_py_init_deferred_actions) {
-        //TODO: will this work?
-        action();
-    }
+    doActions(PyInitOrdering.Before);
+    doActions(PyInitOrdering.After);
     py_init_called = true;
     return pyd_modules[""];
 }
 
 /**
 Module initialization function. Should be called after the last call to def.
+
+This may not be supportable in Python 3 extensions.
 
 Params
 Options = Optional parameters. Takes Docstring!(docstring), and ModuleName!(modulename)
@@ -316,6 +313,9 @@ void add_module(Options...)() {
     ready_module_methods(modulename);
     version(Python_3_0_Or_Later) {
         assert(!py_init_called);
+        version(PydPythonExtension) {
+            static assert(false, "add_module is not properly supported in python3 at this time");
+        }
         PyModuleDef* modl = new PyModuleDef;
         Py_SET_REFCNT(modl, 1);
         modl.m_name = zcc(modulename);
@@ -350,6 +350,17 @@ template Py3_ModuleInit(string modulename) {
 bool py_init_called = false;
 void delegate()[] before_py_init_deferred_actions;
 void delegate()[] after_py_init_deferred_actions;
+
+void doActions(PyInitOrdering which) {
+    auto actions = before_py_init_deferred_actions;
+    if (which == PyInitOrdering.Before) {
+    }else if(which == PyInitOrdering.After) {
+        actions = after_py_init_deferred_actions;
+    }else assert(false);
+    foreach(action; actions) {
+        action();
+    }
+}
 
 /// 
 enum PyInitOrdering{

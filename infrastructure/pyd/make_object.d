@@ -58,10 +58,16 @@ shared static this() {
 }
 
 void init_rangewrapper() {
+    version(PydPythonExtension) {
+        on_py_init({
+            wrap_struct!(RangeWrapper,
+                Def!(RangeWrapper.iter, PyName!"__iter__"),
+                Def!(RangeWrapper.next))();
+            rangeWrapperInited = true;
+            }, PyInitOrdering.After);
+    }else{
     on_py_init( {
-            add_module!(
-                ModuleName!"pyd", 
-                Docstring!"contains some wrapper utilities")();
+            add_module!(ModuleName!"pyd")();
             });
     on_py_init( {
             wrap_struct!(RangeWrapper,
@@ -70,6 +76,7 @@ void init_rangewrapper() {
                 Def!(RangeWrapper.next))();
             rangeWrapperInited = true;
             }, PyInitOrdering.After);
+    }
 }
 
 bool rangeWrapperInited = false;
@@ -257,6 +264,7 @@ PyObject* d_to_python(T) (T t) {
     } else static if (is(T == struct) && 
             !is(T == RangeWrapper) && 
             isInputRange!T) {
+        assert(is_wrapped!(RangeWrapper*));
         return d_to_python(wrap_range(t));
     } else static if (is(T == struct)) {
         alias Unqual!T Tu;

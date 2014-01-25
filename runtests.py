@@ -92,7 +92,8 @@ try:
     if "pyd_unittests" in use_parts:
         os.chdir("pyd_unittests")
         exes = ["class_wrap", "def", "embedded", "make_object", 
-                "pydobject", "struct_wrap", "const"]
+                "pydobject", "struct_wrap", "const", "typeinfo", "func_wrap"
+                ]
         if opts.clean:
             if os.path.exists("build"): shutil.rmtree("build")
             for exe in exes:
@@ -100,8 +101,8 @@ try:
         else:
             pydexe()
             for exe in exes:
-                print exe
-                check_exe(exe + ("3" if verz_maj == "3" else ""))
+                print (exe)
+                check_exe(exe)
         os.chdir("..")
     if "hello" in use_parts:
         os.chdir("hello")
@@ -145,7 +146,7 @@ try:
         os.chdir("..")
     if "d_and_c" in use_parts:
         os.chdir("misc/d_and_c")
-        print "cwd: ", os.getcwd()
+        print ("cwd: ", os.getcwd())
         if opts.clean:
             if os.path.exists("build"): shutil.rmtree("build")
         else:
