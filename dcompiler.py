@@ -179,7 +179,7 @@ try:
             self.spawn(cmdElements)
 except DistutilsExecError as msg:
             raise CompileError(msg)
-            ''')
+''')
 
 class DCompiler(cc.CCompiler):
 
