@@ -19,6 +19,8 @@ elif use == 'both':
     import hello2
 
 
+hello.hello()
+"""
 try:
     if use == '1':
         hello.hello()
@@ -31,3 +33,4 @@ except Exception as e:
     print (e)
     print (e.__dict__)
 
+"""

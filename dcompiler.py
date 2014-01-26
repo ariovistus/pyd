@@ -167,17 +167,19 @@ _pyVerXY = _pyVerXDotY.replace('.', '') # e.g., '24'
 def spawn0(self, cmdElements):
     import platform
     if platform.python_version() < "2.6":
-        eval("""
-        try:
-            self.spawn(cmdElements)
-        except DistutilsExecError, msg:
-            raise CompileError(msg)
-        """)
+        exec(
+        """
+try:
+    self.spawn(cmdElements)
+except DistutilsExecError, msg:
+    raise CompileError(msg)""")
     else:
-        try:
+        exec('''
+try:
             self.spawn(cmdElements)
-        except DistutilsExecError as msg:
+except DistutilsExecError as msg:
             raise CompileError(msg)
+            ''')
 
 class DCompiler(cc.CCompiler):
 

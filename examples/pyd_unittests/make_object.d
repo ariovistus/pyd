@@ -18,21 +18,23 @@ auto cantconvert(E)(lazy E e) {
     return collectException!PydConversionException(e);
 }
 
-void displaybuffer(PydObject.BufferView buf) {
-    writefln("buf.has_simple: %x", buf.has_simple);
-    writefln("buf.has_nd: %x", buf.has_nd);
-    writefln("buf.has_strides: %x", buf.has_strides);
-    writefln("buf.has_indirect: %x", buf.has_indirect);
-    writefln("buf.c_contiguous: %x", buf.c_contiguous);
-    writefln("buf.fortran_contiguous: %x", buf.fortran_contiguous);
-    writefln("buf.buf: %x", buf.buf.ptr);
-    writefln("buf.len: %s", buf.buf.length);
-    writefln("buf.format: %s", buf.format);
-    writefln("buf.itemsize: %s", buf.itemsize);
-    writefln("buf.ndim: %s", buf.ndim);
-    writefln("buf.shape: %s", buf.shape);
-    writefln("buf.strides: %s", buf.strides);
-    writefln("buf.suboffsets: %s", buf.suboffsets);
+version(Python_2_6_Or_Later) {
+    void displaybuffer(PydObject.BufferView buf) {
+        writefln("buf.has_simple: %x", buf.has_simple);
+        writefln("buf.has_nd: %x", buf.has_nd);
+        writefln("buf.has_strides: %x", buf.has_strides);
+        writefln("buf.has_indirect: %x", buf.has_indirect);
+        writefln("buf.c_contiguous: %x", buf.c_contiguous);
+        writefln("buf.fortran_contiguous: %x", buf.fortran_contiguous);
+        writefln("buf.buf: %x", buf.buf.ptr);
+        writefln("buf.len: %s", buf.buf.length);
+        writefln("buf.format: %s", buf.format);
+        writefln("buf.itemsize: %s", buf.itemsize);
+        writefln("buf.ndim: %s", buf.ndim);
+        writefln("buf.shape: %s", buf.shape);
+        writefln("buf.strides: %s", buf.strides);
+        writefln("buf.suboffsets: %s", buf.suboffsets);
+    }
 }
 
 
@@ -57,6 +59,7 @@ unittest {
 
 // numpy unittests - numpy supports new buffer interface with PyBUF_ND,
 // PyBUF_C_CONTIGUOUS, and PyBUF_F_CONTIGUOUS. handy for testing.
+version(Python_2_6_Or_Later) {
 unittest {
     import std.stdio;
 
@@ -154,6 +157,7 @@ unittest {
                  [0, 0, 1, 0]]);
     }
 }
+}
 
 // tests on MatrixInfo utility template
 unittest {
@@ -171,6 +175,7 @@ unittest {
 
 // bytearray tests - bytearray supports the new buffer interface with
 // PyBUF_ND and PyBUF_C_CONTIGUOUS
+version(Python_2_6_Or_Later) {
 unittest {
     version(Python_3_0_Or_Later) {
         py_stmts(
@@ -193,6 +198,7 @@ unittest {
     // with char[], python_to_d probably isn't calling this function, but anyways
     // char[]'s element type is dchar. Go figure.
     assert(cantconvert(python_buffer_to_d!(char[])(a_ptr)));
+}
 }
 
 // test arbirary ranges

@@ -75,7 +75,7 @@ class X:
         self.resolution = "NO!"
     def what(self):
         return "Yes, yes I am!"
-        >", "office");
+>", "office");
     auto x = py_eval("X()","office");
     writeln(x.resolution);
     writeln(x.method("what"));

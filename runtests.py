@@ -3,6 +3,13 @@ import os, os.path
 import shutil
 import subprocess
 import platform
+if platform.python_version() < "2.5":
+    def check_call(*args, **kwargs):
+        ret=subprocess.call(*args,**kwargs)
+        if ret != 0: 
+            cmd = kwargs.get('args',args[0])
+            raise Exception("command '%s' returned %s" %(cmd, ret))
+    subprocess.check_call = check_call
 from distutils.sysconfig import get_config_var
 here = os.getcwd()
 parts = [
@@ -44,7 +51,7 @@ if opts.use_build:
     print ("using build: %r" % build)
     os.putenv("PYTHONPATH", build)
 def check_exe(cmd):
-    subprocess.check_call([os.path.join(".",cmd + exe_ext)])
+    subprocess.call([os.path.join(".",cmd + exe_ext)])
 def remove_exe(cmd):
     if os.path.exists(cmd + exe_ext):
         os.remove(cmd+exe_ext)
@@ -87,7 +94,10 @@ try:
             remove_exe("pyind")
         else:
             pydexe()
-            check_exe("pyind" + ("3" if verz_maj == "3" else ""))
+            pyind = "pyind"
+            if verz_maj == "3":
+                pyind = "pyind3"
+            check_exe(pyind)
         os.chdir("..")
     if "pyd_unittests" in use_parts:
         os.chdir("pyd_unittests")

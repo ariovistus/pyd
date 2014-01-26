@@ -211,7 +211,7 @@ unittest {
             return self.a
         def bar(self, wongo, xx):
             return "%s %s b %s" % (self.a, wongo, self.b)
-            >", "testing");
+>", "testing");
     auto x = py_eval("X()","testing");
     assert(x.getattr("a") == py("widget"));
     assert(x.a == py("widget"));

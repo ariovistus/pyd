@@ -193,17 +193,21 @@ PyObject* d_to_python(T) (T t) {
     } else static if(isSomeString!T) {
         alias Unqual!(typeof(T.init[0])) C;
         static if(is(C == char)) {
-            return PyUnicode_DecodeUTF8(t.ptr, t.length, null);
+            return PyUnicode_DecodeUTF8(t.ptr, cast(Py_ssize_t) t.length, null);
         }else static if(is(C == wchar)) {
             return PyUnicode_DecodeUTF16(cast(char*) t.ptr, 
-                    2*t.length, null, null);
+                    cast(Py_ssize_t)(2*t.length), null, null);
         }else static if(is(C == dchar)) {
-            return PyUnicode_DecodeUTF32(cast(char*) t.ptr, 
-                    4*t.length, null, null);
+            version(Python_2_6_Or_Later) {
+                return PyUnicode_DecodeUTF32(cast(char*) t.ptr, 
+                        cast(Py_ssize_t)(4*t.length), null, null);
+            }else{
+                return d_to_python(to!string(t));
+            }
         }else static assert(false, "waht is this T? " ~ T.stringof);
     } else static if (isArray!(T)) {
         // Converts any array (static or dynamic) to a Python list
-        PyObject* lst = PyList_New(t.length);
+        PyObject* lst = PyList_New(cast(Py_ssize_t) t.length);
         PyObject* temp;
         if (lst is null) return null;
         for(int i=0; i<t.length; ++i) {
@@ -213,7 +217,7 @@ PyObject* d_to_python(T) (T t) {
                 return null;
             }
             // Steals the reference to temp
-            PyList_SET_ITEM(lst, i, temp);
+            PyList_SET_ITEM(lst, cast(Py_ssize_t) i, temp);
         }
         return lst;
     // Converts any associative array to a Python dict
@@ -488,15 +492,19 @@ T python_to_d(T) (PyObject* o) {
                 ws[] = ptr[0 .. len];
                 return cast(T) ws;
             }else static if(is(C == dchar)) {
-                PyObject* utf32 = PyUnicode_AsUTF32String(str);
-                if(!utf32) handle_exception();
-                // PyUnicode_AsUTF32String puts a BOM character in front of
-                // string
-                auto ptr = cast(const(dchar)*)(PyBytes_AsString(utf32)+4);
-                Py_ssize_t len = PyBytes_Size(utf32)/4-1; 
-                dchar[] ds = new dchar[](len);
-                ds[] = ptr[0 .. len];
-                return cast(T) ds;
+                version(Python_2_6_Or_Later) {
+                    PyObject* utf32 = PyUnicode_AsUTF32String(str);
+                    if(!utf32) handle_exception();
+                    // PyUnicode_AsUTF32String puts a BOM character in front of
+                    // string
+                    auto ptr = cast(const(dchar)*)(PyBytes_AsString(utf32)+4);
+                    Py_ssize_t len = PyBytes_Size(utf32)/4-1; 
+                    dchar[] ds = new dchar[](len);
+                    ds[] = ptr[0 .. len];
+                    return cast(T) ds;
+                }else{
+                    return to!(T)(python_to_d!string(str));
+                }
             }else static assert(false, "what T is this!? " ~ T.stringof);
         }
         assert(0);
@@ -661,7 +669,7 @@ if((isArray!T || IsStaticArrayPointer!T) &&
   Convert a D object to python bytes (str, in python 2).
 */
 PyObject* d_to_python_bytes(T)(T t) if(is(T == string)) {
-    return PyBytes_FromStringAndSize(t.ptr, t.length);
+    return PyBytes_FromStringAndSize(t.ptr, cast(Py_ssize_t) t.length);
 }
 
 /** Convert an iterable Python object to a D object.
@@ -1084,7 +1092,7 @@ template MatrixInfo(T) if(isArray!T || IsStaticArrayPointer!T) {
         }
         string s = "";
         foreach(i; 0 .. ndim) {
-            s ~= shape_name ~ "["~ to!string(i) ~"] = " ~ s_ixn ~ ".length;";
+            s ~= shape_name ~ "["~ to!string(i) ~"] = cast(Py_ssize_t)" ~ s_ixn ~ ".length;";
             s_ixn ~= "[0]";
         }
         return s;

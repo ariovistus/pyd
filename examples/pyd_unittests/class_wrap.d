@@ -214,7 +214,7 @@ class Bizzy4 {
 
     @property int i() { return _i; }
     @property void i(int n) { _i = n; }
-    @property size_t length() { return 5; }
+    @property Py_ssize_t length() { return 5; }
     @property string repr() { return "cowabunga"; }
 
     void foo(Bizzy4 other) {

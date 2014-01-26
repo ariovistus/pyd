@@ -13,11 +13,11 @@ import testdll
 
 testdll.foo()
 
-print ()
+print ("")
 
 print (testdll.bar(12))
 
-print ()
+print ("")
 
 print ("testdll.baz():")
 testdll.baz()
@@ -26,7 +26,7 @@ testdll.baz(20)
 print ("testdll.baz(30, 'cat'):")
 testdll.baz(30, 'cat')
 
-print ()
+print ("")
 
 print ("Testing callback support")
 def foo():
@@ -36,7 +36,7 @@ print ("Testing delegate wrapping")
 dg = testdll.func_test()
 dg()
 
-print ()
+print ("")
 
 print ("Testing class wrapping")
 a = testdll.Foo(10)
@@ -54,26 +54,28 @@ print ("Testing range iteration wrapping:")
 for i in a:
     print (i)
 
-print ()
+print ("")
 
 print ("Testing exception wrapping")
 print ("patform: ", platform.python_version())
 if platform.python_version() < "2.6":
-    eval("""
-    try:
-        testdll.throws()
-    except RuntimeError, e:
-        print ("Success: Exception caught!")
-        print (e)
-        """)
+    exec("""
+try:
+    testdll.throws()
+except RuntimeError, e:
+    print ("Success: Exception caught!")
+    print (e)
+""")
 else:
-    try:
+    exec("""
+try:
         testdll.throws()
-    except RuntimeError as e:
+except RuntimeError as e:
         print ("Success: Exception caught!")
         print (e)
+    """)
 
-print ()
+print ("")
 
 S = testdll.S
 s = S()
@@ -84,13 +86,13 @@ print (s.s)
 print ("s.write_s()")
 s.write_s()
 
-print ()
+print ("")
 
 print ("Testing custom conversion function")
 print (testdll.conv1())
 testdll.conv2(20)
 
-print ()
+print ("")
 
 print ('--------')
 print ('SUCCESS')
