@@ -57,7 +57,7 @@ for i in a:
 print ("")
 
 print ("Testing exception wrapping")
-print ("patform: ", platform.python_version())
+print ("platform: ", platform.python_version())
 if platform.python_version() < "2.6":
     exec("""
 try:

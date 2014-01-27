@@ -222,9 +222,17 @@ template reference_container(Mapping) {
     Container _reference_container = null;
 
     @property reference_container() {
-        if(!_reference_container) 
+        if(!_reference_container) {
             _reference_container = new Container();
+            Py_AtExit(&clear);
+        }
         return _reference_container;
+    }
+
+    extern(C) void clear() {
+        if(_reference_container) {
+            _reference_container.get_index!0 .clear();
+        }
     }
 }
 

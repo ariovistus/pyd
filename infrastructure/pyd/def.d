@@ -247,6 +247,15 @@ template alias_selector(alias fn, fn_t) {
 
 string pyd_module_name;
 
+/// true after Py_Finalize has been called.
+/// Playing with the Python API when this is true
+/// is not advised.
+__gshared Py_Finalize_called = false;
+
+extern(C) void Py_Finalize_hook() {
+    Py_Finalize_called = true;
+}
+
 /// For embedding python
 void py_init() {
     version(PydPythonExtension) assert(false, "py_init should only be called when embedding python");
@@ -266,6 +275,7 @@ void py_init() {
 /// For embedding python, should you wish to restart the interpreter.
 void py_finish() {
     Py_Finalize();
+    Py_Finalize_hook();
     py_init_called = false;
 }
 
@@ -274,6 +284,7 @@ void py_finish() {
  * For extending python.
  */
 PyObject* module_init(string docstring="") {
+    Py_AtExit(&Py_Finalize_hook);
     string name = pyd_module_name;
     ready_module_methods("");
     version(Python_3_0_Or_Later) {

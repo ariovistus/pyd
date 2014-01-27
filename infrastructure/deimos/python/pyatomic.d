@@ -68,6 +68,6 @@ version(Python_3_0_Or_Later) {
         _Py_atomic_store_explicit(val, val2, _Py_memory_order._Py_memory_order_relaxed);
     }
     auto _Py_atomic_load_relaxed(ATOMIC_VAL)(ATOMIC_VAL val) {
-        _Py_atomic_load_explicit(val, _Py_memory_order._Py_memory_order_relaxed);
+        return _Py_atomic_load_explicit(val, _Py_memory_order._Py_memory_order_relaxed);
     }
 }

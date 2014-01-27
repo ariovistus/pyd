@@ -34,6 +34,7 @@ import std.conv;
 import util.typelist;
 import util.typeinfo;
 
+import pyd.def;
 import pyd.references;
 import pyd.class_wrap;
 import pyd.exception;
@@ -455,8 +456,17 @@ private
 class PydWrappedFunc {
     PyObject* callable;
 
-    this(PyObject* c) { callable = c; Py_INCREF(c); }
-    ~this() { Py_DECREF(callable); }
+    this(PyObject* c) { 
+        callable = c; 
+        Py_INCREF(c); 
+    }
+
+    ~this() { 
+        if(callable && !Py_Finalize_called) {
+            Py_DECREF(callable); 
+        }
+        callable = null;
+    }
 
     Tr fn(Tr, T ...) (T t) {
         PyObject* ret = call(t);

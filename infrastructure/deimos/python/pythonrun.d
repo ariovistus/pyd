@@ -457,6 +457,12 @@ void PyFloat_Fini();
 void PyOS_FiniInterrupts();
 /// _
 void PyByteArray_Fini();
+version(Python_3_2_Or_Later) {
+    /// Availability: >= 3.2
+    void PySlice_Fini();
+    /// Availability: >= 3.2
+    mixin(PyAPI_DATA!"PyThreadState* _Py_Finalizing");
+}
 
 
 /// _

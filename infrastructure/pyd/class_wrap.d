@@ -1357,11 +1357,13 @@ struct IndexSliceMerge(Params...) {
     static extern(C) PyObject* op_func(T)(PyObject* self, PyObject* key) {
         static if(OpIndexs.length) {
             version(Python_2_5_Or_Later) {
+                Py_ssize_t i;
                 if(!PyIndex_Check(key)) goto slice;
-                Py_ssize_t i = PyNumber_AsSsize_t(key, PyExc_IndexError);
+                i = PyNumber_AsSsize_t(key, PyExc_IndexError);
             }else{
+                C_long i;
                 if(!PyInt_Check(key)) goto slice;
-                C_long i = PyLong_AsLong(key);
+                i = PyLong_AsLong(key);
             }
             if(i == -1 && PyErr_Occurred()) {
                 return null;
@@ -1397,11 +1399,13 @@ slice:
             PyObject* val) {
         static if(OpIndexAssigns.length) {
             version(Python_2_5_Or_Later) {
+                Py_ssize_t i;
                 if(!PyIndex_Check(key)) goto slice;
-                Py_ssize_t i = PyNumber_AsSsize_t(key, PyExc_IndexError);
+                i = PyNumber_AsSsize_t(key, PyExc_IndexError);
             }else{
+                C_long i;
                 if(!PyInt_Check(key)) goto slice;
-                C_long i = PyLong_AsLong(key);
+                i = PyLong_AsLong(key);
             }
             if(i == -1 && PyErr_Occurred()) {
                 return -1;

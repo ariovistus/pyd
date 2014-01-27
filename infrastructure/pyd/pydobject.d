@@ -26,6 +26,7 @@ SOFTWARE.
 module pyd.pydobject;
 
 import deimos.python.Python;
+import pyd.def;
 import pyd.exception;
 import pyd.make_object;
 import std.exception: enforce;
@@ -76,7 +77,7 @@ public:
 
     /// Destructor. Calls Py_DECREF on PyObject reference.
     ~this() {
-        if (m_ptr) Py_DECREF(m_ptr);
+        if (m_ptr && !Py_Finalize_called) Py_DECREF(m_ptr);
         m_ptr = null;
     }
 
