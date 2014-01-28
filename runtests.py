@@ -25,8 +25,8 @@ parts = [
 ]
 use_parts = set()
 exe_ext = get_config_var("EXE")
-verz_maj = platform.python_version_tuple()[0]
-if verz_maj == "3" or verz_maj == "2":
+verz_maj = int(platform.python_version_tuple()[0])
+if verz_maj == 3 or verz_maj == 2:
     import optparse
     oparser = optparse.OptionParser()
     oparser.add_option("-b", action="store_true", dest="use_build")
@@ -95,7 +95,7 @@ try:
         else:
             pydexe()
             pyind = "pyind"
-            if verz_maj == "3":
+            if verz_maj == 3:
                 pyind = "pyind3"
             check_exe(pyind)
         os.chdir("..")

@@ -520,13 +520,8 @@ version(Python_3_0_Or_Later) {
 }
 /// _
 alias PyObject* function(PyObject*) reprfunc;
-version(Python_3_0_Or_Later) {
-    /// _
-    alias Py_hash_t function(PyObject*) hashfunc;
-}else{
-    /// _
-    alias C_long function(PyObject*) hashfunc;
-}
+/// _
+alias Py_hash_t function(PyObject*) hashfunc;
 /// _
 alias PyObject* function(PyObject*, PyObject*, int) richcmpfunc;
 /// _
@@ -765,8 +760,8 @@ mixin(PyAPI_DATA!"PyTypeObject PyBaseObject_Type");
 /** built-in 'super' */
 mixin(PyAPI_DATA!"PyTypeObject PySuper_Type"); 
 
-version(Python_3_0_Or_Later) {
-    /// Availability: 3.*
+version(Python_3_2_Or_Later) {
+    /// Availability: >= 3.2
     C_long PyType_GetFlags(PyTypeObject*);
 }
 
@@ -857,18 +852,11 @@ PyObject* PyObject_GenericGetAttr(PyObject*, PyObject*);
 /// _
 int PyObject_GenericSetAttr(PyObject*,
         PyObject*, PyObject*);
-version(Python_3_0_Or_Later) {
-    /// _
-    Py_hash_t PyObject_Hash(PyObject*);
+/// _
+Py_hash_t PyObject_Hash(PyObject*);
+version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
     Py_hash_t PyObject_HashNotImplemented(PyObject*);
-}else{
-    /// _
-    C_long PyObject_Hash(PyObject*);
-    version(Python_2_6_Or_Later){
-        /// Availability: >= 2.6
-        C_long PyObject_HashNotImplemented(PyObject*);
-    }
 }
 /// _
 int PyObject_IsTrue(PyObject*);
@@ -899,36 +887,27 @@ int Py_ReprEnter(PyObject *);
 /// ditto
 void Py_ReprLeave(PyObject *);
 
-version(Python_3_0_Or_Later) {
-    /// _
-    Py_hash_t _Py_HashDouble(double);
-    /// _
-    Py_hash_t _Py_HashPointer(void*);
-    /// Availability: >= 2.7
+/// _
+Py_hash_t _Py_HashDouble(double);
+/// _
+Py_hash_t _Py_HashPointer(void*);
+
+version(Python_3_1_Or_Later) {
+    version = Py_HashSecret;
+}else version(Python_3_0_Or_Later) {
+}else version(Python_2_7_Or_Later) {
+    version = Py_HashSecret;
+}
+version(Py_HashSecret) {
+    /// Availability: 2.7, >= 3.1
     struct _Py_HashSecret_t{
         /// _
         Py_hash_t prefix;
         /// _
         Py_hash_t suffix;
     } 
-    /// Availability: 3.*
+    /// Availability: 2.7, >= 3.1
     mixin(PyAPI_DATA!"_Py_HashSecret_t _Py_HashSecret");
-}else{
-    /// _
-    C_long _Py_HashDouble(double);
-    /// _
-    C_long _Py_HashPointer(void*);
-    version(Python_2_7_Or_Later) {
-        /// Availability: >= 2.7
-        struct _Py_HashSecret_t{
-            /// _
-            C_long prefix;
-            /// _
-            C_long suffix;
-        } 
-        /// _
-        mixin(PyAPI_DATA!"_Py_HashSecret_t _Py_HashSecret");
-    }
 }
 
 /// _
@@ -1084,7 +1063,7 @@ version(Python_3_0_Or_Later) {
 // D translation of C macro:
 /// _
 int PyType_HasFeature()(PyTypeObject* t, int f) {
-    version(Python_3_0_Or_Later) {
+    version(Python_3_2_Or_Later) {
         return (PyType_GetFlags(t) & f) != 0;
     }else{
         return (t.tp_flags & f) != 0;

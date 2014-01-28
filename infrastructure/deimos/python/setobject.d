@@ -19,11 +19,7 @@ version(Python_2_5_Or_Later){
     /// Availability: >= 2.5
     struct setentry {
         /** cached hash code for the entry key */
-        version(Python_3_2_Or_Later) {
-            Py_hash_t hash;
-        }else{
-            C_long hash;
-        }
+        Py_hash_t hash;
         /// _
         PyObject* key;
     }
@@ -74,11 +70,7 @@ struct PySetObject {
     }
 
     /** only used by frozenset objects */
-    version(Python_3_2_Or_Later) {
-        Py_hash_t hash;
-    }else{
-        C_long hash;
-    }
+    Py_hash_t hash;
     /** List of weak references */
     PyObject* weakreflist;
 }
@@ -143,11 +135,7 @@ version(Python_2_5_Or_Later){
     /// Availability: >= 2.5
     int _PySet_Next(PyObject* set, Py_ssize_t *pos, PyObject** entry);
     /// Availability: >= 2.5
-    version(Python_3_2_Or_Later) {
-        int _PySet_NextEntry(PyObject* set, Py_ssize_t* pos, PyObject** key, Py_hash_t* hash);
-    }else{
-        int _PySet_NextEntry(PyObject* set, Py_ssize_t* pos, PyObject** key, C_long* hash);
-    }
+    int _PySet_NextEntry(PyObject* set, Py_ssize_t* pos, PyObject** key, Py_hash_t* hash);
     /// Availability: >= 2.5
     PyObject* PySet_Pop(PyObject* set);
     /// Availability: >= 2.5

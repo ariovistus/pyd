@@ -46,10 +46,14 @@ version(Python_2_5_Or_Later){
         alias int Py_ssize_t;
     }
     version(Python_3_2_Or_Later) {
-        /// Availability: 3.2
+        /// Availability: >= 3.2
+        /// (It invariably replaces c long, so we always define it for 
+        /// convenience)
         alias Py_ssize_t Py_hash_t;
-        /// Availability: 3.2
+        /// Availability: >= 3.2
         alias size_t Py_uhash_t;
+    }else{
+        alias C_long Py_hash_t;
     }
 }else {
     /*

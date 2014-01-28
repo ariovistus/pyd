@@ -27,7 +27,7 @@ struct PyDictEntry {
      * We have to use Py_ssize_t instead because dict_popitem() abuses
      * me_hash to hold a search finger.
      */
-    version(Python_3_0_Or_Later) {
+    version(Python_3_2_Or_Later) {
         Py_hash_t me_hash;
     }else version(Python_2_5_Or_Later) {
         Py_ssize_t me_hash;
@@ -70,13 +70,8 @@ struct PyDictObject{
      */
     PyDictEntry* ma_table;
     /// _
-    version(Python_3_0_Or_Later) {
-        PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash) 
-            ma_lookup;
-    }else {
-        PyDictEntry* function(PyDictObject* mp, PyObject* key, C_long hash) 
-            ma_lookup;
-    }
+    PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash) 
+        ma_lookup;
     /// _
     PyDictEntry ma_smalltable[PyDict_MINSIZE];
 }
@@ -144,16 +139,11 @@ int PyDict_DelItem(PyObject* mp, PyObject* key);
 void PyDict_Clear(PyObject* mp);
 /// _
 int PyDict_Next(PyObject* mp, Py_ssize_t* pos, PyObject_BorrowedRef** key, PyObject_BorrowedRef** value);
-version(Python_3_0_Or_Later) {
-    /// Availability: 3.*
+version(Python_2_5_Or_Later) {
+    /// Availability: >= 2.5
     int _PyDict_Next(
             PyObject* mp, Py_ssize_t* pos, Borrowed!PyObject** key, 
             Borrowed!PyObject** value, Py_hash_t* hash);
-}else version(Python_2_5_Or_Later) {
-    /// Availability: 2.5, 2.6, 2.7
-    int _PyDict_Next(
-            PyObject* mp, Py_ssize_t* pos, Borrowed!PyObject** key, 
-            Borrowed!PyObject** value, C_long* hash);
 }
 /// _
 PyObject* PyDict_Keys(PyObject* mp);
@@ -167,12 +157,9 @@ Py_ssize_t PyDict_Size(PyObject* mp);
 PyObject* PyDict_Copy(PyObject* mp);
 /// _
 int PyDict_Contains(PyObject* mp, PyObject* key);
-version(Python_3_0_Or_Later) {
-    /// Availability: 3.*
+version(Python_2_5_Or_Later) {
+    /// Availability: >= 2.5
     int _PyDict_Contains(PyObject* mp, PyObject* key, Py_hash_t* hash);
-}else version(Python_2_5_Or_Later) {
-    /// Availability: 2.5, 2.6, 2.7
-    int _PyDict_Contains(PyObject* mp, PyObject* key, C_long* hash);
 }
 version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6

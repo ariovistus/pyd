@@ -7,12 +7,12 @@ from celerid.support import setup, Extension
 import platform
 
 
-maj = platform.python_version_tuple()[0] 
-if maj == "3":
+maj = int(platform.python_version_tuple()[0])
+if maj == 3:
     projName = 'pyind3'
     srcs = ['pyind3.d']
     
-elif maj == "2":
+elif maj == 2:
     projName = 'pyind'
     srcs = ['pyind.d']
 else:

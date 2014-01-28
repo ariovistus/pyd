@@ -36,12 +36,8 @@ enum _PyDateTime_DATETIME_DATASIZE = 10;
 struct PyDateTime_Delta {
     mixin PyObject_HEAD;
 
-    version(Python_3_0_Or_Later) {
-        Py_hash_t hashcode;
-    }else {
-        /** -1 when unknown */
-        C_long hashcode;
-    }
+    /** -1 when unknown */
+    Py_hash_t hashcode;
     /** -MAX_DELTA_DAYS <= days <= MAX_DELTA_DAYS */
     int days;
     /** 0 <= seconds < 24*3600 is invariant */
@@ -59,13 +55,8 @@ struct PyDateTime_TZInfo {
  */
 template _PyTZINFO_HEAD() {
     mixin PyObject_HEAD;
-    version(Python_3_0_Or_Later) {
-        /// _
-        Py_hash_t hashcode;
-    }else {
-        /// _
-        C_long hashcode;
-    }
+    /// _
+    Py_hash_t hashcode;
     /// _
     ubyte hastzinfo;
 }

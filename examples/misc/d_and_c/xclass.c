@@ -42,8 +42,34 @@ PyObject *x_add(PyObject * arg1, PyObject * arg2)
 #define PyMODINIT_FUNC void
 #endif
 
-PyMODINIT_FUNC
+#if PY_MAJOR_VERSION >= 3
+struct module_state {
+    PyObject *error;
+};
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+static int x_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
+}
+static int x_clear(PyObject *m) {
+    Py_CLEAR(GETSTATE(m)->error);
+}
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "x",
+    NULL,
+    sizeof(struct module_state),
+    x_methods,
+    NULL,
+    x_traverse,
+    x_clear,
+    NULL
+};
+PyObject *PyInit_x(void)
+#else
+    PyMODINIT_FUNC
 initx(void)
+#endif
 {
     PyObject* m;
 
@@ -52,12 +78,16 @@ initx(void)
     memset(x_XType.tp_as_number, 0, sizeof(PyNumberMethods));
     x_XType.tp_as_number->nb_add = &x_add; 
 
+
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&moduledef);
+#else
+
     // this is important!
     x_XType.tp_flags |= Py_TPFLAGS_CHECKTYPES;
-
-    if(PyType_Ready(&x_XType) < 0) return;
-
     m = Py_InitModule3("x", x_methods, "Hi ho, pipsissiwa is slow");
+#endif
+    if(PyType_Ready(&x_XType) < 0) return;
 
     Py_INCREF(&x_XType);
     PyModule_AddObject(m, "X", (PyObject *)&x_XType);
