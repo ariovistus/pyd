@@ -6,6 +6,8 @@ setup(
     name=projName,
     version='0.1',
     ext_modules=[
-        Extension(projName, ['inherit.d'], build_deimos=True)
+        Extension(projName, ['inherit.d'], 
+            build_deimos=True,
+            d_lump=True)
     ],
 )

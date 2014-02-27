@@ -7,7 +7,7 @@ setup(
     version='0.1',
     ext_modules=[
         Extension(projName, [projName + '.d'], 
-            d_lump=False, 
+            d_lump=True, 
             build_deimos=True)
     ],
   )

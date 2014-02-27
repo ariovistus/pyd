@@ -46,8 +46,8 @@ version(Python_2_5_Or_Later){
         alias int Py_ssize_t;
     }
     version(Python_3_2_Or_Later) {
-        /// Availability: >= 3.2
-        /// (It invariably replaces c long, so we always define it for 
+        /// Availability: >= 3.2 
+        /// (Py_hash_t invariably replaces C_long, so we always define it for 
         /// convenience)
         alias Py_ssize_t Py_hash_t;
         /// Availability: >= 3.2
@@ -61,6 +61,11 @@ version(Python_2_5_Or_Later){
      */
     /// _
     alias int Py_ssize_t;
+    /*
+     * Seems Py_hash_t didn't exist in 2.4, and C_long was everywhere it is now.
+     */
+    /// _
+    alias C_long Py_hash_t;
 }
 
 version(linux) version(DigitalMars) version = dmd_linux;

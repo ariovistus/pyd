@@ -51,7 +51,7 @@ if opts.use_build:
     print ("using build: %r" % build)
     os.putenv("PYTHONPATH", build)
 def check_exe(cmd):
-    subprocess.call([os.path.join(".",cmd + exe_ext)])
+    subprocess.check_call([os.path.join(".",cmd + exe_ext)])
 def remove_exe(cmd):
     if os.path.exists(cmd + exe_ext):
         os.remove(cmd+exe_ext)

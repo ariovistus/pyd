@@ -815,6 +815,13 @@ class LDCDCompiler(DCompiler):
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-fversion=Optimized', '-release', '-O3', '-finline-functions']
 
+    def init_d_opts(self, cmd, ext):
+        DCompiler.init_d_opts(self,cmd, ext)
+        if self.lump:
+            if self.build_exe and '-singleobj' not in self._exeCompileOpts:
+                self._exeCompileOpts.append('-singleobj')
+            elif not self.build_exe and '-singleobj' not in self._compileOpts:
+                self._compileOpts.append('-singleobj')
     def _def_file(self, output_dir, output_filename):
         return [] 
 
