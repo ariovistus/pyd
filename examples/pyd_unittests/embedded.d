@@ -1,5 +1,7 @@
 import pyd.pyd, pyd.embedded;
+import deimos.python.Python;
 
+import std.exception;
 import std.stdio;
 
 static this() {
@@ -106,5 +108,53 @@ unittest {
    // (*^&^&* broken @property
    // static assert(is(typeof(c.unicode("abc")) == PydObject));
 }
+
+unittest {
+    auto ex = collectException!PythonException(py_eval("import sys"));
+    auto msg = ex.py_message;
+    assert(ex.py_message == "invalid syntax", ex.py_message);
+
+}
+unittest {
+    InterpContext c = new InterpContext();
+    auto ex = collectException!PythonException(c.py_eval("import sys"));
+    assert(ex.py_message == "invalid syntax");
+    assert(ex.traceback() == null);
+}
+
+unittest {
+    auto ex = collectException!PythonException(py_stmts("&raise Exception('foo')"));
+    assert(ex.py_message == "invalid syntax");
+    assert(ex.traceback() == null);
+}
+unittest {
+    auto ex = collectException!PythonException(py_stmts("raise Exception('foo')"));
+    assert(ex.py_message == "foo");
+    assert(ex.traceback() != null);
+}
+unittest {
+    auto ex = collectException!PythonException(py_eval("import sys"));
+    assert(ex.py_message == "invalid syntax");
+    assert(ex.traceback() == null);
+}
+
+unittest {
+    auto inspect = py_import("inspect");
+    auto ex = collectException!PythonException(inspect.currentframe.opCall());
+    assert(ex.py_message == "call stack is not deep enough");
+}
+unittest {
+    auto c = new InterpContext();
+    c.py_stmts("import inspect");
+    auto ex = collectException!PythonException(c.inspect.currentframe.opCall());
+    assert(ex.py_message == "call stack is not deep enough");
+}
+unittest {
+    auto c = new InterpContext();
+    c.pushDummyFrame();
+    c.py_stmts("import inspect");
+    auto frame = c.inspect.currentframe.opCall();
+}
+
 
 void main() {}

@@ -69,6 +69,7 @@ class InterpContext {
     /// dict object: local variables in this context
     PydObject locals;
     PyCompilerFlags flags;
+    PyFrameObject* frame;
 
     /**
       */
@@ -76,6 +77,24 @@ class InterpContext {
         debug assert(Py_IsInitialized(), "python not initialized");
         locals = new PydObject(PyDict_New());
         globals = py(["__builtins__": new PydObject(PyEval_GetBuiltins())]);
+    }
+
+    void pushDummyFrame() {
+        auto threadstate = PyThreadState_GET();
+        if(threadstate.frame == null) {
+            PyCodeObject* code = PyCode_NewEmpty("<d>","<d>", 0);
+            frame = PyFrame_New(threadstate, code, 
+                    cast(PyObject*)(globals.ptr), 
+                    cast(PyObject*)(locals.ptr));
+            threadstate.frame = frame;
+        }
+    }
+
+    void popDummyFrame() {
+        auto threadstate = PyThreadState_GET();
+        if(threadstate.frame == frame) {
+            threadstate.frame = null;
+        }
     }
 
     /**

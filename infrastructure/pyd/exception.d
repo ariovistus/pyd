@@ -229,11 +229,21 @@ public:
             if(PyObject_IsInstance(m_value, cast(PyObject*)PyExc_SyntaxError)) {
                 pmsg = PyObject_GetAttrString(m_value, "msg");
             }else{
-                pmsg = PyObject_GetAttrString(m_value, "message");
+                // todo: test this on other versions..
+                version(Python_3_3_Or_Later) {
+                    pmsg = PyObject_GetAttrString(m_value, "args");
+                    if(pmsg != null && PyTuple_Check(pmsg) && 
+                            PyTuple_Size(pmsg) >= 1) {
+                        pmsg = cast(PyObject*) PyTuple_GetItem(pmsg, 0);
+                    }
+
+                }else{
+                    pmsg = PyObject_GetAttrString(m_value, "message");
+                }
             }
             if(pmsg) {
-                auto cmsg = PyBytes_AsString(pmsg);
-                if(cmsg) message = to!string(cmsg);
+                import pyd.make_object;
+                message = python_to_d!string(pmsg);
             }
         }
 

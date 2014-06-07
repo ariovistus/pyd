@@ -14,6 +14,7 @@ from distutils.sysconfig import get_config_var
 here = os.getcwd()
 parts = [
 "hello",
+"many_libs",
 "arraytest",
 "inherit",
 "rawexample",
@@ -122,6 +123,14 @@ try:
             pybuild()
             check_py("test.py")
         os.chdir("..")
+    if "many_libs" in use_parts:
+        os.chdir("../tests/many_libs")
+        if opts.clean:
+            if os.path.exists("build"): shutil.rmtree("build")
+        else:
+            pybuild()
+            check_py("test.py")
+        os.chdir("../../examples")
     if "arraytest" in use_parts:
         os.chdir("arraytest")
         if opts.clean:

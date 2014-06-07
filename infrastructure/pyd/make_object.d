@@ -808,7 +808,7 @@ if (isArray!T || IsStaticArrayPointer!T) {
             static if(isDynamicArray!T) {
                 _array = new MatrixInfo!T.unqual(buf.shape[0]);
             }else static if(isPointer!T) {
-                ubyte[] dubuf = new ubyte[](buf.buf.length);
+                ubyte[] dubuf = new ubyte[](buf.buffer.len);
                 _array = cast(typeof(_array)) dubuf.ptr;
                     
             }
