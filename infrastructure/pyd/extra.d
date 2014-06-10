@@ -26,6 +26,7 @@ SOFTWARE.
 module pyd.extra;
 
 import std.traits;
+import std.complex;
 
 import pyd.pydobject;
 import pyd.exception;
@@ -48,18 +49,48 @@ import deimos.python.Python;
     return m_type;
 }
 
+template NumpyFormatType(T) {
+    static if(is(Unqual!T == Complex!F, F)) {
+        alias Float = F;
+        enum supportedComplex = F.sizeof == 4 || F.sizeof == 8;
+    }else{
+        enum supportedComplex = false;
+    }
+    enum supported = SimpleFormatType!T.supported || isBoolean!T || supportedComplex;
+
+    static if(SimpleFormatType!T.supported) {
+        alias pyType = SimpleFormatType!T.pyType;
+    }else{
+        PyObject* pyType() {
+            assert(supported);
+
+            PyObject* numpy = PyImport_ImportModule("numpy");
+            static if(is(Unqual!T == Complex!Float, Float)) {
+                static if(Float.sizeof == 4) {
+                    return PyObject_GetAttrString(numpy, "complex64");
+                }else static if(Float.sizeof == 8) {
+                    return PyObject_GetAttrString(numpy, "complex128");
+                }else assert(0);
+            }else static if(isBoolean!T) {
+                return PyObject_GetAttrString(numpy, "bool_");
+            }
+            return null;
+        }
+    }
+}
+static assert(NumpyFormatType!(Complex!float).supported);
+
 /**
   Convert a D array to numpy.ndarray.
   */
 PyObject* d_to_python_numpy_ndarray(T)(T t) 
 if((isArray!T || IsStaticArrayPointer!T) &&
-        SimpleFormatType!(MatrixInfo!T.MatrixElementType).supported) {
+        NumpyFormatType!(MatrixInfo!T.MatrixElementType).supported) {
     enforce(numpy_ndarray_Type, "numpy is not available"); 
     alias MatrixInfo!T.MatrixElementType ME;
-    string format = SimpleFormatType!ME.s;
     Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
     PyObject* pyshape = d_to_python(shape);
-    PyObject* pyformat = d_to_python(format);
+    PyObject* pyformat = NumpyFormatType!ME.pyType();
     PyObject* args = PyTuple_New(2);
     scope(exit) Py_DECREF(args);
     PyTuple_SetItem(args, 0, pyshape);

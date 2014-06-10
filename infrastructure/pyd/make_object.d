@@ -639,13 +639,7 @@ if((isArray!T || IsStaticArrayPointer!T) &&
         SimpleFormatType!(MatrixInfo!T.MatrixElementType).supported) {
 
     alias MatrixInfo!T.MatrixElementType ME;
-    string format = SimpleFormatType!ME.s;
-    version(Python_3_0_Or_Later) {
-        PyObject* pyformat = d_to_python(format);
-    }else{
-        // stinking py2 array won't take unicode
-        PyObject* pyformat = d_to_python_bytes(format);
-    }
+    PyObject* pyformat = SimpleFormatType!ME.pyType();
     PyObject* args = PyTuple_New(1);
     PyTuple_SetItem(args, 0, pyformat);
     scope(exit) Py_DECREF(args);
@@ -963,58 +957,35 @@ bool match_format_type(T)(string format) {
 
 /// generate a struct format string from T
 template SimpleFormatType(T) {
-    static if(isFloatingPoint!T) {
-        static if(T.sizeof == 4) {
-            enum s = "f";
-            enum supported = true;
-        }else static if(T.sizeof == 8) {
-            enum s = "d";
-            enum supported = true;
+    enum supported = 
+        (isFloatingPoint!T && (T.sizeof == 4 || T.sizeof == 8) ||
+        isIntegral!T); 
+
+    PyObject* pyType() {
+        assert(supported);
+        version(Python_3_0_Or_Later) {
+            alias to_python = d_to_python;
         }else{
-            enum supported = false;
+            // stinking py2 array won't take unicode
+            alias to_python = d_to_python_bytes;
         }
-    }else static if(isBoolean!T) {
-        enum s = "?";
-        enum supported = true;
-    }else static if(isIntegral!T) {
-        static if(isSigned!T) {
-            static if(T.sizeof == 1) {
-                enum s = "b";
-                enum supported = true;
-            }else static if(T.sizeof == 2) {
-                enum s = "h";
-                enum supported = true;
-            }else static if(T.sizeof == 4) {
-                enum s = "i";
-                enum supported = true;
-            }else static if(T.sizeof == 8) {
-                enum s = "q";
-                enum supported = true;
-            }else {
-                enum supported = false;
-                enum supported = true;
-            }
-        }else static if(isUnsigned!T) {
-            static if(T.sizeof == 1) {
-                enum s = "B";
-                enum supported = true;
-            }else static if(T.sizeof == 2) {
-                enum s = "H";
-                enum supported = true;
-            }else static if(T.sizeof == 4) {
-                enum s = "I";
-                enum supported = true;
-            }else static if(T.sizeof == 8) {
-                enum s = "Q";
-                enum supported = true;
-            }else {
-                enum supported = false;
-            }
+        static if(isFloatingPoint!T && T.sizeof == 4) {
+            return to_python("f");
+        }else static if(isFloatingPoint!T && T.sizeof == 8) {
+            return to_python("d");
+        }else static if(isIntegral!T && T.sizeof == 1) {
+            return to_python(isSigned!T ? "b" : "B");
+        }else static if(isIntegral!T && T.sizeof == 2) {
+            return to_python(isSigned!T ? "h" : "H");
+        }else static if(isIntegral!T && T.sizeof == 4) {
+            return to_python(isSigned!T ? "i" : "I");
+        }else static if(isIntegral!T && T.sizeof == 8) {
+            return to_python(isSigned!T ? "q" : "Q");
         }
-    }else {
-        enum supported = false;
+        return null;
     }
 }
+
 
 /**
   Check that T is a pointer to a rectangular static array.

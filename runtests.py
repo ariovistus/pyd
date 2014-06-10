@@ -103,7 +103,8 @@ try:
     if "pyd_unittests" in use_parts:
         os.chdir("pyd_unittests")
         exes = ["class_wrap", "def", "embedded", "make_object", 
-                "pydobject", "struct_wrap", "const", "typeinfo", "func_wrap"
+                "pydobject", "struct_wrap", "const", "typeinfo", "func_wrap",
+                "extra",
                 ]
         if opts.clean:
             if os.path.exists("build"): shutil.rmtree("build")

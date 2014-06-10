@@ -10,7 +10,7 @@ maj = platform.python_version_tuple()[0]
 projName = 'pyd_unittests'
 exts = [
         'pydobject','make_object','embedded','func_wrap','class_wrap',
-        'def','struct_wrap', 'typeinfo', 'const', 
+        'def','struct_wrap', 'typeinfo', 'const', 'extra', 
 ];
 
 string_imports = {

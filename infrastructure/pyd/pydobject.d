@@ -253,8 +253,9 @@ Struct Format Strings </a>
             }
             /// _
             void set_item(T)(T value, Py_ssize_t[] indeces...) {
+                import std.traits;
                 enforce(itemsize == T.sizeof);
-                T* ptr = cast(T*) item_ptr(indeces);
+                auto ptr = cast(Unqual!T*) item_ptr(indeces);
                 *ptr = value;
             }
 
@@ -608,7 +609,7 @@ Struct Format Strings </a>
         }
     }
     /// Equivalent to o[_i] in Python; usually only makes sense for sequences.
-    PydObject opIndex(int i) {
+    PydObject opIndex(Py_ssize_t i) {
         return new PydObject(PySequence_GetItem(m_ptr, i));
     }
 
