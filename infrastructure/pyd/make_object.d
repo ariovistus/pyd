@@ -44,6 +44,8 @@ import std.metastrings;
 import std.conv;
 import std.range;
 
+import core.stdc.string : memcpy;
+
 import pyd.references;
 import pyd.pydobject;
 import pyd.class_wrap;
