@@ -25,7 +25,7 @@ void main() {
         printf("tp_as_buffer: %x\n", a->ob_type->tp_as_buffer);
         printf("bf_getbuffer: %x\n", &a->ob_type->tp_as_buffer->bf_getbuffer);
 
-        Py_bufferK buffer;
+        Py_buffer buffer;
         printf("Py_buffer sizeof: %x\n", sizeof(Py_buffer));
         if(PyObject_GetBuffer(a, &buffer, PyBUF_SIMPLE) != -1) {
             printf("PyObject_GetBuffer succeeded\n");
