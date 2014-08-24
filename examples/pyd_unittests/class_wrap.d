@@ -67,6 +67,10 @@ shared static this() {
             Property!(Bizzy5.c, Mode!"rw"),
             Property!(Bizzy5.e, Mode!"w"),
     )();
+    wrap_class!(TBizzy,
+            ModuleName!"testing",
+            Def!(TBizzy.f),
+    )();
     }, PyInitOrdering.After);
 
 }
@@ -242,6 +246,16 @@ class Bizzy5 {
 
     @property void e(string _val) { }
 
+}
+
+mixin template t3(T) {
+    int f(T t) {
+        return 1;
+    }
+}
+
+class TBizzy {
+    mixin t3!int;
 }
 
 unittest {

@@ -231,16 +231,26 @@ template def_selector(alias fn, fn_t) {
     }
 }
 
+template IsEponymousTemplateFunction(alias fn) {
+    // dmd issue 13372: its not a bug, its a feature!
+    alias TypeTuple!(__traits(parent, fn))[0] Parent;
+    enum IsEponymousTemplateFunction = is(typeof(Parent) == typeof(fn));
+}
+
 template alias_selector(alias fn, fn_t) {
     alias ParameterTypeTuple!fn_t ps; 
     alias ReturnType!fn_t ret;
     alias TypeTuple!(__traits(parent, fn))[0] Parent;
     enum nom = __traits(identifier, fn);
-    alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
     template IsDesired(alias f) {
         alias ParameterTypeTuple!f fps;
         alias ReturnType!f fret;
         enum bool IsDesired = is(ps == fps) && is(fret == ret);
+    }
+    static if(IsEponymousTemplateFunction!fn) {
+        alias TypeTuple!(fn) Overloads;
+    }else{
+        alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
     }
     alias Filter!(IsDesired, Overloads) VOverloads;
 }

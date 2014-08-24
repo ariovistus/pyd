@@ -23,11 +23,23 @@ string a4(string s1, int i1, string s2 = "friedman", int i2 = 4, string s3 = "je
     return std.string.format("<'%s', %s, '%s', %s, '%s'>", s1,i1,s2,i2,s3);
 }
 
+int t1(T)(T i) {
+    return 1;
+}
+
+template t2(T) {
+    int f(T t) {
+        return 1;
+    }
+}
+
 static this() {
     def!(a,int function(double), ModuleName!"testing")(); 
     def!(a2, int function(int,double,), ModuleName!"testing")(); 
     def!(a3, int function(int[]), ModuleName!"testing")(); 
     def!(a4, ModuleName!"testing")(); 
+    def!(t1!int, PyName!"t1", ModuleName!"testing")(); 
+    def!(t2!int.f, PyName!"t2", ModuleName!"testing")(); 
     on_py_init({
             add_module!(ModuleName!"testing")();
     });
