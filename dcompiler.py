@@ -380,7 +380,11 @@ class DCompiler(cc.CCompiler):
         # Add the infraDir to the include path for pyd, meta, and utils.
         includePathOpts += self._includeOpts
         includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
-        
+
+        for include_dir in include_dirs:
+            includePathOpts += self._includeOpts
+            includePathOpts[-1] %= winpath(include_dir, self.winonly)
+
         if self.build_exe:
             pass
         else:
