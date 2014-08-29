@@ -9,6 +9,6 @@ libDir = os.path.join('build', 'lib.%s-%s' % (
 ))
 sys.path.append(os.path.abspath(libDir))
 
-import hello
+import hello_w_libs
 
-hello.hello()
+hello_w_libs.hello()
