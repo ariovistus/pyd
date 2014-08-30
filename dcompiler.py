@@ -380,7 +380,11 @@ class DCompiler(cc.CCompiler):
         # Add the infraDir to the include path for pyd, meta, and utils.
         includePathOpts += self._includeOpts
         includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
-        
+
+        for include_dir in include_dirs:
+            includePathOpts += self._includeOpts
+            includePathOpts[-1] %= winpath(include_dir, self.winonly)
+
         if self.build_exe:
             pass
         else:
@@ -679,12 +683,13 @@ class DMDDCompiler(DCompiler):
             return ''
 
     def library_dir_option(self, dir):
-        self.warn("Don't know how to set library search path for DMD.")
-        #raise DistutilsPlatformError, "Don't know how to set library search path for DMD."
+        return '-L-L' + dir
 
     def runtime_library_dir_option(self, dir):
-        self.warn("Don't know how to set runtime library search path for DMD.")
-        #raise DistutilsPlayformError, "Don't know how to set runtime library search path for DMD."
+        if not _isPlatWin:
+            return '-L-R' + dir
+        else:
+            self.warn("Don't know how to set runtime library search path for DMD on Windows.")
 
     def library_option(self, lib):
         if _isPlatWin:
