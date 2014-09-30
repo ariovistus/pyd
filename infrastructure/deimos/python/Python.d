@@ -77,4 +77,11 @@ version(Python_2_4_Or_Later) {
     public import deimos.python.tupleobject;
     public import deimos.python.unicodeobject;
     public import deimos.python.weakrefobject;
-}else static assert(0, "You are missing python version flags");
+}else{
+    static assert(0, "You are missing python version flags");
+    
+    //dmd may ignore the assert
+    pragma(msg, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    pragma(msg, "You are missing python version flags");
+    pragma(msg, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+}

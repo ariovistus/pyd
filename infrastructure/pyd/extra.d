@@ -74,7 +74,6 @@ template NumpyFormatType(T) {
             }else static if(isBoolean!T) {
                 return PyObject_GetAttrString(numpy, "bool_");
             }
-            return null;
         }
     }
 }

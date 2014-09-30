@@ -32,7 +32,6 @@ import std.traits;
 import std.conv;
 import std.exception: enforce;
 import std.functional;
-import std.metastrings;
 import std.typetuple;
 import std.string: format;
 import std.typecons: Tuple;
@@ -196,15 +195,15 @@ struct property_parts(alias p, string _mode) {
             enum bool issproperty = false;
             enum string wmode = "";
         }else{
-            static assert(Setters.length != 0, Format!("can't find property %s.%s setter", Parent.stringof, nom));
+            static assert(Setters.length != 0, format("can't find property %s.%s setter", Parent.stringof, nom));
             static assert(Setters.length == 1, 
-                Format!("can't handle property overloads of %s.%s setter %s", 
+                format("can't handle property overloads of %s.%s setter %s", 
                     Parent.stringof, nom, Setters.stringof));
             alias Setters[0] SetterFn;
             alias typeof(&SetterFn) setter_type;
             static if(rmode == "r") {
                 static assert(!(IsProperty!GetterFn ^ IsProperty!(Setters[0])), 
-                        Format!("%s.%s: getter and setter must both be @property or not @property", 
+                        format("%s.%s: getter and setter must both be @property or not @property", 
                             Parent.stringof, nom));
             }
             enum issproperty = IsProperty!SetterFn;
@@ -521,7 +520,7 @@ struct Init(cps ...) {
         }
         alias Filter!(IsDesired, Overloads) VOverloads;
         static assert(VOverloads.length != 0, 
-                Format!("%s: Cannot find constructor with params %s", 
+                format("%s: Cannot find constructor with params %s", 
                     T.stringof, CtorParams.stringof));
         alias VOverloads[0] FN;
 
@@ -650,11 +649,11 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
             mixin("alias " ~ fn_str1 ~ " FN;");
             static if(!is(rhs_t == Guess))
                 static assert(is(RHS_T == rhs_t), 
-                        Format!("expected typeof(rhs) = %s, found %s", 
+                        format("expected typeof(rhs) = %s, found %s", 
                             rhs.stringof, RHS_T.stringof));
         }else static if(is(rhs_t == Guess)) {
             static assert(false, 
-                    Format!("Operator %s: Cannot determine type of rhs", op));
+                    format("Operator %s: Cannot determine type of rhs", op));
         } else static if(is(typeof(mixin(fn_str2)) == function)) {
             alias rhs_t RHS_T;
             alias ReturnType!(typeof(mixin(fn_str2))) RET_T;
@@ -773,7 +772,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
             alias C.opOpAssign!(_op) FN;
             static if(!is(rhs_t == Guess))
                 static assert(is(RHS_T == rhs_t), 
-                        Format!("expected typeof(rhs) = %s, found %s", 
+                        format("expected typeof(rhs) = %s, found %s", 
                             rhs.stringof, RHS_T.stringof));
         }else static if(is(rhs_t == Guess)) {
             static assert(false, "Cannot determine type of rhs");
@@ -824,15 +823,15 @@ struct OpCompare(_rhs_t = Guess) {
             static assert(0, C.stringof ~ " has no comparison operator overloads");
         }
         static if(!is(typeof(C.init.opCmp) == function)) {
-            static assert(0, Format!("why is %s.opCmp not a function?",C));
+            static assert(0, format("why is %s.opCmp not a function?",C));
         }
         alias TypeTuple!(__traits(getOverloads, C, "opCmp")) Overloads;
         static if(is(rhs_t == Guess) && Overloads.length > 1) {
-            static assert(0, Format!("Cannot choose between %s", Overloads));
+            static assert(0, format("Cannot choose between %s", Overloads));
         }else static if(Overloads.length == 1) {
             static if(!is(rhs_t == Guess) &&
                 !is(ParameterTypeTuple!(Overloads[0])[0] == rhs_t)) {
-                static assert(0, Format!("%s.opCmp: expected param %s, got %s",
+                static assert(0, format("%s.opCmp: expected param %s, got %s",
                             C, rhs_t, ParameterTypeTuple!(Overloads[0])));
             }else{
                 alias Overloads[0] FN;
@@ -843,7 +842,7 @@ struct OpCompare(_rhs_t = Guess) {
             }
             alias Filter!(IsDesiredOverload, Overloads) Overloads1;
             static assert(Overloads1.length == 1, 
-                    Format!("Cannot choose between %s", Overloads1));
+                    format("Cannot choose between %s", Overloads1));
             alias Overloads1[0] FN;
         }
     }
@@ -875,7 +874,7 @@ struct OpIndex(index_t...) {
             alias TypeTuple!(__traits(getOverloads, C, "opIndex")) Overloads;
             static if(index_t.length == 0 && Overloads.length > 1) {
                 static assert(0, 
-                        Format!("%s.opIndex: Cannot choose between %s",
+                        format("%s.opIndex: Cannot choose between %s",
                             C.stringof,Overloads.stringof));
             }else static if(index_t.length == 0) {
                 alias Overloads[0] FN;
@@ -885,7 +884,7 @@ struct OpIndex(index_t...) {
                 }
                 alias Filter!(IsDesiredOverload, Overloads) Overloads1;
                 static assert(Overloads1.length == 1, 
-                        Format!("%s.opIndex: Cannot choose between %s",
+                        format("%s.opIndex: Cannot choose between %s",
                             C.stringof,Overloads1.stringof));
                 alias Overloads1[0] FN;
             }
@@ -893,7 +892,7 @@ struct OpIndex(index_t...) {
             alias C.opIndex!(index_t) FN;
         }else{
             static assert(0, 
-                    Format!("cannot get a handle on %s.opIndex", C.stringof));
+                    format("cannot get a handle on %s.opIndex", C.stringof));
         }
     }
     static void call(string classname, T)() {
@@ -930,7 +929,7 @@ struct OpIndexAssign(index_t...) {
                         "opIndexAssign must have at least 2 parameters");
             static if(index_t.length == 0 && VOverloads.length > 1) {
                 static assert(0, 
-                        Format!("%s.opIndexAssign: Cannot choose between %s",
+                        format("%s.opIndexAssign: Cannot choose between %s",
                             C.stringof,VOverloads.stringof));
             }else static if(index_t.length == 0) {
                 alias VOverloads[0] FN;
@@ -940,7 +939,7 @@ struct OpIndexAssign(index_t...) {
                 }
                 alias Filter!(IsDesiredOverload, VOverloads) Overloads1;
                 static assert(Overloads1.length == 1, 
-                        Format!("%s.opIndex: Cannot choose between %s",
+                        format("%s.opIndex: Cannot choose between %s",
                             C.stringof,Overloads1.stringof));
                 alias Overloads1[0] FN;
             }
@@ -948,7 +947,7 @@ struct OpIndexAssign(index_t...) {
             alias C.opIndexAssign!(index_t) FN;
         }else{
             static assert(0, 
-                    Format!("cannot get a handle on %s.opIndexAssign", C.stringof));
+                    format("cannot get a handle on %s.opIndexAssign", C.stringof));
         }
     }
     static void call(string classname, T)() {
@@ -988,14 +987,14 @@ struct OpSlice() {
             }
             alias Filter!(IsDesiredOverload, Overloads) Overloads1;
             static assert(Overloads1.length != 0, 
-                    Format!("%s.opSlice: must have overload %s",
+                    format("%s.opSlice: must have overload %s",
                         C.stringof,TypeTuple!(Py_ssize_t,Py_ssize_t).stringof));
             static assert(Overloads1.length == 1, 
-                    Format!("%s.opSlice: cannot choose between %s",
+                    format("%s.opSlice: cannot choose between %s",
                         C.stringof,Overloads1.stringof));
             alias Overloads1[0] FN;
         }else{
-            static assert(0, Format!("cannot get a handle on %s.opSlice",
+            static assert(0, format("cannot get a handle on %s.opSlice",
                         C.stringof));
         }
     }
@@ -1037,11 +1036,11 @@ struct OpSliceAssign(rhs_t = Guess) {
             }
             alias Filter!(IsDesiredOverload, Overloads) Overloads1;
             static assert(Overloads1.length != 0, 
-                    Format!("%s.opSliceAssign: must have overload %s",
+                    format("%s.opSliceAssign: must have overload %s",
                         C.stringof,TypeTuple!(Guess,Py_ssize_t,Py_ssize_t).stringof));
             static if(is(rhs_t == Guess)) {
                 static assert(Overloads1.length == 1, 
-                        Format!("%s.opSliceAssign: cannot choose between %s",
+                        format("%s.opSliceAssign: cannot choose between %s",
                             C.stringof,Overloads1.stringof));
                 alias Overloads1[0] FN;
             }else{
@@ -1051,12 +1050,12 @@ struct OpSliceAssign(rhs_t = Guess) {
                 }
                 alias Filter!(IsDesiredOverload2, Overloads1) Overloads2;
                 static assert(Overloads2.length == 1, 
-                        Format!("%s.opSliceAssign: cannot choose between %s",
+                        format("%s.opSliceAssign: cannot choose between %s",
                             C.stringof,Overloads2.stringof));
                 alias Overloads2[0] FN;
             }
         }else{
-            static assert(0, Format!("cannot get a handle on %s.opSlice",
+            static assert(0, format("cannot get a handle on %s.opSlice",
                         C.stringof));
         }
     }
@@ -1089,12 +1088,12 @@ struct OpCall(Args_t...) {
         alias Filter!(IsDesiredOverload, Overloads) VOverloads;
         static if(VOverloads.length == 0) {
             static assert(0,
-                    Format!("%s.opCall: cannot find signature %s", T.stringof, 
+                    format("%s.opCall: cannot find signature %s", T.stringof, 
                         Args_t.stringof));
         }else static if(VOverloads.length == 1){
             alias VOverloads[0] FN;
         }else static assert(0,
-                Format!("%s.%s: cannot choose between %s", T.stringof, nom,
+                format("%s.%s: cannot choose between %s", T.stringof, nom,
                     VOverloads.stringof));
     }
     static void call(string classname, T)() {
@@ -1144,12 +1143,12 @@ struct _Len(fnt...) {
         alias Filter!(IsDesiredOverload, Overloads) VOverloads;
         static if(VOverloads.length == 0 && Overloads.length != 0) {
             static assert(0,
-                    Format!("%s.%s must have signature %s", T.stringof, nom,
+                    format("%s.%s must have signature %s", T.stringof, nom,
                         (Py_ssize_t function()).stringof));
         }else static if(VOverloads.length == 1){
             alias VOverloads[0] FN;
         }else static assert(0,
-                Format!("%s.%s: cannot choose between %s", T.stringof, nom,
+                format("%s.%s: cannot choose between %s", T.stringof, nom,
                     VOverloads.stringof));
     }
     static void call(string classname, T)() {

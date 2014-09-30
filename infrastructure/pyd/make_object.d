@@ -40,7 +40,6 @@ import std.typetuple;
 import std.bigint;
 import std.traits;
 import std.typecons;
-import std.metastrings;
 import std.conv;
 import std.range;
 
@@ -288,13 +287,16 @@ PyObject* d_to_python(T) (T t) {
             }
             return wrap_d_object(t);
         }
+    } else {
+        // No conversion found, check runtime registry
+        if (to_converter_registry!(T).dg) {
+            return to_converter_registry!(T).dg(t);
+        }
+        PyErr_SetString(PyExc_RuntimeError, ("D conversion function d_to_python failed with type " ~ typeid(T).toString()).ptr);
+        return null;
     }
-    // No conversion found, check runtime registry
-    if (to_converter_registry!(T).dg) {
-        return to_converter_registry!(T).dg(t);
-    }
-    PyErr_SetString(PyExc_RuntimeError, ("D conversion function d_to_python failed with type " ~ typeid(T).toString()).ptr);
-    return null;
+    
+    assert(false);
 }
 
 /**
@@ -571,12 +573,13 @@ T python_to_d(T) (PyObject* o) {
         int res = PyObject_IsTrue(o);
         handle_exception();
         return res == 1;
+    } else {
+        if (from_converter_registry!(T).dg) {
+            return from_converter_registry!(T).dg(o);
+        }
+        could_not_convert!(T)(o);
     }
-
-    if (from_converter_registry!(T).dg) {
-        return from_converter_registry!(T).dg(o);
-    }
-    could_not_convert!(T)(o);
+    
     assert(0);
 }
 
@@ -964,27 +967,31 @@ template SimpleFormatType(T) {
         isIntegral!T); 
 
     PyObject* pyType() {
-        assert(supported);
-        version(Python_3_0_Or_Later) {
-            alias to_python = d_to_python;
+        //assert(supported);
+        static if(supported) {
+            version(Python_3_0_Or_Later) {
+                alias to_python = d_to_python;
+            }else{
+                // stinking py2 array won't take unicode
+                alias to_python = d_to_python_bytes;
+            }
+            static if(isFloatingPoint!T && T.sizeof == 4) {
+                return to_python("f");
+            }else static if(isFloatingPoint!T && T.sizeof == 8) {
+                return to_python("d");
+            }else static if(isIntegral!T && T.sizeof == 1) {
+                return to_python(isSigned!T ? "b" : "B");
+            }else static if(isIntegral!T && T.sizeof == 2) {
+                return to_python(isSigned!T ? "h" : "H");
+            }else static if(isIntegral!T && T.sizeof == 4) {
+                return to_python(isSigned!T ? "i" : "I");
+            }else static if(isIntegral!T && T.sizeof == 8) {
+                return to_python(isSigned!T ? "q" : "Q");
+            }
+            return null;
         }else{
-            // stinking py2 array won't take unicode
-            alias to_python = d_to_python_bytes;
+            assert(false);
         }
-        static if(isFloatingPoint!T && T.sizeof == 4) {
-            return to_python("f");
-        }else static if(isFloatingPoint!T && T.sizeof == 8) {
-            return to_python("d");
-        }else static if(isIntegral!T && T.sizeof == 1) {
-            return to_python(isSigned!T ? "b" : "B");
-        }else static if(isIntegral!T && T.sizeof == 2) {
-            return to_python(isSigned!T ? "h" : "H");
-        }else static if(isIntegral!T && T.sizeof == 4) {
-            return to_python(isSigned!T ? "i" : "I");
-        }else static if(isIntegral!T && T.sizeof == 8) {
-            return to_python(isSigned!T ? "q" : "Q");
-        }
-        return null;
     }
 }
 

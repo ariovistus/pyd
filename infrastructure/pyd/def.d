@@ -28,7 +28,7 @@ module pyd.def;
 import deimos.python.Python;
 
 import std.algorithm: startsWith;
-import std.metastrings;
+import std.string: format;
 import std.typetuple;
 import std.traits;
 import util.conv;
@@ -221,10 +221,10 @@ template def_selector(alias fn, fn_t) {
     alias alias_selector!(fn, fn_t) als;
     static if(als.VOverloads.length == 0 && als.Overloads.length != 0) {
         alias staticMap!(Typeof, als.Overloads) OverloadsT;
-        static assert(0, Format!("%s not among %s", 
+        static assert(0, format("%s not among %s", 
                     fn_t.stringof,OverloadsT.stringof));
     }else static if(als.VOverloads.length > 1){
-        static assert(0, Format!("%s: Cannot choose between %s", als.nom, 
+        static assert(0, format("%s: Cannot choose between %s", als.nom, 
                     staticMap!(Typeof, als.VOverloads)));
     }else{
         alias als.VOverloads[0] FN;

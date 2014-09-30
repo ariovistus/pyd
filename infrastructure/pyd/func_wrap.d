@@ -27,7 +27,6 @@ module pyd.func_wrap;
 
 import deimos.python.Python;
 import std.algorithm: max;
-import std.metastrings;
 import std.exception: enforce;
 import std.range;
 import std.conv;
@@ -182,7 +181,6 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
                     (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
                 if (argNum == argCount) {
                     return fn(t.fields[0 .. argNum]);
-                    break;
                 }
             }
         }else static if(MaxArgs.vstyle == Variadic.typesafe) {

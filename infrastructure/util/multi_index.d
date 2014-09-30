@@ -3622,11 +3622,12 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
                         static if(!allowDuplicates){
                             _RemoveAllBut!N(node);
                             return false;
-                        }
-                        if(isFirst(cursor)){
-                            setFirst(node, index);
                         }else{
-                            cursor.index!N.insertPrev(node);
+                            if(isFirst(cursor)){
+                                setFirst(node, index);
+                            }else{
+                                cursor.index!N.insertPrev(node);
+                            }
                         }
                     }else if(cursor){
                         cursor.index!N.insertNext(node);
