@@ -89,7 +89,7 @@ struct PyFrameObject {
         /// ditto
         int f_stacksize;
     }
-    PyObject* _f_localsplus[1];
+    PyObject*[1] _f_localsplus;
     /** locals+stack, dynamically sized */
     PyObject** f_localsplus()() {
         return _f_localsplus.ptr;
