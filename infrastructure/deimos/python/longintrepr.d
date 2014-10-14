@@ -26,7 +26,7 @@ extern(C):
 */
 struct PyLongObject {
 	mixin PyObject_VAR_HEAD;
-	ushort ob_digit[1];
+	ushort[1] ob_digit;
 }
 
 /// _

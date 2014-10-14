@@ -77,7 +77,7 @@ struct PyFrameObject {
     /** index in f_blockstack */
     int f_iblock;
     /** for try and loop blocks */
-    PyTryBlock f_blockstack[CO_MAXBLOCKS];
+    PyTryBlock[CO_MAXBLOCKS] f_blockstack;
     version(Python_2_5_Or_Later){
     }else{
         /// Availability: 2.4
@@ -89,7 +89,7 @@ struct PyFrameObject {
         /// ditto
         int f_stacksize;
     }
-    PyObject* _f_localsplus[1];
+    PyObject*[1] _f_localsplus;
     /** locals+stack, dynamically sized */
     PyObject** f_localsplus()() {
         return _f_localsplus.ptr;

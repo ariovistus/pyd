@@ -73,7 +73,7 @@ struct PyDictObject{
     PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash) 
         ma_lookup;
     /// _
-    PyDictEntry ma_smalltable[PyDict_MINSIZE];
+    PyDictEntry[PyDict_MINSIZE] ma_smalltable;
 }
 
 /// _

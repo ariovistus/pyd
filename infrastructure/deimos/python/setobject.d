@@ -55,15 +55,15 @@ struct PySetObject {
          * additional malloc'ed memory.  table is never NULL!  This rule
          * saves repeated runtime null-tests.
          */
-        setentry *table;
+        setentry* table;
         /// _
         version(Python_3_2_Or_Later) {
-            setentry* function(PySetObject *so, PyObject* key, Py_hash_t hash) lookup;
+            setentry* function(PySetObject* so, PyObject* key, Py_hash_t hash) lookup;
         }else{
-            setentry* function(PySetObject *so, PyObject* key, C_long hash) lookup;
+            setentry* function(PySetObject* so, PyObject* key, C_long hash) lookup;
         }
         /// _
-        setentry smalltable[PySet_MINSIZE];
+        setentry[PySet_MINSIZE] smalltable;
     }else{
         /// Availability: 2.4
         PyObject* data;

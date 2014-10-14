@@ -27,7 +27,7 @@ struct PyTupleObject {
 
     // Will the D layout for a 1-PyObject* array be the same as the C layout?
     // I think the D array will be larger.
-    PyObject* _ob_item[1];
+    PyObject*[1] _ob_item;
     /// _
     PyObject** ob_item()() {
         return _ob_item.ptr;
@@ -69,15 +69,15 @@ PyObject* PyTuple_Pack(Py_ssize_t, ...);
 // XXX: These do not work.
 /// _
 PyObject_BorrowedRef* PyTuple_GET_ITEM()(PyObject* op, Py_ssize_t i) {
-    return (cast(PyTupleObject *) op).ob_item[i];
+    return (cast(PyTupleObject*) op).ob_item[i];
 }
 /// _
 size_t PyTuple_GET_SIZE()(PyObject* op) {
-    return (cast(PyTupleObject *) op).ob_size;
+    return (cast(PyTupleObject*) op).ob_size;
 }
 /// _
 PyObject* PyTuple_SET_ITEM()(PyObject* op, Py_ssize_t i, PyObject* v) {
-    PyTupleObject *opAsTuple = cast(PyTupleObject *) op;
+    PyTupleObject* opAsTuple = cast(PyTupleObject*) op;
     opAsTuple.ob_item[i] = v;
     return v;
 }
@@ -90,4 +90,3 @@ version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
     void _PyTuple_DebugMallocStats(FILE* out_);
 }
-

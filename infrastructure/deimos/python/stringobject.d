@@ -48,7 +48,8 @@ struct PyStringObject {
     int ob_sstate;
     // Will the D layout for a 1-char array be the same as the C layout?  I
     // think the D array will be larger.
-    char _ob_sval[1];
+    // John-Colvin 2014-10-14: It should be the same. char[1].sizeof == 1
+    char[1] _ob_sval;
     ///_
     char* ob_sval()() {
         return _ob_sval.ptr;
