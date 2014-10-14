@@ -78,7 +78,7 @@ struct _PyDateTime_BaseTZInfo {
 template _PyDateTime_TIMEHEAD() {
     mixin _PyTZINFO_HEAD;
     /// _
-    ubyte data[_PyDateTime_TIME_DATASIZE];
+    ubyte[_PyDateTime_TIME_DATASIZE] data;
 }
 
 /// _
@@ -100,13 +100,13 @@ struct PyDateTime_Time {
 struct PyDateTime_Date {
     mixin _PyTZINFO_HEAD;
     /// _
-    ubyte data[_PyDateTime_DATE_DATASIZE];
+    ubyte[_PyDateTime_DATE_DATASIZE] data;
 }
 
 /// _
 template _PyDateTime_DATETIMEHEAD() {
     mixin _PyTZINFO_HEAD;
-    ubyte data[_PyDateTime_DATETIME_DATASIZE];
+    ubyte[_PyDateTime_DATETIME_DATASIZE] data;
 }
 
 /// _
@@ -123,59 +123,59 @@ struct PyDateTime_DateTime {
 // D translations of C macros:
 /** Applies for date and datetime instances. */
 int PyDateTime_GET_YEAR()(PyObject* o) {
-    PyDateTime_Date *ot = cast(PyDateTime_Date *) o;
+    PyDateTime_Date* ot = cast(PyDateTime_Date*) o;
     return (ot.data[0] << 8) | ot.data[1];
 }
 /** Applies for date and datetime instances. */
 int PyDateTime_GET_MONTH()(PyObject* o) {
-    PyDateTime_Date *ot = cast(PyDateTime_Date *) o;
+    PyDateTime_Date* ot = cast(PyDateTime_Date*) o;
     return ot.data[2];
 }
 /** Applies for date and datetime instances. */
 int PyDateTime_GET_DAY()(PyObject* o) {
-    PyDateTime_Date *ot = cast(PyDateTime_Date *) o;
+    PyDateTime_Date* ot = cast(PyDateTime_Date*) o;
     return ot.data[3];
 }
 
 /** Applies for date and datetime instances. */
 int PyDateTime_DATE_GET_HOUR()(PyObject* o) {
-    PyDateTime_DateTime *ot = cast(PyDateTime_DateTime *) o;
+    PyDateTime_DateTime* ot = cast(PyDateTime_DateTime*) o;
     return ot.data[4];
 }
 /** Applies for date and datetime instances. */
 int PyDateTime_DATE_GET_MINUTE()(PyObject* o) {
-    PyDateTime_DateTime *ot = cast(PyDateTime_DateTime *) o;
+    PyDateTime_DateTime* ot = cast(PyDateTime_DateTime*) o;
     return ot.data[5];
 }
 /** Applies for date and datetime instances. */
 int PyDateTime_DATE_GET_SECOND()(PyObject* o) {
-    PyDateTime_DateTime *ot = cast(PyDateTime_DateTime *) o;
+    PyDateTime_DateTime* ot = cast(PyDateTime_DateTime*) o;
     return ot.data[6];
 }
 /** Applies for date and datetime instances. */
 int PyDateTime_DATE_GET_MICROSECOND()(PyObject* o) {
-    PyDateTime_DateTime *ot = cast(PyDateTime_DateTime *) o;
+    PyDateTime_DateTime* ot = cast(PyDateTime_DateTime*) o;
     return (ot.data[7] << 16) | (ot.data[8] << 8) | ot.data[9];
 }
 
 /** Applies for time instances. */
 int PyDateTime_TIME_GET_HOUR()(PyObject* o) {
-    PyDateTime_Time *ot = cast(PyDateTime_Time *) o;
+    PyDateTime_Time* ot = cast(PyDateTime_Time*) o;
     return ot.data[0];
 }
 /** Applies for time instances. */
 int PyDateTime_TIME_GET_MINUTE()(PyObject* o) {
-    PyDateTime_Time *ot = cast(PyDateTime_Time *) o;
+    PyDateTime_Time* ot = cast(PyDateTime_Time*) o;
     return ot.data[1];
 }
 /** Applies for time instances. */
 int PyDateTime_TIME_GET_SECOND()(PyObject* o) {
-    PyDateTime_Time *ot = cast(PyDateTime_Time *) o;
+    PyDateTime_Time* ot = cast(PyDateTime_Time*) o;
     return ot.data[2];
 }
 /** Applies for time instances. */
 int PyDateTime_TIME_GET_MICROSECOND()(PyObject* o) {
-    PyDateTime_Time *ot = cast(PyDateTime_Time *) o;
+    PyDateTime_Time* ot = cast(PyDateTime_Time*) o;
     return (ot.data[3] << 16) | (ot.data[4] << 8) | ot.data[5];
 }
 
@@ -220,10 +220,10 @@ static PyDateTime_CAPI* PyDateTimeAPI;
 PyDateTime_CAPI* PyDateTime_IMPORT()() {
     if (PyDateTimeAPI == null) {
         version(PyCapsule) {
-            PyDateTimeAPI = cast(PyDateTime_CAPI *)
+            PyDateTimeAPI = cast(PyDateTime_CAPI*)
                 PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
         }else {
-            PyDateTimeAPI = cast(PyDateTime_CAPI *)
+            PyDateTimeAPI = cast(PyDateTime_CAPI*)
                 PyCObject_Import("datetime", "datetime_CAPI");
         }
     }
@@ -279,12 +279,12 @@ PyObject* PyDate_FromDate()(int year, int month, int day) {
 /// _
 PyObject* PyDateTime_FromDateAndTime()(int year, int month, int day, int hour, int min, int sec, int usec) {
     return PyDateTimeAPI.DateTime_FromDateAndTime(year, month, day, hour,
-            min, sec, usec, cast(PyObject *) Py_None(), PyDateTimeAPI.DateTimeType);
+            min, sec, usec, cast(PyObject*) Py_None(), PyDateTimeAPI.DateTimeType);
 }
 /// _
 PyObject* PyTime_FromTime()(int hour, int minute, int second, int usecond) {
     return PyDateTimeAPI.Time_FromTime(hour, minute, second, usecond,
-            cast(PyObject *) Py_None(), PyDateTimeAPI.TimeType);
+            cast(PyObject*) Py_None(), PyDateTimeAPI.TimeType);
 }
 /// _
 PyObject* PyDelta_FromDSU()(int days, int seconds, int useconds) {
