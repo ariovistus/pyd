@@ -266,19 +266,29 @@ extern(C) void Py_Finalize_hook() {
     Py_Finalize_called = true;
 }
 
-/// For embedding python
-void py_init() {
-    version(PydPythonExtension) assert(false, "py_init should only be called when embedding python");
-    doActions(PyInitOrdering.Before);
-    Py_Initialize();
-    py_init_called = true;
-    doActions(PyInitOrdering.After);
-    version(Python_3_0_Or_Later) {
-        // stinking python 3 lazy initializes modules.
-        import pyd.embedded;
-        foreach(modulename, _; pyd_module_classes) {
-            py_import(modulename);
-        }
+version(PydPythonExtension)
+{
+    /// For embedding python
+    void py_init()()
+    {
+        static assert(false, "py_init should only be called when embedding python");
+    }
+}
+else
+{
+    /// For embedding python
+    void py_init() {
+        doActions(PyInitOrdering.Before);
+        Py_Initialize();
+        py_init_called = true;
+        doActions(PyInitOrdering.After);
+        version(Python_3_0_Or_Later) {
+            // stinking python 3 lazy initializes modules.
+            import pyd.embedded;
+            foreach(modulename, _; pyd_module_classes) {
+                py_import(modulename);
+            }
+        }       
     }
 }
 

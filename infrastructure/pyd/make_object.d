@@ -1084,8 +1084,8 @@ template MatrixInfo(T) if(isArray!T || IsStaticArrayPointer!T) {
     bool check(Py_ssize_t[] shape) {
         if (shape.length != dim_list.length) return false;
         foreach(i, d; dim_list) {
-            if(dim_list[i] == -1) continue;
-            if(d != shape[i]) return false;
+            static if(dim_list[i] == -1) continue;
+            else if(d != shape[i]) return false;
         }
         return true;
     }
