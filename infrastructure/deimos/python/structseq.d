@@ -27,7 +27,7 @@ struct PyStructSequence_Desc {
     /// _
     char* doc;
     /// _
-    PyStructSequence_Field *fields;
+    PyStructSequence_Field* fields;
     /// _
     int n_in_sequence;
 }
@@ -39,7 +39,7 @@ version(Python_3_2_Or_Later) {
     PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc);
 }
 /// _
-PyObject *PyStructSequence_New(PyTypeObject* type);
+PyObject* PyStructSequence_New(PyTypeObject* type);
 
 version(Python_3_2_Or_Later) {
     /// _
@@ -57,7 +57,7 @@ version(Python_3_2_Or_Later) {
         mixin PyObject_VAR_HEAD;
         // Will the D layout for a 1-obj array be the same as the C layout?  I
         // think the D array will be larger.
-        PyObject *_ob_item[1];
+        PyObject*[1] _ob_item;
         /// _
         PyObject** ob_item()() {
             return _ob_item.ptr;
@@ -65,12 +65,9 @@ version(Python_3_2_Or_Later) {
     }
     // D translation of C macro:
     /** Macro, *only* to be used to fill in brand new objects */
-    PyObject *PyStructSequence_SET_ITEM()(PyObject* op, int i, PyObject* v) {
+    PyObject* PyStructSequence_SET_ITEM()(PyObject* op, int i, PyObject* v) {
         PyStructSequence* ot = cast(PyStructSequence*) op;
         ot.ob_item[i] = v;
         return v;
     }
 }
-
-
-
