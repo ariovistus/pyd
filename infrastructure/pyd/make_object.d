@@ -903,6 +903,7 @@ struct RangeWrapper {
 /// Struct Format Strings </a>
 bool match_format_type(T)(string format) {
     alias T S;
+    size_t S_size = S.sizeof;
     enforce(format.length > 0);
 
     bool native_size = false;
@@ -934,6 +935,16 @@ bool match_format_type(T)(string format) {
             break;
         case '?': 
             if(!isBoolean!S) return false;
+        case 'Z':
+            if (format.length > 1) {
+                static if(is(S : Complex!F, F)) {
+                    S_size = F.sizeof;
+                }else{
+                    return false;
+                }
+            }
+            format = format[1..$];
+            break;
         default:
             enforce(false, "unknown format: " ~ format); 
     }
@@ -945,13 +956,13 @@ bool match_format_type(T)(string format) {
     }else{
         switch(format[0]) {
             case 'c','b','B','?':
-                return (S.sizeof == 1);
+                return (S_size == 1);
             case 'h','H':
-                return (S.sizeof == 2);
+                return (S_size == 2);
             case 'i','I','l','L','f':
-                return (S.sizeof == 4);
+                return (S_size == 4);
             case 'q','Q','d':
-                return (S.sizeof == 8);
+                return (S_size == 8);
             default:
                 enforce(false, "unknown format: " ~ format); 
                 assert(0); // seriously, d?

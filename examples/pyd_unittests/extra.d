@@ -1,6 +1,7 @@
 import pyd.pyd, pyd.embedded, pyd.extra;
 import deimos.python.Python;
 import std.complex;
+import std.string;
 
 static this() {
     py_init();
@@ -55,6 +56,28 @@ unittest {
         assert(npa[i].to_d!bool() == datum);
 
     }
+}
+
+unittest {
+    InterpContext context = new InterpContext();
+
+    context.py_stmts(outdent("
+        import numpy
+        a = numpy.eye(2, dtype='complex64')
+    "));
+
+    context.a.to_d!(Complex!float[][] )();
+}
+
+unittest {
+    InterpContext context = new InterpContext();
+
+    context.py_stmts(outdent("
+        import numpy
+        a = numpy.eye(2, dtype='complex128')
+    "));
+
+    context.a.to_d!(Complex!double[][] )();
 }
 
 void main() {}

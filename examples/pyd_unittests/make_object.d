@@ -350,31 +350,39 @@ unittest {
             return new G1!"joe"(i);
         }
     }
-    alias unaryFun!"a.i" uConv;
-    alias uConv!(G1!"martin") mConv;
+    static if(!__traits(compiles, {
+                alias unaryFun!"a.i" uConv;
+                alias uConv!(G1!"martin") mConv;
+                })) {
+        import std.stdio;
+        writeln("Can't run this unit test due to dmd issue 12426");
+    }else {
+        alias unaryFun!"a.i" uConv;
+        alias uConv!(G1!"martin") mConv;
 
-    ex_d_to_python(delegate int(G1!"fred" g){ return g.i; });
-    ex_d_to_python(function int(G1!"steve" g){ return g.i; });
-    ex_d_to_python(new Conv());
-    ex_d_to_python(&mConv);
-    ex_d_to_python((G1!"john" a) => a.i);
+        ex_d_to_python(delegate int(G1!"fred" g){ return g.i; });
+        ex_d_to_python(function int(G1!"steve" g){ return g.i; });
+        ex_d_to_python(new Conv());
+        ex_d_to_python(&mConv);
+        ex_d_to_python((G1!"john" a) => a.i);
 
-    ex_python_to_d(delegate G1!"steve"(int i){ return new G1!"steve"(i); });
-    ex_python_to_d(function G1!"fred"(int i){ return new G1!"fred"(i); });
-    ex_python_to_d(new Conv2());
-    ex_python_to_d((int a) => new G1!"martin"(a));
-    ex_python_to_d((int a) => new G1!"john"(a));
+        ex_python_to_d(delegate G1!"steve"(int i){ return new G1!"steve"(i); });
+        ex_python_to_d(function G1!"fred"(int i){ return new G1!"fred"(i); });
+        ex_python_to_d(new Conv2());
+        ex_python_to_d((int a) => new G1!"martin"(a));
+        ex_python_to_d((int a) => new G1!"john"(a));
 
-    assert(py(new G1!"fred"(6)) == py(6));
-    assert(py(new G1!"steve"(7)) == py(7));
-    assert(py(new G1!"joe"(8)) == py(8));
-    assert(py(new G1!"martin"(9)) == py(9));
-    assert(py(new G1!"john"(10)) == py(10));
+        assert(py(new G1!"fred"(6)) == py(6));
+        assert(py(new G1!"steve"(7)) == py(7));
+        assert(py(new G1!"joe"(8)) == py(8));
+        assert(py(new G1!"martin"(9)) == py(9));
+        assert(py(new G1!"john"(10)) == py(10));
 
-    assert(python_to_d!(G1!"fred")(d_to_python(20)) == new G1!"fred"(20));
-    assert(python_to_d!(G1!"steve")(d_to_python(21)) == new G1!"steve"(21));
-    assert(python_to_d!(G1!"joe")(d_to_python(22)) == new G1!"joe"(22));
-    assert(python_to_d!(G1!"martin")(d_to_python(23)) == new G1!"martin"(23));
+        assert(python_to_d!(G1!"fred")(d_to_python(20)) == new G1!"fred"(20));
+        assert(python_to_d!(G1!"steve")(d_to_python(21)) == new G1!"steve"(21));
+        assert(python_to_d!(G1!"joe")(d_to_python(22)) == new G1!"joe"(22));
+        assert(python_to_d!(G1!"martin")(d_to_python(23)) == new G1!"martin"(23));
+    }
 }
 
 unittest {
@@ -382,8 +390,7 @@ unittest {
         return 22;
     };
 
-    // typeof(func) distinct from int function()
-    assert(typeof(func).stringof == "int function() pure nothrow @safe");
+    assert(typeof(func).stringof != "int function()");
     auto py_func = py(func);
     assert(py_func().to_d!int() == 22);
 
