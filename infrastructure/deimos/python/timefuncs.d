@@ -3,7 +3,7 @@
   */
 module deimos.python.timefuncs;
 
-import std.c.time;
+import core.stdc.time;
 
 extern(C):
 // Python-header-file: Include/timefuncs.h:

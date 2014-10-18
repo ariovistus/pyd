@@ -2,7 +2,7 @@
 import pyd.pyd, pyd.embedded;
 import std.range;
 import std.conv;
-import std.c.stdio;
+import core.stdc.stdio;
 import std.algorithm;
 import std.exception;
 import deimos.python.Python;

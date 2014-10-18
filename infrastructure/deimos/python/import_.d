@@ -7,7 +7,7 @@ module deimos.python.import_;
 
 import deimos.python.pyport;
 import deimos.python.object;
-import std.c.stdio;
+import core.stdc.stdio;
 
 extern(C):
 // Python-header-file: Include/import.h:

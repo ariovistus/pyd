@@ -303,7 +303,7 @@ Struct Format Strings </a>
     /*
      * Prints PyObject to a C FILE* object.
      * Params:
-     *      fp = The file object to _print to. std.c.stdio.stdout by default.
+     *      fp = The file object to _print to. core.stdc.stdio.stdout by default.
      *      raw = If $(D_KEYWORD true), prints the "str" representation of the
      *            PydObject, and uses the "repr" otherwise. Defaults to
      *            $(D_KEYWORD false).

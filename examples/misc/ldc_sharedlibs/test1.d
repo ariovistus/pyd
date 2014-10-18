@@ -1,12 +1,12 @@
 // stuff in our library
 
 static this() {
-    import std.c.stdio;
+    import core.stdc.stdio;
     printf("yawn. stretch.\n");
 }
 
 static ~this() {
-    import std.c.stdio;
+    import core.stdc.stdio;
     printf("yawn. zzz.\n");
 }
 

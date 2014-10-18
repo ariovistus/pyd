@@ -3,7 +3,7 @@
   */
 module deimos.python.parsetok;
 
-import std.c.stdio;
+import core.stdc.stdio;
 import deimos.python.node;
 import deimos.python.grammar;
 

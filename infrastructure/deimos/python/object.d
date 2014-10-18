@@ -47,7 +47,7 @@ whose size is determined when the object is allocated.
   */
 module deimos.python.object;
 
-import std.c.stdio;
+import core.stdc.stdio;
 import deimos.python.pyport;
 import deimos.python.methodobject;
 import deimos.python.structmember;

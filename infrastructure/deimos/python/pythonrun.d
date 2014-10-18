@@ -8,7 +8,7 @@ See_Also:
   */
 module deimos.python.pythonrun;
 
-import std.c.stdio;
+import core.stdc.stdio;
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.code;

@@ -287,16 +287,14 @@ PyObject* d_to_python(T) (T t) {
             }
             return wrap_d_object(t);
         }
-    } else {
-        // No conversion found, check runtime registry
-        if (to_converter_registry!(T).dg) {
-            return to_converter_registry!(T).dg(t);
-        }
-        PyErr_SetString(PyExc_RuntimeError, ("D conversion function d_to_python failed with type " ~ typeid(T).toString()).ptr);
-        return null;
+    } 
+
+    // No conversion found, check runtime registry
+    if (to_converter_registry!(T).dg) {
+        return to_converter_registry!(T).dg(t);
     }
-    
-    assert(false);
+    PyErr_SetString(PyExc_RuntimeError, ("D conversion function d_to_python failed with type " ~ typeid(T).toString()).ptr);
+    return null;
 }
 
 /**
@@ -573,13 +571,13 @@ T python_to_d(T) (PyObject* o) {
         int res = PyObject_IsTrue(o);
         handle_exception();
         return res == 1;
-    } else {
-        if (from_converter_registry!(T).dg) {
-            return from_converter_registry!(T).dg(o);
-        }
-        could_not_convert!(T)(o);
+    } 
+
+    if (from_converter_registry!(T).dg) {
+        return from_converter_registry!(T).dg(o);
     }
-    
+    could_not_convert!(T)(o);
+
     assert(0);
 }
 

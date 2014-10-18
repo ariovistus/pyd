@@ -21,7 +21,7 @@ module deimos.python.stringobject;
 
 import deimos.python.pyport;
 import deimos.python.object;
-import std.c.stdarg;
+import core.stdc.stdarg;
 
 version(Python_3_0_Or_Later) {
 }else{

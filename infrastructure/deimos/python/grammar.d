@@ -5,7 +5,7 @@
   */
 module deimos.python.grammar;
 
-import std.c.stdio;
+import core.stdc.stdio;
 
 extern(C):
 // Python-header-file: Include/object.h:

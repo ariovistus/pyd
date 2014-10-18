@@ -11,7 +11,7 @@ module deimos.python.bytesobject;
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.stringobject;
-import std.c.stdarg;
+import core.stdc.stdarg;
 
 version(Python_3_0_Or_Later) {
         /** 

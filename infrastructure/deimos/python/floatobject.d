@@ -7,7 +7,7 @@ import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.unicodeobject;
 import deimos.python.pythonrun;
-import std.c.stdio;
+import core.stdc.stdio;
 
 extern(C):
 // Python-header-file: Include/floatobject.h:

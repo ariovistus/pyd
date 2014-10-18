@@ -5,7 +5,7 @@
   */
 module deimos.python.modsupport;
 
-import std.c.stdio;
+import core.stdc.stdio;
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.methodobject;

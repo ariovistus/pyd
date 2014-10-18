@@ -8,8 +8,8 @@
   */
 module deimos.python.unicodeobject;
 
-import std.c.stdarg;
-import std.c.string;
+import core.stdc.stdarg;
+import core.stdc.string;
 import deimos.python.pyport;
 import deimos.python.object;
 

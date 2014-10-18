@@ -3,7 +3,7 @@
   */
 module deimos.python.pydebug;
 
-import std.c.stdlib;
+import core.stdc.stdlib;
 
 import deimos.python.pyport;
 

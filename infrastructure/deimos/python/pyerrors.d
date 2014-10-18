@@ -3,7 +3,7 @@
   */
 module deimos.python.pyerrors;
 
-import std.c.stdarg;
+import core.stdc.stdarg;
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.unicodeobject;
