@@ -47,8 +47,8 @@ def include_path(path):
             return False
         if ext.lower() == '.d':
             return True
-        if (sys.platform.lower().startswith('win') and
-                re.match("python.._digitalmars\\.lib",pathsubs[-1])):
+        if pathsubs[0:2] == ['infrastructure','windows'] and \
+                re.match("python.._digitalmars\\.lib",pathsubs[-1]):
             return True
         return False
     if len(pathsubs) == 1 and ext.lower() == '.py':

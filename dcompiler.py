@@ -657,7 +657,7 @@ class DMDDCompiler(DCompiler):
             # code because Python X.Y releases are fairly infrequent, so it's
             # more convenient to distribute a pre-extracted .lib file to the
             # users and spare them the need for the "Basic Utilities" package.
-            pythonDMDLibPath = _qp(os.path.join(_infraDir, 'python',
+            pythonDMDLibPath = _qp(os.path.join(_infraDir, 'windows',
                 'python%s_digitalmars.lib' % _pyVerXY
             ))
             if not os.path.isfile(pythonDMDLibPath):
