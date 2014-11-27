@@ -11,6 +11,7 @@ if platform.python_version() < "2.5":
             raise Exception("command '%s' returned %s" %(cmd, ret))
     subprocess.check_call = check_call
 from distutils.sysconfig import get_config_var
+import distutils.util
 here = os.getcwd()
 parts = [
 "hello",
@@ -45,7 +46,17 @@ else:
     for arg in parts:
         use_parts.add(arg)
 if opts.use_build:
-    build = os.path.abspath(os.path.join("build","lib"));
+    libs = [
+        "lib",
+        'lib.%s-%s' % (
+            distutils.util.get_platform(),
+            '.'.join(str(v) for v in sys.version_info[:2])
+        )
+    ]
+    for lib in libs:
+        build = os.path.abspath(os.path.join("build", lib));
+        if os.path.exists(build): break
+
     old_path = os.getenv("PYTHONPATH")
     if not os.path.exists(build):
         subprocess.check_call([sys.executable, "setup.py", "build"]);
