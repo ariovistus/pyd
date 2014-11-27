@@ -8,15 +8,8 @@ import platform
 
 
 maj = int(platform.python_version_tuple()[0])
-if maj == 3:
-    projName = 'pyind3'
-    srcs = ['pyind3.d']
-    
-elif maj == 2:
-    projName = 'pyind'
-    srcs = ['pyind.d']
-else:
-    assert False, "want python 2 or python 3"
+projName = 'pyind'
+srcs = ['pyind.d']
 
 setup(
     name=projName,

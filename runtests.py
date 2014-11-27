@@ -106,10 +106,7 @@ try:
             remove_exe("pyind")
         else:
             pydexe()
-            pyind = "pyind"
-            if verz_maj == 3:
-                pyind = "pyind3"
-            check_exe(pyind)
+            check_exe("pyind")
         os.chdir("..")
     if "pyd_unittests" in use_parts:
         os.chdir("pyd_unittests")

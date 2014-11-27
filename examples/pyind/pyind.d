@@ -85,8 +85,8 @@ class X:
     py_stmts(q"<
 y = Y();
 y.brain_status = "HURTS";
-print "MY BRAIN %s" % y.brain_status;
-print y.resolution
+print ("MY BRAIN %s" % y.brain_status)
+print (y.resolution)
 >","office");
 }
 
