@@ -217,7 +217,11 @@ class DCompiler(cc.CCompiler):
                 # The environment variable wasn't supplied, so search the PATH.
                 # Windows requires the full path for reasons that escape me at
                 # the moment.
-                dBin = _findInPath(self.executables['compiler'][0] + self.exe_extension)
+                for compiler in self.executables['compiler'][0]:
+                    if '.' not in compiler:
+                        compiler += self.exe_extension
+                    dBin = _findInPath(compiler)
+                    if dBin: break
                 if dBin is None:
                     raise DistutilsFileError('You must either set the %s'
                         ' environment variable to the full path of the %s'
@@ -584,10 +588,10 @@ class DMDDCompiler(DCompiler):
 
     executables = {
         'preprocessor' : None,
-        'compiler'     : ['dmd'],
-        'compiler_so'  : ['dmd'],
-        'linker_so'    : ['dmd'],
-        'linker_exe'   : ['dmd'],
+        'compiler'     : ['dmd', 'dmd.bat'],
+        'compiler_so'  : ['dmd', 'dmd.bat'],
+        'linker_so'    : ['dmd', 'dmd.bat'],
+        'linker_exe'   : ['dmd', 'dmd.bat'],
     }
 
     _env_var = 'DMD_BIN'
