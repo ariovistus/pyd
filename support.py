@@ -213,6 +213,12 @@ class build_pyd_embedded_exe(Command):
             else:
                 return ext.libraries
 
+def pydexe_sanity_check():
+    import sys
+    if sys.argv[1] != 'pydexe':
+        print( "use pydexe, not %s" % sys.argv[1] )
+        sys.exit(1)
+
 def setup(*args, **kwargs):
     if 'cmdclass' not in kwargs:
         kwargs['cmdclass'] = {}

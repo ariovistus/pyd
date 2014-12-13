@@ -3,6 +3,12 @@ import os, os.path
 import shutil
 import subprocess
 import platform
+import nose
+from unittest import TestCase
+from nose.plugins import Plugin
+from nose.tools import with_setup
+from distutils.sysconfig import get_config_var
+
 if platform.python_version() < "2.5":
     def check_call(*args, **kwargs):
         ret=subprocess.call(*args,**kwargs)
@@ -10,179 +16,197 @@ if platform.python_version() < "2.5":
             cmd = kwargs.get('args',args[0])
             raise Exception("command '%s' returned %s" %(cmd, ret))
     subprocess.check_call = check_call
-from distutils.sysconfig import get_config_var
-import distutils.util
-here = os.getcwd()
-parts = [
-"hello",
-"many_libs",
-"arraytest",
-"inherit",
-"rawexample",
-"testdll",
-"deimos_unittests",
-"pyind",
-"pyd_unittests",
-"d_and_c",
-]
-use_parts = set()
-exe_ext = get_config_var("EXE")
-verz_maj = int(platform.python_version_tuple()[0])
-if verz_maj == 3 or verz_maj == 2:
-    import optparse
-    oparser = optparse.OptionParser()
-    oparser.add_option("-b", action="store_true", dest="use_build")
-    oparser.add_option('-C',"--compiler", dest="compiler")
-    oparser.add_option('-c',"--clean", action="store_true",dest="clean")
-    oparser.add_option('-g','--debug',action="store_true",dest="debug")
-    (opts, args) = oparser.parse_args()
-else:
-    assert 0
-if args:
-    for arg in args:
-        if arg in parts:
-            use_parts.add(arg)
-else:
-    for arg in parts:
-        use_parts.add(arg)
-if opts.use_build:
-    libs = [
-        "lib",
-        'lib.%s-%s' % (
-            distutils.util.get_platform(),
-            '.'.join(str(v) for v in sys.version_info[:2])
-        )
-    ]
-    for lib in libs:
-        build = os.path.abspath(os.path.join("build", lib));
-        if os.path.exists(build): break
 
-    old_path = os.getenv("PYTHONPATH")
-    if not os.path.exists(build):
-        subprocess.check_call([sys.executable, "setup.py", "build"]);
-    print ("using build: %r" % build)
-    os.putenv("PYTHONPATH", build)
-def check_exe(cmd):
-    subprocess.check_call([os.path.join(".",cmd + exe_ext)])
+here = os.getcwd()
+exe_ext = get_config_var("EXE")
+
+compiler = None
+debug = False
+do_clean = False
+
+def pybuild():
+    pybuild_cmds = [sys.executable, "setup.py", "build"]
+    if compiler is not None:
+        pybuild_cmds.append("--compiler="+options.compiler)
+    subprocess.check_call(pybuild_cmds)
+
+class OurPlugin(Plugin):
+    def options(self, parser, env=os.environ):
+        parser.add_option("--compiler", dest="compiler")
+        parser.add_option("--clean", action="store_true",dest="clean")
+        parser.add_option('--d-debug',action="store_true",dest="debug")
+
+    def configure(self, options, conf):
+        global do_clean, compiler, debug
+        debug = options.debug
+        
+        if options.compiler:
+            compiler = options.compiler
+        if options.clean:
+            do_clean = True
+
+def setup():
+    os.chdir(here)
+
+def teardown():
+    pass
+
+def build_and_run():
+    if do_clean:
+        if os.path.exists("build"): 
+            shutil.rmtree("build")
+        return
+    pybuild()
+    subprocess.check_call([sys.executable, "test.py"])
+
+@with_setup(setup, teardown)
+def test_hello():
+    os.chdir("examples")
+    os.chdir("hello")
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_many_libs():
+    os.chdir("tests")
+    os.chdir("many_libs")
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_arraytest():
+    os.chdir("examples")
+    os.chdir("arraytest")
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_inherit():
+    os.chdir("examples")
+    os.chdir("inherit")
+    build_and_run()
+
+
+@with_setup(setup, teardown)
+def test_rawexample():
+    os.chdir("examples")
+    os.chdir("rawexample")
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_testdll():
+    os.chdir("examples")
+    os.chdir("testdll")
+    build_and_run()
+
+
+@with_setup(setup, teardown)
+def test_d_and_c():
+    os.chdir("examples")
+    os.chdir("misc")
+    os.chdir("d_and_c")
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_multithreading():
+    os.chdir("tests")
+    os.chdir("multithreading")
+    build_and_run()
+
+def build_pydexe():
+    cmds = [sys.executable, "setup.py", "pydexe"]
+    if compiler is not None:
+        cmds.append("--compiler="+compiler)
+    if debug:
+        cmds.append("-g")
+    subprocess.check_call(cmds)
+
 def remove_exe(cmd):
     if os.path.exists(cmd + exe_ext):
         os.remove(cmd+exe_ext)
-def pydexe():
-    try:
-        cmds = [sys.executable, "setup.py", "pydexe"]
-        if opts.compiler:
-            cmds.append("--compiler="+opts.compiler)
-        if opts.debug:
-            cmds.append("-g")
-        subprocess.check_call(cmds)
-    except:
-        import os
-        print (os.getcwd())
-        raise
-def check_py(scrpt):
-    subprocess.check_call([sys.executable, scrpt])
-def pybuild():
-    cmds = [sys.executable, "setup.py", "build"]
-    if opts.compiler:
-        cmds.append("--compiler="+opts.compiler)
-    subprocess.check_call(cmds)
-try:
-    os.chdir("examples")
-    if "deimos_unittests" in use_parts:
-        os.chdir("deimos_unittests")
-        exes = ["link", "object_"]
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-            for exe in exes: remove_exe(exe)
-        else:
-            pydexe()
-            for exe in exes:
-                check_exe(exe)
-        os.chdir("..")
-    if "pyind" in use_parts:
-        os.chdir("pyind")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-            remove_exe("pyind")
-        else:
-            pydexe()
-            check_exe("pyind")
-        os.chdir("..")
-    if "pyd_unittests" in use_parts:
-        os.chdir("pyd_unittests")
-        exes = ["class_wrap", "def", "embedded", "make_object", 
-                "pydobject", "struct_wrap", "const", "typeinfo", "func_wrap",
-                "extra",
-                ]
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-            for exe in exes:
-                remove_exe(exe)
-        else:
-            pydexe()
-            for exe in exes:
-                print (exe)
-                check_exe(exe)
-        os.chdir("..")
-    if "hello" in use_parts:
-        os.chdir("hello")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            check_py("test.py")
-        os.chdir("..")
-    if "many_libs" in use_parts:
-        os.chdir("../tests/many_libs")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            check_py("test.py")
-        os.chdir("../../examples")
-    if "arraytest" in use_parts:
-        os.chdir("arraytest")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            check_py("test.py")
-        os.chdir("..")
-    if "inherit" in use_parts:
-        os.chdir("inherit")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            check_py("test.py")
-        os.chdir("..")
-    if "rawexample" in use_parts:
-        os.chdir("rawexample")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            check_py("test.py")
-        os.chdir("..")
-    if "testdll" in use_parts:
-        os.chdir("testdll")
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            check_py("test.py")
-        os.chdir("..")
-    if "d_and_c" in use_parts:
-        os.chdir("misc/d_and_c")
-        print ("cwd: ", os.getcwd())
-        if opts.clean:
-            if os.path.exists("build"): shutil.rmtree("build")
-        else:
-            pybuild()
-            #check_py("test.py")
-        os.chdir("..")
-finally:
-    if opts.use_build and old_path is not None:
-        os.putenv("PYTHONPATH", old_path)
 
-    
+def build_and_run_pydexe(nom):
+    if do_clean:
+        if os.path.exists("build"): 
+            shutil.rmtree("build")
+        remove_exe(nom)
+        return
+    build_pydexe()
+    subprocess.check_call([os.path.join(".", nom + exe_ext)])
+
+class PydUnittests(TestCase):
+    def setUp(self):
+        setup()
+        os.chdir("tests")
+        os.chdir("pyd_unittests")
+
+    def tearDown(self):
+        teardown()
+
+    def test_class_wrap(self):
+        os.chdir("class_wrap")
+        build_and_run_pydexe("class_wrap")
+
+    def test_def(self):
+        os.chdir("def")
+        build_and_run_pydexe("def")
+
+    def test_embedded(self):
+        os.chdir("embedded")
+        build_and_run_pydexe("embedded")
+
+    def test_make_object(self):
+        os.chdir("make_object")
+        build_and_run_pydexe("make_object")
+
+    def test_pydobject(self):
+        os.chdir("pydobject")
+        build_and_run_pydexe("pydobject")
+
+    def test_struct_wrap(self):
+        os.chdir("struct_wrap")
+        build_and_run_pydexe("struct_wrap")
+
+    def test_const(self):
+        os.chdir("const")
+        build_and_run_pydexe("const")
+
+    def test_typeinfo(self):
+        os.chdir("typeinfo")
+        build_and_run_pydexe("typeinfo")
+
+    def test_func_wrap(self):
+        os.chdir("func_wrap")
+        build_and_run_pydexe("func_wrap")
+
+    def test_extra(self):
+        os.chdir("extra")
+        build_and_run_pydexe("extra")
+
+
+class DeimosUnittests(TestCase):
+    def setUp(self):
+        setup()
+        os.chdir("tests")
+        os.chdir("deimos_unittests")
+
+    def tearDown(self):
+        teardown()
+
+    def test_link(self):
+        os.chdir('link')
+        build_and_run_pydexe("link")
+
+    def test_object(self):
+        os.chdir('object_')
+        build_and_run_pydexe("object_")
+
+    def test_datetime(self):
+        os.chdir('datetime')
+        build_and_run_pydexe("datetime")
+
+@with_setup(setup, teardown)
+def test_pyind():
+    os.chdir('examples')
+    os.chdir('pyind')
+    build_and_run_pydexe("pyind")
+
+
+nose.main(addplugins=[OurPlugin()])

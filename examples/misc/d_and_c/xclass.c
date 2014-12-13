@@ -5,7 +5,7 @@ typedef struct {
 } x_XObject;
 
 static PyTypeObject x_XType = {
-    PyObject_HEAD_INIT(NULL) 0,/*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0) 
     "x.X",                     /*tp_name*/
     sizeof(x_XObject),         /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -58,10 +58,10 @@ static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "x",
     NULL,
-    sizeof(struct module_state),
+    -1,
     x_methods,
     NULL,
-    x_traverse,
+    NULL,
     x_clear,
     NULL
 };
@@ -91,4 +91,7 @@ initx(void)
 
     Py_INCREF(&x_XType);
     PyModule_AddObject(m, "X", (PyObject *)&x_XType);
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }
