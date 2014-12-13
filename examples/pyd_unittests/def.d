@@ -33,17 +33,11 @@ template t2(T) {
     }
 }
 
-void test() {
-    import std.stdio;
-    writeln("IMATEST");
-}
-
 static this() {
     def!(a,int function(double), ModuleName!"testing")(); 
     def!(a2, int function(int,double,), ModuleName!"testing")(); 
     def!(a3, int function(int[]), ModuleName!"testing")(); 
     def!(a4, ModuleName!"testing")(); 
-    def!(test, ModuleName!"testing")(); 
     def!(t1!int, PyName!"t1", ModuleName!"testing")(); 
     def!(t2!int.f, PyName!"t2", ModuleName!"testing")(); 
     on_py_init({
@@ -70,30 +64,4 @@ unittest{
 
 }
 
-int main(string[] args) {
-    InterpContext c = new InterpContext();
-    c.py_stmts("import nose");
-    c.py_stmts("import sys");
-    c.argv = args;
-    c.py_stmts("sys.argv = argv");
-    c.py_stmts("
-from unittest import TestCase
-import testing
-class MyTests(TestCase):
-    def test_something(self):
-        self.assertEqual(1, 2)
-print ('nose: ', nose.__file__)
-print ('stdout: ', sys.stdout)
-testing.MyTests = MyTests
-print ('testing: ', dir(testing))
-");
-    c.py_stmts("print(str(MyTests))");
-    try{
-        return c.py_eval!int("nose.run(module=testing)");
-    }catch(PythonException e) {
-        c.ex = e.traceback();
-        c.py_stmts("import traceback; traceback.print_tb(ex)");
-        throw e;
-    }
-    return 1;
-}
+void main() {}

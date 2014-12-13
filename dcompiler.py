@@ -217,7 +217,7 @@ class DCompiler(cc.CCompiler):
                 # The environment variable wasn't supplied, so search the PATH.
                 # Windows requires the full path for reasons that escape me at
                 # the moment.
-                for compiler in self.executables['compiler'][0]:
+                for compiler in self.executables['compiler']:
                     if '.' not in compiler:
                         compiler += self.exe_extension
                     dBin = _findInPath(compiler)
