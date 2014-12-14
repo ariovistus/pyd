@@ -73,6 +73,7 @@ _pydFiles = [
     'pydobject.d',
     'references.d',
     'struct_wrap.d',
+    'thread.d',
 ]
 
 _metaFiles = [
