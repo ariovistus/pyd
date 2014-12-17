@@ -180,6 +180,10 @@ class PydUnittests(TestCase):
         os.chdir("extra")
         build_and_run_pydexe("extra")
 
+    def test_thread(self):
+        os.chdir("thread")
+        build_and_run_pydexe("thread")
+
 
 class DeimosUnittests(TestCase):
     def setUp(self):

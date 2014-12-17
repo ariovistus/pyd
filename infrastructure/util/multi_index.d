@@ -1636,9 +1636,9 @@ version(PtrHackery){
         return result;
     }
 
-    @property Node parentmost()
+    @property parentmost() inout
     {
-        Node result = &this;
+        auto result = &this;
         while(result.index!N._parent !is null)
             result = result.index!N._parent;
         return result;
@@ -3237,7 +3237,7 @@ static if(size_t.sizeof == 4){
 /// Hash(key) = hash of type size_t 
 /// Eq(key1, key2) determines equality of key1, key2
 template Hashed(bool allowDuplicates = false, alias KeyFromValue="a", 
-        alias Hash="??", alias Eq="a==b") {
+        alias Hash="typeid(a).getHash(&a)", alias Eq="a==b") {
     // this index allocates the table, and an array in removeKey
 
     enum bool BenefitsFromSignals = true;
@@ -3246,18 +3246,9 @@ template Hashed(bool allowDuplicates = false, alias KeyFromValue="a",
     template Inner(ThisContainer, ThisNode, Value, ValueView, size_t N, Allocator) {
         alias unaryFun!KeyFromValue key;
         alias typeof(key(Value.init)) KeyType;
-        static if (Hash == "??") {
-            static if(is(typeof(KeyType.init.toHash()))) {
-                enum _Hash = "a.toHash()";
-            }else{
-                enum _Hash = "typeid(a).getHash(&a)";
-            }
-        }else{
-            enum _Hash = Hash;
-        }
 
         alias TypeTuple!(N) NodeTuple;
-        alias TypeTuple!(N,KeyFromValue, _Hash, Eq, allowDuplicates, 
+        alias TypeTuple!(N,KeyFromValue, Hash, Eq, allowDuplicates, 
                 Sequenced!().Inner!(ThisContainer, ThisNode,Value,ValueView,N,Allocator).SequencedRange, 
                 ThisContainer) IndexTuple;
         // node implementation 
@@ -4033,12 +4024,12 @@ $(BIGOH n + n $(SUB k)) for this index ($(BIGOH n $(SUB k)) on a good day)
 
 /// _
 template HashedUnique(alias KeyFromValue="a", 
-        alias Hash="??", alias Eq="a==b"){
+        alias Hash="typeid(a).getHash(&a)", alias Eq="a==b"){
     alias Hashed!(false, KeyFromValue, Hash, Eq) HashedUnique;
 }
 /// _
 template HashedNonUnique(alias KeyFromValue="a", 
-        alias Hash="??", alias Eq="a==b"){
+        alias Hash="typeid(a).getHash(&a)", alias Eq="a==b"){
     alias Hashed!(true, KeyFromValue, Hash, Eq) HashedNonUnique;
 }
 
@@ -5115,11 +5106,13 @@ denied:
     template ForEachIndexPosition(size_t i){
         static if(i < IndexedBy.Indeces.length){
             static if(is(typeof(index!i ._NodePosition((ThisNode*).init)))){
+                enum variableDeclarations = Replace!(q{
+                    ThisNode* node$i;
+                }, "$i", i) ~ ForEachIndexPosition!(i+1).variableDeclarations;
                 enum getNodePositions = Replace!(q{
                     auto pos$i = index!$i ._NodePosition(node);
                 }, "$i", i) ~ ForEachIndexPosition!(i+1).getNodePositions;
                 enum gotoDeniedOnInvalid = Replace!(q{
-                    ThisNode* node$i;
                     if(!index!$i ._PositionFixable(node, pos$i, node$i)) 
                         goto denied;
                 }, "$i", i) ~ ForEachIndexPosition!(i+1).gotoDeniedOnInvalid;
@@ -5128,17 +5121,20 @@ denied:
                 }, "$i", i) ~ ForEachIndexPosition!(i+1).fixupIndeces;
             }else{
                 enum getNodePositions = ForEachIndexPosition!(i+1).getNodePositions;
+                enum variableDeclarations = ForEachIndexPosition!(i+1).variableDeclarations;
                 enum gotoDeniedOnInvalid = ForEachIndexPosition!(i+1).gotoDeniedOnInvalid;
                 enum fixupIndeces = ForEachIndexPosition!(i+1).fixupIndeces;
             }
         }else{
             enum getNodePositions = "";
+            enum variableDeclarations = "";
             enum gotoDeniedOnInvalid = "";
             enum fixupIndeces = "";
         }
     }
 
     bool _Replace(ThisNode* node, Value value){
+        mixin(ForEachIndexPosition!0 .variableDeclarations);
         mixin(ForEachIndexPosition!0 .getNodePositions);
         Value old = node.value;
         node.value = value;
@@ -5160,6 +5156,7 @@ Preconditions: mod is a callable of the form void mod(ref Value)
 Complexity: $(BIGOH m(n)) 
 */
     void _Modify(Modifier)(ThisNode* node, Modifier mod){
+        mixin(ForEachIndexPosition!0 .variableDeclarations);
         mixin(ForEachIndexPosition!0 .getNodePositions);
         mod(node.value);
         mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);

@@ -263,7 +263,9 @@ string pyd_module_name;
 __gshared Py_Finalize_called = false;
 
 extern(C) void Py_Finalize_hook() {
+    import thread = pyd.thread;
     Py_Finalize_called = true;
+    thread.detachAll();
 }
 
 version(PydPythonExtension)
