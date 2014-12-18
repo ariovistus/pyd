@@ -27,7 +27,7 @@ do_clean = False
 def pybuild():
     pybuild_cmds = [sys.executable, "setup.py", "build"]
     if compiler is not None:
-        pybuild_cmds.append("--compiler="+options.compiler)
+        pybuild_cmds.append("--compiler="+compiler)
     subprocess.check_call(pybuild_cmds)
 
 class OurPlugin(Plugin):
