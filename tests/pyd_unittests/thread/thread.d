@@ -10,3 +10,5 @@ static if(version_minor < 67) {
         assert(thread2 == thread);
     }
 }
+
+void main() {}
