@@ -1,6 +1,14 @@
 import sys
 import time
-sys.path.append("build/lib.linux-x86_64-3.3/")
+import os.path
+import distutils.util
+
+libDir = os.path.join('build', 'lib.%s-%s' % (
+    distutils.util.get_platform(),
+    '.'.join(str(v) for v in sys.version_info[:2])
+))
+sys.path.append(os.path.abspath(libDir))
+
 import libmarsv5camera_py as lc
 lc.find("192.168.0.10")
 try:
