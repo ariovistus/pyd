@@ -303,6 +303,8 @@ template function_wrap(alias real_fn, string fnname) {
     extern (C)
     PyObject* func(PyObject* self, PyObject* args, PyObject* kwargs) {
         return exception_catcher(delegate PyObject*() {
+            import thread = pyd.thread;
+            thread.ensureAttached();
             return pyApplyToAlias!(real_fn,fnname)(args, kwargs);
         });
     }

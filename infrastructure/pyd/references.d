@@ -292,6 +292,9 @@ void remove_pyd_mapping(T)(PyObject* self) {
 T get_d_reference(T) (PyObject* _self) {
     alias pyd_references!T.container container;
     alias pyd_references!T.Mapping Mapping;
+    import thread = pyd.thread;
+
+    thread.ensureAttached();
 
     enforce(is_wrapped!T,
             format(

@@ -74,6 +74,10 @@ enum PyTrace_C_RETURN           = 6;
 
 /// _
 struct PyThreadState {
+    version(Python_3_4_Or_Later) {
+        /// Availability: >= 3.4
+        PyThreadState* prev;
+    }
     /// _
     PyThreadState* next;
     /// _
@@ -124,19 +128,37 @@ struct PyThreadState {
     /// _
     PyObject* dict;
 
-    /** tick_counter is incremented whenever the check_interval ticker
-     * reaches zero. The purpose is to give a useful measure of the number
-     * of interpreted bytecode instructions in a given thread.  This
-     * extremely lightweight statistic collector may be of interest to
-     * profilers (like psyco.jit()), although nothing in the core uses it.
-     */
-    int tick_counter;
+    version(Python_3_4_Or_Later) {
+    }else{
+        /** tick_counter is incremented whenever the check_interval ticker
+         * reaches zero. The purpose is to give a useful measure of the number
+         * of interpreted bytecode instructions in a given thread.  This
+         * extremely lightweight statistic collector may be of interest to
+         * profilers (like psyco.jit()), although nothing in the core uses it.
+         */
+        /// Availability: < 3.4
+        int tick_counter;
+    }
     /// _
     int gilstate_counter;
     /** Asynchronous exception to raise */
     PyObject* async_exc;
     /** Thread id where this tstate was created */
     C_long thread_id;
+
+    version(Python_3_3_Or_Later) {
+        /// Availability: >= 3.3
+        int trash_delete_nesting;
+
+        /// Availability: >= 3.3
+        PyObject *trash_delete_later;
+    }
+    version(Python_3_4_Or_Later) {
+        /// Availability: >= 3.4
+        void function(void *) on_delete;
+        /// Availability: >= 3.4
+        void* on_delete_data;
+    }
 }
 
 /// _

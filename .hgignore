@@ -31,6 +31,7 @@ examples/pyd_unittests/struct_wrap
 examples/pyd_unittests/typeinfo
 syntax: regexp
 ^build/
+^dist/
 ^examples/misc/d_and_c/build/
 ^examples/arraytest/build/
 ^examples/hello/build/
