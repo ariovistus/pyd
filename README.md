@@ -1,2 +1,7 @@
-[![Build Status](https://travis-ci.org/ariovistus/pyd.svg)](https://travis-ci.org/ariovistus/pyd.svg)
+[![build-status-badge]][build-status]
 
+
+
+
+[build-status-badge]: https://travis-ci.org/ariovistus/pyd.svg?branch=master
+[build-status]: https://travis-ci.org/ariovistus/pyd

@@ -10,7 +10,10 @@ install:
     - sudo dpkg -i ./dmd_2.066.1-0_amd64.deb
     - python --version
     - pip --version
-    - pip install nose nose-exclude numpy
+    - pip install nose nose-exclude 
+    - pip install numpy
+    - python -c "import numpy; print (numpy);"
+
 
 script: 
     - python setup.py install
