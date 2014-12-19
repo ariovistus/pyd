@@ -1,3 +1,0 @@
-include_rules
-: $(PYD_FILES) |> $(DC) $(DFLAGS) $(PY27_VERSION) $(PYD_INCLUDE) -lib %f $(DOUT)%o |> pyd27.$(LIB)
-: $(PYD_FILES) |> $(DC) $(DFLAGS) $(PY32_VERSION) $(PYD_INCLUDE) -lib %f $(DOUT)%o |> pyd32.$(LIB)
