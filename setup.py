@@ -6,7 +6,7 @@ import os.path
 
 import build_manifest
 
-PACKAGE_NAME = 'celerid'
+PACKAGE_NAME = 'pyd'
 
 isSourceDist = 'sdist' in [arg.lower() for arg in sys.argv]
 
@@ -23,9 +23,9 @@ allFiles = [
     for path in includedPaths
 ]
 
-# Only Python code files *within the celerid package* should go into
+# Only Python code files *within the pyd package* should go into
 # packageFiles (Python code files in examples shouldn't).  A module named
-# 'X.py' should later appear in packageModules as 'celerid.X'.
+# 'X.py' should later appear in packageModules as 'pyd.X'.
 packageCodeFiles = [f for f in allFiles if f.endswith('.py') and '/' not in f]
 packageDataFiles = [f for f in allFiles if f not in packageCodeFiles]
 

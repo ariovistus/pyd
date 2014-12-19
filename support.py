@@ -1,6 +1,6 @@
 __all__ = ('setup', 'Extension')
 
-from celerid import patch_distutils # Cause distutils to be hot-patched.
+from pyd import patch_distutils # Cause distutils to be hot-patched.
 import sys, os, os.path
 
 from distutils.core import setup as base_setup, Extension as std_Extension, Command
@@ -104,7 +104,7 @@ class build_pyd_embedded_exe(Command):
                 verbose=self.verbose,
                 dry_run=self.dry_run,
                 force=self.force)
-        from celerid import dcompiler
+        from pyd import dcompiler
         assert isinstance(self.compiler, dcompiler.DCompiler)
         self.compiler.build_exe = True
         self.compiler.optimize = self.optimize

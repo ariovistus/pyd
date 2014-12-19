@@ -1,4 +1,4 @@
-from celerid.support import setup, Extension
+from pyd.support import setup, Extension
 
 projName = 'libmarsv5camera_py'
 

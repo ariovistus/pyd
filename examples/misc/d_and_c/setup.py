@@ -1,7 +1,7 @@
 #import sys
 #sys.path.append('../../../build/lib')
 from distutils.core import Extension as cExtension
-from celerid.support import setup, Extension
+from pyd.support import setup, Extension
 
 module1 = Extension("x", sources = ['xclass.c'])
 module2 = Extension("y", sources = ['hello.d'])

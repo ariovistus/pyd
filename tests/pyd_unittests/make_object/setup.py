@@ -1,5 +1,5 @@
-import celerid.support
-from celerid.support import setup, Extension, pydexe_sanity_check
+import pyd.support
+from pyd.support import setup, Extension, pydexe_sanity_check
 
 pydexe_sanity_check()
 projName = 'make_object'

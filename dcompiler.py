@@ -56,7 +56,7 @@ _isPlatOSX = sys.platform.lower() == 'darwin'
 
 _infraDir = os.path.join(os.path.dirname(__file__), 'infrastructure')
 
-from celerid.pyd_support import make_pydmain, make_pyddef
+from pyd.pyd_support import make_pydmain, make_pyddef
 
 _pydFiles = [
     'class_wrap.d',

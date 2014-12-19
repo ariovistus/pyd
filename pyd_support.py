@@ -1,6 +1,6 @@
 from distutils.errors import DistutilsPlatformError
 import sys
-from celerid.dcompiler import _infraDir
+from pyd.dcompiler import _infraDir
 import os.path
 
 def make_pydmain(outputFile, projname):

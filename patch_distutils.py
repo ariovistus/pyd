@@ -6,19 +6,19 @@
 #
 # To apply these changes, the setup.py file for extension modules written in D
 # should execute the following import statement:
-#   from celerid import patch_distutils
+#   from pyd import patch_distutils
 
 from distutils import ccompiler as cc
 from distutils.command import build, build_ext
 
-from celerid import dcompiler
+from pyd import dcompiler
 
 cc.CCompiler.language_map['.d'] = 'd'
 cc.CCompiler.language_order.insert(0, 'd')
 
-cc.compiler_class['dmd'] = ('celerid.dcompiler', 'DMDDCompiler', 'Digital Mars D')
-cc.compiler_class['gdc'] = ('celerid.dcompiler', 'GDCDCompiler', 'GCC D Compiler')
-cc.compiler_class['ldc'] = ('celerid.dcompiler', 'LDCDCompiler', 'LLVM D Compiler')
+cc.compiler_class['dmd'] = ('pyd.dcompiler', 'DMDDCompiler', 'Digital Mars D')
+cc.compiler_class['gdc'] = ('pyd.dcompiler', 'GDCDCompiler', 'GCC D Compiler')
+cc.compiler_class['ldc'] = ('pyd.dcompiler', 'LDCDCompiler', 'LLVM D Compiler')
 
 _old_new_compiler = cc.new_compiler
 

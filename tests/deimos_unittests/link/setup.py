@@ -1,5 +1,5 @@
 # usage: python setup.py pydexe
-from celerid.support import setup, Extension, pydexe_sanity_check
+from pyd.support import setup, Extension, pydexe_sanity_check
 import platform
 
 pydexe_sanity_check()
