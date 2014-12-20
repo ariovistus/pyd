@@ -38,12 +38,26 @@ distutils.core.setup(
     name=PACKAGE_NAME,
     package_dir={PACKAGE_NAME: os.curdir},
     packages=[PACKAGE_NAME],
+    package_data={PACKAGE_NAME: packageDataFiles},
+    py_modules=packageModules,
 
     version=open('version.txt').read().strip(),
-    url='https://bitbucket.org/ariovistus/pyd',
+    url='https://github.com/ariovistus/pyd',
     maintainer='Ellery Newcomer',
     maintainer_email='ellery-newcomer@utulsa.edu',
-    py_modules=packageModules,
-    package_data={PACKAGE_NAME: packageDataFiles},
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: D',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+    ]
 )
 

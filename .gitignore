@@ -41,3 +41,6 @@ examples/pyind/pyind
 examples/pyind/pyind3
 examples/pyind/build/
 examples/pyd_unittests/build/
+examples/interpcontext/interpcontext
+examples/pydobject/example
+examples/simple_embedded/hello
