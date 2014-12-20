@@ -222,7 +222,7 @@ def test_simple_embedded():
 def test_interpcontext():
     os.chdir('examples')
     os.chdir('interpcontext')
-    build_and_run()
+    build_and_run_pydexe("interpcontext")
 
 @with_setup(setup, teardown)
 def test_def():
