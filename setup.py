@@ -34,6 +34,18 @@ packageModules = [
     for f in packageCodeFiles
 ]
 
+README="""
+PyD
+
+PyD provides seamless interoperability between python and the D programming language
+
+Project at https://github.com/ariovistus/pyd
+
+Docs at http://pyd.readthedocs.org/
+
+more about D: http://dlang.org/
+"""
+
 distutils.core.setup(
     name=PACKAGE_NAME,
     package_dir={PACKAGE_NAME: os.curdir},
@@ -43,6 +55,8 @@ distutils.core.setup(
 
     version=open('version.txt').read().strip(),
     url='https://github.com/ariovistus/pyd',
+    description="Interoperability between python and the D programming language",
+    long_description=README,
     maintainer='Ellery Newcomer',
     maintainer_email='ellery-newcomer@utulsa.edu',
     classifiers=[
@@ -50,7 +64,7 @@ distutils.core.setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: D',
+        #'Programming Language :: D',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
