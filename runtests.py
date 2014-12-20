@@ -212,5 +212,29 @@ def test_pyind():
     os.chdir('pyind')
     build_and_run_pydexe("pyind")
 
+@with_setup(setup, teardown)
+def test_simple_embedded():
+    os.chdir('examples')
+    os.chdir('simple_embedded')
+    build_and_run_pydexe("hello")
+
+@with_setup(setup, teardown)
+def test_interpcontext():
+    os.chdir('examples')
+    os.chdir('interpcontext')
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_def():
+    os.chdir('examples')
+    os.chdir('def')
+    build_and_run()
+
+@with_setup(setup, teardown)
+def test_pydobject():
+    os.chdir('examples')
+    os.chdir('pydobject')
+    build_and_run_pydexe("example")
+
 
 nose.main(addplugins=[OurPlugin()])

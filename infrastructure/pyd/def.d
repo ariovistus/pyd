@@ -201,7 +201,7 @@ void def(alias _fn, Options...)() {
         alias typeof(&_fn) fn_t;
     }
     alias def_selector!(_fn, fn_t).FN fn;
-    pragma(msg, "def: " ~ args.pyname);
+    
     PyMethodDef empty;
     ready_module_methods(args.modulename);
     PyMethodDef[]* list = &module_methods[args.modulename];

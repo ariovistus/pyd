@@ -43,7 +43,7 @@ import deimos.python.Python;
 import pyd.pyd;
 import util.conv;
 import std.algorithm: findSplit;
-import std.string: strip;
+import std.string: strip, outdent;
 import std.traits;
 
 /++
@@ -136,7 +136,7 @@ python = python statements
             size_t line = __LINE__) {
 
         auto pres = PyRun_StringFlags(
-                zcc(python), 
+                zcc(outdent(python)), 
                 Py_file_input, 
                 cast(PyObject*) globals.ptr, 
                 cast(PyObject*) locals.ptr,
@@ -273,7 +273,7 @@ void py_stmts(string python, string modl = "",string file = __FILE__, size_t lin
         locals["__builtins__"] = builtins;
     }
     auto pres = PyRun_String(
-            zcc(python), 
+            zcc(outdent(python)), 
             Py_file_input, locals_ptr, locals_ptr);
     scope(exit) Py_DECREF(locals_ptr);
     if(pres) {
