@@ -30,6 +30,21 @@
         ]
     },
     {
+        "name": "python27-shared", 
+        "targetType": "dynamicLibrary",
+        "dflags": ["-fPIC", "-defaultlib=libphobos2.so"],
+        "versions": [
+            "Python_2_4_Or_Later", 
+            "Python_2_5_Or_Later", 
+            "Python_2_6_Or_Later", 
+            "Python_2_7_Or_Later", 
+            "Python_Unicode_UCS4"
+        ], 
+        "libs": [
+            "python2.7"
+        ]
+    },
+    {
         "name": "python33", 
         "versions": [
             "Python_2_4_Or_Later", 

@@ -1,14 +1,15 @@
 {
-	"name": "simple_embedded",
-	"description": "A minimal D application.",
+	"name": "shared_embedded",
+	"description": "A minimal D shared library.",
 	"copyright": "Copyright © 2014, ariovistus",
 	"authors": ["ariovistus"],
-        "targetType": "executable",
+        "dflags": ["-fPIC"],
+        "targetType": "dynamicLibrary",
         "dflags-dmd": ["-defaultlib=libphobos2.so"],
 	"dependencies": {
             "pyd": "0.9.3",
 	},
         "subConfigurations": {
-            "pyd": "python27",
+            "pyd": "python27-shared",
         }
 }
