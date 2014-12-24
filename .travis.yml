@@ -5,15 +5,48 @@ python:
 
 sudo: true
 
+env:
+    - TEST=runtests:test_hello
+    - TEST=runtests:test_many_libs
+    - TEST=runtests:test_arraytest
+    - TEST=runtests:test_inherit
+    - TEST=runtests:test_rawexample
+    - TEST=runtests:test_testdll
+    - TEST=runtests:test_d_and_c
+    - TEST=runtests:test_multithreading
+    - TEST=runtests:PydUnittests.test_class_wrap
+    - TEST=runtests:PydUnittests.test_def
+    - TEST=runtests:PydUnittests.test_embedded
+    - TEST=runtests:PydUnittests.test_make_object
+    - TEST=runtests:PydUnittests.test_pydobject
+    - TEST=runtests:PydUnittests.test_struct_wrap
+    - TEST=runtests:PydUnittests.test_const
+    - TEST=runtests:PydUnittests.test_typeinfo
+    - TEST=runtests:PydUnittests.test_func_wrap
+    - TEST=runtests:PydUnittests.test_extra
+    - TEST=runtests:PydUnittests.test_thread
+    - TEST=runtests:DeimosUnittests.test_link
+    - TEST=runtests:DeimosUnittests.test_object
+    - TEST=runtests:DeimosUnittests.test_datetime
+    - TEST=runtests:test_pyind
+    - TEST=runtests:test_simple_embedded
+    - TEST=runtests:test_interpcontext
+    - TEST=runtests:test_def
+    - TEST=runtests:test_pydobject
+
 install:
     - wget http://downloads.dlang.org/releases/2014/dmd_2.066.1-0_amd64.deb
     - sudo dpkg -i ./dmd_2.066.1-0_amd64.deb
     - python --version
     - pip --version
     - pip install nose nose-exclude numpy
+    - python setup.py install
 
 
 script: 
-    - python setup.py install
-    - python runtests.py runtests --exclude-test=runtests.PydUnittests.test_extra --exclude-test=runtests.test_pydobject
+    - python runtests.py $TEST 
 
+matrix:
+    allow_failures:
+        - env: TEST=runtests:test_pydobject
+        - env: TEST=runtests:PydUnittests.test_extra

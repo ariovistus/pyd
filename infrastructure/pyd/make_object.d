@@ -406,7 +406,7 @@ T python_to_d(T) (PyObject* o) {
         }
         return python_to_d_try_extends!T(o);
     } else static if(is(Unqual!T == std.bigint.BigInt)) {
-        if (PyNumber_Check(o)) {
+        if (isPyNumber(o)) {
             return python_to_d_bigint!T(o);
         }
         return python_to_d_try_extends!T(o);
@@ -482,9 +482,11 @@ T python_to_d(T) (PyObject* o) {
             return python_iter_to_d!T(o);
         }
     } else static if (isFloatingPoint!T) {
-        double res = PyFloat_AsDouble(o);
-        handle_exception();
-        return cast(T) res;
+        if (isPyNumber(o)) {
+            double res = PyFloat_AsDouble(o);
+            return cast(T) res;
+        }
+        return python_to_d_try_extends!T(o);
     } else static if(isIntegral!T) {
         version(Python_3_0_Or_Later) {
         }else{
@@ -524,10 +526,11 @@ T python_to_d(T) (PyObject* o) {
         }
         return python_to_d_try_extends!T(o);
     } else static if (isBoolean!T) {
-        if (!PyNumber_Check(o)) could_not_convert!(T)(o);
-        int res = PyObject_IsTrue(o);
-        handle_exception();
-        return res == 1;
+        if (isPyNumber(o)) { 
+            int res = PyObject_IsTrue(o);
+            return res == 1;
+        }
+        return python_to_d_try_extends!T(o);
     } 
 
     assert(0);
@@ -780,6 +783,19 @@ T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
         item = PyIter_Next(iter);
     }
     return cast(T) _array;
+}
+
+bool isPyNumber(PyObject* obj) {
+    version(Python_3_0_Or_Later) {
+        return 
+            PyLong_Check(obj) ||
+            PyFloat_Check(obj);
+    }else{
+        return 
+            PyInt_Check(obj) ||
+            PyLong_Check(obj) ||
+            PyFloat_Check(obj);
+    }
 }
 
 version(Python_2_6_Or_Later) {

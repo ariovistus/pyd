@@ -473,9 +473,9 @@ unittest {
 }
 
 unittest {
-    import std.bigint;
-    ex_python_to_d(delegate BigInt (PydObject obj) {
-        return BigInt(obj.a.to_d!string());
+    import std.conv;
+    ex_python_to_d(delegate double (PydObject obj) {
+        return to!double(obj.a.to_d!string());
     });
 
     InterpContext context = new InterpContext();
@@ -485,7 +485,58 @@ unittest {
                 self.a = '12345'
         foo = Z()
     ");
-    auto result = context.foo.to_d!BigInt();
+    auto result = context.foo.to_d!double();
+}
+
+unittest {
+    ex_python_to_d(delegate bool (PydObject obj) {
+        return obj.a.to_d!string() == "12345";
+    });
+
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        class Z:
+            def __init__(self):
+                self.a = '12345'
+        foo = Z()
+    ");
+    auto result = context.foo.to_d!bool();
+}
+
+unittest {
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        coo = 0
+        foo = 1
+        zoo = 2
+    ");
+    assert(context.coo.to_d!bool() == false);
+    assert(context.foo.to_d!bool() == true);
+    assert(context.zoo.to_d!bool() == true);
+}
+
+unittest {
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        coo = 0.0
+        foo = 1.0
+        zoo = 0.1
+        doo = 2.0
+    ");
+    assert(context.coo.to_d!bool() == false);
+    assert(context.foo.to_d!bool() == true);
+    assert(context.zoo.to_d!bool() == true);
+    assert(context.doo.to_d!bool() == true);
+}
+
+unittest {
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        fo = 1
+        zo = 1.0
+    ");
+    assert(context.fo.to_d!double() == 1.0);
+    assert(context.zo.to_d!double() == 1.0);
 }
 
 void main() {}
