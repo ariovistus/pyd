@@ -37,7 +37,7 @@ Have the D compiler compile things with debugging information.
 Extension arguments
 ~~~~~~~~~~~~~~~~~~~
 
-In addition to the arguments accepted by distutils' Extension, PyD's `Extension` accepts the following arguments:
+In addition to the `arguments <https://docs.python.org/2/distutils/apiref.html#distutils.core.Extension>`__ accepted by distutils' Extension, PyD's `Extension` accepts the following arguments:
 
 version_flags
 -------------

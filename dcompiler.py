@@ -233,8 +233,7 @@ class DCompiler(cc.CCompiler):
                 # Just run it via the PATH directly in Linux
                 dBin = self.executables['compiler'][0]
         self._binpath = dBin
-        # _unicodeOpt
-        self._unicodeOpt = self._versionOpt % ('Python_Unicode_UCS' + ((sys.maxunicode == 0xFFFF and '2') or '4'))
+        self._unicodeOpt = 'Python_Unicode_UCS' + ((sys.maxunicode == 0xFFFF and '2') or '4')
 
     def _initialize(self):
         # It is intended that this method be implemented by subclasses.
@@ -278,6 +277,25 @@ class DCompiler(cc.CCompiler):
 
         return None
 
+    def python_versions(self):
+        optf = 'Python_%d_%d_Or_Later'
+        def pv2(minor):
+            ret = []
+            if not self.build_exe:
+                ret.append('PydPythonExtension')
+            ret.extend([(optf % (2,m)) for m in range(4,minor+1)])
+            return ret
+        def pv3(minor):
+            return [(optf % (3,m)) for m in range(0,minor+1)]
+        major = sys.version_info[0]
+        minor = sys.version_info[1]
+        if major == 2: return pv2(minor)
+        if major == 3: return  pv2(7) + pv3(minor)
+        assert False, "what python version is this, anyways?"
+
+    def all_versions(self):
+        return self.python_versions() + [self._unicodeOpt]
+
     def versionOpts(self):
         # Python version option allows extension writer to take advantage of
         # Python/C API features available only in recent version of Python with
@@ -287,22 +305,7 @@ class DCompiler(cc.CCompiler):
         #   } else {
         #     // Do it the hard way...
         #   }
-        def pvo(opt):
-            optf = 'Python_%d_%d_Or_Later'
-            def pv2(minor):
-                ret = []
-                if not self.build_exe:
-                    ret.append(opt % 'PydPythonExtension')
-                ret.extend([opt % (optf % (2,m)) for m in range(4,minor+1)])
-                return ret
-            def pv3(minor):
-                return [opt % (optf % (3,m)) for m in range(0,minor+1)]
-            major = sys.version_info[0]
-            minor = sys.version_info[1]
-            if major == 2: return pv2(minor)
-            if major == 3: return  pv2(7) + pv3(minor)
-            assert False, "what python version is this, anyways?"
-        return pvo(self._versionOpt) + [self._unicodeOpt]
+        return [self._versionOpt % v for v in self.all_versions()]
 
     def compile(self, sources,
         output_dir=None, macros=None, include_dirs=None, debug=0,
@@ -425,8 +428,6 @@ class DCompiler(cc.CCompiler):
             optimizationOpts = self._releaseOptimizeOpts
         else:
             optimizationOpts = self._defaultOptimizeOpts
-
-        print ('sources: %s' % ([os.path.basename(s) for s, t in sources],))
 
         unittestOpt = []
         if self.unittest_from_ext:

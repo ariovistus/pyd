@@ -1,0 +1,49 @@
+{
+    "name": "pyd",
+    "description": "Pyd is a library for the D programming language that wraps the raw Python/C API with a cleaner, simpler interface.",
+    "homepage": "https://github.com/ariovistus/pyd",
+    "authors": [
+        "Kirk McDonald"
+    ],
+    "license": "MIT",
+    "importPaths": [
+        "infrastructure/"
+    ],
+    "sourcePaths": [
+        "infrastructure/pyd/",
+        "infrastructure/deimos/",
+        "infrastructure/meta/",
+        "infrastructure/util/"
+    ],
+    "configurations": [
+    {
+        "name": "python27", 
+        "versions": [
+            "Python_2_4_Or_Later", 
+            "Python_2_5_Or_Later", 
+            "Python_2_6_Or_Later", 
+            "Python_2_7_Or_Later", 
+            "Python_Unicode_UCS4"
+        ], 
+        "libs": [
+            "python2.7"
+        ]
+    },
+    {
+        "name": "python33", 
+        "versions": [
+            "Python_2_4_Or_Later", 
+            "Python_2_5_Or_Later", 
+            "Python_2_6_Or_Later", 
+            "Python_2_7_Or_Later", 
+            "Python_3_0_Or_Later", 
+            "Python_3_1_Or_Later", 
+            "Python_3_2_Or_Later", 
+            "Python_3_3_Or_Later", 
+            "Python_Unicode_UCS4"
+        ], 
+        "libs": [
+            "python3.3m"
+        ]
+    }]
+}

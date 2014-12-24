@@ -12,6 +12,7 @@ MANIFEST
 build
 dist
 .tup
+.dub
 examples/arraytest/tsetup.py
 examples/hello/tsetup.py
 examples/inherit/tsetup.py
@@ -21,6 +22,7 @@ examples/misc/ctypes/boilerplate.d
 examples/deimos_unittests/datetime
 examples/deimos_unittests/link
 examples/deimos_unittests/object_
+examples/dub/simple_embedded/simple_embedded
 examples/pyd_unittests/class_wrap
 examples/pyd_unittests/const
 examples/pyd_unittests/def
@@ -44,3 +46,14 @@ examples/pyd_unittests/build/
 examples/interpcontext/interpcontext
 examples/pydobject/example
 examples/simple_embedded/hello
+tests/pyd_unittests/make_object/make_object
+tests/pyd_unittests/class_wrap/class_wrap
+tests/pyd_unittests/const/const
+tests/pyd_unittests/def/def
+tests/pyd_unittests/embedded/embedded
+tests/pyd_unittests/extra/extra
+tests/pyd_unittests/func_wrap/func_wrap
+tests/pyd_unittests/pydobject/pydobject
+tests/pyd_unittests/struct_wrap/struct_wrap
+tests/pyd_unittests/thread/thread
+tests/pyd_unittests/typeinfo/typeinfo

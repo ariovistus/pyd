@@ -422,4 +422,70 @@ unittest {
     assert(py_dg().to_d!int() == 42);
 }
 
+unittest {
+    import std.typecons;
+    ex_python_to_d(delegate Tuple!(int, int) (PydObject obj) {
+        return tuple(obj.a.to_d!int(), obj.b.to_d!int());
+    });
+
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        class Z:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+        foo = Z()
+    ");
+    auto result = context.foo.to_d!(Tuple!(int, int))();
+}
+
+unittest {
+    import std.complex;
+    ex_python_to_d(delegate Complex!(double) (PydObject obj) {
+        return complex(obj.a.to_d!double(), obj.b.to_d!double());
+    });
+
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        class Z:
+            def __init__(self):
+                self.a = 1.5
+                self.b = 2.5
+        foo = Z()
+    ");
+    auto result = context.foo.to_d!(Complex!(double))();
+}
+
+unittest {
+    import std.bigint;
+    ex_python_to_d(delegate BigInt (PydObject obj) {
+        return BigInt(obj.a.to_d!string());
+    });
+
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        class Z:
+            def __init__(self):
+                self.a = '12345'
+        foo = Z()
+    ");
+    auto result = context.foo.to_d!BigInt();
+}
+
+unittest {
+    import std.bigint;
+    ex_python_to_d(delegate BigInt (PydObject obj) {
+        return BigInt(obj.a.to_d!string());
+    });
+
+    InterpContext context = new InterpContext();
+    context.py_stmts("
+        class Z:
+            def __init__(self):
+                self.a = '12345'
+        foo = Z()
+    ");
+    auto result = context.foo.to_d!BigInt();
+}
+
 void main() {}

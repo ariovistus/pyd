@@ -42,6 +42,7 @@ import std.traits;
 import std.typecons;
 import std.conv;
 import std.range;
+import std.stdio;
 
 import core.stdc.string : memcpy;
 
@@ -178,92 +179,39 @@ PyObject* d_to_python(T) (T t) {
     } else static if (isFloatingPoint!T) {
         return PyFloat_FromDouble(t);
     } else static if( isTuple!T) {
-        T.Types tuple;
-        foreach(i, _t; T.Types) {
-            tuple[i] = t[i];
-        }
-        return PyTuple_FromItems(tuple);
+        return d_tuple_to_python!T(t);
     } else static if (is(Unqual!T _unused : Complex!F, F)) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if(is(T == std.bigint.BigInt)) {
-        import std.string: format;
-        string num_str = format("%s\0",t);
-        return PyLong_FromString(num_str.dup.ptr, null, 10);
+        return d_bigint_to_python(t);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return Py_INCREF(t.ptr);
     } else static if(isSomeString!T) {
-        alias Unqual!(typeof(T.init[0])) C;
-        static if(is(C == char)) {
-            return PyUnicode_DecodeUTF8(t.ptr, cast(Py_ssize_t) t.length, null);
-        }else static if(is(C == wchar)) {
-            return PyUnicode_DecodeUTF16(cast(char*) t.ptr, 
-                    cast(Py_ssize_t)(2*t.length), null, null);
-        }else static if(is(C == dchar)) {
-            version(Python_2_6_Or_Later) {
-                return PyUnicode_DecodeUTF32(cast(char*) t.ptr, 
-                        cast(Py_ssize_t)(4*t.length), null, null);
-            }else{
-                return d_to_python(to!string(t));
-            }
-        }else static assert(false, "waht is this T? " ~ T.stringof);
+        return d_string_to_python(t);
     } else static if (isArray!(T)) {
-        // Converts any array (static or dynamic) to a Python list
-        PyObject* lst = PyList_New(cast(Py_ssize_t) t.length);
-        PyObject* temp;
-        if (lst is null) return null;
-        for(int i=0; i<t.length; ++i) {
-            temp = d_to_python(t[i]);
-            if (temp is null) {
-                Py_DECREF(lst);
-                return null;
-            }
-            // Steals the reference to temp
-            PyList_SET_ITEM(lst, cast(Py_ssize_t) i, temp);
-        }
-        return lst;
-    // Converts any associative array to a Python dict
+        return d_array_to_python(t);
     } else static if (isAssociativeArray!(T)) {
-        PyObject* dict = PyDict_New();
-        PyObject* ktemp, vtemp;
-        int result;
-        if (dict is null) return null;
-        foreach(k, v; t) {
-            ktemp = d_to_python(k);
-            vtemp = d_to_python(v);
-            if (ktemp is null || vtemp is null) {
-                if (ktemp !is null) Py_DECREF(ktemp);
-                if (vtemp !is null) Py_DECREF(vtemp);
-                Py_DECREF(dict);
-                return null;
-            }
-            result = PyDict_SetItem(dict, ktemp, vtemp);
-            Py_DECREF(ktemp);
-            Py_DECREF(vtemp);
-            if (result == -1) {
-                Py_DECREF(dict);
-                return null;
-            }
-        }
-        return dict;
+        return d_aarray_to_python(t);
     } else static if (isDelegate!T || isFunctionPointer!T) {
         PydWrappedFunc_Ready!(T)();
         return wrap_d_object(t);
     } else static if (is(T : PydObject)) {
         return Py_INCREF(t.ptr());
-    // The function expects to be passed a borrowed reference and return an
-    // owned reference. Thus, if passed a PyObject*, this will increment the
-    // reference count.
     } else static if (is(T : PyObject*)) {
+        // The function expects to be passed a borrowed reference and return an
+        // owned reference. Thus, if passed a PyObject*, this will increment the
+        // reference count.
         Py_XINCREF(t);
         return t;
-    // Convert wrapped type to a PyObject*
     } else static if (is(T == class)) {
+        // Convert wrapped type to a PyObject*
         alias Unqual!T Tu;
         // But only if it actually is a wrapped type. :-)
         PyTypeObject** type = Tu.classinfo in wrapped_classes;
         if (type) {
             return wrap_d_object(t, *type);
         }
+        return d_to_python_try_extends(t);
         // If it's not a wrapped type, fall through to the exception.
     // If converting a struct by value, create a copy and wrap that
     } else static if (is(T == struct) && 
@@ -278,6 +226,7 @@ PyObject* d_to_python(T) (T t) {
             *temp = cast(Tu) t;
             return wrap_d_object(cast(T*)temp);
         }
+        return d_to_python_try_extends(t);
     // If converting a struct by reference, wrap the thing directly
     } else static if (is(typeof(*t) == struct)) {
         alias Unqual!T Tu;
@@ -287,14 +236,92 @@ PyObject* d_to_python(T) (T t) {
             }
             return wrap_d_object(t);
         }
+        return d_to_python_try_extends(t);
     } 
 
-    // No conversion found, check runtime registry
+    assert(0);
+}
+
+PyObject* d_to_python_try_extends(T) (T t) {
     if (to_converter_registry!(T).dg) {
         return to_converter_registry!(T).dg(t);
     }
     PyErr_SetString(PyExc_RuntimeError, ("D conversion function d_to_python failed with type " ~ typeid(T).toString()).ptr);
     return null;
+}
+
+PyObject* d_tuple_to_python(T) (T t) if (isTuple!T) {
+    T.Types tuple;
+    foreach(i, _t; T.Types) {
+        tuple[i] = t[i];
+    }
+    return PyTuple_FromItems(tuple);
+}
+
+PyObject* d_bigint_to_python(BigInt t) {
+    import std.string: format;
+    string num_str = format("%s\0",t);
+    return PyLong_FromString(num_str.dup.ptr, null, 10);
+}
+
+PyObject* d_string_to_python(T)(T t) if(isSomeString!T) {
+    alias Unqual!(typeof(T.init[0])) C;
+    static if(is(C == char)) {
+        return PyUnicode_DecodeUTF8(t.ptr, cast(Py_ssize_t) t.length, null);
+    }else static if(is(C == wchar)) {
+        return PyUnicode_DecodeUTF16(cast(char*) t.ptr, 
+                cast(Py_ssize_t)(2*t.length), null, null);
+    }else static if(is(C == dchar)) {
+        version(Python_2_6_Or_Later) {
+            return PyUnicode_DecodeUTF32(cast(char*) t.ptr, 
+                    cast(Py_ssize_t)(4*t.length), null, null);
+        }else{
+            return d_to_python(to!string(t));
+        }
+    }else static assert(false, "waht is this T? " ~ T.stringof);
+}
+
+PyObject* d_array_to_python(T)(T t) if(isArray!T) {
+    // Converts any array (static or dynamic) to a Python list
+    PyObject* lst = PyList_New(cast(Py_ssize_t) t.length);
+    PyObject* temp;
+    if (lst is null) return null;
+    for(int i=0; i<t.length; ++i) {
+        temp = d_to_python(t[i]);
+        if (temp is null) {
+            Py_DECREF(lst);
+            return null;
+        }
+        // Steals the reference to temp
+        PyList_SET_ITEM(lst, cast(Py_ssize_t) i, temp);
+    }
+    return lst;
+}
+
+PyObject* d_aarray_to_python(T)(T t) if(isAssociativeArray!T) {
+    // Converts any associative array to a Python dict
+    PyObject* dict = PyDict_New();
+    PyObject* ktemp, vtemp;
+    int result;
+    if (dict is null) return null;
+    foreach(k, v; t) {
+        ktemp = d_to_python(k);
+        vtemp = d_to_python(v);
+        if (ktemp is null || vtemp is null) {
+            if (ktemp !is null) Py_DECREF(ktemp);
+            if (vtemp !is null) Py_DECREF(vtemp);
+            Py_DECREF(dict);
+            return null;
+        }
+        result = PyDict_SetItem(dict, ktemp, vtemp);
+        Py_DECREF(ktemp);
+        Py_DECREF(vtemp);
+        if (result == -1) {
+            Py_DECREF(dict);
+            return null;
+        }
+    }
+    return dict;
 }
 
 /**
@@ -369,27 +396,20 @@ T python_to_d(T) (PyObject* o) {
         if (o != cast(PyObject*) Py_None()) could_not_convert!(T)(o);
         return;
     } else static if (isTuple!T) {
-        T.Types tuple;
-        if(!PyTuple_Check(o)) could_not_convert!T(o);
-        auto len = PyTuple_Size(o);
-        if(len != T.Types.length) could_not_convert!T(o);
-        foreach(i,_t; T.Types) {
-            auto obj =  Py_XINCREF(PyTuple_GetItem(o, i));
-            tuple[i] = python_to_d!_t(obj);
-            Py_DECREF(obj);
+        if(PyTuple_Check(o)) {
+            return python_to_d_tuple!T(o);
         }
-        return T(tuple);
+        return python_to_d_try_extends!T(o);
     } else static if (is(Unqual!T _unused : Complex!F, F)) {
-        double real_ = PyComplex_RealAsDouble(o);
-        handle_exception();
-        double imag = PyComplex_ImagAsDouble(o);
-        handle_exception();
-        return complex!(F,F)(real_, imag);
+        if (PyComplex_Check(o)) {
+            return python_to_d_complex!T(o);
+        }
+        return python_to_d_try_extends!T(o);
     } else static if(is(Unqual!T == std.bigint.BigInt)) {
-        if (!PyNumber_Check(o)) could_not_convert!(T)(o);
-        string num_str = python_to_d!string(o);
-        if(num_str.endsWith("L")) num_str = num_str[0..$-1];
-        return BigInt(num_str);
+        if (PyNumber_Check(o)) {
+            return python_to_d_bigint!T(o);
+        }
+        return python_to_d_try_extends!T(o);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return cast(T) PydInputRange!E(borrowed(o));
     } else static if (is(T == class)) {
@@ -403,8 +423,7 @@ T python_to_d(T) (PyObject* o) {
                 return get_d_reference!(T)(o);
             }
         }
-        // Otherwise, throw up an exception.
-        //could_not_convert!(T)(o);
+        return python_to_d_try_extends!T(o);
     } else static if (is(T == struct)) { // struct by value
         // struct is wrapped
         if (is_wrapped!(T*) && PyObject_TypeCheck(o, &PydTypeObject!(T*))) { 
@@ -421,11 +440,13 @@ T python_to_d(T) (PyObject* o) {
             T t = *cast(T*) wrapper.range;
             return t;
         }
+        return python_to_d_try_extends!T(o);
     } else static if (isPointer!T && is(pointerTarget!T == struct)) { 
         // pointer to struct   
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &PydTypeObject!(T))) {
             return get_d_reference!(T)(o);
-        }// else could_not_convert!(T)(o);
+        }
+        return python_to_d_try_extends!T(o);
     } else static if (is(T == delegate)) {
         // Get the original wrapped delegate out if this is a wrapped delegate
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &PydTypeObject!(T))) {
@@ -433,88 +454,23 @@ T python_to_d(T) (PyObject* o) {
         // Otherwise, wrap the PyCallable with a delegate
         } else if (PyCallable_Check(o)) {
             return PydCallable_AsDelegate!(T)(o);
-        }// else could_not_convert!(T)(o);
+        }
+        return python_to_d_try_extends!T(o);
     } else static if (isDelegate!T || isFunctionPointer!T) {
         // We can only make it a function pointer if we originally wrapped a
         // function pointer.
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &PydTypeObject!(T))) {
             return get_d_reference!(T)(o);
-        }// else could_not_convert!(T)(o);
+        }
+        return python_to_d_try_extends!T(o);
     } else static if (isSomeString!T) {
-        alias Unqual!(typeof(T.init[0])) C;
-        PyObject* str;
-        if(PyBytes_Check(o)) {
-            static if(is(C == char)) {
-                str = o;
-            }else{
-                version(Python_3_0_Or_Later) {
-                    str = PyObject_Str(o);
-                    if(!str) handle_exception();
-                }else{
-                    str = PyObject_Unicode(o);
-                    if(!str) handle_exception();
-                }
-            }
-        }else if(PyUnicode_Check(o)) {
-            str = o;
-        }else {
-            str = PyObject_Repr(o);
-            if(!str) handle_exception();
-            version(Python_3_0_Or_Later) {
-            }else{
-                static if(!is(C == char)) {
-                    str = PyObject_Unicode(str);
-                    if(!str) handle_exception();
-                }
-            }
-        }
-        static if(is(C == char)) {
-            if(PyBytes_Check(str)) {
-                const(char)* res = PyBytes_AsString(str);
-                if(!res) handle_exception();
-                return to!T(res);
-            }
-        }
-
-        if(PyUnicode_Check(str)) {
-            static if(is(C == char)) {
-                PyObject* utf8 = PyUnicode_AsUTF8String(str);
-                if(!utf8) handle_exception();
-                const(char)* res = PyBytes_AsString(utf8);
-                if(!res) handle_exception();
-                return to!T(res);
-            }else static if(is(C == wchar)) {
-                PyObject* utf16 = PyUnicode_AsUTF16String(str);
-                if(!utf16) handle_exception();
-                // PyUnicode_AsUTF16String puts a BOM character in front of
-                // string
-                auto ptr = cast(const(wchar)*)(PyBytes_AsString(utf16)+2);
-                Py_ssize_t len = PyBytes_Size(utf16)/2-1; 
-                wchar[] ws = new wchar[](len);
-                ws[] = ptr[0 .. len];
-                return cast(T) ws;
-            }else static if(is(C == dchar)) {
-                version(Python_2_6_Or_Later) {
-                    PyObject* utf32 = PyUnicode_AsUTF32String(str);
-                    if(!utf32) handle_exception();
-                    // PyUnicode_AsUTF32String puts a BOM character in front of
-                    // string
-                    auto ptr = cast(const(dchar)*)(PyBytes_AsString(utf32)+4);
-                    Py_ssize_t len = PyBytes_Size(utf32)/4-1; 
-                    dchar[] ds = new dchar[](len);
-                    ds[] = ptr[0 .. len];
-                    return cast(T) ds;
-                }else{
-                    return to!(T)(python_to_d!string(str));
-                }
-            }else static assert(false, "what T is this!? " ~ T.stringof);
-        }
-        assert(0);
+        return python_to_d_string!T(o);
     } else static if (isArray!T || IsStaticArrayPointer!T) {
-        static if(isPointer!T)
+        static if(isPointer!T) {
             alias Unqual!(ElementType!(pointerTarget!T)) E;
-        else
+        }else {
             alias Unqual!(ElementType!T) E;
+        }
         version(Python_2_6_Or_Later) {
             if(PyObject_CheckBuffer(o)) {
                 return python_buffer_to_d!(T)(o);
@@ -566,6 +522,7 @@ T python_to_d(T) (PyObject* o) {
                 return cast(T) res;
             }
         }
+        return python_to_d_try_extends!T(o);
     } else static if (isBoolean!T) {
         if (!PyNumber_Check(o)) could_not_convert!(T)(o);
         int res = PyObject_IsTrue(o);
@@ -573,13 +530,117 @@ T python_to_d(T) (PyObject* o) {
         return res == 1;
     } 
 
+    assert(0);
+}
+
+T python_to_d_try_extends(T) (PyObject* o) {
     if (from_converter_registry!(T).dg) {
         return from_converter_registry!(T).dg(o);
     }
     could_not_convert!(T)(o);
-
     assert(0);
 }
+
+T python_to_d_tuple(T) (PyObject* o) {
+    T.Types tuple;
+    auto len = PyTuple_Size(o);
+    if(len != T.Types.length) could_not_convert!T(o);
+    foreach(i,_t; T.Types) {
+        auto obj =  Py_XINCREF(PyTuple_GetItem(o, i));
+        tuple[i] = python_to_d!_t(obj);
+        Py_DECREF(obj);
+    }
+    return T(tuple);
+}
+
+T python_to_d_complex(T) (PyObject* o) {
+    static if (is(Unqual!T _unused : Complex!F, F)) {
+        double real_ = PyComplex_RealAsDouble(o);
+        handle_exception();
+        double imag = PyComplex_ImagAsDouble(o);
+        handle_exception();
+        return complex!(F,F)(real_, imag);
+    }else static assert(false);
+}
+
+T python_to_d_bigint(T) (PyObject* o) {
+    string num_str = python_to_d!string(o);
+    if(num_str.endsWith("L")) num_str = num_str[0..$-1];
+    return BigInt(num_str);
+}
+
+T python_to_d_string(T) (PyObject* o) {
+    alias Unqual!(typeof(T.init[0])) C;
+    PyObject* str;
+    if(PyBytes_Check(o)) {
+        static if(is(C == char)) {
+            str = o;
+        }else{
+            version(Python_3_0_Or_Later) {
+                str = PyObject_Str(o);
+                if(!str) handle_exception();
+            }else{
+                str = PyObject_Unicode(o);
+                if(!str) handle_exception();
+            }
+        }
+    }else if(PyUnicode_Check(o)) {
+        str = o;
+    }else {
+        str = PyObject_Repr(o);
+        if(!str) handle_exception();
+        version(Python_3_0_Or_Later) {
+        }else{
+            static if(!is(C == char)) {
+                str = PyObject_Unicode(str);
+                if(!str) handle_exception();
+            }
+        }
+    }
+    static if(is(C == char)) {
+        if(PyBytes_Check(str)) {
+            const(char)* res = PyBytes_AsString(str);
+            if(!res) handle_exception();
+            return to!T(res);
+        }
+    }
+
+    if(PyUnicode_Check(str)) {
+        static if(is(C == char)) {
+            PyObject* utf8 = PyUnicode_AsUTF8String(str);
+            if(!utf8) handle_exception();
+            const(char)* res = PyBytes_AsString(utf8);
+            if(!res) handle_exception();
+            return to!T(res);
+        }else static if(is(C == wchar)) {
+            PyObject* utf16 = PyUnicode_AsUTF16String(str);
+            if(!utf16) handle_exception();
+            // PyUnicode_AsUTF16String puts a BOM character in front of
+            // string
+            auto ptr = cast(const(wchar)*)(PyBytes_AsString(utf16)+2);
+            Py_ssize_t len = PyBytes_Size(utf16)/2-1; 
+            wchar[] ws = new wchar[](len);
+            ws[] = ptr[0 .. len];
+            return cast(T) ws;
+        }else static if(is(C == dchar)) {
+            version(Python_2_6_Or_Later) {
+                PyObject* utf32 = PyUnicode_AsUTF32String(str);
+                if(!utf32) handle_exception();
+                // PyUnicode_AsUTF32String puts a BOM character in front of
+                // string
+                auto ptr = cast(const(dchar)*)(PyBytes_AsString(utf32)+4);
+                Py_ssize_t len = PyBytes_Size(utf32)/4-1; 
+                dchar[] ds = new dchar[](len);
+                ds[] = ptr[0 .. len];
+                return cast(T) ds;
+            }else{
+                return to!(T)(python_to_d!string(str));
+            }
+        }else static assert(false, "what T is this!? " ~ T.stringof);
+    }
+    assert(0);
+}
+
 
 // (*^&* array doesn't implement the buffer interface, but we still
 // want it to copy fast.

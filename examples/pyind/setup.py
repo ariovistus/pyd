@@ -1,13 +1,6 @@
-# usage: python setup.py pydexe
-import sys
-if sys.argv[1] != 'pydexe':
-    print( "use pydexe, not %s" % sys.argv[1] )
-    sys.exit(1)
-from pyd.support import setup, Extension
-import platform
+from pyd.support import setup, Extension, pydexe_sanity_check
 
-
-maj = int(platform.python_version_tuple()[0])
+pydexe_sanity_check()
 projName = 'pyind'
 srcs = ['pyind.d']
 

@@ -51,6 +51,8 @@ class Extension(std_Extension):
             self.with_main = False
 
         std_Extension.__init__(self, *args, **kwargs)
+
+
 class build_pyd_embedded_exe(Command):
     description = "Build a D application that embeds python with Pyd"
 
@@ -124,6 +126,7 @@ class build_pyd_embedded_exe(Command):
         else:
             for ext in self.extensions:
                 self.per_ext(ext)
+
     def per_ext(self, ext):
             self.compiler.init_d_opts(self, ext)
             # mostly copied from distutils.command.build_ext
@@ -166,6 +169,7 @@ class build_pyd_embedded_exe(Command):
                     target_lang=language)
             import shutil
             shutil.copy(self.compiler.executable_filename(ext_path), '.')
+
     def get_ext_fullpath(self, ext_name):
         fullname = ext_name
         modpath = fullname.split('.')
