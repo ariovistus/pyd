@@ -78,6 +78,9 @@ static if (version_minor < 67) {
     version(Posix) {
         import core.sys.posix.sys.types;
     }
+    version(OSX) {
+        import core.sys.osx.mach.port;
+    }
 
     class _Thread
     {
