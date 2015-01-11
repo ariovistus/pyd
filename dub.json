@@ -16,49 +16,96 @@
         "infrastructure/util/"
     ],
     "configurations": [
-    {
-        "name": "python27", 
-        "versions": [
-            "Python_2_4_Or_Later", 
-            "Python_2_5_Or_Later", 
-            "Python_2_6_Or_Later", 
-            "Python_2_7_Or_Later", 
-            "Python_Unicode_UCS4"
-        ], 
-        "libs": [
-            "python2.7"
-        ]
-    },
-    {
-        "name": "python27-shared", 
-        "targetType": "dynamicLibrary",
-        "dflags": ["-fPIC", "-defaultlib=libphobos2.so"],
-        "versions": [
-            "Python_2_4_Or_Later", 
-            "Python_2_5_Or_Later", 
-            "Python_2_6_Or_Later", 
-            "Python_2_7_Or_Later", 
-            "Python_Unicode_UCS4"
-        ], 
-        "libs": [
-            "python2.7"
-        ]
-    },
-    {
-        "name": "python33", 
-        "versions": [
-            "Python_2_4_Or_Later", 
-            "Python_2_5_Or_Later", 
-            "Python_2_6_Or_Later", 
-            "Python_2_7_Or_Later", 
-            "Python_3_0_Or_Later", 
-            "Python_3_1_Or_Later", 
-            "Python_3_2_Or_Later", 
-            "Python_3_3_Or_Later", 
-            "Python_Unicode_UCS4"
-        ], 
-        "libs": [
-            "python3.3m"
-        ]
-    }]
+        {
+            "name": "python27", 
+            "platforms": ["linux"],
+            "versions": [
+                "Python_2_4_Or_Later", 
+                "Python_2_5_Or_Later", 
+                "Python_2_6_Or_Later", 
+                "Python_2_7_Or_Later", 
+                "Python_Unicode_UCS4"
+            ], 
+            "libs": [
+                "python2.7"
+            ]
+        },
+        {
+            "name": "python27", 
+            "platforms": ["osx"],
+            "versions": [
+                "Python_2_4_Or_Later", 
+                "Python_2_5_Or_Later", 
+                "Python_2_6_Or_Later", 
+                "Python_2_7_Or_Later", 
+                "Python_Unicode_UCS2"
+            ], 
+            "libs": []
+        },
+        {
+            "name": "python27-shared", 
+            "platforms": ["linux"],
+            "versions": [
+                "Python_2_4_Or_Later", 
+                "Python_2_5_Or_Later", 
+                "Python_2_6_Or_Later", 
+                "Python_2_7_Or_Later", 
+                "Python_Unicode_UCS4"
+            ], 
+            "dflags": ["-fPIC", "-defaultlib=libphobos2.so"],
+            "libs": [
+                "python2.7"
+            ]
+        },
+        {
+            "name": "python27-shared", 
+            "platforms": ["osx"],
+            "versions": [
+                "Python_2_4_Or_Later", 
+                "Python_2_5_Or_Later", 
+                "Python_2_6_Or_Later", 
+                "Python_2_7_Or_Later", 
+                "Python_Unicode_UCS2"
+            ], 
+            "dflags": ["-fPIC", "-defaultlib=libphobos2.so"],
+            "libs": []
+        },
+        {
+            "name": "python33", 
+            "platforms": ["linux"],
+            "versions": [
+                "Python_2_4_Or_Later", 
+                "Python_2_5_Or_Later", 
+                "Python_2_6_Or_Later", 
+                "Python_2_7_Or_Later", 
+                "Python_3_0_Or_Later", 
+                "Python_3_1_Or_Later", 
+                "Python_3_2_Or_Later", 
+                "Python_3_3_Or_Later", 
+                "Python_Unicode_UCS4"
+            ], 
+            "libs": [
+                "python3.3m"
+            ]
+        },
+        {
+            "name": "python33-shared", 
+            "platforms": ["linux"],
+            "versions": [
+                "Python_2_4_Or_Later", 
+                "Python_2_5_Or_Later", 
+                "Python_2_6_Or_Later", 
+                "Python_2_7_Or_Later", 
+                "Python_3_0_Or_Later", 
+                "Python_3_1_Or_Later", 
+                "Python_3_2_Or_Later", 
+                "Python_3_3_Or_Later", 
+                "Python_Unicode_UCS4"
+            ], 
+            "dflags": ["-fPIC", "-defaultlib=libphobos2.so"],
+            "libs": [
+                "python3.3m"
+            ]
+        },
+    ]
 }

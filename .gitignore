@@ -13,6 +13,7 @@ build
 dist
 .tup
 .dub
+.ropeproject
 examples/arraytest/tsetup.py
 examples/hello/tsetup.py
 examples/inherit/tsetup.py
@@ -23,6 +24,7 @@ examples/deimos_unittests/datetime
 examples/deimos_unittests/link
 examples/deimos_unittests/object_
 examples/dub/simple_embedded/simple_embedded
+examples/dub/shared_embedded/test
 examples/pyd_unittests/class_wrap
 examples/pyd_unittests/const
 examples/pyd_unittests/def
