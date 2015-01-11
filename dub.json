@@ -2,6 +2,7 @@
     "name": "pyd",
     "description": "Pyd is a library for the D programming language that wraps the raw Python/C API with a cleaner, simpler interface.",
     "homepage": "https://github.com/ariovistus/pyd",
+    "targetType": "sourceLibrary",
     "authors": [
         "Kirk McDonald"
     ],
@@ -15,50 +16,50 @@
         "infrastructure/meta/",
         "infrastructure/util/"
     ],
+    "versions-linux":   ["Python_Unicode_UCS4"],
+    "versions-osx":     ["Python_Unicode_UCS2"],
+    "versions-windows": ["Python_Unicode_UCS2"],
     "configurations": [
-    {
-        "name": "python27", 
-        "versions": [
-            "Python_2_4_Or_Later", 
-            "Python_2_5_Or_Later", 
-            "Python_2_6_Or_Later", 
-            "Python_2_7_Or_Later", 
-            "Python_Unicode_UCS4"
-        ], 
-        "libs": [
-            "python2.7"
-        ]
-    },
-    {
-        "name": "python27-shared", 
-        "targetType": "dynamicLibrary",
-        "dflags": ["-fPIC", "-defaultlib=libphobos2.so"],
-        "versions": [
-            "Python_2_4_Or_Later", 
-            "Python_2_5_Or_Later", 
-            "Python_2_6_Or_Later", 
-            "Python_2_7_Or_Later", 
-            "Python_Unicode_UCS4"
-        ], 
-        "libs": [
-            "python2.7"
-        ]
-    },
-    {
-        "name": "python33", 
-        "versions": [
-            "Python_2_4_Or_Later", 
-            "Python_2_5_Or_Later", 
-            "Python_2_6_Or_Later", 
-            "Python_2_7_Or_Later", 
-            "Python_3_0_Or_Later", 
-            "Python_3_1_Or_Later", 
-            "Python_3_2_Or_Later", 
-            "Python_3_3_Or_Later", 
-            "Python_Unicode_UCS4"
-        ], 
-        "libs": [
-            "python3.3m"
-        ]
-    }]
+        {
+            "name": "python27",
+            "versions": [
+                "Python_2_4_Or_Later",
+                "Python_2_5_Or_Later",
+                "Python_2_6_Or_Later",
+                "Python_2_7_Or_Later",
+            ],
+            "libs": ["python2.7"]
+        },
+        {
+            "name": "python33",
+            "versions": [
+                "Python_2_4_Or_Later",
+                "Python_2_5_Or_Later",
+                "Python_2_6_Or_Later",
+                "Python_2_7_Or_Later",
+                "Python_3_0_Or_Later",
+                "Python_3_1_Or_Later",
+                "Python_3_2_Or_Later",
+                "Python_3_3_Or_Later",
+            ],
+            "libs": ["python3.3m"],
+            "lflags-osx": ["-L/Library/Frameworks/Python.framework/Versions/3.3/lib/"]
+        },
+        {
+            "name": "python34",
+            "versions": [
+                "Python_2_4_Or_Later",
+                "Python_2_5_Or_Later",
+                "Python_2_6_Or_Later",
+                "Python_2_7_Or_Later",
+                "Python_3_0_Or_Later",
+                "Python_3_1_Or_Later",
+                "Python_3_2_Or_Later",
+                "Python_3_3_Or_Later",
+                "Python_3_4_Or_Later",
+            ],
+            "libs": ["python3.4m"],
+            "lflags-osx": ["-L/Library/Frameworks/Python.framework/Versions/3.4/lib/"]
+        }
+    ]
 }
