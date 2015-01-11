@@ -2,6 +2,7 @@
     "name": "pyd",
     "description": "Pyd is a library for the D programming language that wraps the raw Python/C API with a cleaner, simpler interface.",
     "homepage": "https://github.com/ariovistus/pyd",
+    "targetType": "sourceLibrary",
     "authors": [
         "Kirk McDonald"
     ],
