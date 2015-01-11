@@ -42,7 +42,7 @@
                 "Python_3_3_Or_Later",
             ],
             "libs": ["python3.3m"],
-            "lflags": ["-L/Library/Frameworks/Python.framework/Versions/3.3/lib/"]
+            "lflags-osx": ["-L/Library/Frameworks/Python.framework/Versions/3.3/lib/"]
         },
         {
             "name": "python34",
@@ -58,7 +58,7 @@
                 "Python_3_4_Or_Later",
             ],
             "libs": ["python3.4m"],
-            "lflags": ["-L/Library/Frameworks/Python.framework/Versions/3.4/lib/"]
+            "lflags-osx": ["-L/Library/Frameworks/Python.framework/Versions/3.4/lib/"]
         }
     ]
 }
