@@ -5,7 +5,7 @@
 	"authors": ["ariovistus"],
         "dflags": ["-fPIC"],
         "targetType": "dynamicLibrary",
-        "dflags-dmd": ["-defaultlib=libphobos2.so"],
+        "dflags-posix-dmd": ["-defaultlib=libphobos2.so"],
 	"dependencies": {
             "pyd": "0.9.3",
 	},

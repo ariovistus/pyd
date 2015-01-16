@@ -28,7 +28,12 @@
                 "Python_2_6_Or_Later",
                 "Python_2_7_Or_Later",
             ],
-            "libs": ["python2.7"]
+            "libs-posix": [
+                "python2.7"
+            ],
+            "libs-windows-dmd": [
+                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python27_digitalmars"
+            ]
         },
         {
             "name": "python33",
@@ -42,7 +47,10 @@
                 "Python_3_2_Or_Later",
                 "Python_3_3_Or_Later",
             ],
-            "libs": ["python3.3m"],
+            "libs-posix": ["python3.3m"],
+            "libs-windows-dmd": [
+                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python33_digitalmars"
+            ],
             "lflags-osx": ["-L/Library/Frameworks/Python.framework/Versions/3.3/lib/"]
         },
         {
@@ -58,7 +66,10 @@
                 "Python_3_3_Or_Later",
                 "Python_3_4_Or_Later",
             ],
-            "libs": ["python3.4m"],
+            "libs-posix": ["python3.4m"],
+            "libs-windows-dmd": [
+                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python34_digitalmars"
+            ],
             "lflags-osx": ["-L/Library/Frameworks/Python.framework/Versions/3.4/lib/"]
         }
     ]

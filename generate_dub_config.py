@@ -1,6 +1,8 @@
 import json
 import six
+import sys
 import platform
+import os.path
 from collections import OrderedDict
 from pyd.patch_distutils import new_compiler
 from distutils.command.build_ext import build_ext
@@ -33,7 +35,11 @@ class MockExt:
 ext = build_ext(Distribution())
 
 libraries = ext.get_libraries(MockExt())
-
+lib_file = compiler._lib_file([])
+if lib_file:
+    lib_file = os.path.basename(lib_file).replace(compiler.static_lib_extension, "")
+    if sys.platform == 'win32':
+        libraries.append(os.path.join('$PYD_PACKAGE_DIR','infrastructure', 'windows', lib_file))
 if __name__ == '__main__':
     config =  OrderedDict()
     config['name'] = "python%s%s" % platform.python_version_tuple()[0:2]
