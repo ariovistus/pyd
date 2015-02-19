@@ -763,7 +763,7 @@ class GDCDCompiler(DCompiler):
         # _debugOptimizeOpts
         self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', self._unittestOpt]
         # _releaseOptimizeOpts
-        self._releaseOptimizeOpts = ['-fversion=Optimized', '-frelease', '-O3', '-finline-functions']
+        self._releaseOptimizeOpts = ['-fversion=Optimized', '-frelease', '-O3']
 
     def _def_file(self, output_dir, output_filename):
         return ['-Wl,-soname,' + os.path.basename(output_filename)]
@@ -824,7 +824,7 @@ class LDCDCompiler(DCompiler):
         # _debugOptimizeOpts
         self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', self._unittestOpt]
         # _releaseOptimizeOpts
-        self._releaseOptimizeOpts = ['-fversion=Optimized', '-release', '-O3', '-finline-functions']
+        self._releaseOptimizeOpts = ['-d-version=Optimized', '-release', '-O3']
 
     def init_d_opts(self, cmd, ext):
         DCompiler.init_d_opts(self,cmd, ext)
