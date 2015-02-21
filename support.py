@@ -43,7 +43,7 @@ class Extension(std_Extension):
         self.with_main = kwargs.pop('with_main', True)
         self.pyd_optimize = kwargs.pop('optimize', False)
         self.d_unittest = kwargs.pop('d_unittest', False)
-        self.d_property = kwargs.pop('d_property', True)
+        self.d_property = kwargs.pop('d_property', False)
         self.d_lump = kwargs.pop('d_lump', False)
         self.string_imports = kwargs.pop('string_imports', [])
         if self.with_main and not self.with_pyd:

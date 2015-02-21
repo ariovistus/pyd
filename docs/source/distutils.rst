@@ -115,7 +115,7 @@ d_property
 Have D compilers enable property checks (i.e. trying to call functions without 
 parens will result in an error)
 
-Default: :code:`True`
+Default: :code:`False`
 
 string_imports
 --------------
