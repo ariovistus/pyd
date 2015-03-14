@@ -44,7 +44,7 @@ import std.conv;
 import std.range;
 import std.stdio;
 
-import core.stdc.string : memcpy;
+import core.stdc.string : memcpy, strlen;
 
 import pyd.references;
 import pyd.pydobject;
@@ -401,13 +401,17 @@ T python_to_d(T) (PyObject* o) {
         }
         return python_to_d_try_extends!T(o);
     } else static if (is(Unqual!T _unused : Complex!F, F)) {
-        if (PyComplex_Check(o)) {
+        if (PyComplex_Check(o) || isNumpyComplexNumber(o)) {
             return python_to_d_complex!T(o);
         }
         return python_to_d_try_extends!T(o);
     } else static if(is(Unqual!T == std.bigint.BigInt)) {
         if (isPyNumber(o)) {
             return python_to_d_bigint!T(o);
+        }
+        if (isNumpyNumber(o)) {
+            auto i = to_python_int(o);
+            return python_to_d_bigint!T(i);
         }
         return python_to_d_try_extends!T(o);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
@@ -482,12 +486,16 @@ T python_to_d(T) (PyObject* o) {
             return python_iter_to_d!T(o);
         }
     } else static if (isFloatingPoint!T) {
-        if (isPyNumber(o)) {
+        if (isPyNumber(o) || isNumpyNumber(o)) {
             double res = PyFloat_AsDouble(o);
             return cast(T) res;
         }
         return python_to_d_try_extends!T(o);
     } else static if(isIntegral!T) {
+        if (isNumpyNumber(o)) {
+            o = to_python_int(o);
+        }
+
         version(Python_3_0_Or_Later) {
         }else{
             if(PyInt_Check(o)) {
@@ -524,9 +532,10 @@ T python_to_d(T) (PyObject* o) {
                 return cast(T) res;
             }
         }
+
         return python_to_d_try_extends!T(o);
     } else static if (isBoolean!T) {
-        if (isPyNumber(o)) { 
+        if (isPyNumber(o) || isNumpyNumber(o)) { 
             int res = PyObject_IsTrue(o);
             return res == 1;
         }
@@ -534,6 +543,12 @@ T python_to_d(T) (PyObject* o) {
     } 
 
     assert(0);
+}
+
+PyObject* to_python_int(PyObject* o) {
+    auto builtins = new PydObject(PyEval_GetBuiltins());
+    auto int_ = builtins["int"];
+    return int_(o).to_d!(PyObject*)();
 }
 
 T python_to_d_try_extends(T) (PyObject* o) {
@@ -557,10 +572,11 @@ T python_to_d_tuple(T) (PyObject* o) {
 }
 
 T python_to_d_complex(T) (PyObject* o) {
+    import util.conv;
     static if (is(Unqual!T _unused : Complex!F, F)) {
-        double real_ = PyComplex_RealAsDouble(o);
+        double real_ = python_to_d!double(PyObject_GetAttrString(o, "real"));
         handle_exception();
-        double imag = PyComplex_ImagAsDouble(o);
+        double imag = python_to_d!double(PyObject_GetAttrString(o, "imag"));
         handle_exception();
         return complex!(F,F)(real_, imag);
     }else static assert(false);
@@ -796,6 +812,60 @@ bool isPyNumber(PyObject* obj) {
             PyLong_Check(obj) ||
             PyFloat_Check(obj);
     }
+}
+
+const(char)[] type_name(PyObject* obj) {
+    auto type = cast(PyTypeObject*)PyObject_Type(obj);
+    return type.tp_name[0 .. strlen(type.tp_name)];
+}
+
+bool isNumpyBool(PyObject* obj) {
+    switch(type_name(obj)) {
+        case "numpy.bool_":
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool isNumpyInteger(PyObject* obj) {
+    switch(type_name(obj)) {
+        case "numpy.int8":
+        case "numpy.int16":
+        case "numpy.int32":
+        case "numpy.int64":
+        case "numpy.uint8":
+        case "numpy.uint16":
+        case "numpy.uint32":
+        case "numpy.uint64":
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool isNumpyFloat(PyObject* obj) {
+    switch(type_name(obj)) {
+        case "numpy.float32":
+        case "numpy.float64":
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool isNumpyComplexNumber(PyObject* obj) {
+    switch(type_name(obj)) {
+        case "numpy.complex32":
+        case "numpy.complex64":
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool isNumpyNumber(PyObject* obj) {
+    return isNumpyBool(obj) || isNumpyInteger(obj) || isNumpyFloat(obj);
 }
 
 version(Python_2_6_Or_Later) {
