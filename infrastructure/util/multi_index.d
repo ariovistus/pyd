@@ -1993,7 +1993,7 @@ Complexity: $(BIGOH 1).
         bool opBinaryRight(string op)(Elem e) const
         if (op == "in") 
         {
-            Node p;
+            const(ThisNode)* p;
             return _find2(key(e),p);
         }
     /++
@@ -2032,9 +2032,9 @@ Complexity:
 $(BIGOH log(n))
 */
         ValueView opIndex(KeyType k) inout{
-            Node n; 
+            inout(ThisNode)* n;
             enforce(_find2(k,n));
-            return n.value;
+            return cast(ValueView) n.value;
         }
     }
 
@@ -3480,10 +3480,10 @@ Complexity:
 $(BIGOH n) ($(BIGOH 1) on a good day)
 */
                 ValueView opIndex ( KeyType k ) const{
-                    ThisNode* node;
+                    const(ThisNode)* node;
                     size_t index;
                     enforce(_find(k, node, index));
-                    return node.value;
+                    return cast(ValueView) node.value;
                 }
             }
 
@@ -3510,7 +3510,7 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
             bool opBinaryRight(string op)(ValueView value) const
             if (op == "in")
             {
-                ThisNode* node;
+                const(ThisNode)* node;
                 size_t index;
                 return _find(key(value), node,index);
             }
@@ -3521,7 +3521,7 @@ Complexity:
 $(BIGOH n) ($(BIGOH n 1) on a good day)
  */
             bool contains(ValueView value) const{
-                ThisNode* node;
+                const(ThisNode)* node;
                 size_t index;
                 auto r =  _find(key(value), node,index);
                 return r;
@@ -3529,7 +3529,7 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
 
             ///ditto
             bool contains(KeyType k) const{
-                ThisNode* node;
+                const(ThisNode)* node;
                 size_t index;
                 return _find(k, node,index);
             }
@@ -3655,7 +3655,7 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                 }
             }
             ConstBucketSeqRange equalRange( KeyType k ) const{
-                ThisNode* node;
+                const(ThisNode)* node;
                 size_t index;
                 if(!_find(k, node,index)){
                     return ConstBucketSeqRange(this,null,null);
@@ -3663,7 +3663,7 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                 static if(!allowDuplicates){
                     return ConstBucketSeqRange(this,node,node);
                 }else{
-                    ThisNode* node2 = node;
+                    const(ThisNode)* node2 = node;
                     while(node2.index!N.next !is null && 
                             eq(k, key(node2.index!N.next.value))){
                         node2 = node2.index!N.next;
