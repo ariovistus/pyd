@@ -1178,14 +1178,26 @@ template IsStaticArrayPointer(T) {
   Handles dynamic arrays, static arrays, and pointers to static arrays.
 */
 template MatrixInfo(T) if(isArray!T || IsStaticArrayPointer!T) {
+    template ElementType2(_T) {
+        static if(isSomeString!_T) {
+            alias ElementType2=_T;
+        }else{
+            alias ElementType2=ElementType!_T;
+        }
+    }
+
     template _dim_list(T, dimi...) {
-        static if(isDynamicArray!T) {
-            alias _dim_list!(ElementType!T, dimi,-1) next;
+        static if(isSomeString!T) {
+            alias dimi list;
+            alias T elt;
+            alias Unqual!T unqual;
+        } else static if(isDynamicArray!T) {
+            alias _dim_list!(ElementType2!T, dimi,-1) next;
             alias next.list list;
             alias next.elt elt;
             alias next.unqual[] unqual;
         }else static if(isStaticArray!T) {
-            alias _dim_list!(ElementType!T, dimi, cast(Py_ssize_t) T.length) next;
+            alias _dim_list!(ElementType2!T, dimi, cast(Py_ssize_t) T.length) next;
             alias next.list list;
             alias next.elt elt;
             alias next.unqual[T.length] unqual;

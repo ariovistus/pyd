@@ -171,6 +171,11 @@ unittest {
     static assert(M2.dimstring == "[5,4]");
     static assert(is(M2.unqual == double[4][5]));
     static assert(is(M2.MatrixElementType == const(double)));
+    alias MatrixInfo!(string[4][5]) M3;
+    static assert(M3.ndim == 2);
+    static assert(M3.dimstring == "[5,4]");
+    static assert(is(M3.unqual == string[4][5]));
+    static assert(is(M3.MatrixElementType == string));
 }
 
 // bytearray tests - bytearray supports the new buffer interface with
