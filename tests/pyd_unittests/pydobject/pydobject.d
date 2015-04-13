@@ -1,3 +1,4 @@
+import std.range;
 import pyd.pyd, pyd.embedded;
 
 static this() {
@@ -290,6 +291,15 @@ version(Python_2_6_Or_Later) {
             assert(b.item!double(0,1) == 1);
         }
     }
+}
+
+unittest {
+    static assert(!isInputRange!PydObject);
+    static assert(!isForwardRange!PydObject);
+    static assert(!isBidirectionalRange!PydObject);
+    static assert(!isRandomAccessRange!PydObject);
+    // :(
+    //static assert(!isOutputRange!(PydObject, PydObject));
 }
 
 void main(){}

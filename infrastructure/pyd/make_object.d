@@ -217,8 +217,12 @@ PyObject* d_to_python(T) (T t) {
     } else static if (is(T == struct) && 
             !is(T == RangeWrapper) && 
             isInputRange!T) {
-        assert(is_wrapped!(RangeWrapper*));
-        return d_to_python(wrap_range(t));
+        if (to_converter_registry!(T).dg) {
+            return d_to_python_try_extends(t);
+        }else static if(__traits(compiles, wrap_range(t))) {
+            assert(is_wrapped!(RangeWrapper*));
+            return d_to_python(wrap_range(t));
+        }
     } else static if (is(T == struct)) {
         alias Unqual!T Tu;
         if (is_wrapped!(Tu*)) {
@@ -322,6 +326,31 @@ PyObject* d_aarray_to_python(T)(T t) if(isAssociativeArray!T) {
         }
     }
     return dict;
+}
+
+T python_to_aarray(T)(PyObject* py) if(isAssociativeArray!T) {
+    PyObject* keys = null;
+    if(PyDict_Check(py)) {
+        keys = PyDict_Keys(py);
+    }else if(PyMapping_Keys(py)) {
+        keys = PyMapping_Keys(py);
+    }else{
+        could_not_convert!(T)(py);
+        assert(0);
+    }
+    PyObject* iterator = PyObject_GetIter(keys);
+    T result;
+    PyObject* key;
+    while ((key=PyIter_Next(iterator)) !is null) {
+        PyObject* value = PyObject_GetItem(py, key);
+        auto d_key = python_to_d!(KeyType!T)(key);
+        auto d_value = python_to_d!(ValueType!T)(value);
+        result[d_key] = d_value;
+        Py_DECREF(key);
+        Py_DECREF(value);
+    }
+    Py_DECREF(iterator);
+    return result;
 }
 
 /**
@@ -485,6 +514,8 @@ T python_to_d(T) (PyObject* o) {
         }else {
             return python_iter_to_d!T(o);
         }
+    } else static if (isAssociativeArray!T) {
+        return python_to_aarray!T(o);
     } else static if (isFloatingPoint!T) {
         if (isPyNumber(o) || isNumpyNumber(o)) {
             double res = PyFloat_AsDouble(o);
@@ -1057,6 +1088,7 @@ bool match_format_type(T)(string format) {
             // this (*&^& function is not defined
             //PyBuffer_SizeFromFormat()
             native_size = true;
+            goto case;
         case '=','<','>','!':
             format = format[1 .. $];
         default:
@@ -1071,13 +1103,13 @@ bool match_format_type(T)(string format) {
             break;
         case 'b', 'h','i','l','q': 
             if(!isSigned!S) return false;
-            break;
+            else break;
         case 'B', 'H', 'I', 'L','Q': 
             if(!isUnsigned!S) return false;
-            break;
+            else break;
         case 'f','d':
             if(!isFloatingPoint!S) return false;
-            break;
+            else break;
         case '?': 
             if(!isBoolean!S) return false;
         case 'Z':
@@ -1360,7 +1392,6 @@ post_code = code to mix in to each for loop after finishing the nested for loop.
 
 alias python_to_d!(Object) python_to_d_Object;
 
-private
 void could_not_convert(T) (PyObject* o, string reason = "", 
         string file = __FILE__, size_t line = __LINE__) {
     // Pull out the name of the type of this Python object, and the

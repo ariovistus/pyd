@@ -238,6 +238,12 @@ unittest {
 }
 
 unittest {
+    auto py = py_eval("{'a': 'a'}");
+    auto d = python_to_d!(string[string])(cast(PyObject*) py.ptr());
+    assert(d["a"] == "a");
+}
+
+unittest {
     assert(py_eval!byte("int(30)") == 30);
     assert(py_eval!byte(format("int(%s)", byte.max)) == byte.max);
     assert(py_eval!byte(format("int(%s)", byte.min)) == byte.min);

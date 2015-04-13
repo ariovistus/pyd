@@ -1160,7 +1160,7 @@ Struct Format Strings </a>
     }
 
     /// Forwards to getattr
-    @property auto opDispatch(string nom)() {
+    @property auto opDispatch(string nom)() if(nom != "popFront") {
         return this.getattr(nom);
     }
     /// Forwards to setattr
@@ -1173,7 +1173,7 @@ Struct Format Strings </a>
         this.setattr(nom,value);
     }
     /// Forwards to method.
-    auto opDispatch(string nom, T...)(T ts) /*if(T.length > 1)*/ {
+    auto opDispatch(string nom, T...)(T ts) if(nom != "popFront") {
         return this.getattr(nom).opCall(ts);
     }
 
