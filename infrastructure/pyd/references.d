@@ -23,6 +23,7 @@ module pyd.references;
 import std.traits;
 import std.typetuple;
 
+import pyd.func_wrap;
 import deimos.python.Python;
 import util.multi_index;
 import util.typeinfo;
@@ -62,7 +63,7 @@ template IsRefParam(alias p) {
 }
 
 template FnHasRefParams(Fn) {
-    alias anySatisfy!(IsRefParam, ParameterStorageClassTuple!(Fn)) 
+    alias anySatisfy!(IsRefParam, ParameterStorageClassTuple!(Fn))
         FnHasRefParams;
 }
 
@@ -76,12 +77,12 @@ struct DFn_Py_Mapping {
     Constness constness;
 
     this(Fn)(Fn d, PyObject* py) if(isFunctionPointer!Fn) {
-        static assert(!FnHasRefParams!Fn, 
+        static assert(!FnHasRefParams!Fn,
                 "Pyd cannot handle ref or out parameters at this time");
         this.d = DKey(d);
         this.d_typeinfo = typeid(TypeInfoType!Fn);
         this.params_info = (cast(TypeInfo_Tuple) typeid(ParameterTypeTuple!Fn))
-            .elements; 
+            .elements;
         this.py = py;
         this.functionAttributes = .functionAttributes!Fn;
         this.linkage = functionLinkage!Fn;
@@ -90,11 +91,11 @@ struct DFn_Py_Mapping {
 
     template TypeInfoType(T) if(isFunctionPointer!T) {
         alias Unqual!(
-                SetFunctionAttributes!(T, functionLinkage!T, 
+                SetFunctionAttributes!(T, functionLinkage!T,
                     FunctionAttribute.none)) TypeInfoType;
     }
 
-    public static const(void)* DKey(T)(T t) 
+    public static const(void)* DKey(T)(T t)
         if(isFunctionPointer!T) {
             return cast(const(void)*) t;
         }
@@ -114,12 +115,12 @@ struct DDg_Py_Mapping {
     Constness constness;
 
     this(Dg)(Dg d, PyObject* py) if(isDelegate!Dg) {
-        static assert(!FnHasRefParams!Dg, 
+        static assert(!FnHasRefParams!Dg,
                 "Pyd cannot handle ref or out parameters at this time");
         this.d = DKey(d);
         this.d_typeinfo = typeid(TypeInfoType!Dg);
         this.params_info = (cast(TypeInfo_Tuple) typeid(ParameterTypeTuple!Dg))
-            .elements; 
+            .elements;
         this.py = py;
         this.functionAttributes = .functionAttributes!Dg;
         this.linkage = functionLinkage!Dg;
@@ -128,11 +129,11 @@ struct DDg_Py_Mapping {
 
     template TypeInfoType(T) {
         alias Unqual!(
-                SetFunctionAttributes!(T, functionLinkage!T, 
+                SetFunctionAttributes!(T, functionLinkage!T,
                     FunctionAttribute.none)) TypeInfoType;
     }
 
-    public static const(void)*[2] DKey(T)(T t) 
+    public static const(void)*[2] DKey(T)(T t)
         if(isDelegate!T) {
             typeof(return) key;
             key[0] = cast(const(void)*) t.ptr;
@@ -154,7 +155,7 @@ struct DStruct_Py_Mapping {
     TypeInfo d_typeinfo;
     Constness constness;
 
-    this(S)(S d, PyObject* py) if(isPointer!S && 
+    this(S)(S d, PyObject* py) if(isPointer!S &&
             is(pointerTarget!S == struct)) {
         this.d = DKey(d);
         this.d_typeinfo = typeid(TypeInfoType!S);
@@ -166,7 +167,7 @@ struct DStruct_Py_Mapping {
         alias Unqual!T TypeInfoType;
     }
 
-    public static const(void)* DKey(T)(T t) 
+    public static const(void)* DKey(T)(T t)
         if(isPointer!T && is(pointerTarget!T == struct)) {
             return cast(const(void)*) t;
     }
@@ -193,7 +194,7 @@ struct DClass_Py_Mapping {
             alias Unqual!T TypeInfoType;
     }
 
-    public static const(void)* DKey(T)(T t) 
+    public static const(void)* DKey(T)(T t)
         if(is(T == class)) {
             return cast(const(void)*) t;
     }
@@ -215,8 +216,8 @@ struct DClass_Py_Mapping {
 /// inside a destructor and we need to use this container there.
 template reference_container(Mapping) {
     alias MultiIndexContainer!(Mapping, IndexedBy!(
-                HashedUnique!("a.d"), 
-                HashedUnique!("a.py")), 
+                HashedUnique!("a.d"), "d",
+                HashedUnique!("a.py"), "python"),
             MallocAllocator, MutableView)
         Container;
     Container _reference_container = null;
@@ -231,7 +232,7 @@ template reference_container(Mapping) {
 
     extern(C) void clear() {
         if(_reference_container) {
-            _reference_container.get_index!0 .clear();
+            _reference_container.d.clear();
         }
     }
 }
@@ -256,13 +257,13 @@ void set_pyd_mapping(T) (PyObject* _self, T t) {
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
     
-    Mapping mapping = Mapping(t, _self); 
-    auto py_index = container.get_index!1;
+    Mapping mapping = Mapping(t, _self);
+    auto py_index = container.python;
     auto range = py_index.equalRange(_self);
     if (range.empty) {
         auto count = py_index.insert(mapping);
         enforce(count != 0,
-                format("could not add py reference %x for T=%s, t=%s", 
+                format("could not add py reference %x for T=%s, t=%s",
                     _self, T.stringof,  Mapping.DKey(t)));
     }else{
         auto count = py_index.replace(PSR(range).front, mapping);
@@ -278,11 +279,17 @@ void remove_pyd_mapping(T)(PyObject* self) {
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
     
-    auto py_index = container.get_index!1;
+    auto py_index = container.python;
     auto range = py_index.equalRange(self);
     if(!range.empty) {
         py_index.remove(take(PSR(range),1));
     }
+}
+
+bool isConversionAddingFunctionAttributes(
+        uint fromTypeFunctionAttributes,
+        uint toTypeFunctionAttributes) {
+    return (~(fromTypeFunctionAttributes | StrippedFunctionAttributes) & toTypeFunctionAttributes) != 0;
 }
 
 
@@ -303,7 +310,7 @@ T get_d_reference(T) (PyObject* _self) {
     enforce(_self !is null,
             "Error: trying to find D reference for null PyObject*!");
 
-    auto py_index = container.get_index!1;
+    auto py_index = container.python;
     auto range = py_index.equalRange(_self);
 
     enforce(!range.empty,
@@ -321,7 +328,7 @@ T get_d_reference(T) (PyObject* _self) {
             tif = tif.base;
         }
 
-        enforce(found, 
+        enforce(found,
             format(
                 "Type mismatch extracting D object: found: %s, required: %s",
                 range.front.d_typeinfo,
@@ -338,7 +345,7 @@ T get_d_reference(T) (PyObject* _self) {
     // mutable => const, etc, okay
     enforce(constCompatible(range.front.constness, constness!T),
             format(
-                "constness mismatch required: %s, found: %s", 
+                "constness mismatch required: %s, found: %s",
                 constness_ToString(constness!T),
                 constness_ToString(range.front.constness)));
     static if(isFunctionPointer!T || isDelegate!T) {
@@ -352,11 +359,12 @@ T get_d_reference(T) (PyObject* _self) {
         // losing function attributes is ok,
         // giving a function new ones, not so much
         enforce(
-                (~range.front.functionAttributes & functionAttributes!T) == 0,
+                !isConversionAddingFunctionAttributes(
+                    range.front.functionAttributes, functionAttributes!T),
                 format(
                     "trying to convert %s%s to %s",
-                    SetFunctionAttributes!(T, 
-                        functionLinkage!T, 
+                    SetFunctionAttributes!(T,
+                        functionLinkage!T,
                         FunctionAttribute.none).stringof,
                     attrs_to_string(range.front.functionAttributes),
                     T.stringof));
@@ -371,7 +379,7 @@ PyObject_BorrowedRef* get_python_reference(T) (T t) {
     alias pyd_references!T.container container;
     alias pyd_references!T.Mapping Mapping;
 
-    auto d_index = container.get_index!0;
+    auto d_index = container.d;
     auto range = d_index.equalRange(Mapping.DKey(t));
     if(range.empty) return null;
     return borrowed(range.front.py);
@@ -398,7 +406,7 @@ PyObject* wrap_d_object(T)(T t, PyTypeObject* type = null) {
         set_pyd_mapping(obj, t);
         return obj;
     } else {
-        PyErr_SetString(PyExc_RuntimeError, 
+        PyErr_SetString(PyExc_RuntimeError,
                 (format("Type %s is not wrapped by Pyd.", typeid(T))).ptr);
         return null;
     }

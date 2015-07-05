@@ -1,0 +1,11 @@
+{
+	"name": "references",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2015, ellery",
+	"authors": ["ellery"],
+	"dependencies": {
+            "d-unit": "~>0.7.2",
+            "pyd": "~master"
+
+	}
+}

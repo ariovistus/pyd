@@ -100,6 +100,8 @@ string attrs_to_string(uint attrs) {
         if(attrs & property) s ~= " @property";
         if(attrs & trusted) s ~= " @trusted";
         if(attrs & safe) s ~= " @safe";
+        if(attrs & nogc) s ~= " @nogc";
+        if(attrs & return_) s ~= " return";
     }
     return s;
 }

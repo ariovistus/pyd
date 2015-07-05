@@ -30,6 +30,7 @@ import std.algorithm: max;
 import std.exception: enforce;
 import std.range;
 import std.conv;
+import std.compiler;
 import util.typelist;
 import util.typeinfo;
 
@@ -50,15 +51,25 @@ template hasFunctionAttrs(T) {
     }
 }
 
+template StripFunctionAttributes(F) {
+    static if(hasFunctionAttrs!F) {
+        alias StripFunctionAttributes = SetFunctionAttributes!(F, 
+                functionLinkage!F, 
+                StrippedFunctionAttributes);
+    }else{
+        alias StripFunctionAttributes = F;
+    }
+}
+
+static if(version_major == 2 && version_minor >= 67) {
+    enum StrippedFunctionAttributes = FunctionAttribute.system;
+}else{
+    enum StrippedFunctionAttributes = FunctionAttribute.none;
+}
+
 // Builds a callable Python object from a delegate or function pointer.
 void PydWrappedFunc_Ready(S)() {
-    static if(hasFunctionAttrs!S) {
-        alias SetFunctionAttributes!(S, 
-                functionLinkage!S, 
-                FunctionAttribute.none) T;
-    }else{
-        alias S T;
-    }
+    alias T = StripFunctionAttributes!S;
     alias PydTypeObject!(T) type;
     alias wrapped_class_object!(T) obj;
     if (!is_wrapped!(T)) {
@@ -286,9 +297,8 @@ template wrapped_func_call(fn_t) {
             return null;
         }
 
-        fn_t fn = get_d_reference!fn_t(self);
-
         return exception_catcher(delegate PyObject*() {
+            fn_t fn = get_d_reference!fn_t(self);
             return pyApplyToDelegate(fn, args);
         });
     }
