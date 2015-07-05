@@ -20,6 +20,7 @@ SOFTWARE.
 module util.typeinfo;
 
 import std.traits;
+import std.compiler;
 
 enum Constness {
     Mutable,
@@ -101,7 +102,9 @@ string attrs_to_string(uint attrs) {
         if(attrs & trusted) s ~= " @trusted";
         if(attrs & safe) s ~= " @safe";
         if(attrs & nogc) s ~= " @nogc";
-        if(attrs & return_) s ~= " return";
+        static if(version_major == 2 && version_minor >= 67) {
+            if(attrs & return_) s ~= " return";
+        }
     }
     return s;
 }
