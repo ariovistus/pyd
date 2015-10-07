@@ -4897,7 +4897,7 @@ if(IndexedByCount!(Args)() == 1 &&
                 }
             }
         }
-        object.clear(node);
+        object.destroy(node);
         Allocator.deallocate(node);
     }
 
