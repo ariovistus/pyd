@@ -30,7 +30,6 @@ import pyd.class_wrap;
 import pyd.exception;
 import pyd.func_wrap;
 import pyd.make_object;
-import meta.Nameof;
 
 template call_ctor(T, init) {
     alias ParameterTypeTuple!(init.Inner!T.FN) paramtypes;

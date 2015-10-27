@@ -9,4 +9,3 @@ MODULES =
 	$(MODULE pyd.pyd)
 	$(MODULE pyd.pydobject)
 	$(MODULE pyd.struct_wrap)
-	$(MODULE meta.Nameof)

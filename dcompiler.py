@@ -76,11 +76,6 @@ _pydFiles = [
     'thread.d',
 ]
 
-_metaFiles = [
-    'Demangle.d',
-    'Nameof.d',
-]
-
 _utilFiles = [
     'conv.d',
     'typeinfo.d',
@@ -358,13 +353,6 @@ class DCompiler(cc.CCompiler):
                         " missing." % filePath
                     )
                 sources.append((winpath(filePath,self.winonly), 'infra'))
-            for file in _metaFiles:
-                filePath = os.path.join(_infraDir, 'meta', file)
-                if not os.path.isfile(filePath):
-                    raise DistutilsPlatformError("Required meta source file"
-                        " '%s' is missing." % filePath
-                    )
-                sources.append((winpath(filePath,self.winonly), 'infra'))
         if self.build_deimos:
             for file in _deimosFiles:
                 filePath = os.path.join(_infraDir, 'deimos', 'python', file)
@@ -385,7 +373,7 @@ class DCompiler(cc.CCompiler):
             mainFilename = os.path.join(infra_output_dir, 'pydmain.d')
             make_pydmain(mainFilename, name)
             sources.append((winpath(mainFilename,self.winonly), 'infra'))
-        # Add the infraDir to the include path for pyd, meta, and utils.
+        # Add the infraDir to the include path for pyd and utils.
         includePathOpts += self._includeOpts
         includePathOpts[-1] = includePathOpts[-1] % winpath(os.path.join(_infraDir), self.winonly)
 
