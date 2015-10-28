@@ -1,5 +1,4 @@
 module util.replace;
-//import std.metastrings;
 import std.conv;
 
 /**
@@ -11,7 +10,6 @@ T = replacement specs, alternating between string to be replaced and $(D toStrin
 
 Example:
 ---
-import std.metastrings;
 import std.stdio;
 
 void main()
