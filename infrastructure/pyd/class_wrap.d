@@ -1169,8 +1169,8 @@ template param1(C) {
     template param1(T) {alias ParameterTypeTuple!(T.Inner!C .FN)[0] param1; }
 }
 
-alias Pred!q{__traits(hasMember, A,"op")} IsOp;
-alias Pred!q{A.stringof.startsWith("OpUnary!")} IsUn;
+enum IsOp(A) = __traits(hasMember, A, "op");
+enum IsUn(A) = A.stringof.startsWith("OpUnary!");
 template IsBin(T...) {
     static if(T[0].stringof.startsWith("BinaryOperatorX!")) 
         enum bool IsBin = !T[0].isRight;
@@ -1189,7 +1189,7 @@ struct Operators(Ops...) {
     enum bool needs_shim = false;
 
     template BinOp(string op, T) {
-        alias Pred!(Replace!(q{A.op == "OP"},"OP",op)) IsThisOp;
+        enum IsThisOp(A) = A.op == op;
         alias Filter!(IsThisOp, Ops) Ops0;
         alias Filter!(IsBin, Ops0) OpsL;
         alias staticMap!(param1!T, OpsL) OpsLparams;
@@ -1221,7 +1221,7 @@ struct Operators(Ops...) {
 
     }
     struct UnOp(string op, T) {
-        alias Pred!(Replace!(q{A.op == "OP"},"OP",op)) IsThisOp;
+        enum IsThisOp(A) = A.op == op;
         alias Filter!(IsUn, Filter!(IsThisOp, Ops)) Ops1;
         static assert(Ops1.length <= 1, 
                 Replace!("Cannot have overloads of $OP$T1", 
@@ -1239,7 +1239,8 @@ struct Operators(Ops...) {
     }
 
     static void call(T)() {
-        alias NoDuplicates!(staticMap!(Pred!"A.op", Ops)) str_op_tuple;
+        enum GetOp(A) = A.op;
+        alias NoDuplicates!(staticMap!(GetOp, Ops)) str_op_tuple;
         enum binops = binaryslots.keys();
         foreach(_op; str_op_tuple) {
             BinOp!(_op, T).call(); // noop if op is unary
