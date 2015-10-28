@@ -15,7 +15,7 @@ class Base {
 
 class Derived : Base {
     this(int i) { super(i); writefln("Derived.this(): ", i); }
-    void foo() {
+    override void foo() {
         writefln("Derived.foo");
     }
 }
