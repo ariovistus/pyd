@@ -139,10 +139,10 @@ struct Args(string default_modulename,
         enum modulename = default_modulename;
     }
 
-    alias Filter!(Not!IsModuleName, 
-          Filter!(Not!IsDocstring, 
-          Filter!(Not!IsPyName,
-          Filter!(Not!IsMode,
+    alias Filter!(templateNot!IsModuleName, 
+          Filter!(templateNot!IsDocstring, 
+          Filter!(templateNot!IsPyName,
+          Filter!(templateNot!IsMode,
               Params)))) rem;
     template IsString(T...) {
         enum bool IsString = is(typeof(T[0]) == string);
