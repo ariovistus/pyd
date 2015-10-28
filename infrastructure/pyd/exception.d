@@ -29,7 +29,7 @@ import std.conv;
 import std.string: format;
 import std.string;
 import deimos.python.Python;
-import meta.Nameof : prettytypeof;
+import std.traits : FullyQualifiedName;
 
 /**
  * This function first checks if a Python exception is set, and then (if one
@@ -57,7 +57,7 @@ T error_code(T) () {
         return -1;
     } else static if (is(T == void)) {
         return;
-    } else static assert(false, "exception_catcher cannot handle return type " ~ prettytypeof!(T));
+    } else static assert(false, "exception_catcher cannot handle return type " ~ FullyQualifiedName!T);
 }
 
 /**

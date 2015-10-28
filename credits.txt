@@ -6,7 +6,3 @@ David Rushby, Kirk McDonald
 
 Pyd:
 Kirk McDonald
-
-meta:
-Tomasz Stachowiak, Don Clugston, Kirk McDonald
-
