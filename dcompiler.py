@@ -45,7 +45,9 @@ def is_posix_static_python():
         return not get_config_var('Py_ENABLE_SHARED')
 def posix_static_python_opts():
     ls = [l for l in get_config_var('LIBS').split(' ') if l]
+    print(ls)
     ls.extend([l for l in get_config_var('MODLIBS').split(' ') if l])
+    print(ls)
     return ls
 
 def posix_static_python_lib():
