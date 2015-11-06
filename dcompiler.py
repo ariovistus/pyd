@@ -13,7 +13,7 @@
 import os, os.path, sys
 
 from distutils import ccompiler as cc
-from distutils.sysconfig import get_config_var 
+from distutils.sysconfig import get_config_var
 from distutils.ccompiler import gen_lib_options
 from distutils.errors import (
     DistutilsExecError, DistutilsFileError, DistutilsPlatformError,
@@ -38,7 +38,7 @@ def cygpath(path_, winonly):
         return path_
 
 def is_posix_static_python():
-    if (sys.platform == "win32" or 
+    if (sys.platform == "win32" or
        sys.platform[:6] == "cygwin"):
         return False
     else:
@@ -312,7 +312,7 @@ class DCompiler(cc.CCompiler):
         include_dirs = include_dirs or []
         extra_preargs = extra_preargs or []
         extra_postargs = extra_postargs or []
-            
+
         pythonVersionOpts = self.versionOpts()
 
         if not os.path.exists(output_dir):
@@ -431,7 +431,7 @@ class DCompiler(cc.CCompiler):
                     imps.add(os.path.dirname(os.path.abspath(imp)))
                 else:
                     imps.add(os.path.abspath(imp))
-            unittestOpt.extend([self._stringImportOpt % (imp,) 
+            unittestOpt.extend([self._stringImportOpt % (imp,)
                 for imp in imps])
         objFiles = []
 
@@ -598,8 +598,10 @@ class DMDDCompiler(DCompiler):
         self._outputOpts = ['-of%s']
         # _linkOpts
         if is_posix_static_python():
-            self._exeLinkOpts = ['-L'+l for l in posix_static_python_opts()]
-            self._exeLinkOpts.extend(['-L'+posix_static_python_lib(), '-L-ldl','-L-lutil'])
+            self._exeLinkOpts = ['-L'+posix_static_python_lib()]
+            self._exeLinkOpts.extend([
+                '-L'+l for l in posix_static_python_opts()
+            ])
         else:
             self._exeLinkOpts = []
         if _isPlatWin:
@@ -627,7 +629,7 @@ class DMDDCompiler(DCompiler):
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-version=Optimized', '-release', '-O', '-inline']
 
-    #def link_opts(self, 
+    #def link_opts(self,
 
     def _def_file(self, output_dir, output_filename):
         if _isPlatWin:
@@ -703,7 +705,7 @@ class DMDDCompiler(DCompiler):
             self._dmd_so_ctor = dsto
         return DCompiler.compile(self, *args, **kwargs)
     def link (self, *args, **kwargs):
-        if not _isPlatWin and not self.build_exe: 
+        if not _isPlatWin and not self.build_exe:
             args[1].append(self._dmd_so_ctor)
         return DCompiler.link(self, *args, **kwargs)
 
@@ -745,9 +747,9 @@ class GDCDCompiler(DCompiler):
         # _defaultOptimizeOpts
         self._defaultOptimizeOpts = ['-fdebug']
         # _stringImportOpt
-        self._stringImportOpt = '-J%s' 
+        self._stringImportOpt = '-J%s'
         # _propertyOpt
-        self._propertyOpt = '-fproperty' 
+        self._propertyOpt = '-fproperty'
         # _unittestOpt
         self._unittestOpt = '-funittest'
         # _debugOptimizeOpts
@@ -796,7 +798,7 @@ class LDCDCompiler(DCompiler):
         else:
             self._exeLinkOpts = []
         # _linkOpts
-        self._SharedLinkOpts = ['-shared'] 
+        self._SharedLinkOpts = ['-shared']
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt
@@ -824,7 +826,7 @@ class LDCDCompiler(DCompiler):
             elif not self.build_exe and '-singleobj' not in self._compileOpts:
                 self._compileOpts.append('-singleobj')
     def _def_file(self, output_dir, output_filename):
-        return [] 
+        return []
 
     def library_dir_option(self, dir):
         return "-L-L" + dir
@@ -849,7 +851,7 @@ class LDCDCompiler(DCompiler):
                 ' shared object file).'
             )
         return DCompiler.link(self, *args, **kwargs)
-        
+
 
 # Utility functions:
 def _findInPath(fileName, startIn=None):
