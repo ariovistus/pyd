@@ -10,7 +10,7 @@ class Foo {
     void bar() {
         writefln("Foo.bar: %s", i);
     }
-    string toString() {
+    override string toString() {
         return format("{%s}",i);
     }
 }
