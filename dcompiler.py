@@ -447,7 +447,9 @@ class DCompiler(cc.CCompiler):
                 [_qp(source[0]) for source in sources] + extra_postargs
             )
             cmdElements = [el for el in cmdElements if el]
+            print('travis_fold:start:pyd_compile')
             spawn0(self,cmdElements)
+            print('travis_fold:end:pyd_compile')
             return [objName]
         else:
           for source, source_type in sources:
@@ -573,7 +575,9 @@ class DCompiler(cc.CCompiler):
         )
         cmdElements = [el for el in cmdElements if el]
 
+        print('travis_fold:start:pyd_link')
         spawn0(self,cmdElements)
+        print('travis_fold:end:pyd_link')
 
 class DMDDCompiler(DCompiler):
     compiler_type = 'dmd'

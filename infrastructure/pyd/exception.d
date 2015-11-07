@@ -230,7 +230,7 @@ public:
                 pmsg = PyObject_GetAttrString(m_value, "msg");
             }else{
                 // todo: test this on other versions..
-                version(Python_3_3_Or_Later) {
+                version(Python_3_2_Or_Later) {
                     pmsg = PyObject_GetAttrString(m_value, "args");
                     if(pmsg != null && PyTuple_Check(pmsg) && 
                             PyTuple_Size(pmsg) >= 1) {

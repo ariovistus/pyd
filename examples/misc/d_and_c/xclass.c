@@ -53,6 +53,7 @@ static int x_traverse(PyObject *m, visitproc visit, void *arg) {
 }
 static int x_clear(PyObject *m) {
     Py_CLEAR(GETSTATE(m)->error);
+    return 0;
 }
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
@@ -87,7 +88,7 @@ initx(void)
     x_XType.tp_flags |= Py_TPFLAGS_CHECKTYPES;
     m = Py_InitModule3("x", x_methods, "Hi ho, pipsissiwa is slow");
 #endif
-    if(PyType_Ready(&x_XType) < 0) return;
+    if(PyType_Ready(&x_XType) < 0) return NULL;
 
     Py_INCREF(&x_XType);
     PyModule_AddObject(m, "X", (PyObject *)&x_XType);
