@@ -179,6 +179,19 @@ except DistutilsExecError as msg:
             raise CompileError(msg)
 ''')
 
+def wrapped_spawn(self, cmdElements, tag):
+    '''
+    wrap spawn with unique-ish travis fold prints
+    '''
+    import uuid
+    a = uuid.uuid1()
+    print("travis_fold:start:%s-%s" % (tag, a))
+    try:
+        spawn0(self, cmdElements)
+    finally:
+        print("travis_fold:end:%s-%s" % (tag, a))
+
+
 class DCompiler(cc.CCompiler):
 
     src_extensions = ['.d']
@@ -447,9 +460,7 @@ class DCompiler(cc.CCompiler):
                 [_qp(source[0]) for source in sources] + extra_postargs
             )
             cmdElements = [el for el in cmdElements if el]
-            print('travis_fold:start:pyd_compile')
-            spawn0(self,cmdElements)
-            print('travis_fold:end:pyd_compile')
+            wrapped_spawn(self,cmdElements, 'pyd_compile')
             return [objName]
         else:
           for source, source_type in sources:
@@ -575,9 +586,7 @@ class DCompiler(cc.CCompiler):
         )
         cmdElements = [el for el in cmdElements if el]
 
-        print('travis_fold:start:pyd_link')
-        spawn0(self,cmdElements)
-        print('travis_fold:end:pyd_link')
+        wrapped_spawn(self,cmdElements, 'pyd_link')
 
 class DMDDCompiler(DCompiler):
     compiler_type = 'dmd'
