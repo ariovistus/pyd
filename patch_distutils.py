@@ -16,9 +16,15 @@ from pyd import dcompiler
 cc.CCompiler.language_map['.d'] = 'd'
 cc.CCompiler.language_order.insert(0, 'd')
 
-cc.compiler_class['dmd'] = ('pyd.dcompiler', 'DMDDCompiler', 'Digital Mars D')
-cc.compiler_class['gdc'] = ('pyd.dcompiler', 'GDCDCompiler', 'GCC D Compiler')
-cc.compiler_class['ldc'] = ('pyd.dcompiler', 'LDCDCompiler', 'LLVM D Compiler')
+d_compilers = {
+    'dmd': ('pyd.dcompiler', 'DMDDCompiler', 'Digital Mars D'),
+    'gdc': ('pyd.dcompiler', 'GDCDCompiler', 'GCC D Compiler'),
+    'ldc': ('pyd.dcompiler', 'LDCDCompiler', 'LLVM D Compiler'),
+    'ldc2': ('pyd.dcompiler', 'LDCDCompiler', 'LLVM D Compiler'),
+}
+
+for compiler, compiler_class in d_compilers.items():
+    cc.compiler_class[compiler] = compiler_class
 
 _old_new_compiler = cc.new_compiler
 
@@ -26,18 +32,14 @@ def new_compiler(compiler=None, dry_run=0, force=0, **kwargs):
     if compiler is not None:
         compiler = compiler.lower()
 
-    if compiler not in ('dmd', 'gdc','ldc'):
+    if compiler not in d_compilers:
         return _old_new_compiler(compiler=compiler,
             dry_run=dry_run, force=force, **kwargs
           )
-    elif compiler == 'dmd':
-        return dcompiler.DMDDCompiler(None, dry_run, force)
-    elif compiler == 'ldc':
-        return dcompiler.LDCDCompiler(None, dry_run, force)
-    elif compiler == 'gdc':
-        return dcompiler.GDCDCompiler(None, dry_run, force)
     else:
-        raise RuntimeError("Couldn't get a compiler...")
+        # non-lazy people should probably use import_module here
+        DCompiler = getattr(dcompiler, d_compilers[compiler][1])
+        return DCompiler(None, dry_run, force)
 
 cc.new_compiler = new_compiler
 #   python setup.py build --compiler=dmd
