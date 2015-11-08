@@ -317,7 +317,19 @@ class DCompiler(cc.CCompiler):
         #   }
         return [self._versionOpt % v for v in self.all_versions()]
 
-    def compile(self, sources,
+    def _make_object_name(self, *args):
+        path = args[:-1]
+        dir = os.path.join(*path)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        file = args[-1]+self.obj_extension
+        filename = os.path.join(dir, file)
+        filename = winpath(filename, self.winonly)
+        filename = _qp(filename)
+        return filename
+
+    def compile(
+        self, sources,
         output_dir=None, macros=None, include_dirs=None, debug=0,
         extra_preargs=None, extra_postargs=None, depends=None
     ):
@@ -449,10 +461,9 @@ class DCompiler(cc.CCompiler):
         objFiles = []
 
         if self.lump:
-            objName = os.path.join(output_dir,'infra','temp'+self.obj_extension)
-            objName = (winpath(objName,self.winonly))
+            objName = self._make_object_name(output_dir, 'infra', 'temp')
             outOpts = outputOpts[:]
-            outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
+            outOpts[-1] = outOpts[-1] % objName
             cmdElements = (
                 [binpath] + extra_preargs + unittestOpt + compileOpts +
                 pythonVersionOpts + optimizationOpts +
@@ -465,17 +476,15 @@ class DCompiler(cc.CCompiler):
         else:
           for source, source_type in sources:
             outOpts = outputOpts[:]
-            objFilename = cygpath(os.path.splitext(source)[0],self.winonly) + self.obj_extension
+            objFilename = os.path.splitext(source)[0]
             if source_type == 'project':
-                objName = os.path.join(output_dir, 'project', objFilename)
+                objName = self._make_object_name(output_dir, 'project', objFilename)
             elif source_type == 'outside':
-                objName = os.path.join(output_dir, 'outside', os.path.basename(objFilename))
+                objName = self._make_object_name(output_dir, 'outside', os.path.basename(objFilename))
             else: # infra
-                objName = os.path.join(output_dir, 'infra', os.path.basename(objFilename))
-            if not os.path.exists(os.path.dirname(objName)):
-                os.makedirs(os.path.dirname(objName))
-            objFiles.append(winpath(objName,self.winonly))
-            outOpts[-1] = outOpts[-1] % _qp(winpath(objName,self.winonly))
+                objName = self._make_object_name(output_dir, 'infra', os.path.basename(objFilename))
+            objFiles.append(objName)
+            outOpts[-1] = outOpts[-1] % objName
 
             cmdElements = (
                 [binpath] + extra_preargs + unittestOpt + compileOpts +
