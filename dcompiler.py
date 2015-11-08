@@ -736,9 +736,6 @@ class GDCDCompiler(DCompiler):
     _env_var = 'GDC_BIN'
 
     def _initialize(self):
-        if not self.build_exe:
-            print("gdc does not support building shared libraries, so python extensions are out of the question")
-            sys.exit(1)
         self._exeCompileOpts = ['-c']
         # _compileOpts
         self._compileOpts = ['-fPIC', '-c']
@@ -769,6 +766,11 @@ class GDCDCompiler(DCompiler):
         self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', self._unittestOpt]
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-fversion=Optimized', '-frelease', '-O3']
+    def compile(self, *args, **kwargs):
+        if not self.build_exe:
+            print("gdc does not support building shared libraries, so python extensions are out of the question")
+            sys.exit(1)
+        return DCompiler.compile(self, *args, **kwargs)
 
     def _def_file(self, output_dir, output_filename):
         return ['-Wl,-soname,' + os.path.basename(output_filename)]
