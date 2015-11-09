@@ -38,6 +38,7 @@ import std.algorithm;
 import std.complex;
 import std.typetuple;
 import std.bigint;
+import std.datetime;
 import std.traits;
 import std.typecons;
 import std.conv;
@@ -180,6 +181,26 @@ PyObject* d_to_python(T) (T t) {
         return PyFloat_FromDouble(t);
     } else static if( isTuple!T) {
         return d_tuple_to_python!T(t);
+    } else static if (is(T == DateTime)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        return PyDateTime_FromDateAndTime(t.year, t.month, t.day, t.hour, t.minute, t.second, 0);
+    } else static if (is(T == Date)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        return PyDate_FromDate(t.year, t.month, t.day);
+    } else static if (is(T == SysTime)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        return PyDateTime_FromDateAndTime(t.year, t.month, t.day, t.hour, t.minute, t.second, 0);
+    } else static if (is(T == TimeOfDay)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        return PyTime_FromTime(t.hour, t.minute, t.second, 0);
     } else static if (is(Unqual!T _unused : Complex!F, F)) {
         return PyComplex_FromDoubles(t.re, t.im);
     } else static if(is(T == std.bigint.BigInt)) {
@@ -443,6 +464,72 @@ T python_to_d(T) (PyObject* o) {
             return python_to_d_bigint!T(i);
         }
         return python_to_d_try_extends!T(o);
+    } else static if(is(T == DateTime)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        if(PyDateTime_Check(o)) {
+            int year = PyDateTime_GET_YEAR(o);
+            int month = PyDateTime_GET_MONTH(o);
+            int day = PyDateTime_GET_DAY(o);
+            int hour = PyDateTime_DATE_GET_HOUR(o);
+            int minute = PyDateTime_DATE_GET_MINUTE(o);
+            int second = PyDateTime_DATE_GET_SECOND(o);
+            return DateTime(year, month, day, hour, minute, second);
+        }
+        if(PyDate_Check(o)) {
+            int year = PyDateTime_GET_YEAR(o);
+            int month = PyDateTime_GET_MONTH(o);
+            int day = PyDateTime_GET_DAY(o);
+            return DateTime(year, month, day, 0, 0, 0);
+        }
+    } else static if(is(T == Date)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        if(PyDateTime_Check(o) || PyDate_Check(o)) {
+            int year = PyDateTime_GET_YEAR(o);
+            int month = PyDateTime_GET_MONTH(o);
+            int day = PyDateTime_GET_DAY(o);
+            return Date(year, month, day);
+        }
+    } else static if(is(T == SysTime)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        if(PyDateTime_Check(o)) {
+            int year = PyDateTime_GET_YEAR(o);
+            int month = PyDateTime_GET_MONTH(o);
+            int day = PyDateTime_GET_DAY(o);
+            int hour = PyDateTime_DATE_GET_HOUR(o);
+            int minute = PyDateTime_DATE_GET_MINUTE(o);
+            int second = PyDateTime_DATE_GET_SECOND(o);
+            auto dt = DateTime(year, month, day, hour, minute, second);
+            return SysTime(dt);
+        }
+        if(PyDate_Check(o)) {
+            int year = PyDateTime_GET_YEAR(o);
+            int month = PyDateTime_GET_MONTH(o);
+            int day = PyDateTime_GET_DAY(o);
+            auto dt = DateTime(year, month, day, 0, 0, 0);
+            return SysTime(dt);
+        }
+    } else static if(is(T == TimeOfDay)) {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+        if(PyTime_Check(o)) {
+            int hour = PyDateTime_TIME_GET_HOUR(o);
+            int minute = PyDateTime_TIME_GET_MINUTE(o);
+            int second = PyDateTime_TIME_GET_SECOND(o);
+            return TimeOfDay(hour, minute, second);
+        }
+        if(PyDateTime_Check(o)) {
+            int hour = PyDateTime_DATE_GET_HOUR(o);
+            int minute = PyDateTime_DATE_GET_MINUTE(o);
+            int second = PyDateTime_DATE_GET_SECOND(o);
+            return TimeOfDay(hour, minute, second);
+        }
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return cast(T) PydInputRange!E(borrowed(o));
     } else static if (is(T == class)) {

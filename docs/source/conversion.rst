@@ -15,6 +15,10 @@ Any integral type               bool
 BigInt                          long (int in python3)
 float, double, real             float
 std.complex.Complex             complex
+std.datetime.Date               datetime.date
+std.datetime.DateTime           datetime.datetime
+std.datetime.SysTime            datetime.datetime
+std.datetime.Time               datetime.time
 string                          str
 dynamic array                   list
 static array                    list
@@ -48,6 +52,9 @@ float                           float, double, real
 int, long                       Any integral type
 bool                            bool
 buffer                          dynamic or static array (with many dimensions!) 
+datetime.date                   std.datetime.Date, std.datetime.DateTime, std.datetime.SysTime
+datetime.datetime               std.datetime.Date, std.datetime.DateTime, std.datetime.SysTime, std.datetime.Time
+datetime.time                   std.datetime.Time
 ======================          ===============================================
 
 Numpy
