@@ -17,6 +17,12 @@ d:
  - gdc-5.2.0
 
 matrix:
+  allow_failures:
+   - d: ldc-0.15.1
+     env: TEST=runtests:test_extra
+   - d: ldc-0.16.1
+     env: TEST=runtests:test_extra
+
   exclude:
    - d: dmd-2.067.1
      env: TEST=runtests:test_hello
@@ -132,6 +138,8 @@ matrix:
    - d: gdc-5.2.0
      env: TEST=runtests:test_d_and_c
   
+   - d: gdc-4.9.2
+   - d: gdc-5.2.0
    #- os: osx
    #  d: gdc-4.9.2
    #- os: osx
@@ -162,6 +170,7 @@ env:
     - TEST=runtests:test_d_and_c
     - TEST=runtests:test_multithreading
     - TEST=runtests:PydUnittests
+    - TEST=runtests:test_extra
     - TEST=runtests:DeimosUnittests
     - TEST=runtests:test_pyind
     - TEST=runtests:test_simple_embedded

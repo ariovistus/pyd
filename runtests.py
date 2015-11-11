@@ -1,5 +1,6 @@
 import sys
-import os, os.path
+import os
+import os.path
 import shutil
 import subprocess
 import platform
@@ -11,10 +12,10 @@ from distutils.sysconfig import get_config_var
 
 if platform.python_version() < "2.5":
     def check_call(*args, **kwargs):
-        ret=subprocess.call(*args,**kwargs)
-        if ret != 0: 
-            cmd = kwargs.get('args',args[0])
-            raise Exception("command '%s' returned %s" %(cmd, ret))
+        ret = subprocess.call(*args, **kwargs)
+        if ret != 0:
+            cmd = kwargs.get('args', args[0])
+            raise Exception("command '%s' returned %s" % (cmd, ret))
     subprocess.check_call = check_call
 
 here = os.getcwd()
@@ -24,40 +25,46 @@ compiler = None
 debug = False
 do_clean = False
 
+
 def pybuild():
     pybuild_cmds = [sys.executable, "setup.py", "build"]
     if compiler is not None:
         pybuild_cmds.append("--compiler="+compiler)
     subprocess.check_call(pybuild_cmds)
 
+
 class OurPlugin(Plugin):
     def options(self, parser, env=os.environ):
         parser.add_option("--compiler", dest="compiler")
-        parser.add_option("--clean", action="store_true",dest="clean")
-        parser.add_option('--d-debug',action="store_true",dest="debug")
+        parser.add_option("--clean", action="store_true", dest="clean")
+        parser.add_option('--d-debug', action="store_true", dest="debug")
 
     def configure(self, options, conf):
         global do_clean, compiler, debug
         debug = options.debug
-        
+
         if options.compiler:
             compiler = options.compiler
         if options.clean:
             do_clean = True
 
+
 def setup():
     os.chdir(here)
+
 
 def teardown():
     pass
 
+
 def build_and_run():
     if do_clean:
-        if os.path.exists("build"): 
+        if os.path.exists("build"):
             shutil.rmtree("build")
         return
     pybuild()
     subprocess.check_call([sys.executable, "test.py"])
+
 
 @with_setup(setup, teardown)
 def test_hello():
@@ -65,17 +72,20 @@ def test_hello():
     os.chdir("hello")
     build_and_run()
 
+
 @with_setup(setup, teardown)
 def test_many_libs():
     os.chdir("tests")
     os.chdir("many_libs")
     build_and_run()
 
+
 @with_setup(setup, teardown)
 def test_arraytest():
     os.chdir("examples")
     os.chdir("arraytest")
     build_and_run()
+
 
 @with_setup(setup, teardown)
 def test_inherit():
@@ -89,6 +99,7 @@ def test_rawexample():
     os.chdir("examples")
     os.chdir("rawexample")
     build_and_run()
+
 
 @with_setup(setup, teardown)
 def test_testdll():
@@ -104,11 +115,13 @@ def test_d_and_c():
     os.chdir("d_and_c")
     build_and_run()
 
+
 @with_setup(setup, teardown)
 def test_multithreading():
     os.chdir("tests")
     os.chdir("multithreading")
     build_and_run()
+
 
 def build_pydexe():
     cmds = [sys.executable, "setup.py", "pydexe"]
@@ -118,18 +131,29 @@ def build_pydexe():
         cmds.append("-g")
     subprocess.check_call(cmds)
 
+
 def remove_exe(cmd):
     if os.path.exists(cmd + exe_ext):
         os.remove(cmd+exe_ext)
 
+
 def build_and_run_pydexe(nom):
     if do_clean:
-        if os.path.exists("build"): 
+        if os.path.exists("build"):
             shutil.rmtree("build")
         remove_exe(nom)
         return
     build_pydexe()
     subprocess.check_call([os.path.join(".", nom + exe_ext)])
+
+
+@with_setup(setup, teardown)
+def test_extra():
+    os.chdir("tests")
+    os.chdir("pyd_unittests")
+    os.chdir("extra")
+    build_and_run_pydexe("extra")
+
 
 class PydUnittests(TestCase):
     def setUp(self):
@@ -176,10 +200,6 @@ class PydUnittests(TestCase):
         os.chdir("func_wrap")
         build_and_run_pydexe("func_wrap")
 
-    def test_extra(self):
-        os.chdir("extra")
-        build_and_run_pydexe("extra")
-
     def test_thread(self):
         os.chdir("thread")
         build_and_run_pydexe("thread")
@@ -206,11 +226,13 @@ class DeimosUnittests(TestCase):
         os.chdir('datetime')
         build_and_run_pydexe("datetime")
 
+
 @with_setup(setup, teardown)
 def test_pyind():
     os.chdir('examples')
     os.chdir('pyind')
     build_and_run_pydexe("pyind")
+
 
 @with_setup(setup, teardown)
 def test_simple_embedded():
@@ -218,17 +240,20 @@ def test_simple_embedded():
     os.chdir('simple_embedded')
     build_and_run_pydexe("hello")
 
+
 @with_setup(setup, teardown)
 def test_interpcontext():
     os.chdir('examples')
     os.chdir('interpcontext')
     build_and_run_pydexe("interpcontext")
 
+
 @with_setup(setup, teardown)
 def test_def():
     os.chdir('examples')
     os.chdir('def')
     build_and_run()
+
 
 @with_setup(setup, teardown)
 def test_pydobject():
