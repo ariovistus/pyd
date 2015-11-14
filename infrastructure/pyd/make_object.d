@@ -483,6 +483,10 @@ T python_to_d(T) (PyObject* o) {
             int day = PyDateTime_GET_DAY(o);
             return DateTime(year, month, day, 0, 0, 0);
         }
+        if(is_numpy_datetime64(o)) {
+            return python_to_d_numpy_datetime64!T(o);
+        }
+
     } else static if(is(T == Date)) {
         if(PyDateTimeAPI is null) {
             PyDateTime_IMPORT();
@@ -492,6 +496,9 @@ T python_to_d(T) (PyObject* o) {
             int month = PyDateTime_GET_MONTH(o);
             int day = PyDateTime_GET_DAY(o);
             return Date(year, month, day);
+        }
+        if(is_numpy_datetime64(o)) {
+            return python_to_d_numpy_datetime64!T(o);
         }
     } else static if(is(T == SysTime)) {
         if(PyDateTimeAPI is null) {
@@ -514,6 +521,9 @@ T python_to_d(T) (PyObject* o) {
             auto dt = DateTime(year, month, day, 0, 0, 0);
             return SysTime(dt);
         }
+        if(is_numpy_datetime64(o)) {
+            return python_to_d_numpy_datetime64!T(o);
+        }
     } else static if(is(T == TimeOfDay)) {
         if(PyDateTimeAPI is null) {
             PyDateTime_IMPORT();
@@ -529,6 +539,9 @@ T python_to_d(T) (PyObject* o) {
             int minute = PyDateTime_DATE_GET_MINUTE(o);
             int second = PyDateTime_DATE_GET_SECOND(o);
             return TimeOfDay(hour, minute, second);
+        }
+        if(is_numpy_datetime64(o)) {
+            return python_to_d_numpy_datetime64!T(o);
         }
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return cast(T) PydInputRange!E(borrowed(o));
@@ -1527,3 +1540,41 @@ struct arrayobject {
     arraydescr* ob_descr;
     PyObject* weakreflist; /* List of weak references */
 } 
+
+template get_type(string _module, string type_name) {
+    @property PyTypeObject* get_type() {
+        static PyTypeObject* m_type;
+        static bool inited = false;
+        if(!inited) {
+            inited = true;
+            PyObject* py_module = PyImport_ImportModule(_module);
+            if(py_module) {
+                scope(exit) Py_XDECREF(py_module);
+                m_type = cast(PyTypeObject*) PyObject_GetAttrString(
+                    py_module, type_name
+                );
+            }else{
+                PyErr_Clear();
+            }
+        }
+        return m_type;
+    }
+}
+
+alias numpy_datetime64 = get_type!("numpy", "datetime64");
+alias datetime_datetime = get_type!("datetime", "datetime");
+
+
+bool is_numpy_datetime64(PyObject* py) {
+    auto py_type = cast(PyTypeObject*) PyObject_Type(py);
+    return (numpy_datetime64 !is null && py_type == numpy_datetime64);
+}
+
+T python_to_d_numpy_datetime64(T)(PyObject* py) {
+    PyObject* astype = PyObject_GetAttrString(py, "astype");
+    PyObject* args = PyTuple_FromItems(cast(PyObject*) datetime_datetime);
+    scope(exit) Py_DECREF(args);
+    PyObject* datetime = PyObject_CallObject(astype, args);
+    scope(exit) Py_DECREF(datetime);
+    return python_to_d!T(datetime);
+}
