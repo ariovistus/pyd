@@ -823,6 +823,8 @@ class LDCDCompiler(DCompiler):
             self._exeLinkOpts = []
         # _linkOpts
         self._SharedLinkOpts = ['-shared']
+        if _isPlatOSX:
+            self._SharedLinkOpts.append('-L'+posix_static_python_lib())
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt
