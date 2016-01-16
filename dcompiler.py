@@ -215,7 +215,7 @@ class DCompiler(cc.CCompiler):
         self.version_flags_from_ext = []
         self.debug_flags_from_ext = []
         self.string_imports_from_ext = []
-        # Get DMD/GDC specific info
+        # Get DMD/GDC/LDC specific info
         self._initialize()
         # _binpath
         try:
@@ -247,7 +247,7 @@ class DCompiler(cc.CCompiler):
 
     def _initialize(self):
         # It is intended that this method be implemented by subclasses.
-        raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead.")
+        raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler, GDCDCompiler or LDCDCompiler instead.")
 
     def init_d_opts(self, cmd, ext):
             self.optimize = cmd.optimize or ext.pyd_optimize
@@ -267,7 +267,7 @@ class DCompiler(cc.CCompiler):
         """A list of options used to tell the linker how to make a dll/so. In
         DMD, it is the .def file. In GDC, it is
         ['-shared', '-Wl,-soname,blah.so'] or similar."""
-        raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler or GDCDCompiler instead.")
+        raise NotImplementedError( "Cannot initialize DCompiler, use DMDDCompiler, GDCDCompiler or LDCDCompiler instead.")
 
     def _lib_file(self, libraries):
         return ''
@@ -542,7 +542,7 @@ class DCompiler(cc.CCompiler):
                     ' bases of output_filename "%s" alone.' % output_filename)
 
         # Format the output filename option
-        # (-offilename in DMD, -o filename in GDC)
+        # (-offilename in DMD, -o filename in GDC, -of=filename in LDC)
         outputOpts[-1] = outputOpts[-1] % _qp(winpath(output_filename,self.winonly))
 
         if not os.path.exists(output_dir):
