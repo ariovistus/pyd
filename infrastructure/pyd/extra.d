@@ -33,21 +33,7 @@ import pyd.exception;
 import pyd.make_object;
 import deimos.python.Python;
 
-@property PyTypeObject* numpy_ndarray_Type() {
-    static PyTypeObject* m_type;
-    static bool inited = false;
-    if(!inited) {
-        inited = true;
-        PyObject* numpy = PyImport_ImportModule("numpy");
-        if(numpy) {
-            scope(exit) Py_XDECREF(numpy);
-            m_type = cast(PyTypeObject*) PyObject_GetAttrString(numpy, "ndarray");
-        }else{
-            PyErr_Clear();
-        }
-    }
-    return m_type;
-}
+alias numpy_ndarray_Type = get_type!("numpy", "ndarray");
 
 template NumpyFormatType(T) {
     static if(is(Unqual!T == Complex!F, F)) {
@@ -85,15 +71,13 @@ static assert(NumpyFormatType!(Complex!float).supported);
 PyObject* d_to_python_numpy_ndarray(T)(T t) 
 if((isArray!T || IsStaticArrayPointer!T) &&
         NumpyFormatType!(MatrixInfo!T.MatrixElementType).supported) {
-    enforce(numpy_ndarray_Type, "numpy is not available"); 
+    enforce(numpy_ndarray_Type(), "numpy is not available"); 
     alias MatrixInfo!T.MatrixElementType ME;
     Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
     PyObject* pyshape = d_to_python(shape);
     PyObject* pyformat = NumpyFormatType!ME.pyType();
-    PyObject* args = PyTuple_New(2);
+    PyObject* args = PyTuple_FromItems(pyshape, pyformat);
     scope(exit) Py_DECREF(args);
-    PyTuple_SetItem(args, 0, pyshape);
-    PyTuple_SetItem(args, 1, pyformat);
     PyObject* ndarray = numpy_ndarray_Type.tp_new(numpy_ndarray_Type, args, null);
     if(!ndarray) handle_exception();
     enforce(ndarray, "numpy.ndarray.__new__ returned null (and didn't set an exception)");
@@ -112,3 +96,13 @@ if((isArray!T || IsStaticArrayPointer!T) &&
     Py_INCREF(ndarray);
     return ndarray;
 }
+
+PyObject* d_to_numpy_datetime64(T)(T t) {
+    PyObject* datetime = d_to_python(t);
+    scope(exit) Py_DECREF(datetime);
+    PyObject* args = PyTuple_FromItems(datetime);
+    scope(exit) Py_DECREF(args);
+    PyObject* datetime64 = numpy_datetime64.tp_new(numpy_datetime64, args, null);
+    return datetime64;
+}
+

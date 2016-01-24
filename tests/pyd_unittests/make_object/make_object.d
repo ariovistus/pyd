@@ -4,6 +4,7 @@ import std.functional;
 import std.range;
 import std.algorithm;
 import std.exception;
+import std.datetime;
 import deimos.python.Python;
 import std.stdio;
 
@@ -335,6 +336,108 @@ unittest {
     assert(si.to_d!string() == "ちりめん");
     assert(si.to_d!wstring() == "ちりめん"w);
     assert(si.to_d!dstring() == "ちりめん"d);
+}
+
+unittest {
+    auto datetime = DateTime(1999, 1, 5, 4, 31, 39);
+    auto date = Date(1998, 2, 4);
+    auto systime = SysTime(datetime);
+    auto time = TimeOfDay(4, 32, 33);
+    auto context = new InterpContext();
+    context.d = datetime;
+    context.d2 = date;
+    context.s = systime;
+    context.t = time;
+    context.py_stmts("
+        from datetime import datetime, date, time
+        assert isinstance(d, datetime)
+        assert d.year == 1999
+        assert d.month == 1
+        assert d.day == 5
+        assert d.hour == 4
+        assert d.minute == 31
+        assert d.second == 39
+
+        assert isinstance(d2, date)
+        assert d2.year == 1998
+        assert d2.month == 2
+        assert d2.day == 4
+
+        assert isinstance(s, datetime)
+        assert s.year == 1999
+        assert s.month == 1
+        assert s.day == 5
+        assert s.hour == 4
+        assert s.minute == 31
+        assert s.second == 39
+
+        assert isinstance(t, time)
+        assert t.hour == 4
+        assert t.minute == 32
+        assert t.second == 33
+    ");
+}
+
+unittest {
+    auto context = new InterpContext();
+    context.py_stmts("
+        from datetime import datetime, date, time
+        d1 = datetime(2011, 4, 21, 4, 31, 39)
+        d2 = date(2012, 5, 12)
+        t1 = time(4, 32, 40)
+    ");
+
+    auto datetime = context.d1.to_d!DateTime();
+    assert(datetime.year == 2011);
+    assert(datetime.month == 4);
+    assert(datetime.day == 21);
+    assert(datetime.hour == 4);
+    assert(datetime.minute == 31);
+    assert(datetime.second == 39);
+
+    auto datetime2 = context.d2.to_d!DateTime();
+    assert(datetime2.year == 2012);
+    assert(datetime2.month == 5);
+    assert(datetime2.day == 12);
+    assert(datetime2.hour == 0);
+    assert(datetime2.minute == 0);
+    assert(datetime2.second == 0);
+
+    auto date = context.d1.to_d!Date();
+    assert(date.year == 2011);
+    assert(date.month == 4);
+    assert(date.day == 21);
+
+    auto date2 = context.d2.to_d!Date();
+    assert(date2.year == 2012);
+    assert(date2.month == 5);
+    assert(date2.day == 12);
+
+    auto systime1 = context.d1.to_d!SysTime();
+    assert(systime1.year == 2011);
+    assert(systime1.month == 4);
+    assert(systime1.day == 21);
+    assert(systime1.hour == 4);
+    assert(systime1.minute == 31);
+    assert(systime1.second == 39);
+
+    auto systime2 = context.d2.to_d!SysTime();
+    assert(systime2.year == 2012);
+    assert(systime2.month == 5);
+    assert(systime2.day == 12);
+    assert(systime2.hour == 0);
+    assert(systime2.minute == 0);
+    assert(systime2.second == 0);
+
+    auto time1 = context.t1.to_d!TimeOfDay();
+    assert(time1.hour == 4);
+    assert(time1.minute == 32);
+    assert(time1.second == 40);
+
+    auto time2 = context.d1.to_d!TimeOfDay();
+    assert(time2.hour == 4);
+    assert(time2.minute == 31);
+    assert(time2.second == 39);
 }
 
 class G1(string name) {

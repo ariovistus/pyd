@@ -1,6 +1,7 @@
 import pyd.pyd, pyd.embedded, pyd.extra;
 import deimos.python.Python;
 import std.complex;
+import std.datetime;
 import std.bigint;
 import std.string;
 
@@ -119,6 +120,60 @@ unittest {
         assert(npop[i].imag.to_d!float() == datum.im);
         assert(npop[i].getattr("real").to_d!float() == datum.re);
     }
+}
+
+unittest {
+    auto context = new InterpContext();
+    context.py_stmts("
+        from datetime import datetime
+        import numpy as np;
+        dt1 = np.datetime64(datetime(2014, 2, 3, 5, 1, 4))
+    ");
+    auto result = context.dt1.to_d!DateTime();
+    assert (result.year == 2014);
+    assert (result.month == 2);
+    assert (result.day == 3);
+    assert (result.hour == 5);
+    assert (result.minute == 1);
+    assert (result.second == 4);
+
+    auto result2 = context.dt1.to_d!SysTime();
+    assert (result2.year == 2014);
+    assert (result2.month == 2);
+    assert (result2.day == 3);
+    assert (result2.hour == 5);
+    assert (result2.minute == 1);
+    assert (result2.second == 4);
+    
+    auto result3 = context.dt1.to_d!Date();
+    assert (result3.year == 2014);
+    assert (result3.month == 2);
+    assert (result3.day == 3);
+
+    auto result4 = context.dt1.to_d!TimeOfDay();
+    assert (result4.hour == 5);
+    assert (result4.minute == 1);
+    assert (result4.second == 4);
+}
+
+unittest {
+    auto context = new InterpContext();
+
+    auto dt = DateTime(2014, 8, 22, 13, 7, 54);
+    context.dt = d_to_numpy_datetime64(dt);
+    context.py_stmts("
+        from datetime import datetime
+        from numpy import datetime64
+
+        assert isinstance(dt, datetime64)
+        dt_ = dt.astype(datetime)
+        assert dt_.year == 2014
+        assert dt_.month == 8
+        assert dt_.day == 22
+        assert dt_.hour == 13
+        assert dt_.minute == 7
+        assert dt_.second == 54
+    ");
 }
 
 unittest {
