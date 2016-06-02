@@ -481,7 +481,7 @@ this index
                         isImplicitlyConvertible!(ElementType!SomeRange, 
                             ValueView))
                 {
-                    import std.array;
+                    import std.array: empty, front;
                     if(stuff.empty) return 0;
                     size_t count = 0;
                     ThisNode* prev;
@@ -3520,7 +3520,7 @@ Reports whether value exists in this collection
 Complexity:
 $(BIGOH n) ($(BIGOH n 1) on a good day)
  */
-            bool contains(ValueView value) const{
+            bool containsValue(ValueView value) const{
                 const(ThisNode)* node;
                 size_t index;
                 auto r =  _find(key(value), node,index);

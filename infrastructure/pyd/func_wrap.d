@@ -31,8 +31,10 @@ import std.exception: enforce;
 import std.range;
 import std.conv;
 import std.compiler;
+import std.string: format;
 import util.typelist;
 import util.typeinfo;
+import util.replace: Replace;
 
 import pyd.def;
 import pyd.references;

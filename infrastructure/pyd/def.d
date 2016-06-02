@@ -28,6 +28,7 @@ module pyd.def;
 import deimos.python.Python;
 
 import std.algorithm: startsWith;
+import std.exception: enforce;
 import std.string: format;
 import std.typetuple;
 import std.traits;

@@ -27,7 +27,7 @@ module pyd.class_wrap;
 
 import deimos.python.Python;
 
-import std.algorithm: countUntil;
+import std.algorithm: countUntil, startsWith;
 import std.traits;
 import std.conv;
 import std.exception: enforce;

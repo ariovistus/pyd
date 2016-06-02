@@ -22,6 +22,8 @@ module pyd.references;
 
 import std.traits;
 import std.typetuple;
+import std.string: format;
+import std.exception: enforce;
 
 import pyd.func_wrap;
 import deimos.python.Python;

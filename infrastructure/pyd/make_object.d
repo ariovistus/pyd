@@ -54,6 +54,7 @@ import pyd.struct_wrap;
 import pyd.func_wrap;
 import pyd.def;
 import pyd.exception;
+import std.string: format;
 
 
 shared static this() {
