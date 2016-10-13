@@ -122,8 +122,8 @@ template StripSafeTrusted(F) {
     enum linkage = functionLinkage!F;
     alias SetFunctionAttributes!(F, linkage, desired_attrs) unqual_F;
     static if(isFunctionPointer!F) {
-        enum constn = constness!(pointerTarget!F);
-        alias ApplyConstness!(pointerTarget!unqual_F, constn)* StripSafeTrusted;
+        enum constn = constness!(PointerTarget!F);
+        alias ApplyConstness!(PointerTarget!unqual_F, constn)* StripSafeTrusted;
     }else static if(isDelegate!F) {
         enum constn = constness!(F);
         alias ApplyConstness!(unqual_F, constn) StripSafeTrusted;
