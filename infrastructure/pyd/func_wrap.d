@@ -714,12 +714,12 @@ template isSharedFunction(T...) if (T.length == 1) {
 }
 
 template funcTarget(T...) if(T.length == 1) {
-    static if(isPointer!(T[0]) && is(pointerTarget!(T[0]) == function)) {
-        alias pointerTarget!(T[0]) funcTarget;
+    static if(isPointer!(T[0]) && is(PointerTarget!(T[0]) == function)) {
+        alias PointerTarget!(T[0]) funcTarget;
     }else static if(is(T[0] == function)) {
         alias T[0] funcTarget;
     }else static if(is(T[0] == delegate)) {
-        alias pointerTarget!(typeof((T[0]).init.funcptr)) funcTarget;
+        alias PointerTarget!(typeof((T[0]).init.funcptr)) funcTarget;
     }else static assert(false);
 }
 

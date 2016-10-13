@@ -158,19 +158,19 @@ struct DStruct_Py_Mapping {
     Constness constness;
 
     this(S)(S d, PyObject* py) if(isPointer!S &&
-            is(pointerTarget!S == struct)) {
+            is(PointerTarget!S == struct)) {
         this.d = DKey(d);
         this.d_typeinfo = typeid(TypeInfoType!S);
         this.py = py;
         this.constness = .constness!S;
     }
 
-    template TypeInfoType(T) if(isPointer!T && is(pointerTarget!T == struct)) {
+    template TypeInfoType(T) if(isPointer!T && is(PointerTarget!T == struct)) {
         alias Unqual!T TypeInfoType;
     }
 
     public static const(void)* DKey(T)(T t)
-        if(isPointer!T && is(pointerTarget!T == struct)) {
+        if(isPointer!T && is(PointerTarget!T == struct)) {
             return cast(const(void)*) t;
     }
 
@@ -245,7 +245,7 @@ template pyd_references(T) {
         alias DDg_Py_Mapping Mapping;
     }else static if (isFunctionPointer!T) {
         alias DFn_Py_Mapping Mapping;
-    }else static if(isPointer!T && is(pointerTarget!T == struct)) {
+    }else static if(isPointer!T && is(PointerTarget!T == struct)) {
         alias DStruct_Py_Mapping Mapping;
     }else static if (is(T == class)) {
         alias DClass_Py_Mapping Mapping;

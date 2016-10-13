@@ -71,7 +71,7 @@ template wrapped_struct_init(T) if (is(T == struct)){
 // This template accepts a tuple of function pointer types, which each describe
 // a ctor of T, and  uses them to wrap a Python tp_init function.
 template wrapped_ctors(string classname, T,Shim, C ...) 
-if(is(T == class) || (isPointer!T && is(pointerTarget!T == struct))) {
+if(is(T == class) || (isPointer!T && is(PointerTarget!T == struct))) {
     //alias shim_class T;
     alias wrapped_class_object!(T) wrap_object;
     alias NewParamT!T U;

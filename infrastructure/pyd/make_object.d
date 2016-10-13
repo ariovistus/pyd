@@ -575,7 +575,7 @@ T python_to_d(T) (PyObject* o) {
             return t;
         }
         return python_to_d_try_extends!T(o);
-    } else static if (isPointer!T && is(pointerTarget!T == struct)) { 
+    } else static if (isPointer!T && is(PointerTarget!T == struct)) { 
         // pointer to struct   
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &PydTypeObject!(T))) {
             return get_d_reference!(T)(o);
@@ -601,7 +601,7 @@ T python_to_d(T) (PyObject* o) {
         return python_to_d_string!T(o);
     } else static if (isArray!T || IsStaticArrayPointer!T) {
         static if(isPointer!T) {
-            alias Unqual!(ElementType!(pointerTarget!T)) E;
+            alias Unqual!(ElementType!(PointerTarget!T)) E;
         }else {
             alias Unqual!(ElementType!T) E;
         }
@@ -801,7 +801,7 @@ T python_to_d_string(T) (PyObject* o) {
 T python_array_array_to_d(T)(PyObject* o) 
 if(isArray!T || IsStaticArrayPointer!T) {
     static if(isPointer!T)
-        alias Unqual!(ElementType!(pointerTarget!T)) E;
+        alias Unqual!(ElementType!(PointerTarget!T)) E;
     else
         alias Unqual!(ElementType!T) E;
     if(o.ob_type !is array_array_Type)
@@ -887,7 +887,7 @@ PyObject* d_to_python_bytes(T)(T t) if(is(T == string)) {
   */
 T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
     static if(isPointer!T)
-        alias Unqual!(ElementType!(pointerTarget!T)) E;
+        alias Unqual!(ElementType!(PointerTarget!T)) E;
     else
         alias Unqual!(ElementType!T) E;
     PyObject* iter = PyObject_GetIter(o);
@@ -911,7 +911,7 @@ T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
                     format("length mismatch: %s vs %s", 
                         len, T.length));
     }else static if(isPointer!T){
-        ubyte[] bufi = new ubyte[](pointerTarget!T.sizeof);
+        ubyte[] bufi = new ubyte[](PointerTarget!T.sizeof);
         _array = cast(MatrixInfo!T.unqual)(bufi.ptr);
     }
     int i = 0;
@@ -1299,7 +1299,7 @@ template IsStaticArrayPointer(T) {
         }
     }
     static if(isPointer!T) {
-        enum bool IsStaticArrayPointer = _Inner!(pointerTarget!T);
+        enum bool IsStaticArrayPointer = _Inner!(PointerTarget!T);
     }else{
         enum bool IsStaticArrayPointer = false;
     }
@@ -1437,8 +1437,8 @@ post_code = code to mix in to each for loop after finishing the nested for loop.
         return s_begin ~ s_end;
     }
 
-    static if(isPointer!T && isStaticArray!(pointerTarget!T)) {
-        alias _dim_list!(pointerTarget!T) _dim;
+    static if(isPointer!T && isStaticArray!(PointerTarget!T)) {
+        alias _dim_list!(PointerTarget!T) _dim;
         /// T, with all nonmutable qualifiers stripped away.
         alias _dim.unqual* unqual;
     }else{
