@@ -246,24 +246,24 @@ Struct Format Strings </a>
             }
 
             /// _
-            T item(T)(Py_ssize_t[] indeces...) {
+            T item(T)(Py_ssize_t[] indices...) {
                 enforce(itemsize == T.sizeof);
-                return *cast(T*) item_ptr(indeces);
+                return *cast(T*) item_ptr(indices);
             }
             /// _
-            void set_item(T)(T value, Py_ssize_t[] indeces...) {
+            void set_item(T)(T value, Py_ssize_t[] indices...) {
                 import std.traits;
                 enforce(itemsize == T.sizeof);
-                auto ptr = cast(Unqual!T*) item_ptr(indeces);
+                auto ptr = cast(Unqual!T*) item_ptr(indices);
                 *ptr = value;
             }
 
-            void* item_ptr(Py_ssize_t[] indeces...) {
-                if(has_strides) enforce(indeces.length == ndim);
-                else enforce(indeces.length == 1);
+            void* item_ptr(Py_ssize_t[] indices...) {
+                if(has_strides) enforce(indices.length == ndim);
+                else enforce(indices.length == 1);
                 if(has_strides) {
                     void* ptr = buffer.buf;
-                    foreach(i, index; indeces) {
+                    foreach(i, index; indices) {
                         ptr += strides[i] * index;
                         if(has_indirect && suboffsets != [] && 
                                 suboffsets[i] >= 0) {
@@ -272,7 +272,7 @@ Struct Format Strings </a>
                     }
                     return ptr;
                 }else {
-                    return buffer.buf+indeces[0];
+                    return buffer.buf+indices[0];
                 }
             }
         }

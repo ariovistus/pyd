@@ -8,9 +8,9 @@ module util.multi_index;
  *  make MutableView a per index thing?
  *  modify(r, mod, rollback)
  *  contain const/immutable value types
- *  other indeces? 
+ *  other indices? 
  *  dup
- *  make reserve perform reserve on all appropriate indeces?
+ *  make reserve perform reserve on all appropriate indices?
  *  ensure MultiIndexContainer is strongly exception safe.  
  */
 
@@ -1001,7 +1001,7 @@ for this index
 
 /**
 Perform mod on r.front and performs any necessary fixups to container's 
-indeces. If the result of mod violates any index' invariant, r.front is
+indices. If the result of mod violates any index' invariant, r.front is
 removed from the container.
 Preconditions: !r.empty, $(BR)
 mod is a callable of the form void mod(ref Value) 
@@ -2040,7 +2040,7 @@ $(BIGOH log(n))
 
 /**
 Perform mod on r.front and performs any necessary fixups to container's 
-indeces. If the result of mod violates any index' invariant, r.front is
+indices. If the result of mod violates any index' invariant, r.front is
 removed from the container.
 Preconditions: !r.empty, $(BR)
 mod is a callable of the form void mod(ref Value) 
@@ -3599,7 +3599,7 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
                         index = cast(size_t) node.index!N.prev;
                     }else{
                         static assert(0,"signals not implemented for Hashed "
-                                "indeces without version=BucketHackery");
+                                "indices without version=BucketHackery");
                     }
                 }else{
                     index = hash(key(node.index!N.prev.value))%hashes.length;
@@ -3812,7 +3812,7 @@ $(BIGOH i(n)) $(BR) $(BIGOH n) for this index ($(BIGOH 1) on a good day)
                     if(!newnode) return 0;
                 }else{
                     // won't deny, so don't bother looking until
-                    // we know other indeces won't deny.
+                    // we know other indices won't deny.
                     ThisNode* newnode = _InsertAllBut!N(value);
                     if(!newnode) return 0;
                     auto k = key(value);
@@ -4129,24 +4129,24 @@ struct IndexedBy(L...)
     template _inner(size_t index, List...) {
         static if(List.length <= 1) {
             alias TypeTuple!() names;
-            alias TypeTuple!() name_indeces;
-            alias TypeTuple!(List) indeces;
+            alias TypeTuple!() name_indices;
+            alias TypeTuple!(List) indices;
         }else static if(IsIndex!(List[0]) && is(typeof(List[1]) == string)) {
             alias _inner!(index+1,List[2 .. $]) next;
             alias TypeTuple!(List[1], next.names) names;
-            alias TypeTuple!(index, next.name_indeces) name_indeces;
-            alias TypeTuple!(List[0], next.indeces) indeces;
+            alias TypeTuple!(index, next.name_indices) name_indices;
+            alias TypeTuple!(List[0], next.indices) indices;
         }else {
             alias _inner!(index+1,List[1 .. $]) next;
             alias next.names names;
-            alias next.name_indeces name_indeces;
-            alias TypeTuple!(List[0], next.indeces) indeces;
+            alias next.name_indices name_indices;
+            alias TypeTuple!(List[0], next.indices) indices;
         }
     }
 
     alias _inner!(0, L).names Names;
-    alias _inner!(0, L).name_indeces NameIndeces;
-    alias _inner!(0, L).indeces Indeces;
+    alias _inner!(0, L).name_indices NameIndices;
+    alias _inner!(0, L).indices Indices;
     alias L List;
 }
 
@@ -4187,7 +4187,7 @@ template OU(T){
 }
 
 /** 
-Specifies how to hook up value signals to indeces.
+Specifies how to hook up value signals to indices.
 
 A value type Value is a signal whenever Value supports the signal 
 interface, ie $(BR)
@@ -4210,11 +4210,11 @@ where mixinAlias is passed in as a string to each element of L.
 
 Arguments must be instantiations of ValueSignal.
 
-Signals to single indeces can be specified by ValueSignal!(index[, mixinAlias])
+Signals to single indices can be specified by ValueSignal!(index[, mixinAlias])
 
-Signals to all indeces can be specified by ValueSignal!("*"[, mixinAlias])
+Signals to all indices can be specified by ValueSignal!("*"[, mixinAlias])
 
-A signal can be shared by multiple indeces; however do not associate a signal 
+A signal can be shared by multiple indices; however do not associate a signal 
 to the same index more than once.
 */
 
@@ -4228,7 +4228,7 @@ struct ValueChangedSlots(L...) {
             Inner i;
             return i;
         }
-        enum N = IndexedBy.Indeces.length;
+        enum N = IndexedBy.Indices.length;
         alias ExpandStarSignals!(IndexedBy,L) List;
 
 
@@ -4241,7 +4241,7 @@ struct ValueChangedSlots(L...) {
                     static assert(false, "you bad, bad person");
                 }else {
                     enum _TagIndex = staticIndexOf!(valueSignal.Tag, IndexedBy.Names);
-                    enum GetIndex = IndexedBy.NameIndeces[_TagIndex];
+                    enum GetIndex = IndexedBy.NameIndices[_TagIndex];
                 }
             }
         }
@@ -4249,54 +4249,54 @@ struct ValueChangedSlots(L...) {
         enum string[] AllSignals = OU!(string).TypeList2SortedArray!(
                 NoDuplicates!(staticMap!(GetMixinAlias, List)))(); 
 
-        template FindIndeces(string mixinAlias, size_t i, indeces...)
-        if(indeces.length == 1 && is(typeof(indeces[0]) == size_t[])){
+        template FindIndices(string mixinAlias, size_t i, indices...)
+        if(indices.length == 1 && is(typeof(indices[0]) == size_t[])){
             static if(i < List.length){
                 static if(List[i].MixinAlias == mixinAlias){
                     enum index = GetIndex!(List[i]);
-                    static if(IndexedBy.Indeces[index].BenefitsFromSignals){
+                    static if(IndexedBy.Indices[index].BenefitsFromSignals){
                         enum size_t[] result = 
-                            FindIndeces!(mixinAlias, i+1, 
+                            FindIndices!(mixinAlias, i+1, 
                                     OU!(size_t).orderedUniqueInsert(
-                                        indeces[0], index)).result;
+                                        indices[0], index)).result;
                     }else{
                         enum size_t[] result = 
-                            FindIndeces!(mixinAlias, i+1, indeces[0]).result;
+                            FindIndices!(mixinAlias, i+1, indices[0]).result;
                     }
                 }else{
                     enum size_t[] result = 
-                        FindIndeces!(mixinAlias, i+1, indeces[0]).result;
+                        FindIndices!(mixinAlias, i+1, indices[0]).result;
                 }
             }else{
-                enum size_t[] result = indeces[0];
+                enum size_t[] result = indices[0];
             }
         }
 
         template GenSets(size_t i, MI...){
             static if (i < AllSignals.length){
                 enum mixinAlias = AllSignals[i];
-                enum indeces = FindIndeces!(mixinAlias,0,cast(size_t[])[]).result;
-                template InsertIndeces(size_t j){
+                enum indices = FindIndices!(mixinAlias,0,cast(size_t[])[]).result;
+                template InsertIndices(size_t j){
                     static if(j < MI.length){
-                        static if(MI[j].Indeces == indeces){
+                        static if(MI[j].Indices == indices){
                             alias TypeTuple!(MI[0 .. j], 
-                                    Mixin2Indeces!(
+                                    Mixin2Indices!(
                                         OU!(string).orderedUniqueInsert(
                                             MI[j].MixinAliases,mixinAlias),
-                                        indeces
+                                        indices
                                         ), 
-                                    MI[j+1 .. $]) InsertIndeces;
+                                    MI[j+1 .. $]) InsertIndices;
                         }else{
-                            alias InsertIndeces!(i+1) InsertIndeces;
+                            alias InsertIndices!(i+1) InsertIndices;
                         }
                     }else{
-                        alias TypeTuple!(MI, Mixin2Indeces!([mixinAlias], 
-                                    indeces)) InsertIndeces;
+                        alias TypeTuple!(MI, Mixin2Indices!([mixinAlias], 
+                                    indices)) InsertIndices;
                     }
                 }
 
-                static if(indeces.length > 0){
-                    alias InsertIndeces!(0) MI2;
+                static if(indices.length > 0){
+                    alias InsertIndices!(0) MI2;
                     alias GenSets!(i+1, MI2).result result;
                 }else{
                     alias GenSets!(i+1, MI).result result;
@@ -4306,9 +4306,9 @@ struct ValueChangedSlots(L...) {
             }
         }
 
-        // map { set of mixin aliases -> set of indeces }
+        // map { set of mixin aliases -> set of indices }
         // since we don't have maps or sets in ct (boo),
-        // really this is a list of ((list of mixin aliases), (list of indeces))
+        // really this is a list of ((list of mixin aliases), (list of indices))
         // with each inner list sorted ascending.
         //
         // what's the background?
@@ -4323,33 +4323,33 @@ struct ValueChangedSlots(L...) {
         //
         // Requires: In the map's key set - a set of sets of mixin aliases -
         //  each mixin appears in exactly one set. (it is a true set)
-        //  The map's value set - a set of sets of indeces - is a true set,
+        //  The map's value set - a set of sets of indices - is a true set,
         //  each index set is unique
         //
         // Then: for each entry in the map (K,V), we generate a slot function W
         //  inside our node. W gets connected/disconnected to/from each of 
-        //  the signals in K. W notifies each of the indeces in V.
+        //  the signals in K. W notifies each of the indices in V.
 
         alias GenSets!(0).result Mixin2Index;
 
 
-        template _GetIndecesForSignal(string signal, size_t i){
+        template _GetIndicesForSignal(string signal, size_t i){
             static if(i < N){
                 static if(staticIndexOf!(signal, GetMixinAliases!(List[i])) 
                         != -1){
-                    alias TypeTuple!(i,_GetIndecesForSignal!(signal,i+1)) 
-                        _GetIndecesForSignal;
+                    alias TypeTuple!(i,_GetIndicesForSignal!(signal,i+1)) 
+                        _GetIndicesForSignal;
                 }else{
-                    alias _GetIndecesForSignal!(signal,i+1) 
-                        _GetIndecesForSignal;
+                    alias _GetIndicesForSignal!(signal,i+1) 
+                        _GetIndicesForSignal;
                 }
             }else{
-                alias TypeTuple!() _GetIndecesForSignal;
+                alias TypeTuple!() _GetIndicesForSignal;
             }
         }
 
-        template GetIndecesForSignal(string signal){
-            alias _GetIndecesForSignal!(signal, 0) GetIndecesForSignal;
+        template GetIndicesForSignal(string signal){
+            alias _GetIndicesForSignal!(signal, 0) GetIndicesForSignal;
         }
     }
 }
@@ -4367,7 +4367,7 @@ template ExpandStarSignals(IndexedBy, L...) {
 }
 
 template ExpandStarSignal(IndexedBy, size_t i, ProtoSignal) {
-    static if(i >= IndexedBy.Indeces.length) {
+    static if(i >= IndexedBy.Indices.length) {
         alias TypeTuple!() ExpandStarSignal;
     }else {
         alias TypeTuple!(ValueSignal!(i, ProtoSignal.MixinAlias),
@@ -4390,12 +4390,12 @@ struct ValueSignal(string tag, string mixinAlias = "")
     enum MixinAlias = mixinAlias;
 }
 
-struct Mixin2Indeces(stuff...)
+struct Mixin2Indices(stuff...)
 // wish we could pass arrays directly (cough)
 if(stuff.length == 2 && is(typeof(stuff[0]) == string[]) && 
         is(typeof(stuff[1]) == size_t[])){
     enum string[] MixinAliases = stuff[0];
-    enum size_t[] Indeces = stuff[1];
+    enum size_t[] Indices = stuff[1];
 }
 
 
@@ -4458,12 +4458,12 @@ struct MNode(_ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
                 alias Signals.Mixin2Index[i] Mixin2Index;
 
                 template ForEachIndex2(size_t j) {
-                    static if(j < Mixin2Index.Indeces.length) {
+                    static if(j < Mixin2Index.Indices.length) {
                         enum result = Replace!(q{
                             if(!container.index!($i)._NotifyChange(&this)) {
                                 goto denied;
                             }
-                        }, "$i", Mixin2Index.Indeces[j]) ~ ForEachIndex2!(j+1).result;
+                        }, "$i", Mixin2Index.Indices[j]) ~ ForEachIndex2!(j+1).result;
                     }else{
                         enum result = "";
                     }
@@ -4491,7 +4491,7 @@ struct MNode(_ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
             //alias L[0] L0;
             enum result = 
                 Replace!(q{
-                    alias IndexedBy.Indeces[$N] L$N;
+                    alias IndexedBy.Indices[$N] L$N;
                     alias L$N.Inner!(ThisContainer, typeof(this),Value,ValueView,$N, Allocator) M$N;
                     mixin M$N.NodeMixin!(M$N.NodeTuple) index$N;
                     template index(size_t n) if(n == $N){ alias index$N index; }
@@ -4502,7 +4502,7 @@ struct MNode(_ThisContainer, IndexedBy, Allocator, Signals, Value, ValueView) {
         }
     }
 
-    enum stuff = ForEachIndex!(0, IndexedBy.Indeces).result;
+    enum stuff = ForEachIndex!(0, IndexedBy.Indices).result;
     mixin(stuff);
 }
 
@@ -4529,8 +4529,8 @@ int IndexedByCount(X...)() {
     }
     return r;
 }
-size_t[] IndexedByAllIndeces(X)() {
-    // erm. returns list of nonindeces in IndexedBy
+size_t[] IndexedByAllIndices(X)() {
+    // erm. returns list of nonindices in IndexedBy
     size_t[] res = [];
     foreach(i,x; X.List){
         static if(!IsIndex!x && 
@@ -4718,7 +4718,7 @@ struct CriterionFromKey(MultiIndex, size_t index,
 
 class MultiIndexContainer(Value, Args...)
 if(IndexedByCount!(Args)() != 1) {
-    static assert (IndexedByCount!(Args)() > 0, "MultiIndexContainer requires indeces to be wrapped with IndexedBy!(..)");
+    static assert (IndexedByCount!(Args)() > 0, "MultiIndexContainer requires indices to be wrapped with IndexedBy!(..)");
     static assert (IndexedByCount!(Args)() < 2, "MultiIndexContainer takes exactly one IndexedBy!(..)");
 }
 
@@ -4728,11 +4728,11 @@ if(FindIndexedBy!Args .List.length == 0) {
 }
 
 class MultiIndexContainer(Value, Args...)
-if(IndexedByAllIndeces!(FindIndexedBy!Args)().length != 0) {
+if(IndexedByAllIndices!(FindIndexedBy!Args)().length != 0) {
     import std.conv;
     alias FindIndexedBy!Args IndexedBy;
-    enum lst = IndexedByAllIndeces!(IndexedBy)();
-    pragma(msg, "IndexedBy contains non-index at indeces");
+    enum lst = IndexedByAllIndices!(IndexedBy)();
+    pragma(msg, "IndexedBy contains non-index at indices");
     mixin template Frch(size_t i) {
         static if(i < lst.length) {
             static if(__traits(compiles, IndexedBy.List[lst[i]].stringof)) {
@@ -4748,8 +4748,8 @@ if(IndexedByAllIndeces!(FindIndexedBy!Args)().length != 0) {
     // @@@ PHOBOS ISSUE 8320 @@@
     /+
     static assert (false, 
-            Replace!(/*"IndexedBy contains non-index at indeces*/" %s", "%s", 
-                IndexedByAllIndeces!(FindIndexedBy!Args)()));
+            Replace!(/*"IndexedBy contains non-index at indices*/" %s", "%s", 
+                IndexedByAllIndices!(FindIndexedBy!Args)()));
 +/
 }
 
@@ -4788,8 +4788,8 @@ if(IndexGarbage!(Args)().length != 0) {
     // @@@ PHOBOS ISSUE 8320 @@@
     /+
     static assert (false, 
-            Replace!(/*"IndexedBy contains non-index at indeces*/" %s", "%s", 
-                IndexedByAllIndeces!(FindIndexedBy!Args)()));
+            Replace!(/*"IndexedBy contains non-index at indices*/" %s", "%s", 
+                IndexedByAllIndices!(FindIndexedBy!Args)()));
 +/
 }
 
@@ -4819,7 +4819,7 @@ or
 ---
 container.name
 ---
-for named indeces.
+for named indices.
 
 If you have a range into an index of this container, you can convert it to a 
 range of index N via
@@ -4831,7 +4831,7 @@ This is equivalent to c++ multi_index' project
 class MultiIndexContainer(Value, Args...) 
 if(IndexedByCount!(Args)() == 1 &&
    FindIndexedBy!Args .List.length != 0 &&
-   IndexedByAllIndeces!(FindIndexedBy!Args)().length == 0 &&
+   IndexedByAllIndices!(FindIndexedBy!Args)().length == 0 &&
    _AllUnique!(FindIndexedBy!Args .Names) &&
    ValueChangedSlotsCount!(Args)() <= 1 &&
    ConstnessViewCount!(Args)() <= 1 &&
@@ -4854,8 +4854,8 @@ if(IndexedByCount!(Args)() == 1 &&
 
     /+
     template IndexedByList0(size_t i, stuff...){
-        static if(i < IndexedBy.Indeces.length){
-            alias typeof(IndexedBy.Indeces[i].Inner!(typeof(this), ThisNode, Value, i).exposeType()) x;
+        static if(i < IndexedBy.Indices.length){
+            alias typeof(IndexedBy.Indices[i].Inner!(typeof(this), ThisNode, Value, i).exposeType()) x;
             alias IndexedByList0!(i+1, stuff, x).result result;
         }else{
             alias stuff result;
@@ -4868,10 +4868,10 @@ if(IndexedByCount!(Args)() == 1 &&
     size_t node_count;
 
     template ForEachCtorMixin(size_t i){
-        static if(i < IndexedBy.Indeces.length){
-            static if(is(typeof(IndexedBy.Indeces[i].Inner!(typeof(this), 
+        static if(i < IndexedBy.Indices.length){
+            static if(is(typeof(IndexedBy.Indices[i].Inner!(typeof(this), 
                                 ThisNode,Value,ValueView,i,Allocator).IndexCtorMixin))){
-                enum result =  IndexedBy.Indeces[i].Inner!(typeof(this), 
+                enum result =  IndexedBy.Indices[i].Inner!(typeof(this), 
                         ThisNode,Value, ValueView,i,Allocator).IndexCtorMixin ~ 
                     ForEachCtorMixin!(i+1).result;
             }else enum result = ForEachCtorMixin!(i+1).result;
@@ -4913,7 +4913,7 @@ if(IndexedByCount!(Args)() == 1 &&
         static if(L.length > 0){
             enum result = 
                 Replace!(q{
-                    alias IndexedBy.Indeces[$N] L$N;
+                    alias IndexedBy.Indices[$N] L$N;
                     alias L$N.Inner!(typeof(this),ThisNode,Value, ValueView,$N,Allocator) M$N;
                     mixin M$N.IndexMixin!(M$N.IndexTuple) index$N;
                     template index(size_t n) if(n == $N){ alias index$N index; }
@@ -4973,7 +4973,7 @@ if(IndexedByCount!(Args)() == 1 &&
         }
     }
 
-    enum stuff = (ForEachIndex!(0, IndexedBy.Indeces).result);
+    enum stuff = (ForEachIndex!(0, IndexedBy.Indices).result);
     mixin(stuff);
 
     template ForEachNamedIndex(size_t i){
@@ -4982,7 +4982,7 @@ if(IndexedByCount!(Args)() == 1 &&
         }else {
             enum result = Replace!(q{
                 alias get_index!$N $name;
-            }, "$N", IndexedBy.NameIndeces[i], "$name", IndexedBy.Names[i]) ~
+            }, "$N", IndexedBy.NameIndices[i], "$name", IndexedBy.Names[i]) ~
             ForEachNamedIndex!(i+1).result;
         }
     }
@@ -4992,7 +4992,7 @@ if(IndexedByCount!(Args)() == 1 &&
 
 
     template ForEachCheckInsert(size_t i, size_t N){
-        static if(i < IndexedBy.Indeces.length){
+        static if(i < IndexedBy.Indices.length){
             static if(i != N && __traits(hasMember, index!i,"_DenyInsertion")){
                 enum result = (Replace!(q{
                         ThisNode* aY; 
@@ -5004,7 +5004,7 @@ if(IndexedByCount!(Args)() == 1 &&
     }
 
     template ForEachDoInsert(size_t i, size_t N){
-        static if(i < IndexedBy.Indeces.length){
+        static if(i < IndexedBy.Indices.length){
             static if(i != N){
                 import std.traits;
                 static if(ParameterTypeTuple!(index!i._Insert).length == 2){
@@ -5071,7 +5071,7 @@ denied:
     }
 
     template ForEachDoRemove(size_t i, size_t N){
-        static if(i < IndexedBy.Indeces.length){
+        static if(i < IndexedBy.Indices.length){
             static if(i != N){
                 enum result = Replace!(q{
                     index!(Y)._Remove(node);
@@ -5080,17 +5080,17 @@ denied:
         }else enum result = "";
     }
 
-    // disattach node from all indeces except index N
+    // disattach node from all indices except index N
     void _RemoveAllBut(size_t N)(ThisNode* node){
         mixin(ForEachDoRemove!(0, N).result);
         node_count --;
     }
 
-    // disattach node from all indeces.
+    // disattach node from all indices.
     // @@@BUG@@@ cannot pass length directly to _RemoveAllBut
     auto _RemoveAll(size_t N = size_t.max)(ThisNode* node){
         static if(N == size_t.max) {
-            enum _grr_bugs = IndexedBy.Indeces.length;
+            enum _grr_bugs = IndexedBy.Indices.length;
             _RemoveAllBut!(_grr_bugs)(node);
         }else {
             _RemoveAllBut!N(node);
@@ -5104,7 +5104,7 @@ denied:
     }
 
     template ForEachIndexPosition(size_t i){
-        static if(i < IndexedBy.Indeces.length){
+        static if(i < IndexedBy.Indices.length){
             static if(is(typeof(index!i ._NodePosition((ThisNode*).init)))){
                 enum variableDeclarations = Replace!(q{
                     ThisNode* node$i;
@@ -5116,20 +5116,20 @@ denied:
                     if(!index!$i ._PositionFixable(node, pos$i, node$i)) 
                         goto denied;
                 }, "$i", i) ~ ForEachIndexPosition!(i+1).gotoDeniedOnInvalid;
-                enum fixupIndeces = Replace!(q{
+                enum fixupIndices = Replace!(q{
                     index!$i ._FixPosition(node, pos$i, node$i);
-                }, "$i", i) ~ ForEachIndexPosition!(i+1).fixupIndeces;
+                }, "$i", i) ~ ForEachIndexPosition!(i+1).fixupIndices;
             }else{
                 enum getNodePositions = ForEachIndexPosition!(i+1).getNodePositions;
                 enum variableDeclarations = ForEachIndexPosition!(i+1).variableDeclarations;
                 enum gotoDeniedOnInvalid = ForEachIndexPosition!(i+1).gotoDeniedOnInvalid;
-                enum fixupIndeces = ForEachIndexPosition!(i+1).fixupIndeces;
+                enum fixupIndices = ForEachIndexPosition!(i+1).fixupIndices;
             }
         }else{
             enum getNodePositions = "";
             enum variableDeclarations = "";
             enum gotoDeniedOnInvalid = "";
-            enum fixupIndeces = "";
+            enum fixupIndices = "";
         }
     }
 
@@ -5140,7 +5140,7 @@ denied:
         node.value = value;
         {
             mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);
-            mixin(ForEachIndexPosition!0 .fixupIndeces);
+            mixin(ForEachIndexPosition!0 .fixupIndices);
         }
         return true;
 denied:
@@ -5150,7 +5150,7 @@ denied:
 
 /*
 Perform mod on node.value and perform any necessary fixups to this container's 
-indeces. mod may be of the form void mod(ref Value), in which case mod directly modifies the value in node. If the result of mod violates any index' invariant,
+indices. mod may be of the form void mod(ref Value), in which case mod directly modifies the value in node. If the result of mod violates any index' invariant,
 the node is removed from the container. 
 Preconditions: mod is a callable of the form void mod(ref Value) 
 Complexity: $(BIGOH m(n)) 
@@ -5160,14 +5160,14 @@ Complexity: $(BIGOH m(n))
         mixin(ForEachIndexPosition!0 .getNodePositions);
         mod(node.value);
         mixin(ForEachIndexPosition!0 .gotoDeniedOnInvalid);
-        mixin(ForEachIndexPosition!0 .fixupIndeces);
+        mixin(ForEachIndexPosition!0 .fixupIndices);
         return;
 denied:
         _RemoveAll(node);
     }
 
     template ForEachClear(size_t i){
-        static if(i < IndexedBy.Indeces.length){
+        static if(i < IndexedBy.Indices.length){
             enum string result = Replace!(q{
                 index!$i ._ClearIndex();
             }, "$i", i) ~ ForEachClear!(i+1).result;
@@ -5186,7 +5186,7 @@ denied:
     }
 
     template ForEachCheck(size_t i){
-        static if(i < IndexedBy.Indeces.length){
+        static if(i < IndexedBy.Indices.length){
             enum result = Replace!(q{
                 index!($i)._Check();
             },"$i", i) ~ ForEachCheck!(i+1).result;
@@ -5222,7 +5222,7 @@ denied:
 
     private template RangeIndexNo(R){
         template IndexNoI(size_t i){
-            static if(i == IndexedBy.Indeces.length){
+            static if(i == IndexedBy.Indices.length){
                 enum size_t IndexNoI = -1;
             }else static if(index!(i).IsMyRange!(R)){
                 enum size_t IndexNoI = i;

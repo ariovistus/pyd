@@ -85,10 +85,10 @@ if((isArray!T || IsStaticArrayPointer!T) &&
     auto buf = array.buffer_view(PyBUF_STRIDES|PyBUF_C_CONTIGUOUS);
     // this really should be optimized, but I am so lazy right now
     enum xx = (MatrixInfo!T.matrixIter(
-                "t", "shape", "_indeces",
+                "t", "shape", "_indices",
                 MatrixInfo!T.ndim, q{
                 static if(is(typeof($array_ixn) == ME)) {
-                    buf.set_item!ME($array_ixn, cast(Py_ssize_t[]) _indeces);
+                    buf.set_item!ME($array_ixn, cast(Py_ssize_t[]) _indices);
                 }
                 },""));
     mixin(xx);

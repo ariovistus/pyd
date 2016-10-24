@@ -1054,7 +1054,7 @@ if (isArray!T || IsStaticArrayPointer!T) {
                         _array = new MatrixInfo!T.unqual(buf.shape[0]);
                     }
                     enum string xx = (MatrixInfo!T.matrixIter(
-                        "_array", "buf.shape", "_indeces",
+                        "_array", "buf.shape", "_indices",
                         MatrixInfo!T.rectArrayAt, q{
                     static if(isDynamicArray!(typeof($array_ixn))) {
                         $array_ixn = new typeof($array_ixn)(buf.shape[$i+1]);
@@ -1089,12 +1089,12 @@ if (isArray!T || IsStaticArrayPointer!T) {
                     
             }
             enum string xx = (MatrixInfo!T.matrixIter(
-                "_array", "buf.shape", "_indeces",
+                "_array", "buf.shape", "_indices",
                 MatrixInfo!T.ndim, q{
                 static if(isDynamicArray!(typeof($array_ixn))) {
                     $array_ixn = new typeof($array_ixn)(buf.shape[$i+1]);
                 }else static if(is(typeof($array_ixn) == ME)) {
-                    $array_ixn = buf.item!ME(cast(Py_ssize_t[]) _indeces);
+                    $array_ixn = buf.item!ME(cast(Py_ssize_t[]) _indices);
                 }
                 },
                 ""));

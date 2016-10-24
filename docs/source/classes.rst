@@ -104,7 +104,7 @@ Operator                                                                        
 
 Notes on wrapped operators
     * only one overload is permitted per operator; however OpBinary and OpBinaryRight may "share" an operator.
-    * PyD only supports opSlice, opSliceAssign if both of their two indeces are
+    * PyD only supports opSlice, opSliceAssign if both of their two indices are
       implicitly convertable to Py_ssize_t. This is a limitation of the 
       Python/C API. Note this means the zero-argument form of opSlice 
       (:code:`foo[]`) cannot be wrapped.
