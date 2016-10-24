@@ -1,4 +1,4 @@
-/** 
+/**
   Mirror _ast.h
   */
 module deimos.python.ast;
@@ -16,8 +16,8 @@ alias _mod* mod_ty;
 
 /// Availability: >= 2.5
 mod_ty* PyAST_FromNode(
-        const(node)* n, 
-        PyCompilerFlags* flags, 
-        const(char)* filename, 
+        const(node)* n,
+        PyCompilerFlags* flags,
+        const(char)* filename,
         PyArena* arena);
 }

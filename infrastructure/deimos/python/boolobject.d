@@ -1,4 +1,4 @@
-/** 
+/**
   Mirror _boolobject.h
   */
 module deimos.python.boolobject;

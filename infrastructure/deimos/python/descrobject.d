@@ -84,7 +84,7 @@ struct PyDescrObject {
 }
 
 /// introduced in python 3, but looks generally useful.
-PyTypeObject* PyDescr_TYPE(T)(T* x) 
+PyTypeObject* PyDescr_TYPE(T)(T* x)
 if(     is(T == PyDescrObject) ||
         is(T == PyMethodDescrObject) ||
         is(T == PyMemberDescrObject) ||
@@ -95,7 +95,7 @@ if(     is(T == PyDescrObject) ||
 }
 
 /// introduced in python 3, but looks generally useful.
-PyObject* PyDescr_NAME(T)(T* x) 
+PyObject* PyDescr_NAME(T)(T* x)
 if(     is(T == PyDescrObject) ||
         is(T == PyMethodDescrObject) ||
         is(T == PyMemberDescrObject) ||

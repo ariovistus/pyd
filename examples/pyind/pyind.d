@@ -7,13 +7,13 @@ import pyd.embedded;
 
 shared static this() {
     on_py_init({
-            def!(knock, ModuleName!"office", 
-                Docstring!"a brain specialist works here")(); 
+            def!(knock, ModuleName!"office",
+                Docstring!"a brain specialist works here")();
             add_module!(ModuleName!"office")();
     });
     py_init();
 
-    wrap_class!(Gumby, 
+    wrap_class!(Gumby,
         Def!(Gumby.query),
         ModuleName!"office",
         Property!(Gumby.brain_status),
@@ -57,9 +57,9 @@ void main() {
 
     // functions can be defined in Python and invoked in D
     alias py_def!(
-        "def holler(a): 
+        "def holler(a):
             return ' '.join(['Doctor!']*a)",
-        "office", 
+        "office",
         string function(int)) call_out;
 
     writeln(call_out(1));

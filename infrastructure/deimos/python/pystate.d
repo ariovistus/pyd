@@ -1,7 +1,7 @@
 /**
   Mirror _pystate.h
 
-  Thread and interpreter state structures and their interfaces 
+  Thread and interpreter state structures and their interfaces
   */
 module deimos.python.pystate;
 
@@ -91,11 +91,11 @@ struct PyThreadState {
         /** The stack has overflowed. Allow 50 more calls
            to handle the runtime error. */
         /// Availability: 3.*
-        ubyte overflowed; 
-        /** The current calls must not cause 
+        ubyte overflowed;
+        /** The current calls must not cause
            a stack overflow. */
         /// Availability: 3.*
-        ubyte recursion_critical; 
+        ubyte recursion_critical;
     }
     /// _
     int tracing;
@@ -207,7 +207,7 @@ version(Python_3_0_Or_Later) {
     mixin(PyAPI_DATA!"_Py_atomic_address _PyThreadState_Current");
 
     /// _
-    auto PyThreadState_GET()() { 
+    auto PyThreadState_GET()() {
         return cast(PyThreadState*)
                 _Py_atomic_load_relaxed(&_PyThreadState_Current);
     }
@@ -216,7 +216,7 @@ version(Python_3_0_Or_Later) {
     mixin(PyAPI_DATA!"PyThreadState* _PyThreadState_Current");
 
     /// _
-    auto PyThreadState_GET()() { 
+    auto PyThreadState_GET()() {
         return _PyThreadState_Current;
     }
 }
@@ -224,7 +224,7 @@ version(Python_3_0_Or_Later) {
 /// _
 enum PyGILState_STATE {
     /// _
-    PyGILState_LOCKED, 
+    PyGILState_LOCKED,
     /// _
     PyGILState_UNLOCKED
 };

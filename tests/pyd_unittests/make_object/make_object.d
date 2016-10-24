@@ -79,68 +79,68 @@ unittest {
                 "f = ndarray(shape=[3,4], buffer=b, order='F')\n"
                 ,
                 "testing");
-        assert(py_eval!(double[][])("a","testing") == 
+        assert(py_eval!(double[][])("a","testing") ==
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(py_eval!(double[4][4])("a","testing") == 
+        assert(py_eval!(double[4][4])("a","testing") ==
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(py_eval!(double[][4])("a","testing") == 
+        assert(py_eval!(double[][4])("a","testing") ==
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(py_eval!(double[4][])("a","testing") == 
+        assert(py_eval!(double[4][])("a","testing") ==
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(*py_eval!(double[4][4]*)("a","testing") == 
+        assert(*py_eval!(double[4][4]*)("a","testing") ==
                 [[0, 1, 0, 0],
                  [0, 0, 1, 0],
                  [0, 0, 0, 1],
                  [0, 0, 0, 0]]);
-        assert(py_eval!(double[][])("b","testing") == 
+        assert(py_eval!(double[][])("b","testing") ==
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(py_eval!(double[4][3])("b","testing") == 
+        assert(py_eval!(double[4][3])("b","testing") ==
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(py_eval!(double[][3])("b","testing") == 
+        assert(py_eval!(double[][3])("b","testing") ==
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(py_eval!(double[4][])("b","testing") == 
+        assert(py_eval!(double[4][])("b","testing") ==
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(*py_eval!(double[4][3]*)("b","testing") == 
+        assert(*py_eval!(double[4][3]*)("b","testing") ==
                 [[1, 0, 0, 0],
                  [0, 1, 0, 0],
                  [0, 0, 1, 0]]);
-        assert(py_eval!(double[][])("f","testing") == 
+        assert(py_eval!(double[][])("f","testing") ==
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(py_eval!(double[4][3])("f","testing") == 
+        assert(py_eval!(double[4][3])("f","testing") ==
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(py_eval!(double[][3])("f","testing") == 
+        assert(py_eval!(double[][3])("f","testing") ==
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(py_eval!(double[4][])("f","testing") == 
+        assert(py_eval!(double[4][])("f","testing") ==
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
-        assert(*py_eval!(double[4][3]*)("f","testing") == 
+        assert(*py_eval!(double[4][3]*)("f","testing") ==
                 [[1, 0, 0, 0],
                  [0, 0, 0, 1],
                  [0, 1, 0, 0]]);
@@ -149,7 +149,7 @@ unittest {
         // this won't work because f is a matrix of doubles
         assert(cantconvert(py_eval!(float[][])("f","testing")));
 
-        auto b = py_eval!(double[][])("b","testing"); 
+        auto b = py_eval!(double[][])("b","testing");
         import pyd.extra;
         assert(python_to_d!(double[][])(d_to_python_numpy_ndarray(b))
                 ==
@@ -518,12 +518,12 @@ unittest {
 
     // or int function() pure
     auto refunc3 = py_func.to_d!(
-            SetFunctionAttributes!(int function(), "D", 
+            SetFunctionAttributes!(int function(), "D",
                 FunctionAttribute.pure_))();
     assert(func is refunc3);
     // or int function() nothrow
     auto refunc4 = py_func.to_d!(
-            SetFunctionAttributes!(int function(), "D", 
+            SetFunctionAttributes!(int function(), "D",
                 FunctionAttribute.nothrow_))();
     assert(func is refunc4);
 

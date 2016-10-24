@@ -27,8 +27,8 @@ version(Python_2_5_Or_Later){
 PyObject* PyEval_CallFunction(PyObject* obj, const(char)* format, ...);
 /// _
 PyObject* PyEval_CallMethod(
-        PyObject* obj, 
-        const(char)* methodname, 
+        PyObject* obj,
+        const(char)* methodname,
         const(char)* format, ...);
 
 /// _
@@ -67,14 +67,14 @@ int Py_GetRecursionLimit();
 // d translation of c macro:
 /// _
 int Py_EnterRecursiveCall()(char* where) {
-    return _Py_MakeRecCheck(PyThreadState_GET().recursion_depth) &&  
+    return _Py_MakeRecCheck(PyThreadState_GET().recursion_depth) &&
         _Py_CheckRecursiveCall(where);
 }
 /// _
 void Py_LeaveRecursiveCall()() {
     version(Python_3_0_Or_Later) {
         if(_Py_MakeEndRecCheck(PyThreadState_GET().recursion_depth))
-            PyThreadState_GET().overflowed = 0;  
+            PyThreadState_GET().overflowed = 0;
     }else {
         --PyThreadState_GET().recursion_depth;
     }
@@ -94,8 +94,8 @@ version(Python_3_0_Or_Later) {
     // d translation of c macro:
     /// Availability: 3.*
     auto _Py_MakeEndRecCheck()(x) {
-        return (--(x) < ((_Py_CheckRecursionLimit > 100) 
-                    ? (_Py_CheckRecursionLimit - 50) 
+        return (--(x) < ((_Py_CheckRecursionLimit > 100)
+                    ? (_Py_CheckRecursionLimit - 50)
                     : (3 * (_Py_CheckRecursionLimit >> 2))));
     }
     /*
@@ -106,12 +106,12 @@ version(Python_3_0_Or_Later) {
     }
 
     auto Py_END_ALLOW_RECURSION()() {
-        PyThreadState_GET()->recursion_critical = _old; 
+        PyThreadState_GET()->recursion_critical = _old;
         }while(0);
     }
     */
 
-    /** 
+    /**
       D's answer to C's
       ---
       Py_ALLOW_RECURSION
@@ -133,7 +133,7 @@ version(Python_3_0_Or_Later) {
                 ubyte _old = PyThreadState_GET().recursion_critical;
                 PyThreadState_GET().recursion_critical = 1;
                 $inner_code;
-                PyThreadState_GET().recursion_critical = _old; 
+                PyThreadState_GET().recursion_critical = _old;
                 }
         }, "$inner_code", inner_code);
     }
@@ -197,8 +197,8 @@ version(Python_3_0_Or_Later) {
 #define Py_UNBLOCK_THREADS      _save = PyEval_SaveThread();
 */
 
-/** 
-  D's answer to C's 
+/**
+  D's answer to C's
   ---
   Py_BEGIN_ALLOW_THREADS
   ..code..
@@ -217,7 +217,7 @@ string Py_ALLOW_THREADS()(string inner_code) {
             {
             PyThreadState* _save = PyEval_SaveThread();
             $inner_code;
-            PyEval_RestoreThread(_save); 
+            PyEval_RestoreThread(_save);
             }
     }, "$inner_code", inner_code);
 }

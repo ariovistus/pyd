@@ -1,7 +1,7 @@
 /**
   Mirror _genobject.h
 
-  Generator object interface 
+  Generator object interface
  */
 module deimos.python.genobject;
 
@@ -14,9 +14,9 @@ extern(C):
 
 struct PyGenObject {
     mixin PyObject_HEAD;
-    /** The gi_ prefix is intended to remind of generator-iterator. 
+    /** The gi_ prefix is intended to remind of generator-iterator.
 
-    Note: gi_frame can be NULL if the generator is "finished" 
+    Note: gi_frame can be NULL if the generator is "finished"
      */
     PyFrameObject* gi_frame;
     /** True if generator is being executed. */

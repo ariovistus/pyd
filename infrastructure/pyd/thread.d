@@ -29,7 +29,7 @@ import util.multi_index;
 private bool isAttached = false;
 
 alias ThreadSet = MultiIndexContainer!(
-    Thread, 
+    Thread,
     IndexedBy!(HashedUnique!()),
     MallocAllocator, MutableView
 );

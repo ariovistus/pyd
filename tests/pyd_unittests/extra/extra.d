@@ -12,7 +12,7 @@ static this() {
 /*
 unittest {
     alias cfloat_ = Complex!float;
-    
+
     cfloat_[] data = [
         cfloat_(1,2),
         cfloat_(1,3),
@@ -103,7 +103,7 @@ unittest {
 
 unittest {
     alias cfloat_ = const(Complex!float);
-    
+
     cfloat_[] data = [
         cfloat_(1,2),
         cfloat_(1,3),
@@ -144,7 +144,7 @@ unittest {
     assert (result2.hour == 5);
     assert (result2.minute == 1);
     assert (result2.second == 4);
-    
+
     auto result3 = context.dt1.to_d!Date();
     assert (result3.year == 2014);
     assert (result3.month == 2);

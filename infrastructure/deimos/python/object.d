@@ -1,7 +1,7 @@
-/** 
+/**
   Mirror _object.h
 
-Object and type object interface 
+Object and type object interface
 
 Objects are structures allocated on the heap.  Special rules apply to
 the use of objects to ensure they are properly garbage-collected.
@@ -165,16 +165,16 @@ struct PyVarObject {
 }
 
 /// _
-auto Py_REFCNT(T)(T* ob) { 
-    return (cast(PyObject*)ob).ob_refcnt; 
+auto Py_REFCNT(T)(T* ob) {
+    return (cast(PyObject*)ob).ob_refcnt;
 }
 /// _
-auto Py_TYPE(T)(T* ob) { 
-    return (cast(PyObject*)ob).ob_type; 
+auto Py_TYPE(T)(T* ob) {
+    return (cast(PyObject*)ob).ob_type;
 }
 /// _
-auto Py_SIZE(T)(T* ob) { 
-    return (cast(PyVarObject*)ob).ob_size; 
+auto Py_SIZE(T)(T* ob) {
+    return (cast(PyVarObject*)ob).ob_size;
 }
 
 /// Not part of the python api, but annoying to do without.
@@ -182,12 +182,12 @@ void Py_SET_REFCNT(T)(T* ob, int refcnt) {
     (cast(PyObject*) ob).ob_refcnt = refcnt;
 }
 /// ditto
-void Py_SET_TYPE(T)(T* ob, PyTypeObject* tipo) { 
-    (cast(PyObject*)ob).ob_type = tipo; 
+void Py_SET_TYPE(T)(T* ob, PyTypeObject* tipo) {
+    (cast(PyObject*)ob).ob_type = tipo;
 }
 /// ditto
-void Py_SET_SIZE(T)(T* ob, Py_ssize_t size) { 
-    (cast(PyVarObject*)ob).ob_size = size; 
+void Py_SET_SIZE(T)(T* ob, Py_ssize_t size) {
+    (cast(PyVarObject*)ob).ob_size = size;
 }
 
 /// _
@@ -247,11 +247,11 @@ version(Python_2_5_Or_Later){
     /// int-based buffer interface
     /// Availability: 2.4
     alias readbufferproc getreadbufferproc;
-    /// ditto 
+    /// ditto
     alias writebufferproc getwritebufferproc;
-    /// ditto 
+    /// ditto
     alias segcountproc getsegcountproc;
-    /// ditto 
+    /// ditto
     alias charbufferproc getcharbufferproc;
 }
 
@@ -261,12 +261,12 @@ version(Python_2_6_Or_Later){
     struct Py_buffer{
         void* buf;
         /** borrowed reference */
-        Borrowed!PyObject* obj;        
+        Borrowed!PyObject* obj;
         /// _
         Py_ssize_t len;
         /** This is Py_ssize_t so it can be
           pointed to by strides in simple case.*/
-        Py_ssize_t itemsize;  
+        Py_ssize_t itemsize;
         /// _
         int readonly;
         /// _
@@ -687,10 +687,10 @@ version(Python_3_0_Or_Later) {
     /// Availability: 3.*
     struct PyType_Slot{
         /** slot id, see below */
-        int slot;    
+        int slot;
         /** function pointer */
-        void* pfunc; 
-    } 
+        void* pfunc;
+    }
 
     /// Availability: 3.*
     struct PyType_Spec{
@@ -703,8 +703,8 @@ version(Python_3_0_Or_Later) {
         /// _
         int flags;
         /** terminated by slot==0. */
-        PyType_Slot* slots; 
-    } 
+        PyType_Slot* slots;
+    }
 
     /// Availability: 3.*
     PyObject* PyType_FromSpec(PyType_Spec*);
@@ -754,11 +754,11 @@ int PyObject_TypeCheck()(PyObject* ob, PyTypeObject* tp) {
 }
 
 /** built-in 'type' */
-mixin(PyAPI_DATA!"PyTypeObject PyType_Type"); 
+mixin(PyAPI_DATA!"PyTypeObject PyType_Type");
 /** built-in 'object' */
-mixin(PyAPI_DATA!"PyTypeObject PyBaseObject_Type"); 
+mixin(PyAPI_DATA!"PyTypeObject PyBaseObject_Type");
 /** built-in 'super' */
-mixin(PyAPI_DATA!"PyTypeObject PySuper_Type"); 
+mixin(PyAPI_DATA!"PyTypeObject PySuper_Type");
 
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
@@ -905,7 +905,7 @@ version(Py_HashSecret) {
         Py_hash_t prefix;
         /// _
         Py_hash_t suffix;
-    } 
+    }
     /// Availability: 2.7, >= 3.1
     mixin(PyAPI_DATA!"_Py_HashSecret_t _Py_HashSecret");
 }
@@ -932,7 +932,7 @@ version(Python_3_0_Or_Later) {
     /** PySequenceMethods contains sq_contains */
     /// Availability: 2.*
     enum int Py_TPFLAGS_HAVE_SEQUENCE_IN         = 1L<<1;
-    /** This is here for backwards compatibility.  
+    /** This is here for backwards compatibility.
       Extensions that use the old GC
       API will still compile but the objects will not be tracked by the GC. */
     /// Availability: 2.*
@@ -1001,11 +1001,11 @@ version(Python_2_6_Or_Later){
     /** These flags are used to determine if a type is a subclass. */
     /// Availability: >= 2.6
     enum Py_TPFLAGS_INT_SUBCLASS         =(1L<<23);
-    /// ditto 
+    /// ditto
     enum Py_TPFLAGS_LONG_SUBCLASS        =(1L<<24);
-    /// ditto 
+    /// ditto
     enum Py_TPFLAGS_LIST_SUBCLASS        =(1L<<25);
-    /// ditto 
+    /// ditto
     enum Py_TPFLAGS_TUPLE_SUBCLASS       =(1L<<26);
     /// ditto
     version(Python_3_0_Or_Later) {
@@ -1084,13 +1084,13 @@ void _Py_NewReference()(PyObject* op) {
 }
 
 /**
-Increment reference counts.  Can be used wherever a void expression is allowed. 
-The argument must not be a NULL pointer. If it may be NULL, use 
+Increment reference counts.  Can be used wherever a void expression is allowed.
+The argument must not be a NULL pointer. If it may be NULL, use
 Py_XINCREF instead.
 
 In addition, converts and returns Borrowed references to their base types.
 */
-auto Py_INCREF(T)(T op) 
+auto Py_INCREF(T)(T op)
 if(is(T == PyObject*) || is(T _unused : Borrowed!P*, P))
 {
     static if(is(T _unused : Borrowed!P*, P)) {
@@ -1103,8 +1103,8 @@ if(is(T == PyObject*) || is(T _unused : Borrowed!P*, P))
 }
 
 /**
-Increment reference counts.  Can be used wherever a void expression is allowed. 
-The argument may be a NULL pointer. 
+Increment reference counts.  Can be used wherever a void expression is allowed.
+The argument may be a NULL pointer.
 
 In addition, converts and returns Borrowed references to their base types.
 The argument may not be null.
@@ -1122,9 +1122,9 @@ auto Py_XINCREF(T)(T op) {
 }
 
 /**
-Used to decrement reference counts. Calls the object's deallocator function 
-when the refcount falls to 0; for objects that don't contain references to 
-other objects or heap memory this can be the standard function free().  
+Used to decrement reference counts. Calls the object's deallocator function
+when the refcount falls to 0; for objects that don't contain references to
+other objects or heap memory this can be the standard function free().
 Can be used wherever a void expression is allowed.  The argument must not be a
 NULL pointer.  If it may be NULL, use Py_XDECREF instead.
 */
@@ -1132,11 +1132,11 @@ void Py_DECREF()(PyObject *op) {
     // version(PY_REF_DEBUG) _Py_RefTotal++
     --op.ob_refcnt;
 
-    // EMN: this is a horrible idea because it takes forever to figure out 
-    //      what's going on if this is being called from within the garbage 
+    // EMN: this is a horrible idea because it takes forever to figure out
+    //      what's going on if this is being called from within the garbage
     //      collector.
-    
-    // EMN: if we do keep it, don't change the assert! 
+
+    // EMN: if we do keep it, don't change the assert!
     // assert(0) or assert(condition) mess up linking somehow.
     if(op.ob_refcnt < 0) assert (0, "refcount negative");
     if(op.ob_refcnt != 0) {

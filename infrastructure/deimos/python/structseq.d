@@ -1,7 +1,7 @@
 /**
   Mirror _structseq.h
-  
-  Tuple object interface 
+
+  Tuple object interface
 */
 module deimos.python.structseq;
 
@@ -51,7 +51,7 @@ version(Python_3_2_Or_Later) {
     void PyStructSequence_SetItem(PyObject*, Py_ssize_t, PyObject*);
     /// Availability: >= 3.2
     PyObject* PyStructSequence_GetItem(PyObject*, Py_ssize_t);
-}else{ 
+}else{
     /// _
     struct PyStructSequence {
         mixin PyObject_VAR_HEAD;

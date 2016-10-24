@@ -1,7 +1,7 @@
 /**
   Mirror _moduleobject.h
 
-  Module object interface 
+  Module object interface
   */
 module deimos.python.moduleobject;
 
@@ -57,7 +57,7 @@ version(Python_3_0_Or_Later) {
         Py_ssize_t m_index;
         /// _
         PyObject* m_copy;
-    } 
+    }
 
     /// Availability: 3.*
     struct PyModuleDef{

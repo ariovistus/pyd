@@ -56,7 +56,7 @@ version(Python_3_0_Or_Later) {
             /** Num. currently running sections of code
                using f_fp with the GIL released. */
             /// Availability: >= 2.6
-            int unlocked_count;         
+            int unlocked_count;
             /// Availability: >= 2.6
             int readable;
             /// Availability: >= 2.6

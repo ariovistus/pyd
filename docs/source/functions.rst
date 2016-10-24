@@ -54,7 +54,7 @@ specify the module in which to inject the function
 
 Default: `''`
 
-.. _Docstring: 
+.. _Docstring:
 
 Docstring
 ---------
@@ -63,7 +63,7 @@ Specify the docstring to associate with the function
 
 Default: :code:`''`
 
-.. _PyName: 
+.. _PyName:
 
 PyName
 ------

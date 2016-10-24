@@ -68,10 +68,10 @@ static assert(NumpyFormatType!(Complex!float).supported);
 /**
   Convert a D array to numpy.ndarray.
   */
-PyObject* d_to_python_numpy_ndarray(T)(T t) 
+PyObject* d_to_python_numpy_ndarray(T)(T t)
 if((isArray!T || IsStaticArrayPointer!T) &&
         NumpyFormatType!(MatrixInfo!T.MatrixElementType).supported) {
-    enforce(numpy_ndarray_Type(), "numpy is not available"); 
+    enforce(numpy_ndarray_Type(), "numpy is not available");
     alias MatrixInfo!T.MatrixElementType ME;
     Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
     PyObject* pyshape = d_to_python(shape);

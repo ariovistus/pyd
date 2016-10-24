@@ -1,4 +1,4 @@
-MODULES = 
+MODULES =
 	$(MODULE deimos.python.abstract_)
 	$(MODULE deimos.python.ast)
 	$(MODULE deimos.python.boolobject)

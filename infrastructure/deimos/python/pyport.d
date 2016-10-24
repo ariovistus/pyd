@@ -46,8 +46,8 @@ version(Python_2_5_Or_Later){
         alias int Py_ssize_t;
     }
     version(Python_3_2_Or_Later) {
-        /// Availability: >= 3.2 
-        /// (Py_hash_t invariably replaces C_long, so we always define it for 
+        /// Availability: >= 3.2
+        /// (Py_hash_t invariably replaces C_long, so we always define it for
         /// convenience)
         alias Py_ssize_t Py_hash_t;
         /// Availability: >= 3.2
@@ -71,24 +71,24 @@ version(Python_2_5_Or_Later){
 version(linux) version(DigitalMars) version = dmd_linux;
 version(OSX) version(DigitalMars) version = dmd_osx;
 template PyAPI_DATA(string decl) {
-    
+
     version(dmd_linux) {
         // has to be special
 
-        // todo: why does ldc/linux not work this way? 
+        // todo: why does ldc/linux not work this way?
         //  --export-dynamic seems not to change anything
         // export causes dmd to prepend symbols with _imp__, so no use.
         // extern is not necessary for single-command builds
         //               necessary for traditional per-file builds.
         enum PyAPI_DATA = (q{
             extern(C)
-            extern 
+            extern
             __gshared
         } ~ decl ~ ";");
     } else version(dmd_osx) {
         enum PyAPI_DATA = (q{
             extern(C)
-            extern 
+            extern
             __gshared
         } ~ decl ~ ";");
     } else {

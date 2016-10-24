@@ -1,7 +1,7 @@
 Type Conversion
 ===============
 
-PyD provides `d_to_python` and `python_to_d` for converting types to and from 
+PyD provides `d_to_python` and `python_to_d` for converting types to and from
 python. These functions almost always do a copy. If you want reference semantics, use `PydObject`.
 
 D to Python
@@ -51,7 +51,7 @@ complex                         std.complex.Complex
 float                           float, double, real
 int, long                       Any integral type
 bool                            bool
-buffer                          dynamic or static array (with many dimensions!) 
+buffer                          dynamic or static array (with many dimensions!)
 datetime.date                   std.datetime.Date, std.datetime.DateTime, std.datetime.SysTime
 datetime.datetime               std.datetime.Date, std.datetime.DateTime, std.datetime.SysTime, std.datetime.Time
 datetime.time                   std.datetime.Time
@@ -79,11 +79,11 @@ class or struct.
 results:
 
 .. code-block:: python
-    
+
     example.foo()
     example.bar(20)
 
 .. code-block:: bash
-    
+
     12
     S(20)

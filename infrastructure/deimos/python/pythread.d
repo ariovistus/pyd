@@ -19,7 +19,7 @@ version(Python_3_2_Or_Later) {
         PY_LOCK_ACQUIRED = 1,
         /// _
         PY_LOCK_INTR
-    } 
+    }
 }
 
 /// _

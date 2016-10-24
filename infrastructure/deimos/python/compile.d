@@ -67,18 +67,18 @@ version(Python_2_5_Or_Later){
     struct _mod; /* Declare the existence of this type */
     version(Python_3_2_Or_Later) {
         /// Availability: >= 3.2
-        PyCodeObject* PyAST_Compile()(_mod* mod, const(char)* s, 
+        PyCodeObject* PyAST_Compile()(_mod* mod, const(char)* s,
                 PyCompilerFlags* f, PyArena* ar) {
             return PyAST_CompileEx(mod, s, f, -1, ar);
         }
         /**
 Params:
-filename = decoded from the filesystem encoding 
+filename = decoded from the filesystem encoding
 */
         /// Availability: >= 3.2
         PyCodeObject* PyAST_CompileEx(
                 _mod* mod,
-                const(char)* filename,       
+                const(char)* filename,
                 PyCompilerFlags* flags,
                 int optimize,
                 PyArena* arena);

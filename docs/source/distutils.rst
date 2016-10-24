@@ -4,7 +4,7 @@ PyD and distutils
 PyD provides patches to distutils so it can use DMD, LDC, and GDC.
 
 .. seealso::
-    
+
     `distutils <https://docs.python.org/2/library/distutils.html#module-distutils>`__
 
 
@@ -64,26 +64,26 @@ Default: :code:`False`
 
 with_pyd
 --------
-Setting this flag to :code:`False` suppresses compilation and linkage of PyD. 
-`with_main` effectively becomes :code:`False` as well; `PydMain` won't be used 
+Setting this flag to :code:`False` suppresses compilation and linkage of PyD.
+`with_main` effectively becomes :code:`False` as well; `PydMain` won't be used
 unless PyD is in use.
 
 Default: :code:`True`
 
 with_main
 ---------
-Setting this flag to :code:`False` suppresses the use of `PydMain`, allowing 
+Setting this flag to :code:`False` suppresses the use of `PydMain`, allowing
 the user to write a C-style init function instead.
 
 Default: :code:`True`
 
 build_deimos
 ------------
-Build object files for deimos headers. Ideally, this should not be necessary; 
-however some compilers (\*cough* ldc) try to link to PyObject typeinfo. If you 
-get link errors like 
+Build object files for deimos headers. Ideally, this should not be necessary;
+however some compilers (\*cough* ldc) try to link to PyObject typeinfo. If you
+get link errors like
 
-`undefined symbol: _D6deimos6python12methodobject11PyMethodDef6__initZ` 
+`undefined symbol: _D6deimos6python12methodobject11PyMethodDef6__initZ`
 
 try setting this flag to :code:`True`.
 
@@ -112,7 +112,7 @@ Default: :code:`False`
 d_property
 ----------
 
-Have D compilers enable property checks (i.e. trying to call functions without 
+Have D compilers enable property checks (i.e. trying to call functions without
 parens will result in an error)
 
 Default: :code:`False`
@@ -120,8 +120,8 @@ Default: :code:`False`
 string_imports
 --------------
 
-Specify string import files to pass to D compilers. Takes a list of strings 
-which are either paths to import files or paths to directories containing 
+Specify string import files to pass to D compilers. Takes a list of strings
+which are either paths to import files or paths to directories containing
 import files.
 
 Default: :code:`[]`
@@ -129,7 +129,7 @@ Default: :code:`[]`
 
 pydexe
 ~~~~~~
-PyD also provides a custom command to compile D code that embeds python. The 
+PyD also provides a custom command to compile D code that embeds python. The
 format of setup.py stays the same.
 
 .. literalinclude:: ../../examples/pyind/setup.py

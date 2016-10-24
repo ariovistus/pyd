@@ -1,7 +1,7 @@
 /**
   Mirror _longobject.h
 
-  Long (arbitrary precision) integer object interface 
+  Long (arbitrary precision) integer object interface
   */
 module deimos.python.longobject;
 
@@ -105,15 +105,15 @@ Convert string to python long. Roughly, parses format
 
 space* sign? space* Integer ('l'|'L')? Null
 
-Integer: 
+Integer:
         '0' ('x'|'X') HexDigits
         '0' OctalDigits
-        DecimalDigits  
+        DecimalDigits
 
 Params:
 str = null-terminated string to convert.
 pend = if not null, return pointer to the terminating null character.
-base = base in which string integer is encoded. possible values are 8, 
+base = base in which string integer is encoded. possible values are 8,
         10, 16, or 0 to autodetect base.
 */
 PyObject* PyLong_FromString(char* str, char** pend, int base);

@@ -1,7 +1,7 @@
 /**
   Mirror _setobject.h
 
-  Set object interface 
+  Set object interface
   */
 module deimos.python.setobject;
 
@@ -103,12 +103,12 @@ int PyAnySet_Check()(PyObject* ob) {
 version(Python_2_6_Or_Later){
     /// Availability: >= 2.6
     bool PySet_Check()(PyObject* ob) {
-        return (Py_TYPE(ob) == &PySet_Type || 
+        return (Py_TYPE(ob) == &PySet_Type ||
                 PyType_IsSubtype(Py_TYPE(ob), &PySet_Type));
     }
     /// Availability: >= 2.6
     bool PyFrozenSet_Check()(PyObject* ob) {
-        return (Py_TYPE(ob) == &PyFrozenSet_Type || 
+        return (Py_TYPE(ob) == &PyFrozenSet_Type ||
                 PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type));
     }
 }

@@ -1,7 +1,7 @@
 /**
   Mirror _grammar.h
 
-  Grammar interface 
+  Grammar interface
   */
 module deimos.python.grammar;
 
@@ -19,7 +19,7 @@ struct label{
 }
 
 /** Label number 0 is by definition the empty label */
-enum EMPTY = 0;		
+enum EMPTY = 0;
 
 /** A list of labels */
 struct labellist{
@@ -32,9 +32,9 @@ struct labellist{
 /** An arc from one state to another */
 struct arc{
     /** Label of this arc */
-    short	a_lbl;		
+    short	a_lbl;
     /** State where this arc goes to */
-    short	a_arrow;	
+    short	a_arrow;
 }
 
 /** A state in a DFA */
@@ -42,48 +42,48 @@ struct state{
     /// _
     int		 s_narcs;
     /** Array of arcs */
-    arc*	 s_arc;		
-	
+    arc*	 s_arc;
+
     /* Optional accelerators */
     /** Lowest label index */
-    int		 s_lower;	
+    int		 s_lower;
     /** Highest label index */
-    int		 s_upper;	
+    int		 s_upper;
     /** Accelerator */
-    int*	 s_accel;	
+    int*	 s_accel;
     /** Nonzero for accepting state */
-    int		 s_accept;	
+    int		 s_accept;
 }
 
 /** A DFA */
 struct dfa{
     /** Non-terminal this represents */
-    int		 d_type;	
+    int		 d_type;
     /** For printing */
-    char*	 d_name;	
+    char*	 d_name;
     /** Initial state */
-    int		 d_initial;	
+    int		 d_initial;
     /// _
     int		 d_nstates;
     /** Array of states */
-    state*	 d_state;	
+    state*	 d_state;
     /// _
     void*/*bitset*/	 d_first;
-} 
+}
 
 /** A grammar */
 struct grammar{
     /// _
     int		 g_ndfas;
     /** Array of DFAs */
-    dfa*	 g_dfa;		
+    dfa*	 g_dfa;
     /// _
     labellist	 g_ll;
     /** Start symbol of the grammar */
-    int		 g_start;	
+    int		 g_start;
     /** Set if accelerators present */
-    int		 g_accel;	
-} 
+    int		 g_accel;
+}
 
 /* FUNCTIONS */
 

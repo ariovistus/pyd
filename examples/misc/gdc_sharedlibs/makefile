@@ -26,18 +26,18 @@ LIBS= -lrt -lpthread -ldl -lm -lpython2.7 /usr/lib64/libgdruntime.a /usr/lib64/l
 
 lib%.so: %.o boilerplate.o
 	echo "building $@"
-	gcc -nostartfiles -shared $(LIBS) $^ -o $@ 
+	gcc -nostartfiles -shared $(LIBS) $^ -o $@
 
 test1.x: test1.c libtest1.so
 	echo "building $@"
-	gcc $< -l:libtest1.so -o $@ 
+	gcc $< -l:libtest1.so -o $@
 
 test2.x: test2.c libtest2a.so libtest2b.so
 	echo "building $@"
 	LD_LIBRARY_PATH=. gcc $< -L. -ltest2a -ltest2b -o $@
 
 test3.x: test3.d libtest3.so
-	LD_LIBRARY_PATH=. $(GDC) $< -L. -ltest3 -of $@ 
+	LD_LIBRARY_PATH=. $(GDC) $< -L. -ltest3 -of $@
 libtest3.so: test3lib.c
 	gcc -fPIC -shared $< -o $@
 

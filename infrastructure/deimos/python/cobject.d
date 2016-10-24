@@ -2,14 +2,14 @@
   Mirror _cobject.h
 
    C objects to be exported from one extension module to another.
- 
+
    C objects are used for communication between extension modules.
    They provide a way for an extension module to export a C interface
    to other extension modules, so that extension modules can use the
    Python import mechanism to link to one another.
 
-  Note CObjects are pending deprecation in 2.7 and gone in 3.2.  
-  It is recommended you switch all use of CObjects to capsules.  
+  Note CObjects are pending deprecation in 2.7 and gone in 3.2.
+  It is recommended you switch all use of CObjects to capsules.
 
 See_Also:
    <a href="pycapsule.html"> pycapsule.d </a> $(BR)

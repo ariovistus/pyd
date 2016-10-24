@@ -46,8 +46,8 @@ class Foo {
         return x+y;
     }
     Foo opBinary(string op)(Foo f) if(op == "+")
-    { 
-        return new Foo(m_i + f.m_i); 
+    {
+        return new Foo(m_i + f.m_i);
     }
 
     struct Range {
@@ -169,7 +169,7 @@ extern(C) void PydMain() {
         Foo,
         PyName!"Foo",
         Docstring!"A sample class.",
-        Init!(int), 
+        Init!(int),
         Init!(int, int),
         Property!(Foo.i, Docstring!"A sample property of Foo."),
         OpBinary!("+"),

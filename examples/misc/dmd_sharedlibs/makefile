@@ -1,9 +1,9 @@
 # ###########################################################
-BITSI = 
+BITSI =
 ifeq ($(BITSI), 32)
 DMD_M=-m32
 GCC_M=-m32
-else	
+else
 ifeq ($(BITSI), 64)
 DMD_M=-m64
 GCC_M=-m64
@@ -41,7 +41,7 @@ test1.x: test1.c libtest1.so
 test2.x: test2.c libtest2a.so libtest2b.so
 	$(GCC) $< `pwd`/libtest2a.so `pwd`/libtest2b.so -o $@
 test3.x: test3.d libtest3.so
-	dmd $< -L`pwd`/libtest3.so -of$@ 
+	dmd $< -L`pwd`/libtest3.so -of$@
 libtest3.so: test3lib.c
 	gcc -fPIC -shared $< -o $@
 

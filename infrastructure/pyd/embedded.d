@@ -37,7 +37,7 @@ module pyd.embedded;
  +  * wrap python iterators as D input ranges [check]
  +  * do things with inheritance [why??!??]
  +  * do things with multithreading
- +/  
+ +/
 
 import deimos.python.Python;
 import pyd.pyd;
@@ -83,8 +83,8 @@ class InterpContext {
         auto threadstate = PyThreadState_GET();
         if(threadstate.frame == null) {
             PyCodeObject* code = PyCode_NewEmpty("<d>","<d>", 0);
-            frame = PyFrame_New(threadstate, code, 
-                    cast(PyObject*)(globals.ptr), 
+            frame = PyFrame_New(threadstate, code,
+                    cast(PyObject*)(globals.ptr),
                     cast(PyObject*)(locals.ptr));
             threadstate.frame = frame;
         }
@@ -98,7 +98,7 @@ class InterpContext {
     }
 
     /**
-      Evaluate a python expression once within this context and return the 
+      Evaluate a python expression once within this context and return the
       result.
 
 Params:
@@ -107,15 +107,15 @@ Returns:
 the result of expression
      */
     T py_eval(T = PydObject)(
-            string python, 
-            string file = __FILE__, 
+            string python,
+            string file = __FILE__,
             size_t line = __LINE__) {
 
         auto pres = PyRun_StringFlags(
-                zcc(python), 
-                Py_eval_input, 
-                cast(PyObject*) globals.ptr, 
-                cast(PyObject*) locals.ptr, 
+                zcc(python),
+                Py_eval_input,
+                cast(PyObject*) globals.ptr,
+                cast(PyObject*) locals.ptr,
                 &flags);
         if(pres) {
             auto res = new PydObject(pres);
@@ -132,13 +132,13 @@ Params:
 python = python statements
      */
     void py_stmts(string python,
-            string file = __FILE__, 
+            string file = __FILE__,
             size_t line = __LINE__) {
 
         auto pres = PyRun_StringFlags(
-                zcc(outdent(python)), 
-                Py_file_input, 
-                cast(PyObject*) globals.ptr, 
+                zcc(outdent(python)),
+                Py_file_input,
+                cast(PyObject*) globals.ptr,
                 cast(PyObject*) locals.ptr,
                 &flags);
         if(pres) {
@@ -167,12 +167,12 @@ Wraps a python function (specified as a string) as a D function roughly of
 signature func_t
 
 Params:
-python = a python function 
+python = a python function
 modl = context in which to run expression. must be a python module name.
 func_t = type of d function
  +/
-ReturnType!func_t py_def( string python, string modl, func_t) 
-    (ParameterTypeTuple!func_t args, 
+ReturnType!func_t py_def( string python, string modl, func_t)
+    (ParameterTypeTuple!func_t args,
      string file = __FILE__, size_t line = __LINE__) {
     //Note that type is really the only thing that need be static here, but hey.
         alias ReturnType!func_t R;
@@ -180,7 +180,7 @@ ReturnType!func_t py_def( string python, string modl, func_t)
     enum afterdef = findSplit(python, "def")[2];
     enum ereparen = findSplit(afterdef, "(")[0];
     enum name = strip(ereparen) ~ "\0";
-    static PydObject func; 
+    static PydObject func;
     static PythonException exc;
     static string errmsg;
     static bool once = true;
@@ -198,7 +198,7 @@ ReturnType!func_t py_def( string python, string modl, func_t)
             globals["__builtins__"] = builtins;
         }
         auto pres = PyRun_String(
-                    zcc(python), 
+                    zcc(python),
                     Py_file_input, globals_ptr, locals_ptr);
         if(pres) {
             auto res = new PydObject(pres);
@@ -239,7 +239,7 @@ T py_eval(T = PydObject)(string python, string modl = "", string file = __FILE__
         locals["__builtins__"] = builtins;
     }
     auto pres = PyRun_String(
-            zcc(python), 
+            zcc(python),
             Py_eval_input, locals_ptr, locals_ptr);
     scope(exit) Py_XDECREF(locals_ptr);
     if(pres) {
@@ -273,7 +273,7 @@ void py_stmts(string python, string modl = "",string file = __FILE__, size_t lin
         locals["__builtins__"] = builtins;
     }
     auto pres = PyRun_String(
-            zcc(outdent(python)), 
+            zcc(outdent(python)),
             Py_file_input, locals_ptr, locals_ptr);
     scope(exit) Py_DECREF(locals_ptr);
     if(pres) {

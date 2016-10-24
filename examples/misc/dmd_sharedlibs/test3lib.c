@@ -2,7 +2,7 @@ typedef struct {
     int i;
     int j;
     double d;
-} Foobar; 
+} Foobar;
 
 Foobar foo;
 

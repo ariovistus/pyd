@@ -34,12 +34,12 @@ template t2(T) {
 }
 
 static this() {
-    def!(a,int function(double), ModuleName!"testing")(); 
-    def!(a2, int function(int,double,), ModuleName!"testing")(); 
-    def!(a3, int function(int[]), ModuleName!"testing")(); 
-    def!(a4, ModuleName!"testing")(); 
-    def!(t1!int, PyName!"t1", ModuleName!"testing")(); 
-    def!(t2!int.f, PyName!"t2", ModuleName!"testing")(); 
+    def!(a,int function(double), ModuleName!"testing")();
+    def!(a2, int function(int,double,), ModuleName!"testing")();
+    def!(a3, int function(int[]), ModuleName!"testing")();
+    def!(a4, ModuleName!"testing")();
+    def!(t1!int, PyName!"t1", ModuleName!"testing")();
+    def!(t2!int.f, PyName!"t2", ModuleName!"testing")();
     on_py_init({
             add_module!(ModuleName!"testing")();
     });
@@ -58,7 +58,7 @@ unittest{
     assert(c.py_eval!int("a3(i=4)") == 46);
     assert(c.py_eval!int("a3(4,3)") == 49);
     assert(c.py_eval!int("a3(i=[4,3])") == 49);
-    assert(c.py_eval!string("a4('hi',2,s3='zi')") == 
+    assert(c.py_eval!string("a4('hi',2,s3='zi')") ==
             "<'hi', 2, 'friedman', 4, 'zi'>");
 
 

@@ -80,7 +80,7 @@ int PyObject_DelItemString(PyObject* o, char* key);
 int PyObject_DelItem(PyObject* o, PyObject* key);
 /// _
 
-int PyObject_AsCharBuffer(PyObject* obj, const(char)** buffer, 
+int PyObject_AsCharBuffer(PyObject* obj, const(char)** buffer,
         Py_ssize_t* buffer_len);
 /// _
 int PyObject_CheckReadBuffer(PyObject* obj);
@@ -119,7 +119,7 @@ version(Python_2_6_Or_Later){
     void* PyBuffer_GetPointer(Py_buffer* view, Py_ssize_t* indices);
 
     /** Return the implied itemsize of the data-format area from a
-       struct-style description 
+       struct-style description
 
        abstract.h lies; this function actually does not exist. We're lying too.
      */

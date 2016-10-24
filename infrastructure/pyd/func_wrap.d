@@ -46,7 +46,7 @@ import std.traits;
 
 template hasFunctionAttrs(T) {
     static if(isDelegate!T || isFunctionPointer!T) {
-        enum bool hasFunctionAttrs = functionAttributes!T != 
+        enum bool hasFunctionAttrs = functionAttributes!T !=
             FunctionAttribute.none;
     }else{
         enum bool hasFunctionAttrs = false;
@@ -55,8 +55,8 @@ template hasFunctionAttrs(T) {
 
 template StripFunctionAttributes(F) {
     static if(hasFunctionAttrs!F) {
-        alias StripFunctionAttributes = SetFunctionAttributes!(F, 
-                functionLinkage!F, 
+        alias StripFunctionAttributes = SetFunctionAttributes!(F,
+                functionLinkage!F,
                 StrippedFunctionAttributes);
     }else{
         alias StripFunctionAttributes = F;
@@ -160,7 +160,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
 
     // Sanity check!
     if (!supportsNArgs!(fn)(argCount)) {
-        setWrongArgsError(cast(int) argCount, MIN_ARGS, 
+        setWrongArgsError(cast(int) argCount, MIN_ARGS,
                 (MaxArgs.hasMax ? MaxArgs.max:-1));
         handle_exception();
     }
@@ -190,7 +190,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
                     }
                 }
             }
-            static if (argNum >= MIN_ARGS && 
+            static if (argNum >= MIN_ARGS &&
                     (!MaxArgs.hasMax || argNum <= MaxArgs.max)) {
                 if (argNum == argCount) {
                     return fn(t.fields[0 .. argNum]);
@@ -325,8 +325,8 @@ template function_wrap(alias real_fn, string fnname) {
 // Wraps a member function alias with a PyCFunction.
 // func's args and kwargs may each be null.
 template method_wrap(C, alias real_fn, string fname) {
-    static assert(constCompatible(constness!C, constness!(typeof(real_fn))), 
-            format("constness mismatch instance: %s function: %s", 
+    static assert(constCompatible(constness!C, constness!(typeof(real_fn))),
+            format("constness mismatch instance: %s function: %s",
                 C.stringof, typeof(real_fn).stringof));
     alias ParameterTypeTuple!real_fn Info;
     enum size_t ARGS = Info.length;
@@ -344,7 +344,7 @@ template method_wrap(C, alias real_fn, string fname) {
                 PyErr_SetString(PyExc_ValueError, "Wrapped class instance is null!");
                 return null;
             }
-            
+
             Py_ssize_t arglen = args is null ? 0 : PyObject_Length(args);
             enforce(arglen != -1);
             PyObject* self_and_args = PyTuple_New(cast(Py_ssize_t) arglen+1);
@@ -395,7 +395,7 @@ template memberfunc_to_func(T, alias memfn) {
     alias ParameterDefaultValueTuple!memfn dfs;
     enum params = getparams!(memfn,"PS","dfs");
     enum t = gensym!ids();
-        
+
     mixin(Replace!(q{
         Ret func(T $t, $params) {
             auto dg = dg_wrapper($t, &memfn);
@@ -468,14 +468,14 @@ private
 class PydWrappedFunc {
     PyObject* callable;
 
-    this(PyObject* c) { 
-        callable = c; 
-        Py_INCREF(c); 
+    this(PyObject* c) {
+        callable = c;
+        Py_INCREF(c);
     }
 
-    ~this() { 
+    ~this() {
         if(callable && !Py_Finalize_called) {
-            Py_DECREF(callable); 
+            Py_DECREF(callable);
         }
         callable = null;
     }
@@ -548,7 +548,7 @@ PyObject* arrangeNamedArgs(alias fn, string fname)(PyObject* args, PyObject* kwa
     enforce(kwarglen != -1);
     // variadic args might give us a count greater than ids.length
     // (but in that case there should be no kwargs)
-    auto allargs = PyTuple_New(cast(Py_ssize_t) 
+    auto allargs = PyTuple_New(cast(Py_ssize_t)
             max(ids.length, arglen+kwarglen));
 
     foreach(i; 0 .. arglen) {
@@ -562,7 +562,7 @@ PyObject* arrangeNamedArgs(alias fn, string fname)(PyObject* args, PyObject* kwa
         auto name = python_to_d!string(pkey);
         if(name !in allfnnameset) {
             enforce(false, format("%s() got an unexpected keyword argument '%s'",fname, name));
-            
+
 
         }
         size_t n = allfnnameset[name];
@@ -571,10 +571,10 @@ PyObject* arrangeNamedArgs(alias fn, string fname)(PyObject* args, PyObject* kwa
             auto val = Py_XINCREF(bval);
             PyTuple_SetItem(allargs, cast(Py_ssize_t) n, val);
         }else if(vstyle == Variadic.no && n >= firstDefaultValueIndex) {
-            // ok, we can get the default value 
+            // ok, we can get the default value
         }else{
-            enforce(false, format("argument '%s' is NULL! <%s, %s, %s, %s>", 
-                        name, n, firstDefaultValueIndex, ids.length, 
+            enforce(false, format("argument '%s' is NULL! <%s, %s, %s, %s>",
+                        name, n, firstDefaultValueIndex, ids.length,
                         vstyle == Variadic.no));
         }
     }
@@ -683,7 +683,7 @@ template getparams(alias fn, string pt_alias, string pd_alias) {
             }
             static if(var == Variadic.typesafe) {
                 ret ~= "...";
-            } 
+            }
             return ret;
         }
     }
@@ -742,7 +742,7 @@ string tattrs_to_string(fn_t)() {
 
 bool constnessMatch2(fn...)(Constness c) if(fn.length == 1) {
     static if(isImmutableFunction!(fn)) return c == Constness.Immutable;
-    static if(isMutableFunction!(fn)) return c == Constness.Mutable; 
+    static if(isMutableFunction!(fn)) return c == Constness.Mutable;
     static if(isConstFunction!(fn)) return c != Constness.Wildcard;
     else return false;
 }

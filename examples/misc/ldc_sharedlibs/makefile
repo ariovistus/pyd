@@ -26,18 +26,18 @@ LIBS= -L--no-as-needed -L-lphobos-ldc -L-ldruntime-ldc -L-lrt -L-lpthread -L-ldl
 
 lib%.so: %.o boilerplate.o
 	echo "building $@"
-	ldc2 -shared $(LIBS) $^ -of $@ 
+	ldc2 -shared $(LIBS) $^ -of $@
 
 test1.x: test1.c libtest1.so
 	echo "building $@"
-	gcc $< `pwd`/libtest1.so -o $@ 
+	gcc $< `pwd`/libtest1.so -o $@
 
 test2.x: test2.c libtest2a.so libtest2b.so
 	echo "building $@"
 	gcc $< `pwd`/libtest2a.so `pwd`/libtest2b.so -o $@
 
 test3.x: test3.d libtest3.so
-	$(LDC) $< -L`pwd`/libtest3.so -of $@ 
+	$(LDC) $< -L`pwd`/libtest3.so -of $@
 libtest3.so: test3lib.c
 	gcc -fPIC -shared $< -o $@
 
