@@ -73,7 +73,7 @@ bool should_defer_class_wrap(string modulename, string classname) {
         return false;
     }
 }
-void defer_class_wrap(string modulename, string classname, 
+void defer_class_wrap(string modulename, string classname,
         void delegate() wrapper) {
     pyd_module_classes[modulename][classname] = wrapper;
 }
@@ -140,8 +140,8 @@ struct Args(string default_modulename,
         enum modulename = default_modulename;
     }
 
-    alias Filter!(templateNot!IsModuleName, 
-          Filter!(templateNot!IsDocstring, 
+    alias Filter!(templateNot!IsModuleName,
+          Filter!(templateNot!IsDocstring,
           Filter!(templateNot!IsPyName,
           Filter!(templateNot!IsMode,
               Params)))) rem;
@@ -156,20 +156,20 @@ struct Args(string default_modulename,
 /**
 Wraps a D function, making it callable from Python.
 
-Supports default arguments, typesafe variadic arguments, and python's 
+Supports default arguments, typesafe variadic arguments, and python's
 keyword arguments.
- 
+
 Params:
 
 fn   = The function to wrap.
 Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), ModuleName!(modulename), and fn_t
-modulename = The name of the python module in which the wrapped function 
+modulename = The name of the python module in which the wrapped function
             resides.
 pyname = The name of the function as it will appear in Python.
 fn_t = The function type of the function to wrap. This must be
             specified if more than one function shares the same name,
             otherwise the first one defined lexically will be used.
-docstring = The function's docstring. 
+docstring = The function's docstring.
 
 Examples:
 ---
@@ -202,7 +202,7 @@ void def(alias _fn, Options...)() {
         alias typeof(&_fn) fn_t;
     }
     alias def_selector!(_fn, fn_t).FN fn;
-    
+
     PyMethodDef empty;
     ready_module_methods(args.modulename);
     PyMethodDef[]* list = &module_methods[args.modulename];
@@ -222,10 +222,10 @@ template def_selector(alias fn, fn_t) {
     alias alias_selector!(fn, fn_t) als;
     static if(als.VOverloads.length == 0 && als.Overloads.length != 0) {
         alias staticMap!(Typeof, als.Overloads) OverloadsT;
-        static assert(0, format("%s not among %s", 
+        static assert(0, format("%s not among %s",
                     fn_t.stringof,OverloadsT.stringof));
     }else static if(als.VOverloads.length > 1){
-        static assert(0, format("%s: Cannot choose between %s", als.nom, 
+        static assert(0, format("%s: Cannot choose between %s", als.nom,
                     staticMap!(Typeof, als.VOverloads)));
     }else{
         alias als.VOverloads[0] FN;
@@ -239,7 +239,7 @@ template IsEponymousTemplateFunction(alias fn) {
 }
 
 template alias_selector(alias fn, fn_t) {
-    alias ParameterTypeTuple!fn_t ps; 
+    alias ParameterTypeTuple!fn_t ps;
     alias ReturnType!fn_t ret;
     alias TypeTuple!(__traits(parent, fn))[0] Parent;
     enum nom = __traits(identifier, fn);
@@ -291,7 +291,7 @@ else
             foreach(modulename, _; pyd_module_classes) {
                 py_import(modulename);
             }
-        }       
+        }
     }
 }
 
@@ -321,7 +321,7 @@ PyObject* module_init(string docstring="") {
 
         Py3_ModuleInit!"".func();
     }else {
-        pyd_modules[""] = Py_INCREF(Py_InitModule3((name ~ "\0"), 
+        pyd_modules[""] = Py_INCREF(Py_InitModule3((name ~ "\0"),
                     module_methods[""].ptr, (docstring ~ "\0")));
     }
     doActions(PyInitOrdering.Before);
@@ -366,7 +366,7 @@ void add_module(Options...)() {
         }else{
             assert(py_init_called);
         }
-        pyd_modules[modulename] = Py_INCREF(Py_InitModule3((modulename ~ "\0"), 
+        pyd_modules[modulename] = Py_INCREF(Py_InitModule3((modulename ~ "\0"),
                     module_methods[modulename].ptr, (docstring ~ "\0")));
     }
 }
@@ -396,7 +396,7 @@ void doActions(PyInitOrdering which) {
     }
 }
 
-/// 
+///
 enum PyInitOrdering{
     /// call will be made before Py_Initialize.
     Before,
@@ -405,7 +405,7 @@ enum PyInitOrdering{
 }
 
 /// call will be made at the appropriate time for initializing
-/// modules.  (for python 2, it should be after Py_Initialize, 
+/// modules.  (for python 2, it should be after Py_Initialize,
 /// for python 3, before).
 version(Python_3_0_Or_Later) {
     enum PyInitOrdering ModuleInit = PyInitOrdering.Before;
@@ -418,7 +418,7 @@ version(Python_3_0_Or_Later) {
 
   py_init will ensure they are called at the appropriate time
   */
-void on_py_init(void delegate() dg, 
+void on_py_init(void delegate() dg,
         PyInitOrdering ord = ModuleInit) {
     with(PyInitOrdering) switch(ord) {
         case Before:

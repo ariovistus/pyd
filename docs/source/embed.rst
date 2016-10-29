@@ -14,7 +14,7 @@ Some Notes:
 Once again, we use distutils to compile this code using the special command `pydexe`:
 
 .. literalinclude:: ../../examples/simple_embedded/setup.py
-    
+
 .. code-block:: bash
 
     $ python setup.py install
@@ -36,11 +36,11 @@ call stack is not deep enough
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Certain python modules (i.e. :code:`inspect`) expect python to have a nonempty
-call stack. This seems not to be the case in embedded python. To work around 
+call stack. This seems not to be the case in embedded python. To work around
 this, use :code:`InterpContext.pushDummyFrame`:
 
 .. code-block:: d
-    
+
     context.pushDummyFrame();
     py_stmts("import inspect");
     context.popDummyFrame();

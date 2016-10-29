@@ -1,7 +1,7 @@
 /**
   Mirror _sysmodule.h
 
-  System module interface 
+  System module interface
   */
 module deimos.python.sysmodule;
 

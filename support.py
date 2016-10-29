@@ -148,7 +148,7 @@ class build_pyd_embedded_exe(Command):
             extra_args = ext.extra_compile_args or []
             macros = ext.define_macros[:]
 
-            objects = self.compiler.compile(sources, 
+            objects = self.compiler.compile(sources,
                     output_dir=self.build_temp,
                     macros=macros,
                     include_dirs=ext.include_dirs,
@@ -208,7 +208,7 @@ class build_pyd_embedded_exe(Command):
                 if hasattr(sys, 'abiflags'):
                     x = sys.abiflags
                 pythonlib = "python{}.{}{}".format(
-                        sys.hexversion >> 24, 
+                        sys.hexversion >> 24,
                         (sys.hexversion >> 16) & 0xff,
                         x)
                 if hasattr(sys,'pydebug') and sys.pydebug:

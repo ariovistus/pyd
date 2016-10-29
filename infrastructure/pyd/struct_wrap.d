@@ -52,7 +52,7 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
     }else {
         alias T GT;
         mixin("alias typeof(T."~name~") M;");
-    } 
+    }
     static if(countUntil(mode, "r") != -1) {
         static if(PropertyParts.length != 0) {
         }
@@ -82,10 +82,10 @@ Wrap a member variable of a class or struct.
 
 Params:
 name = The name of the member to wrap
-Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), 
+Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname),
 and Mode!(mode)
 pyname = The name of the member as it will appear in Python. Defaults to name
-mode = specifies whether this member is readable, writable. possible values 
+mode = specifies whether this member is readable, writable. possible values
 are "r", "w", "rw". Defaults to "rw".
 docstring = The function's docstring. Defaults to "".
 */

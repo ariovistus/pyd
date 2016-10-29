@@ -1,4 +1,4 @@
-MODULES = 
+MODULES =
 	$(MODULE pyd.class_wrap)
 	$(MODULE pyd.def)
 	$(MODULE pyd.embedded)

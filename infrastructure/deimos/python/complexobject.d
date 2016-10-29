@@ -13,7 +13,7 @@ extern(C):
 /// _
 struct Py_complex {
     /// _
-    double real_; 
+    double real_;
     /// _
     double imag;
 }

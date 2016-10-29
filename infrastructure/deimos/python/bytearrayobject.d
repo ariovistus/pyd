@@ -37,14 +37,14 @@ version(Python_2_6_Or_Later) {
 /// Availability: >= 2.6
     mixin(PyAPI_DATA!"PyTypeObject PyByteArrayIter_Type");
 
-    /** Type check macro 
+    /** Type check macro
 Availability: >= 2.6
      */
     int PyByteArray_Check()(PyObject* self) {
         return PyObject_TypeCheck(self, &PyByteArray_Type);
     }
 
-    /** Type check macro 
+    /** Type check macro
  Availability: >= 2.6
  */
     int PyByteArray_CheckExact()(PyObject* self) {

@@ -1,7 +1,7 @@
 /**
   Mirror import.h
 
-  Module definition and import interface 
+  Module definition and import interface
   */
 module deimos.python.import_;
 
@@ -24,18 +24,18 @@ PyObject* PyImport_ExecCodeModule(char* name, PyObject* co);
 PyObject* PyImport_ExecCodeModuleEx(char* name, PyObject* co, char* pathname);
 version(Python_3_0_Or_Later) {
     /**
-Params: 
-name = UTF-8 encoded string 
+Params:
+name = UTF-8 encoded string
 co =
-pathname = decoded from the filesystem encoding 
-cpathname = decoded from the filesystem encoding 
+pathname = decoded from the filesystem encoding
+cpathname = decoded from the filesystem encoding
      */
     /// Availability: 3.*
     PyObject* PyImport_ExecCodeModuleWithPathnames(
-            char* name,                 
+            char* name,
             PyObject* co,
-            char* pathname,             
-            char* cpathname             
+            char* pathname,
+            char* cpathname
             );
 }
 /// _
@@ -48,7 +48,7 @@ PyObject* PyImport_ImportModule(const(char)* name);
 version(Python_2_5_Or_Later){
     /// Availability: >= 2.5
     PyObject* PyImport_ImportModuleLevel(char* name,
-            PyObject* globals, PyObject* locals, PyObject* fromlist, 
+            PyObject* globals, PyObject* locals, PyObject* fromlist,
             int level);
 }
 version(Python_2_6_Or_Later){
@@ -57,7 +57,7 @@ version(Python_2_6_Or_Later){
 }
 version(Python_2_5_Or_Later){
     /// _
-    PyObject* PyImport_ImportModuleEx()(char* n, PyObject* g, PyObject* l, 
+    PyObject* PyImport_ImportModuleEx()(char* n, PyObject* g, PyObject* l,
             PyObject* f) {
         return PyImport_ImportModuleLevel(n, g, l, f, -1);
     }
@@ -82,23 +82,23 @@ int PyImport_ImportFrozenModule(char* );
 version(Python_3_0_Or_Later) {
     /**
 Params:
-name = UTF-8 encoded string 
+name = UTF-8 encoded string
 */
     /// Availability: 3.*
     PyObject* _PyImport_FindBuiltin(
-            char* name                  
+            char* name
             );
     /// Availability: 3.*
     PyObject* _PyImport_FindExtensionUnicode(char*, PyObject*);
     /**
 Params:
 mod =
-name = UTF-8 encoded string 
+name = UTF-8 encoded string
 */
     /// Availability: 3.*
     int _PyImport_FixupBuiltin(
             PyObject* mod,
-            char* name                  
+            char* name
             );
     /// Availability: 3.*
     int _PyImport_FixupExtensionUnicode(PyObject*, char*, PyObject*);

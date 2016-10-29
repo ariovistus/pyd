@@ -70,7 +70,7 @@ public:
     }
 
     /// Constructs an instance of the Py_None PydObject.
-    this() { 
+    this() {
         m_ptr = Py_INCREF(Py_None());
     }
 
@@ -84,7 +84,7 @@ public:
 /**
   exposes a lowish-level wrapper of the new-style buffer interface
 
-See_also: 
+See_also:
 <a href="http://docs.python.org/c-api/buffer.html">
 Buffers and MemoryView Objects </a>
  */
@@ -125,27 +125,27 @@ Buffers and MemoryView Objects </a>
                 }else{
                     PyErr_Clear();
                 }
-                if(PyObject_GetBuffer(m_ptr, &buffer, 
+                if(PyObject_GetBuffer(m_ptr, &buffer,
                             PyBUF_STRIDES|PyBUF_C_CONTIGUOUS) == 0) {
                     has_nd = true;
                     has_strides = true;
                     c_contiguous = true;
                 }else{
                     PyErr_Clear();
-                    if(PyObject_GetBuffer(m_ptr, &buffer, 
+                    if(PyObject_GetBuffer(m_ptr, &buffer,
                                 PyBUF_STRIDES|PyBUF_F_CONTIGUOUS) == 0) {
                         has_nd = true;
                         has_strides = true;
                         fortran_contiguous = true;
                     }else{
                         PyErr_Clear();
-                        if(PyObject_GetBuffer(m_ptr, &buffer, 
+                        if(PyObject_GetBuffer(m_ptr, &buffer,
                                     PyBUF_STRIDES) == 0) {
                             has_nd = true;
                             has_strides = true;
                         }else{
                             PyErr_Clear();
-                            if(PyObject_GetBuffer(m_ptr, &buffer, 
+                            if(PyObject_GetBuffer(m_ptr, &buffer,
                                         PyBUF_ND) == 0) {
                                 has_nd = true;
                             }else{
@@ -173,7 +173,7 @@ Buffers and MemoryView Objects </a>
                 }
             }
 
-            /** 
+            /**
               Construct buffer view. Don't probe for capabilities; assume
               object supports capabilities implied by flags.
               */
@@ -246,33 +246,33 @@ Struct Format Strings </a>
             }
 
             /// _
-            T item(T)(Py_ssize_t[] indeces...) {
+            T item(T)(Py_ssize_t[] indices...) {
                 enforce(itemsize == T.sizeof);
-                return *cast(T*) item_ptr(indeces);
+                return *cast(T*) item_ptr(indices);
             }
             /// _
-            void set_item(T)(T value, Py_ssize_t[] indeces...) {
+            void set_item(T)(T value, Py_ssize_t[] indices...) {
                 import std.traits;
                 enforce(itemsize == T.sizeof);
-                auto ptr = cast(Unqual!T*) item_ptr(indeces);
+                auto ptr = cast(Unqual!T*) item_ptr(indices);
                 *ptr = value;
             }
 
-            void* item_ptr(Py_ssize_t[] indeces...) {
-                if(has_strides) enforce(indeces.length == ndim);
-                else enforce(indeces.length == 1);
+            void* item_ptr(Py_ssize_t[] indices...) {
+                if(has_strides) enforce(indices.length == ndim);
+                else enforce(indices.length == 1);
                 if(has_strides) {
                     void* ptr = buffer.buf;
-                    foreach(i, index; indeces) {
+                    foreach(i, index; indices) {
                         ptr += strides[i] * index;
-                        if(has_indirect && suboffsets != [] && 
+                        if(has_indirect && suboffsets != [] &&
                                 suboffsets[i] >= 0) {
                             ptr += suboffsets[i];
                         }
                     }
                     return ptr;
                 }else {
-                    return buffer.buf+indeces[0];
+                    return buffer.buf+indices[0];
                 }
             }
         }
@@ -298,7 +298,7 @@ Struct Format Strings </a>
      * Returns a borrowed reference to the PyObject.
      */
     @property Borrowed!PyObject* ptr() { return borrowed(m_ptr); }
-    
+
     /*
      * Prints PyObject to a C FILE* object.
      * Params:
@@ -402,7 +402,7 @@ Struct Format Strings </a>
         if(res == -1) handle_exception();
         return res == 1;
     }
-    
+
     /// Equivalent to _repr(this) in Python.
     PydObject repr() {
         return new PydObject(PyObject_Repr(m_ptr));
@@ -416,7 +416,7 @@ Struct Format Strings </a>
     override string toString() {
         return python_to_d!(string)(m_ptr);
     }
-    
+
     version(Python_3_0_Or_Later) {
     }else{
         /// Equivalent to _unicode(this) in Python.
@@ -448,7 +448,7 @@ Struct Format Strings </a>
     bool callable() {
         return PyCallable_Check(m_ptr) == 1;
     }
-    
+
     /**
      * Calls the PydObject with args.
      * Params:
@@ -459,7 +459,7 @@ Struct Format Strings </a>
     PydObject unpack_call(PydObject args=null) {
         return new PydObject(PyObject_CallObject(m_ptr, args is null ? null : args.m_ptr));
     }
-    
+
     /**
      * Calls the PydObject with positional and keyword arguments.
      * Params:
@@ -600,7 +600,7 @@ Struct Format Strings </a>
      * mappings.
      */
     PydObject opIndex(string key) {
-        // wtf? PyMapping_GetItemString fails on dicts 
+        // wtf? PyMapping_GetItemString fails on dicts
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_GetItemString(m_ptr, zc(key)));
         }else{
@@ -750,7 +750,7 @@ Struct Format Strings </a>
     /// Forwards to appropriate Python binary operator overload.
     ///
     /// Note the result of / in python 3 (and python 2, if CO_FUTURE_DIVISION
-    /// is set) is interpreted as "true division", otherwise it is integer 
+    /// is set) is interpreted as "true division", otherwise it is integer
     /// division for integer arguments.
     ///
     /// See_Also:
@@ -834,7 +834,7 @@ Struct Format Strings </a>
             return this.method("true_div", o);
         }
     }
-    /// Equivalent to _divmod(this, o) for numbers, and this._divmod(o) 
+    /// Equivalent to _divmod(this, o) for numbers, and this._divmod(o)
     /// otherwise.
     /// See_Also:
     /// <a href="http://docs.python.org/library/functions.html#divmod">
@@ -846,7 +846,7 @@ Struct Format Strings </a>
             return this.method("divmod", o);
         }
     }
-    /// Equivalent to _pow(this, exp, mod) for numbers, and this._pow(exp,mod) 
+    /// Equivalent to _pow(this, exp, mod) for numbers, and this._pow(exp,mod)
     /// otherwise.
     /// See_Also:
     /// <a href="http://docs.python.org/library/functions.html#pow">
@@ -858,7 +858,7 @@ Struct Format Strings </a>
             return this.method("pow", exp, mod);
         }
     }
-    /// Equivalent to _abs(this) for numbers, and this._abs() 
+    /// Equivalent to _abs(this) for numbers, and this._abs()
     /// otherwise.
     /// See_Also:
     /// <a href="http://docs.python.org/library/functions.html#abs">
@@ -883,7 +883,7 @@ Struct Format Strings </a>
                 }else{
                     alias o j;
                 }
-                
+
                 PyObject* result = PySequence_InPlaceRepeat(m_ptr, j);
                 if (result is null) handle_exception();
                 Py_DECREF(m_ptr);
@@ -959,7 +959,7 @@ Struct Format Strings </a>
     PydObject as_float() {
         return new PydObject(PyNumber_Float(m_ptr));
     }
-    
+
     //------------------
     // Sequence methods
     //------------------
@@ -997,7 +997,7 @@ Struct Format Strings </a>
     }
     // Added by list:
     /// Equivalent to 'this._insert(i,item)' in python.
-    void insert(int i, PydObject item) { 
+    void insert(int i, PydObject item) {
         if(PyList_Check(m_ptr)) {
             if(PyList_Insert(m_ptr, i, item.m_ptr) == -1) {
                 handle_exception();
@@ -1008,7 +1008,7 @@ Struct Format Strings </a>
     }
     // Added by list:
     /// Equivalent to 'this._append(item)' in python.
-    void append(PydObject item) { 
+    void append(PydObject item) {
         if(PyList_Check(m_ptr)) {
             if(PyList_Append(m_ptr, item.m_ptr) == -1) {
                 handle_exception();
@@ -1019,7 +1019,7 @@ Struct Format Strings </a>
     }
     // Added by list:
     /// Equivalent to 'this._sort()' in Python.
-    void sort() { 
+    void sort() {
         if(PyList_Check(m_ptr)) {
             if(PyList_Sort(m_ptr) == -1) {
                 handle_exception();
@@ -1030,7 +1030,7 @@ Struct Format Strings </a>
     }
     // Added by list:
     /// Equivalent to 'this.reverse()' in Python.
-    void reverse() { 
+    void reverse() {
         if(PyList_Check(m_ptr)) {
             if(PyList_Reverse(m_ptr) == -1) {
                 handle_exception();
@@ -1067,12 +1067,12 @@ Struct Format Strings </a>
         return result == 1;
     }
     /// ditto
-    bool has_key(PydObject key) { 
-        return this.opBinaryRight!("in",PydObject)(key); 
+    bool has_key(PydObject key) {
+        return this.opBinaryRight!("in",PydObject)(key);
     }
     /// Equivalent to 'this._keys()' in Python.
     PydObject keys() {
-        // wtf? PyMapping_Keys fails on dicts 
+        // wtf? PyMapping_Keys fails on dicts
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Keys(m_ptr));
         }else if(PyMapping_Keys(m_ptr)) {
@@ -1083,7 +1083,7 @@ Struct Format Strings </a>
     }
     /// Equivalent to 'this._values()' in Python.
     PydObject values() {
-        // wtf? PyMapping_Values fails on dicts 
+        // wtf? PyMapping_Values fails on dicts
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Values(m_ptr));
         }else if(PyMapping_Check(m_ptr)) {
@@ -1094,7 +1094,7 @@ Struct Format Strings </a>
     }
     /// Equivalent to 'this._items()' in Python.
     PydObject items() {
-        // wtf? PyMapping_Items fails on dicts 
+        // wtf? PyMapping_Items fails on dicts
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Items(m_ptr));
         }else if(PyMapping_Check(m_ptr)) {
@@ -1103,13 +1103,13 @@ Struct Format Strings </a>
             return this.method("items");
         }
     }
-    
+
     // Added by dict
     /// For dicts, wraps PyDict_Clear. Otherwise forwards to method.
     /// See_Also:
     /// <a href="http://docs.python.org/c-api/dict.html#PyDict_Clear">
     /// PyDict_Clear </a>
-    void clear() { 
+    void clear() {
         if(PyDict_Check(m_ptr)) {
             PyDict_Clear(m_ptr);
         }else{
@@ -1122,7 +1122,7 @@ Struct Format Strings </a>
     /// See_Also:
     /// <a href="http://docs.python.org/c-api/dict.html#PyDict_Copy">
     /// PyDict_Copy </a>
-    PydObject copy() { 
+    PydObject copy() {
         if(PyDict_Check(m_ptr)) {
             return new PydObject(PyDict_Copy(m_ptr));
         }else{
@@ -1135,7 +1135,7 @@ Struct Format Strings </a>
     /// See_Also:
     /// <a href="http://docs.python.org/c-api/dict.html#PyDict_Merge">
     /// PyDict_Merge </a>
-    void merge(PydObject o, bool override_=true) { 
+    void merge(PydObject o, bool override_=true) {
         if(PyDict_Check(m_ptr)) {
             int res = PyDict_Merge(m_ptr,o.m_ptr,override_);
             if(res == -1) handle_exception();

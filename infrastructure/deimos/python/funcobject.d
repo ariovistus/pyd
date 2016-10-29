@@ -1,7 +1,7 @@
 /**
   Mirror _funcobject.h
 
-Function object interface 
+Function object interface
 
  * Function objects and code objects should not be confused with each other:
  *
@@ -39,7 +39,7 @@ struct PyFunctionObject {
     version(Python_3_0_Or_Later) {
         /** NULL or a dict */
         /// Availability: 3.*
-        PyObject* func_kwdefaults;	
+        PyObject* func_kwdefaults;
     }
     /** NULL or a tuple of cell objects */
     PyObject* func_closure;
@@ -56,7 +56,7 @@ struct PyFunctionObject {
     version(Python_3_0_Or_Later) {
         /** Annotations, a dict or NULL */
         /// Availability: 3.*
-        PyObject* func_annotations;	
+        PyObject* func_annotations;
     }
 }
 
@@ -117,7 +117,7 @@ Borrowed!PyObject* PyFunction_GET_DEFAULTS()(PyObject* func) {
 }
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    Borrowed!PyObject* PyFunction_GET_KW_DEFAULTS()(PyObject* func) { 
+    Borrowed!PyObject* PyFunction_GET_KW_DEFAULTS()(PyObject* func) {
         return (cast(PyFunctionObject*)func).func_kwdefaults;
     }
 }

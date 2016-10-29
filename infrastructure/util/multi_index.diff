@@ -1,12 +1,12 @@
 --- multi_index.d	2012-06-25 11:11:39.801685222 -0500
 +++ ../../../mercurial/multi_index/src/multi_index.d	2012-06-25 10:56:20.680049917 -0500
 @@ -772,7 +772,7 @@
- 
- 
+
+
   */
 -module multi_index;
 +module util.multi_index;
- 
+
  /**
   * TODO:
 @@ -799,7 +799,7 @@

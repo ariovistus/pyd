@@ -209,12 +209,12 @@ struct DClass_Py_Mapping {
 /// A bidirectional mapping of a pyobject and the d object associated to it.
 /// On the python side, these are weak references; we don't want to prevent
 /// python from reclaiming objects it is finished with. As such, on the D side,
-/// if you take PyObject*s out of here and store them for an extended time 
-/// elsewhere, be sure to increment the reference count. 
+/// if you take PyObject*s out of here and store them for an extended time
+/// elsewhere, be sure to increment the reference count.
 /// On the D side, we have strong references, but that is incidental to the GC.
-/// If you stick d objects not allocated with the GC, there will probably be 
+/// If you stick d objects not allocated with the GC, there will probably be
 /// leaks.
-/// We use malloc for the container's structure because we can't use the GC 
+/// We use malloc for the container's structure because we can't use the GC
 /// inside a destructor and we need to use this container there.
 template reference_container(Mapping) {
     alias MultiIndexContainer!(Mapping, IndexedBy!(
@@ -258,7 +258,7 @@ void set_pyd_mapping(T) (PyObject* _self, T t) {
     import std.stdio;
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
-    
+
     Mapping mapping = Mapping(t, _self);
     auto py_index = container.python;
     auto range = py_index.equalRange(_self);
@@ -280,7 +280,7 @@ void remove_pyd_mapping(T)(PyObject* self) {
     import std.stdio;
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
-    
+
     auto py_index = container.python;
     auto range = py_index.equalRange(self);
     if(!range.empty) {

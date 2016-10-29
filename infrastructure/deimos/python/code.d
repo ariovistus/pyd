@@ -13,11 +13,11 @@ import deimos.python.object;
 
 extern(C):
 
-/** Bytecode object 
+/** Bytecode object
 
   subclass of PyObject.
  */
-struct PyCodeObject { 
+struct PyCodeObject {
     mixin PyObject_HEAD;
 
     /** #arguments, except *args */
@@ -119,25 +119,25 @@ size_t PyCode_GetNumFree()(PyObject* op) {
 
 /// _
 PyCodeObject* PyCode_New(
-        int argcount, 
-        int nlocals, 
-        int stacksize, 
-        int flags, 
-        PyObject* code, 
-        PyObject* consts, 
-        PyObject* names, 
+        int argcount,
+        int nlocals,
+        int stacksize,
+        int flags,
+        PyObject* code,
+        PyObject* consts,
+        PyObject* names,
         PyObject* varnames,
-        PyObject* freevars, 
-        PyObject* cellvars, 
-        PyObject* filenames, 
-        PyObject* name, 
-        int firstlineno, 
+        PyObject* freevars,
+        PyObject* cellvars,
+        PyObject* filenames,
+        PyObject* name,
+        int firstlineno,
         PyObject* lnotab);
 
 version(Python_2_7_Or_Later) {
     /** Creates a new empty code object with the specified source location. */
     /// Availability: >= 2.7
-    PyCodeObject* PyCode_NewEmpty(const(char)* filename, 
+    PyCodeObject* PyCode_NewEmpty(const(char)* filename,
             const(char)* funcname, int firstlineno);
 }
 /** Return the line number associated with the specified bytecode index

@@ -1,6 +1,6 @@
 LDC=ldc2
 
-LIBS= -Wl,--no-as-needed -lphobos-ldc -ldruntime-ldc -lrt -lpthread -ldl -lm 
+LIBS= -Wl,--no-as-needed -lphobos-ldc -ldruntime-ldc -lrt -lpthread -ldl -lm
 
 # convert a D string to python unicode
 test4: test4.py libtest4.so
@@ -20,12 +20,12 @@ clean:
 
 lib%.so: %.o boilerplate.o common.o
 	echo "building $@"
-	gcc -nostartfiles -shared $(LIBS) $^ -o $@ 
+	gcc -nostartfiles -shared $(LIBS) $^ -o $@
 	#gcc -shared $^ -o $@
 boilerplate.d: ../../../infrastructure/d/python_so_linux_boilerplate.d
 	cp $< $@
 	echo "extern(C) void _Dmain(){}" >> $@
-%.o: %.d 
+%.o: %.d
 	echo "building $@"
 	$(LDC) -relocation-model=pic -c $^ -of $@
 	#gcc -fPIC -c $^ -o $@

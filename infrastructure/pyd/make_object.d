@@ -23,8 +23,8 @@ SOFTWARE.
 /++
   This module contains some useful type conversion functions. The two
   most interesting operations here are python_to_d and d_to_python.
- 
-  Additionally, the py function is provided as a convenience to directly 
+
+  Additionally, the py function is provided as a convenience to directly
   convert a D object into an instance of PydObject.
 
   To convert a PydObject to a D type, use PydObject.to_d.
@@ -120,11 +120,11 @@ template from_converter_registry(To) {
 }
 
 /**
-Extend pyd's conversion mechanism. Will be used by d_to_python only if d_to_python cannot 
+Extend pyd's conversion mechanism. Will be used by d_to_python only if d_to_python cannot
 convert its argument by regular means.
 
 Params:
-dg = A callable which takes a D type and returns a PyObject*, or any 
+dg = A callable which takes a D type and returns a PyObject*, or any
 type convertible by d_to_python.
 */
 void ex_d_to_python(dg_t) (dg_t dg) {
@@ -137,7 +137,7 @@ void ex_d_to_python(dg_t) (dg_t dg) {
 }
 
 /**
-Extend pyd's conversion mechanims. Will be used by python_to_d only if python_to_d 
+Extend pyd's conversion mechanims. Will be used by python_to_d only if python_to_d
 cannot convert its argument by regular means.
 
 Params:
@@ -236,8 +236,8 @@ PyObject* d_to_python(T) (T t) {
         return d_to_python_try_extends(t);
         // If it's not a wrapped type, fall through to the exception.
     // If converting a struct by value, create a copy and wrap that
-    } else static if (is(T == struct) && 
-            !is(T == RangeWrapper) && 
+    } else static if (is(T == struct) &&
+            !is(T == RangeWrapper) &&
             isInputRange!T) {
         if (to_converter_registry!(T).dg) {
             return d_to_python_try_extends(t);
@@ -263,7 +263,7 @@ PyObject* d_to_python(T) (T t) {
             return wrap_d_object(t);
         }
         return d_to_python_try_extends(t);
-    } 
+    }
 
     assert(0);
 }
@@ -295,11 +295,11 @@ PyObject* d_string_to_python(T)(T t) if(isSomeString!T) {
     static if(is(C == char)) {
         return PyUnicode_DecodeUTF8(t.ptr, cast(Py_ssize_t) t.length, null);
     }else static if(is(C == wchar)) {
-        return PyUnicode_DecodeUTF16(cast(char*) t.ptr, 
+        return PyUnicode_DecodeUTF16(cast(char*) t.ptr,
                 cast(Py_ssize_t)(2*t.length), null, null);
     }else static if(is(C == dchar)) {
         version(Python_2_6_Or_Later) {
-            return PyUnicode_DecodeUTF32(cast(char*) t.ptr, 
+            return PyUnicode_DecodeUTF32(cast(char*) t.ptr,
                     cast(Py_ssize_t)(4*t.length), null, null);
         }else{
             return d_to_python(to!string(t));
@@ -413,8 +413,8 @@ PydObject py(T) (T t) {
  * An exception class used by python_to_d.
  */
 class PydConversionException : Exception {
-    this(string msg, string file = __FILE__, size_t line = __LINE__) { 
-        super(msg, file, line); 
+    this(string msg, string file = __FILE__, size_t line = __LINE__) {
+        super(msg, file, line);
     }
 }
 
@@ -560,23 +560,23 @@ T python_to_d(T) (PyObject* o) {
         return python_to_d_try_extends!T(o);
     } else static if (is(T == struct)) { // struct by value
         // struct is wrapped
-        if (is_wrapped!(T*) && PyObject_TypeCheck(o, &PydTypeObject!(T*))) { 
+        if (is_wrapped!(T*) && PyObject_TypeCheck(o, &PydTypeObject!(T*))) {
             return *get_d_reference!(T*)(o);
         }
         // or struct is wrapped range
-        if(PyObject_IsInstance(o, 
+        if(PyObject_IsInstance(o,
                     cast(PyObject*)&PydTypeObject!(RangeWrapper*))) {
             RangeWrapper* wrapper = get_d_reference!(RangeWrapper*)(o);
             if(typeid(T) != wrapper.tid) {
-                could_not_convert!T(o, format("typeid mismatch: %s vs %s", 
+                could_not_convert!T(o, format("typeid mismatch: %s vs %s",
                             wrapper.tid, typeid(T)));
             }
             T t = *cast(T*) wrapper.range;
             return t;
         }
         return python_to_d_try_extends!T(o);
-    } else static if (isPointer!T && is(PointerTarget!T == struct)) { 
-        // pointer to struct   
+    } else static if (isPointer!T && is(PointerTarget!T == struct)) {
+        // pointer to struct
         if (is_wrapped!(T) && PyObject_TypeCheck(o, &PydTypeObject!(T))) {
             return get_d_reference!(T)(o);
         }
@@ -638,8 +638,8 @@ T python_to_d(T) (PyObject* o) {
                     if(T.max < res) could_not_convert!T(o,format("%s out of bounds [%s, %s]", res, 0, T.max));
                     return cast(T) res;
                 }else static if(isSigned!T) {
-                    if(T.min > res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
-                    if(T.max < res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max)); 
+                    if(T.min > res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max));
+                    if(T.max < res) could_not_convert!T(o, format("%s out of bounds [%s, %s]", res, T.min, T.max));
                     return cast(T) res;
                 }
             }
@@ -651,7 +651,7 @@ T python_to_d(T) (PyObject* o) {
                 handle_exception();
                 // no overflow from python to C_ulonglong,
                 // overflow from C_ulonglong to T?
-                if(T.max < res) could_not_convert!T(o); 
+                if(T.max < res) could_not_convert!T(o);
                 return cast(T) res;
             }else static if(isSigned!T) {
                 static assert(T.sizeof <= C_longlong.sizeof);
@@ -659,20 +659,20 @@ T python_to_d(T) (PyObject* o) {
                 handle_exception();
                 // no overflow from python to C_longlong,
                 // overflow from C_longlong to T?
-                if(T.min > res) could_not_convert!T(o); 
-                if(T.max < res) could_not_convert!T(o); 
+                if(T.min > res) could_not_convert!T(o);
+                if(T.max < res) could_not_convert!T(o);
                 return cast(T) res;
             }
         }
 
         return python_to_d_try_extends!T(o);
     } else static if (isBoolean!T) {
-        if (isPyNumber(o) || isNumpyNumber(o)) { 
+        if (isPyNumber(o) || isNumpyNumber(o)) {
             int res = PyObject_IsTrue(o);
             return res == 1;
         }
         return python_to_d_try_extends!T(o);
-    } 
+    }
 
     assert(0);
 }
@@ -769,7 +769,7 @@ T python_to_d_string(T) (PyObject* o) {
             // PyUnicode_AsUTF16String puts a BOM character in front of
             // string
             auto ptr = cast(const(wchar)*)(PyBytes_AsString(utf16)+2);
-            Py_ssize_t len = PyBytes_Size(utf16)/2-1; 
+            Py_ssize_t len = PyBytes_Size(utf16)/2-1;
             wchar[] ws = new wchar[](len);
             ws[] = ptr[0 .. len];
             return cast(T) ws;
@@ -780,7 +780,7 @@ T python_to_d_string(T) (PyObject* o) {
                 // PyUnicode_AsUTF32String puts a BOM character in front of
                 // string
                 auto ptr = cast(const(dchar)*)(PyBytes_AsString(utf32)+4);
-                Py_ssize_t len = PyBytes_Size(utf32)/4-1; 
+                Py_ssize_t len = PyBytes_Size(utf32)/4-1;
                 dchar[] ds = new dchar[](len);
                 ds[] = ptr[0 .. len];
                 return cast(T) ds;
@@ -798,7 +798,7 @@ T python_to_d_string(T) (PyObject* o) {
 /// Convert an array.array object to a D object.
 ///
 /// Used by python_to_d.
-T python_array_array_to_d(T)(PyObject* o) 
+T python_array_array_to_d(T)(PyObject* o)
 if(isArray!T || IsStaticArrayPointer!T) {
     static if(isPointer!T)
         alias Unqual!(ElementType!(PointerTarget!T)) E;
@@ -816,20 +816,20 @@ if(isArray!T || IsStaticArrayPointer!T) {
     }
 
     int itemsize = arr_o.ob_descr.itemsize;
-    if(itemsize != E.sizeof) 
+    if(itemsize != E.sizeof)
         could_not_convert!T(o,
-                format("item size mismatch: %s vs %s", 
+                format("item size mismatch: %s vs %s",
                     itemsize, E.sizeof));
     Py_ssize_t count = Py_SIZE(arr_o);
-    if(count < 0) 
-        could_not_convert!T(o, format("nonsensical array length: %s", 
+    if(count < 0)
+        could_not_convert!T(o, format("nonsensical array length: %s",
                     count));
     MatrixInfo!T.unqual _array;
     static if(isDynamicArray!T) {
         _array = new MatrixInfo!T.unqual(count);
     }else {
-        if(!MatrixInfo!T.check([count])) 
-            could_not_convert!T(o, 
+        if(!MatrixInfo!T.check([count]))
+            could_not_convert!T(o,
                     format("length mismatch: %s vs %s", count, T.length));
     }
     // copy data, don't take slice
@@ -848,7 +848,7 @@ if(isArray!T || IsStaticArrayPointer!T) {
 
   Not used by d_to_python.
   */
-PyObject* d_to_python_array_array(T)(T t) 
+PyObject* d_to_python_array_array(T)(T t)
 if((isArray!T || IsStaticArrayPointer!T) &&
         MatrixInfo!T.ndim == 1 &&
         SimpleFormatType!(MatrixInfo!T.MatrixElementType).supported) {
@@ -906,9 +906,9 @@ T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
     static if(isDynamicArray!T) {
         _array = new MatrixInfo!T.unqual(len);
     }else static if(isStaticArray!T){
-        if(len != T.length) 
-            could_not_convert!T(o, 
-                    format("length mismatch: %s vs %s", 
+        if(len != T.length)
+            could_not_convert!T(o,
+                    format("length mismatch: %s vs %s",
                         len, T.length));
     }else static if(isPointer!T){
         ubyte[] bufi = new ubyte[](PointerTarget!T.sizeof);
@@ -935,11 +935,11 @@ T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
 
 bool isPyNumber(PyObject* obj) {
     version(Python_3_0_Or_Later) {
-        return 
+        return
             PyLong_Check(obj) ||
             PyFloat_Check(obj);
     }else{
-        return 
+        return
             PyInt_Check(obj) ||
             PyLong_Check(obj) ||
             PyFloat_Check(obj);
@@ -1004,7 +1004,7 @@ version(Python_2_6_Or_Later) {
 /// Convert a Python new-style buffer to a D object.
 ///
 /// Used by python_to_d.
-T python_buffer_to_d(T)(PyObject* o) 
+T python_buffer_to_d(T)(PyObject* o)
 if (isArray!T || IsStaticArrayPointer!T) {
     PydObject bob = new PydObject(borrowed(o));
     auto buf = bob.buffer_view();
@@ -1020,12 +1020,12 @@ if (isArray!T || IsStaticArrayPointer!T) {
                     buf.format, ME.stringof));
     }
     if(buf.has_nd) {
-        if(!MatrixInfo!T.check(buf.shape)) 
+        if(!MatrixInfo!T.check(buf.shape))
             could_not_convert!T(o,
                     format("dimension mismatch: %s vs %s",
                         buf.shape, MatrixInfo!T.dimstring));
         if(buf.c_contiguous) {
-            // woohoo! single memcpy 
+            // woohoo! single memcpy
             static if(MatrixInfo!T.isRectArray && isStaticArray!T) {
                 memcpy(_array.ptr, buf.buf.ptr, buf.buf.length);
             }else{
@@ -1054,21 +1054,21 @@ if (isArray!T || IsStaticArrayPointer!T) {
                         _array = new MatrixInfo!T.unqual(buf.shape[0]);
                     }
                     enum string xx = (MatrixInfo!T.matrixIter(
-                        "_array", "buf.shape", "_indeces",
+                        "_array", "buf.shape", "_indices",
                         MatrixInfo!T.rectArrayAt, q{
                     static if(isDynamicArray!(typeof($array_ixn))) {
                         $array_ixn = new typeof($array_ixn)(buf.shape[$i+1]);
                     }
                     static if(is(typeof($array_ixn) == RectArrayType)) {
                         // should be innermost loop
-                        assert(offset + rectsize <= buf.buf.length, 
+                        assert(offset + rectsize <= buf.buf.length,
                                 "uh oh: overflow!");
                         alias typeof($array_ixn) rectarr;
                         static if(isStaticArray!rectarr) {
                             memcpy($array_ixn.ptr, buf.buf.ptr + offset, rectsize);
                         }else{
                             static assert(isDynamicArray!rectarr);
-                        
+
                             $array_ixn = (cast(typeof($array_ixn.ptr))(dbuf.ptr + offset))
                                 [0 .. MErectsize];
                         }
@@ -1086,15 +1086,15 @@ if (isArray!T || IsStaticArrayPointer!T) {
             }else static if(isPointer!T) {
                 ubyte[] dubuf = new ubyte[](buf.buffer.len);
                 _array = cast(typeof(_array)) dubuf.ptr;
-                    
+
             }
             enum string xx = (MatrixInfo!T.matrixIter(
-                "_array", "buf.shape", "_indeces",
+                "_array", "buf.shape", "_indices",
                 MatrixInfo!T.ndim, q{
                 static if(isDynamicArray!(typeof($array_ixn))) {
                     $array_ixn = new typeof($array_ixn)(buf.shape[$i+1]);
                 }else static if(is(typeof($array_ixn) == ME)) {
-                    $array_ixn = buf.item!ME(cast(Py_ssize_t[]) _indeces);
+                    $array_ixn = buf.item!ME(cast(Py_ssize_t[]) _indices);
                 }
                 },
                 ""));
@@ -1110,9 +1110,9 @@ if (isArray!T || IsStaticArrayPointer!T) {
            static if(isDynamicArray!T) {
            E[] array = new E[](buf.buf.length);
            }else static if(isStaticArray!T) {
-           if(buf.buf.length != T.length) 
-           could_not_convert!T(o, 
-           format("length mismatch: %s vs %s", 
+           if(buf.buf.length != T.length)
+           could_not_convert!T(o,
+           format("length mismatch: %s vs %s",
            buf.buf.length, T.length));
            E[T.length] array;
            }
@@ -1140,7 +1140,7 @@ auto wrap_range(Range)(Range range) if(is(Range == struct)) {
     wrap.tid = typeid(Range);
     wrap.empty = dg_wrapper(keeper, &Range.empty);
     wrap.popFront = dg_wrapper(keeper, &Range.popFront);
-    auto front_dg = 
+    auto front_dg =
         dg_wrapper(keeper, cast(ElementType!Range function()) &Range.front);
     wrap.front = delegate PyObject*() {
         return d_to_python(front_dg());
@@ -1197,21 +1197,21 @@ bool match_format_type(T)(string format) {
     }
     // by typeishness
     switch(format[0]) {
-        case 'x', 's', 'p': 
+        case 'x', 's', 'p':
             // don't support these
-            enforce(false, "unsupported format: " ~ format); 
-        case 'c': 
+            enforce(false, "unsupported format: " ~ format);
+        case 'c':
             break;
-        case 'b', 'h','i','l','q': 
+        case 'b', 'h','i','l','q':
             if(!isSigned!S) return false;
             else break;
-        case 'B', 'H', 'I', 'L','Q': 
+        case 'B', 'H', 'I', 'L','Q':
             if(!isUnsigned!S) return false;
             else break;
         case 'f','d':
             if(!isFloatingPoint!S) return false;
             else break;
-        case '?': 
+        case '?':
             if(!isBoolean!S) return false;
         case 'Z':
             if (format.length > 1) {
@@ -1224,7 +1224,7 @@ bool match_format_type(T)(string format) {
             format = format[1..$];
             break;
         default:
-            enforce(false, "unknown format: " ~ format); 
+            enforce(false, "unknown format: " ~ format);
     }
 
     // by sizeishness
@@ -1242,18 +1242,18 @@ bool match_format_type(T)(string format) {
             case 'q','Q','d':
                 return (S_size == 8);
             default:
-                enforce(false, "unknown format: " ~ format); 
+                enforce(false, "unknown format: " ~ format);
                 assert(0); // seriously, d?
-                
+
         }
     }
 }
 
 /// generate a struct format string from T
 template SimpleFormatType(T) {
-    enum supported = 
+    enum supported =
         (isFloatingPoint!T && (T.sizeof == 4 || T.sizeof == 8) ||
-        isIntegral!T); 
+        isIntegral!T);
 
     PyObject* pyType() {
         //assert(supported);
@@ -1356,7 +1356,7 @@ template MatrixInfo(T) if(isArray!T || IsStaticArrayPointer!T) {
     }
 
     /**
-      Build shape from t. Assumes all arrays in a dimension are initialized 
+      Build shape from t. Assumes all arrays in a dimension are initialized
       and of uniform length.
       */
     Py_ssize_t[] build_shape(T t) {
@@ -1393,11 +1393,11 @@ template MatrixInfo(T) if(isArray!T || IsStaticArrayPointer!T) {
 
 /**
 Generate a mixin string of nested for loops that iterate over the
-first ndim dimensions of an array of type T (or, preferrably 
+first ndim dimensions of an array of type T (or, preferrably
 MatrixInfo!T.unqual).
 
 Params:
-arr_name = name of array to iterate. 
+arr_name = name of array to iterate.
 shape_name = name of array of dimension lengths.
 index_name = name to use for index vector. Declared in a new nested scoped.
 ndim = number of dimensions to iterate over.
@@ -1405,9 +1405,9 @@ pre_code = code to mixin each for loop before beginning the nested for loop.
 post_code = code to mix in to each for loop after finishing the nested for loop.
 */
 
-    string matrixIter(string arr_name, string shape_name, 
+    string matrixIter(string arr_name, string shape_name,
             string index_name,
-            size_t ndim, 
+            size_t ndim,
             string pre_code, string post_code) {
         string s_begin = "{\n";
         string s_end = "}\n";
@@ -1423,7 +1423,7 @@ post_code = code to mix in to each for loop after finishing the nested for loop.
             s_ixn ~= "["~ index_name ~ "[" ~ s_i ~ "]]";
             string index = index_name~ "[" ~ s_i ~ "]";
             string shape_i = shape_name ~ "[" ~ s_i ~ "]";
-            s_begin ~= "for("~index~" = 0;" ~index ~ " < " ~ shape_i ~ 
+            s_begin ~= "for("~index~" = 0;" ~index ~ " < " ~ shape_i ~
                 "; " ~ index ~ "++) {";
             s_end ~= "}\n";
 
@@ -1456,7 +1456,7 @@ post_code = code to mix in to each for loop after finishing the nested for loop.
     /// * it is any multidimensional static array (or a pointer to)
     /// * it is a 1 dimensional dynamic array
     enum bool isRectArray = staticIndexOf!(-1, dim_list) == -1 || dim_list.length == 1;
-    //(1,2,3) -> rectArrayAt == 0 
+    //(1,2,3) -> rectArrayAt == 0
     //(-1,2,3) -> rectArrayAt == 1 == 3 - 2 == len - max(indexof_rev, 1)
     //(-1,-1,1) -> rectArrayAt == 2 == 3 - 1 == len - max(indexof_rev,1)
     //(-1,-1,-1) -> rectArrayAt == 2 == 3 - 1 == len - max(indexof_rev,1)
@@ -1493,7 +1493,7 @@ post_code = code to mix in to each for loop after finishing the nested for loop.
 
 alias python_to_d!(Object) python_to_d_Object;
 
-void could_not_convert(T) (PyObject* o, string reason = "", 
+void could_not_convert(T) (PyObject* o, string reason = "",
         string file = __FILE__, size_t line = __LINE__) {
     // Pull out the name of the type of this Python object, and the
     // name of the D type.
@@ -1540,7 +1540,7 @@ struct arrayobject {
     Py_ssize_t allocated;
     arraydescr* ob_descr;
     PyObject* weakreflist; /* List of weak references */
-} 
+}
 
 template get_type(string _module, string type_name) {
     @property PyTypeObject* get_type() {

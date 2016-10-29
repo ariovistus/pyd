@@ -35,7 +35,7 @@ void message_handler1(Tid thr, string cmd, float var1) {
 	if (cmd == "acquire") {
 		int ret = _acquire(var1);
 		send!(string, int)(thr, cmd, ret);
-	} 
+	}
 }
 
 
@@ -74,7 +74,7 @@ void _camera_find(Tid t, string ip_address) {
 	} catch (AssertError e) {
 		last_error = "Assertion error" ~ e.msg.idup;
 	}
-	
+
 }
 
 int camera_find(string ip) {
@@ -135,7 +135,7 @@ int acquire(float exposure_time_ms) {
 	} catch (AssertError e) {
 		last_error = "Assertion error" ~ e.msg.idup;
 		return 0;
-	}	
+	}
 }
 
 int _get_image(uint *matrix) {
@@ -167,7 +167,7 @@ extern(C) int get_image(uint *matrix) {
 		return 0;
 	}
 }
- 
+
 int _camera_close() {
 	// The real version of this code closes the socket connection.
 	return 1;

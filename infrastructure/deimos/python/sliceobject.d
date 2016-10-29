@@ -1,7 +1,7 @@
 /**
   Mirror _sliceobject.h
 
-  Slice object interface 
+  Slice object interface
   */
 module deimos.python.sliceobject;
 

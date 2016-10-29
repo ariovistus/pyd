@@ -29,13 +29,13 @@ enum Py_END_OF_BUFFER = -1;
 
 /// Availability: 2.*
 PyObject* PyBuffer_FromObject(
-        PyObject* base, 
-        Py_ssize_t offset, 
+        PyObject* base,
+        Py_ssize_t offset,
         Py_ssize_t size);
 /// Availability: 2.*
 PyObject* PyBuffer_FromReadWriteObject(
-        PyObject* base, 
-        Py_ssize_t offset, 
+        PyObject* base,
+        Py_ssize_t offset,
         Py_ssize_t size);
 /// Availability: 2.*
 PyObject* PyBuffer_FromMemory(void* ptr, Py_ssize_t size);

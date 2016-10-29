@@ -62,7 +62,7 @@ version(Python_3_0_Or_Later) {
     /// Availability: 3.*
     node* PyParser_ParseFileFlagsEx(
             FILE* fp,
-            const(char)* filename,       
+            const(char)* filename,
             const(char)* enc,
             grammar* g,
             int start,
@@ -73,13 +73,13 @@ version(Python_3_0_Or_Later) {
 }else version(Python_2_6_Or_Later) {
     /// Availability: 2.*
     node* PyParser_ParseFileFlagsEx(
-            FILE* fp, 
-            const(char)* filename, 
+            FILE* fp,
+            const(char)* filename,
             grammar* g,
-            int start, 
-            char* ps1, 
+            int start,
+            char* ps1,
             char* ps2,
-            perrdetail* err_ret, 
+            perrdetail* err_ret,
             int* flags);
 }
 
@@ -92,7 +92,7 @@ version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
     node* PyParser_ParseStringFlagsFilenameEx(
             const(char)* s,
-            const(char)* filename,       
+            const(char)* filename,
             grammar* g,
             int start,
             perrdetail* err_ret,

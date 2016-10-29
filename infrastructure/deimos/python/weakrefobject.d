@@ -1,7 +1,7 @@
 /**
   Mirror _weakrefobject.h
 
-Weak references objects for Python. 
+Weak references objects for Python.
   */
 module deimos.python.weakrefobject;
 

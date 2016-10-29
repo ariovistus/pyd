@@ -1,7 +1,7 @@
 /**
   Mirror _modsupport.h
 
-  Module support interface 
+  Module support interface
   */
 module deimos.python.modsupport;
 

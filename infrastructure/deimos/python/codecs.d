@@ -54,7 +54,7 @@ version(Python_3_0_Or_Later) {
    object is passed through the encoder function found for the given
    encoding using the error handling method defined by errors. errors
    may be NULL to use the default method defined for the codec.
-   
+
    Raises a LookupError in case no encoder can be found.
 
  */
@@ -64,7 +64,7 @@ PyObject* PyCodec_Encode(PyObject* object, const(char)* encoding, const(char)* e
    object is passed through the decoder function found for the given
    encoding using the error handling method defined by errors. errors
    may be NULL to use the default method defined for the codec.
-   
+
    Raises a LookupError in case no encoder can be found.
 
  */
@@ -92,8 +92,8 @@ version(Python_2_5_Or_Later) {
 }
 /** Get a StreamReader factory function for the given encoding. */
 PyObject* PyCodec_StreamReader(
-        const(char)* encoding, 
-        PyObject* stream, 
+        const(char)* encoding,
+        PyObject* stream,
         const(char)* errors);
 /** Get a StreamWriter factory function for the given encoding. */
 PyObject* PyCodec_StreamWriter(const(char)* encoding, PyObject* stream, const(char)* errors);

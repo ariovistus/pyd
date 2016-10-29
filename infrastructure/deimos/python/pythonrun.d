@@ -1,7 +1,7 @@
 /**
   Mirror _pythonrun.h
 
-  Interfaces to parse and execute pieces of python code 
+  Interfaces to parse and execute pieces of python code
 
 See_Also:
 <a href="http://docs.python.org/c-api/veryhigh.html"> The Very High Level Layer </a>
@@ -23,17 +23,17 @@ extern(C):
 
 version(Python_3_2_Or_Later) {
     /// _
-    enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | 
-            CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | 
+    enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT |
+            CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION |
             CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL);
 }else version(Python_2_6_Or_Later) {
     /// _
-    enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | 
-            CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | 
+    enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT |
+            CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION |
             CO_FUTURE_UNICODE_LITERALS);
 }else version(Python_2_5_Or_Later) {
     /// _
-    enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | 
+    enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT |
             CO_FUTURE_WITH_STATEMENT );
 }else {
     /// _
@@ -84,7 +84,7 @@ version(Python_3_2_Or_Later) {
 
 /**
   Initialize the Python interpreter. For embedding python, this should
-  be called before accessing other Python/C API functions, with the 
+  be called before accessing other Python/C API functions, with the
   following exceptions:
 
   For Python 3, PyImport_AppendInittab and PyImport_ExtendInittab should
@@ -157,9 +157,9 @@ version(Python_2_5_Or_Later){
 
 /// _
 int PyRun_AnyFileExFlags(
-        FILE* fp, 
-        const(char)* filename, 
-        int closeit, 
+        FILE* fp,
+        const(char)* filename,
+        int closeit,
         PyCompilerFlags* flags);
 
 /// _
@@ -167,52 +167,52 @@ int PyRun_SimpleStringFlags(const(char)*, PyCompilerFlags*);
 
 /// _
 int PyRun_SimpleFileExFlags(
-        FILE* fp,  
-        const(char)* filename, 
-        int closeit, 
+        FILE* fp,
+        const(char)* filename,
+        int closeit,
         PyCompilerFlags* flags);
 
 /// _
 int PyRun_InteractiveOneFlags(
-        FILE* fp, 
-        const(char)* filename, 
+        FILE* fp,
+        const(char)* filename,
         PyCompilerFlags* flags);
 /// _
 int PyRun_InteractiveLoopFlags(
-        FILE* fp, 
-        const(char)* filename, 
+        FILE* fp,
+        const(char)* filename,
         PyCompilerFlags* flags);
 
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
     _mod* PyParser_ASTFromString(
-            const(char)* s, 
-            const(char)* filename, 
-            int start, 
-            PyCompilerFlags* flags, 
+            const(char)* s,
+            const(char)* filename,
+            int start,
+            PyCompilerFlags* flags,
             PyArena* arena);
     version(Python_3_2_Or_Later) {
         /// Availability: >= 3.2
         _mod* PyParser_ASTFromFile(
-                FILE* fp, 
-                const(char)* filename, 
-                const(char)* enc, 
-                int start, 
-                char* ps1, 
-                char* ps2, 
-                PyCompilerFlags* flags, 
-                int* errcode, 
+                FILE* fp,
+                const(char)* filename,
+                const(char)* enc,
+                int start,
+                char* ps1,
+                char* ps2,
+                PyCompilerFlags* flags,
+                int* errcode,
                 PyArena* arena);
     }else{
         /// Availability: <= 2.7
         _mod* PyParser_ASTFromFile(
-                FILE* fp, 
-                const(char)* filename, 
-                int start, 
-                char* ps1, 
-                char* ps2, 
-                PyCompilerFlags* flags, 
-                int* errcode, 
+                FILE* fp,
+                const(char)* filename,
+                int start,
+                char* ps1,
+                char* ps2,
+                PyCompilerFlags* flags,
+                int* errcode,
                 PyArena* arena);
     }
     /// _
@@ -248,11 +248,11 @@ flags = compilation flags (modified by `from __future__ import xx`).
 Returns:
 result of executing code, or null if an exception was raised.
 */
-PyObject* PyRun_StringFlags( 
-        const(char)* str, 
-        int s, 
-        PyObject* g, 
-        PyObject* g, 
+PyObject* PyRun_StringFlags(
+        const(char)* str,
+        int s,
+        PyObject* g,
+        PyObject* g,
         PyCompilerFlags* flags);
 
 version(Python_2_5_Or_Later){
@@ -267,9 +267,9 @@ Returns:
 result of executing code, or null if an exception was raised.
      */
     PyObject* PyRun_String()(
-            const(char)* str, 
-            int s, 
-            PyObject* g, 
+            const(char)* str,
+            int s,
+            PyObject* g,
             PyObject* l) {
         return PyRun_StringFlags(str, s, g, l, null);
     }
@@ -282,7 +282,7 @@ result of executing code, or null if an exception was raised.
         return PyRun_FileExFlags(fp, p, s, g, l, c, null);
     }
     /// _
-    PyObject* PyRun_FileFlags()(FILE* fp, const(char)* p, int s, PyObject* g, 
+    PyObject* PyRun_FileFlags()(FILE* fp, const(char)* p, int s, PyObject* g,
             PyObject* l, PyCompilerFlags *flags) {
         return PyRun_FileExFlags(fp, p, s, g, l, 0, flags);
     }
@@ -307,7 +307,7 @@ result of executing code, or null if an exception was raised.
     /// _
     PyObject* PyRun_FileEx(FILE*, const(char)*, int, PyObject*, PyObject*, int);
     /// _
-    PyObject* PyRun_FileFlags(FILE*, const(char)*, int, PyObject*, PyObject*, 
+    PyObject* PyRun_FileFlags(FILE*, const(char)*, int, PyObject*, PyObject*,
             PyCompilerFlags *);
     /// _
     PyObject* Py_CompileString(const(char)*, const(char)*, int);
@@ -315,17 +315,17 @@ result of executing code, or null if an exception was raised.
 
 /// _
 PyObject* PyRun_FileExFlags(
-        FILE* fp, 
-        const(char)* filename, 
-        int start, 
-        PyObject* globals, 
-        PyObject* locals, 
-        int closeit, 
+        FILE* fp,
+        const(char)* filename,
+        int start,
+        PyObject* globals,
+        PyObject* locals,
+        int closeit,
         PyCompilerFlags* flags);
 
 version(Python_3_2_Or_Later) {
     /// _
-    auto Py_CompileStringFlags()(const(char)* str, const(char)* p, 
+    auto Py_CompileStringFlags()(const(char)* str, const(char)* p,
             int s, PyCompilerFlags* f) {
         return Py_CompileStringExFlags(str, p, s, f, -1);
     }
@@ -339,9 +339,9 @@ version(Python_3_2_Or_Later) {
 }else{
     /// _
     PyObject* Py_CompileStringFlags(
-            const(char)* str, 
-            const(char)* filename, 
-            int, 
+            const(char)* str,
+            const(char)* filename,
+            int,
             PyCompilerFlags* flags);
 }
 
@@ -471,7 +471,7 @@ char* PyOS_Readline(FILE*, FILE*, char*);
 /// _
 mixin(PyAPI_DATA!"int function() PyOS_InputHook");
 /// _
-mixin(PyAPI_DATA!"char* function(FILE*, FILE*, char*) 
+mixin(PyAPI_DATA!"char* function(FILE*, FILE*, char*)
     PyOS_ReadlineFunctionPointer");
 /// _
 mixin(PyAPI_DATA!"PyThreadState* _PyOS_ReadlineTState");

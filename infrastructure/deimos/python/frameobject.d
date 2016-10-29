@@ -64,9 +64,9 @@ struct PyFrameObject {
        directly.  As of 2.3 f_lineno is only valid when tracing is
        active (i.e. when f_trace is set).  At other times we use
        PyCode_Addr2Line to calculate the line from the current
-       bytecode index. 
+       bytecode index.
 
-       Current line number 
+       Current line number
      */
     int f_lineno;
     version(Python_2_5_Or_Later){

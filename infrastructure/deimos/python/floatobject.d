@@ -152,9 +152,9 @@ version(Python_3_0_Or_Later) {
             Py_ssize_t format_spec_len);
 }else{
     version(Python_2_7_Or_Later) {
-        /** Round a C double x to the closest multiple of 10**-ndigits.  
-          Returns a Python float on success, or NULL (with an appropriate 
-          exception set) on failure.  Used in builtin_round in bltinmodule.c. 
+        /** Round a C double x to the closest multiple of 10**-ndigits.
+          Returns a Python float on success, or NULL (with an appropriate
+          exception set) on failure.  Used in builtin_round in bltinmodule.c.
          */
         /// Availability: >= 2.7
         PyObject* _Py_double_round(double x, int ndigits);

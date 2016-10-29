@@ -1,7 +1,7 @@
 /**
   Mirror _node.h
 
-  Parse tree node interface 
+  Parse tree node interface
   */
 module deimos.python.node;
 

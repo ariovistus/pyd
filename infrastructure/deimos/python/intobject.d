@@ -1,7 +1,7 @@
 /**
   Mirror _intobject.h
 
-Integer object interface 
+Integer object interface
 
 PyIntObject represents a (long) integer.  This is an immutable object;
 an integer cannot change its value after creation.
@@ -75,7 +75,7 @@ C_ulong PyInt_AsUnsignedLongMask(PyObject*);
 C_ulonglong PyInt_AsUnsignedLongLongMask(PyObject*);
 
 /** Accessible at the Python level as sys.maxint */
-C_long PyInt_GetMax(); 
+C_long PyInt_GetMax();
 
 /// Availability: 2.*
 C_ulong PyOS_strtoul(char*, char**, int);

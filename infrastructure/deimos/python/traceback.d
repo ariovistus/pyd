@@ -1,7 +1,7 @@
 /**
   Mirror _traceback.h
 
-  Traceback interface 
+  Traceback interface
   */
 module deimos.python.traceback;
 

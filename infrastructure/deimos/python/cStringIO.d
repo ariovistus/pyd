@@ -3,7 +3,7 @@
 
   This header provides access to _cStringIO objects from C.
   Functions are provided for calling _cStringIO objects and
-  macros are provided for testing whether you have _cStringIO 
+  macros are provided for testing whether you have _cStringIO
   objects.
 
   Before calling any of the functions or macros, you must initialize

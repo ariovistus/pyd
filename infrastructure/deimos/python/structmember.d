@@ -1,7 +1,7 @@
 /**
   Mirror _structmember.h
 
-Interface to map C struct members to Python object attributes 
+Interface to map C struct members to Python object attributes
 */
 module deimos.python.structmember;
 

@@ -18,8 +18,8 @@ CPython 2.6+
 * DMD, LDC fe2.065+
 * GDC fe2.065+, embedding only (GDC still doesn't have shared library support!)
 
-Note all D compilers are based on DMD's front end, so while LDC and GDC have 
-their own verisoning schemes, I only pay attention to the front end version. 
+Note all D compilers are based on DMD's front end, so while LDC and GDC have
+their own verisoning schemes, I only pay attention to the front end version.
 
 
 [build-status-badge]: https://travis-ci.org/ariovistus/pyd.svg?branch=master

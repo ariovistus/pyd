@@ -24,7 +24,7 @@ This extension is then built the usual way with distutils, except PyD provides s
 
     $ python setup.py install
 
-Usage: 
+Usage:
 
 .. code-block:: python
 

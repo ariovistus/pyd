@@ -16,7 +16,7 @@ void* PyObject_Realloc(void*, size_t);
 /// _
 void PyObject_Free(void*);
 
- /** 
+ /**
    Don't allocate memory.  Instead of a 'type' parameter, take a pointer to a
    new object (allocated by an arbitrary allocator), and initialize its object
    header fields.
@@ -29,7 +29,7 @@ Borrowed!PyVarObject* PyObject_InitVar(PyVarObject*,
 PyObject* _PyObject_New(PyTypeObject*);
 /// _
 PyVarObject* _PyObject_NewVar(PyTypeObject*, Py_ssize_t);
- /** 
+ /**
    Allocates memory for a new object of the given
    type, and initializes part of it.  'type' must be the C structure type used
    to represent the object, and 'typeobj' the address of the corresponding
@@ -85,7 +85,7 @@ union PyGC_Head {
     /// _
     _gc gc;
     /// _
-    real dummy; 
+    real dummy;
 }
 
 // Numerous macro definitions that appear in objimpl.h at this point are not
@@ -118,7 +118,7 @@ auto PyType_SUPPORTS_WEAKREFS()(PyObject* t) {
     version(Python_3_0_Or_Later) {
         return (t.tp_weaklistoffset > 0);
     }else{
-        return (PyType_HasFeature(t, Py_TPFLAGS_HAVE_WEAKREFS) 
+        return (PyType_HasFeature(t, Py_TPFLAGS_HAVE_WEAKREFS)
                 && (t.tp_weaklistoffset > 0));
     }
 }

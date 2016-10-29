@@ -14,15 +14,15 @@ extern(C):
 version(Python_3_0_Or_Later) {
     /// _
     mixin template PyException_HEAD() {
-        mixin PyObject_HEAD; 
+        mixin PyObject_HEAD;
         /// _
         PyObject* dict;
         /// _
-        PyObject* args; 
+        PyObject* args;
         /// _
         PyObject* traceback;
         /// _
-        PyObject* context; 
+        PyObject* context;
         /// _
         PyObject* cause;
     }
@@ -154,16 +154,16 @@ version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
     int PyExceptionClass_Check()(PyObject* x) {
         version(Python_3_0_Or_Later) {
-            return (PyType_Check((x)) && 
-                    PyType_FastSubclass(cast(PyTypeObject*)x, 
+            return (PyType_Check((x)) &&
+                    PyType_FastSubclass(cast(PyTypeObject*)x,
                         Py_TPFLAGS_BASE_EXC_SUBCLASS));
         }else version(Python_2_6_Or_Later) {
             return (PyClass_Check(x) || (PyType_Check(x) &&
-                        PyType_FastSubclass(cast(PyTypeObject*)x, 
+                        PyType_FastSubclass(cast(PyTypeObject*)x,
                             Py_TPFLAGS_BASE_EXC_SUBCLASS)));
         }else{
             return (PyClass_Check(x) || (PyType_Check(x) &&
-                        PyType_IsSubtype(cast(PyTypeObject*)x, 
+                        PyType_IsSubtype(cast(PyTypeObject*)x,
                             cast(PyTypeObject*) PyExc_BaseException)));
         }
     }
@@ -177,7 +177,7 @@ version(Python_2_5_Or_Later) {
                     PyType_FastSubclass(x.ob_type, Py_TPFLAGS_BASE_EXC_SUBCLASS));
         }else{
             return (PyInstance_Check(x) ||
-                    PyType_IsSubtype(x.ob_type, 
+                    PyType_IsSubtype(x.ob_type,
                         cast(PyTypeObject*) PyExc_BaseException));
         }
     }
@@ -198,7 +198,7 @@ version(Python_2_5_Or_Later) {
         version(Python_3_0_Or_Later) {
             return cast(PyObject*)(x.ob_type);
         }else{
-            return ((PyInstance_Check(x) 
+            return ((PyInstance_Check(x)
                         ? cast(PyObject*)(cast(PyInstanceObject*)x).in_class
                         : cast(PyObject*)(x.ob_type)));
         }
@@ -436,7 +436,7 @@ void PyErr_SyntaxLocation(const(char)* filename, int lineno);
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
     void PyErr_SyntaxLocationEx(
-            const(char)* filename,       
+            const(char)* filename,
             int lineno,
             int col_offset);
 }
@@ -448,28 +448,28 @@ PyObject* PyErr_ProgramText(const(char)* filename, int lineno);
 //-//////////////////////////////////////////////////////////////////////////
 /** create a UnicodeDecodeError object */
 PyObject* PyUnicodeDecodeError_Create(
-        const(char)* encoding, 
-        const(char)* object, 
-        Py_ssize_t length, 
-        Py_ssize_t start, 
-        Py_ssize_t end, 
+        const(char)* encoding,
+        const(char)* object,
+        Py_ssize_t length,
+        Py_ssize_t start,
+        Py_ssize_t end,
         const(char)* reason);
 
 /** create a UnicodeEncodeError object */
 PyObject* PyUnicodeEncodeError_Create(
-        const(char)* encoding, 
-        Py_UNICODE* object, 
-        Py_ssize_t length, 
-        Py_ssize_t start, 
-        Py_ssize_t end, 
+        const(char)* encoding,
+        Py_UNICODE* object,
+        Py_ssize_t length,
+        Py_ssize_t start,
+        Py_ssize_t end,
         const(char)* reason);
 
 /** create a UnicodeTranslateError object */
 PyObject* PyUnicodeTranslateError_Create(
-        Py_UNICODE* object, 
-        Py_ssize_t length, 
-        Py_ssize_t start, 
-        Py_ssize_t end, 
+        Py_UNICODE* object,
+        Py_ssize_t length,
+        Py_ssize_t start,
+        Py_ssize_t end,
         const(char)* reason);
 
 /** get the encoding attribute */

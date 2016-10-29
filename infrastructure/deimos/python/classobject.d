@@ -11,7 +11,7 @@ extern(C):
 
 version(Python_3_0_Or_Later) {
 }else{
-    /** 
+    /**
 subclasses PyObject
 
 Availability: 2.*
@@ -20,11 +20,11 @@ Availability: 2.*
         mixin PyObject_HEAD;
 
         /** A tuple of class objects */
-        PyObject*	cl_bases;	
+        PyObject*	cl_bases;
         /** A dictionary */
-        PyObject*	cl_dict;	
+        PyObject*	cl_dict;
         /** A string */
-        PyObject*	cl_name;	
+        PyObject*	cl_name;
         /** The following three are functions or null */
         PyObject*	cl_getattr;
         /// ditto
@@ -56,7 +56,7 @@ struct PyMethodObject {
     PyObject* im_self;
     version(Python_3_0_Or_Later) {
     }else{
-        /** The class that asked for the method 
+        /** The class that asked for the method
         Availability: 2.*
          */
         PyObject* im_class;

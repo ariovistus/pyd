@@ -14,7 +14,7 @@ There is a variant that takes an explicit size as well as a
 variant that assumes a zero-terminated string.  Note that none of the
 functions should be applied to nil objects.
 
-Note _stringobject goes away in python 3 (well, sort of; it gets moved to 
+Note _stringobject goes away in python 3 (well, sort of; it gets moved to
 bytesobject.h - look there for portability)
   */
 module deimos.python.stringobject;
@@ -99,7 +99,7 @@ PyObject* PyString_FromStringAndSize(const(char)*, Py_ssize_t);
 /// ditto
 PyObject* PyString_FromString(const(char)*);
 /// Availability: 2.*
-PyObject* PyString_FromFormatV(const(char)*,  va_list); 
+PyObject* PyString_FromFormatV(const(char)*,  va_list);
 /// Availability: 2.*
 PyObject* PyString_FromFormat(const(char)*, ...);
 /// Availability: 2.*

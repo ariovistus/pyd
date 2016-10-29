@@ -16,9 +16,9 @@ version(Python_3_2_Or_Later) {
     double PyOS_ascii_atof(const(char)* str);
     /// Availability: <= 3.2
     char* PyOS_ascii_formatd(
-            char* buffer, 
-            size_t buf_len, 
-            const(char)* format, 
+            char* buffer,
+            size_t buf_len,
+            const(char)* format,
             double d);
 }
 

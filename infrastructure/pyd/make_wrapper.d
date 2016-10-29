@@ -60,7 +60,7 @@ template OverloadShim() {
         }
     }
     template __pyd_get_overload(string realname, fn_t) {
-        enum attrs = functionAttributes!fn_t; 
+        enum attrs = functionAttributes!fn_t;
             mixin(Replace!(q{
         ReturnType!(fn_t) func(T ...) (string name, T t) $constness $attrs {
             PyObject* _pyobj = this.__pyd_get_pyobj();
@@ -78,9 +78,9 @@ template OverloadShim() {
             }
         }
         }, "$constness",
-            isImmutableFunction!fn_t ? "immutable" : 
+            isImmutableFunction!fn_t ? "immutable" :
             isConstFunction!fn_t ? "const" : "",
-            "$attrs", attrs_to_string(attrs), 
+            "$attrs", attrs_to_string(attrs),
             "$realname", realname));
     }
     int __pyd_apply_wrapper(dg_t) (dg_t dg) {
@@ -131,7 +131,7 @@ template class_decls(uint i, T, Params...) {
 }
 
 template make_wrapper(T, Params...) {
-    enum string cls = 
+    enum string cls =
     "class wrapper : T {\n"~
     "    mixin OverloadShim;\n"~
     pyd.make_wrapper.class_decls!(0, T, Params)~"\n"~

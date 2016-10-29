@@ -1,7 +1,7 @@
 /**
   Mirror _methodobject.h
 
-Method object interface 
+Method object interface
   */
 module deimos.python.methodobject;
 
@@ -99,7 +99,7 @@ enum int METH_CLASS   = 0x0010;
 enum int METH_STATIC  = 0x0020;
 /** METH_COEXIST allows a method to be entered eventhough a slot has
    already filled the entry.  When defined, the flag allows a separate
-   method, "__contains__" for example, to coexist with a defined 
+   method, "__contains__" for example, to coexist with a defined
    slot like sq_contains. */
 enum int METH_COEXIST = 0x0040;
 

@@ -77,7 +77,7 @@ version(Python_3_0_Or_Later) {
 }
 
 version(Python_3_0_Or_Later) {
-    extern(C) 
+    extern(C)
     export PyObject* PyInit_rawexample () {
         rawmodule.m_methods = rawexample_methods.ptr;
         PyObject* m = PyModule_Create(&rawmodule);

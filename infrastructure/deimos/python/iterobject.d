@@ -1,7 +1,7 @@
 /**
   Mirror _iterobject.h
 
-  Iterators (the basic kind, over a sequence) 
+  Iterators (the basic kind, over a sequence)
   */
 module deimos.python.iterobject;
 

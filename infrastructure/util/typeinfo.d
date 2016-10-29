@@ -57,7 +57,7 @@ template constness(T) {
 }
 
 bool constCompatible(Constness c1, Constness c2) {
-    return c1 == c2 || 
+    return c1 == c2 ||
         c1 == Constness.Const && c2 != Constness.Wildcard ||
         c2 == Constness.Const && c1 != Constness.Wildcard;
 }
@@ -111,13 +111,13 @@ string attrs_to_string(uint attrs) {
 
 // what U should be so 'new U' returns a T
 template NewParamT(T) {
-    static if(isPointer!T && is(PointerTarget!T == struct)) 
+    static if(isPointer!T && is(PointerTarget!T == struct))
         alias PointerTarget!T NewParamT;
     else alias T NewParamT;
 }
 
 template StripSafeTrusted(F) {
-    enum attrs = functionAttributes!F ; 
+    enum attrs = functionAttributes!F ;
     enum desired_attrs = attrs & ~FunctionAttribute.safe & ~FunctionAttribute.trusted;
     enum linkage = functionLinkage!F;
     alias SetFunctionAttributes!(F, linkage, desired_attrs) unqual_F;

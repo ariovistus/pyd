@@ -113,7 +113,7 @@ T exception_catcher_nogc(T) (T delegate() dg) {
         //const(char)* clz = e.classinfo.name.ptr;
         //const(char)* msg = e.msg.ptr;
         //const(char)* file = e.file.ptr;
-        PyObject* p = PyBytes_FromFormat("some thrown D object:\0", 
+        PyObject* p = PyBytes_FromFormat("some thrown D object:\0",
                 /*clz, msg, file, e.line*/);
         PyErr_SetObject(PyExc_RuntimeError, p);
         Py_DECREF(p); // PyErr_SetObject has ownership of it now
@@ -232,7 +232,7 @@ public:
                 // todo: test this on other versions..
                 version(Python_3_2_Or_Later) {
                     pmsg = PyObject_GetAttrString(m_value, "args");
-                    if(pmsg != null && PyTuple_Check(pmsg) && 
+                    if(pmsg != null && PyTuple_Check(pmsg) &&
                             PyTuple_Size(pmsg) >= 1) {
                         pmsg = cast(PyObject*) PyTuple_GetItem(pmsg, 0);
                     }

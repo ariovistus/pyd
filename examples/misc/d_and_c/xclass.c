@@ -5,7 +5,7 @@ typedef struct {
 } x_XObject;
 
 static PyTypeObject x_XType = {
-    PyVarObject_HEAD_INIT(NULL, 0) 
+    PyVarObject_HEAD_INIT(NULL, 0)
     "x.X",                     /*tp_name*/
     sizeof(x_XObject),         /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -32,7 +32,7 @@ static PyMethodDef x_methods[] = {
     {NULL} /*sentinal*/
 };
 
-PyObject *x_add(PyObject * arg1, PyObject * arg2) 
+PyObject *x_add(PyObject * arg1, PyObject * arg2)
 {
     return Py_BuildValue("OO", arg1, arg2);
 }
@@ -77,7 +77,7 @@ initx(void)
     x_XType.tp_new = PyType_GenericNew;
     x_XType.tp_as_number = (PyNumberMethods *) malloc(sizeof(PyNumberMethods));
     memset(x_XType.tp_as_number, 0, sizeof(PyNumberMethods));
-    x_XType.tp_as_number->nb_add = &x_add; 
+    x_XType.tp_as_number->nb_add = &x_add;
 
 
 #if PY_MAJOR_VERSION >= 3

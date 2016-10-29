@@ -13,7 +13,7 @@ shared static this() {
             ModuleName!"testing",
             //Init!(int[]),
             Init!(int,double,string),
-            Def!(Bizzy.a, int function(double)), 
+            Def!(Bizzy.a, int function(double)),
             StaticDef!(Bizzy.b, int function(double)),
             Repr!(Bizzy.repr),
             Property!(Bizzy.m, Mode!"r"),

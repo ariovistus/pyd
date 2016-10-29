@@ -68,10 +68,10 @@ static assert(NumpyFormatType!(Complex!float).supported);
 /**
   Convert a D array to numpy.ndarray.
   */
-PyObject* d_to_python_numpy_ndarray(T)(T t) 
+PyObject* d_to_python_numpy_ndarray(T)(T t)
 if((isArray!T || IsStaticArrayPointer!T) &&
         NumpyFormatType!(MatrixInfo!T.MatrixElementType).supported) {
-    enforce(numpy_ndarray_Type(), "numpy is not available"); 
+    enforce(numpy_ndarray_Type(), "numpy is not available");
     alias MatrixInfo!T.MatrixElementType ME;
     Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);
     PyObject* pyshape = d_to_python(shape);
@@ -85,10 +85,10 @@ if((isArray!T || IsStaticArrayPointer!T) &&
     auto buf = array.buffer_view(PyBUF_STRIDES|PyBUF_C_CONTIGUOUS);
     // this really should be optimized, but I am so lazy right now
     enum xx = (MatrixInfo!T.matrixIter(
-                "t", "shape", "_indeces",
+                "t", "shape", "_indices",
                 MatrixInfo!T.ndim, q{
                 static if(is(typeof($array_ixn) == ME)) {
-                    buf.set_item!ME($array_ixn, cast(Py_ssize_t[]) _indeces);
+                    buf.set_item!ME($array_ixn, cast(Py_ssize_t[]) _indices);
                 }
                 },""));
     mixin(xx);

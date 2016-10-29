@@ -32,7 +32,7 @@ static PyMethodDef x_methods[] = {
     {NULL} /*sentinal*/
 };
 
-PyObject *x_add(PyObject * arg1, PyObject * arg2) 
+PyObject *x_add(PyObject * arg1, PyObject * arg2)
 {
     return Py_BuildValue("OO", arg1, arg2);
 }
@@ -50,7 +50,7 @@ initx(void)
     x_XType.tp_new = PyType_GenericNew;
     x_XType.tp_as_number = (PyNumberMethods *) malloc(sizeof(PyNumberMethods));
     memset(x_XType.tp_as_number, 0, sizeof(PyNumberMethods));
-    x_XType.tp_as_number->nb_add = &x_add; 
+    x_XType.tp_as_number->nb_add = &x_add;
 
     // this is important!
     x_XType.tp_flags |= Py_TPFLAGS_CHECKTYPES;

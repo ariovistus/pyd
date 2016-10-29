@@ -17,8 +17,8 @@ class Tests {
         };
         alias S = typeof(fun);
         alias T = SetFunctionAttributes!(
-                S, 
-                functionLinkage!S, 
+                S,
+                functionLinkage!S,
                 FunctionAttribute.none
                 );
 
@@ -37,8 +37,8 @@ class Tests {
             };
             alias S = typeof(fun);
             alias T = SetFunctionAttributes!(
-                    S, 
-                    functionLinkage!S, 
+                    S,
+                    functionLinkage!S,
                     FunctionAttribute.system
                     );
 
@@ -65,7 +65,7 @@ class Tests {
         auto range = container.python.equalRange(result);
         assertFalse(range.empty);
         assertEquals(functionAttributes!S, range.front.functionAttributes);
-        assertFalse(isConversionAddingFunctionAttributes(range.front.functionAttributes, functionAttributes!F)); 
+        assertFalse(isConversionAddingFunctionAttributes(range.front.functionAttributes, functionAttributes!F));
         //assertEquals(StrippedFunctionAttributes, range.front.functionAttributes);
         // get_d_reference!(int function())(result);
     }

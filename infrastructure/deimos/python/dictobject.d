@@ -70,7 +70,7 @@ struct PyDictObject{
      */
     PyDictEntry* ma_table;
     /// _
-    PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash) 
+    PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash)
         ma_lookup;
     /// _
     PyDictEntry[PyDict_MINSIZE] ma_smalltable;
@@ -142,7 +142,7 @@ int PyDict_Next(PyObject* mp, Py_ssize_t* pos, PyObject_BorrowedRef** key, PyObj
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
     int _PyDict_Next(
-            PyObject* mp, Py_ssize_t* pos, Borrowed!PyObject** key, 
+            PyObject* mp, Py_ssize_t* pos, Borrowed!PyObject** key,
             Borrowed!PyObject** value, Py_hash_t* hash);
 }
 /// _
