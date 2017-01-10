@@ -354,7 +354,7 @@ T get_d_reference(T) (PyObject* _self) {
         // don't cast away linkage!
         enforce(range.front.linkage == functionLinkage!T,
                 format(
-                    "trying to convert a extern(\"%s\") "
+                    "trying to convert a extern(\"%s\") " ~
                     "%s to extern(\"%s\")",
                     range.front.linkage, (isDelegate!T ? "delegate":"function"),
                     functionLinkage!T));

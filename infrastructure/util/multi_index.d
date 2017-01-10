@@ -3598,7 +3598,7 @@ $(BIGOH n) ($(BIGOH n 1) on a good day)
                     version(BucketHackery){
                         index = cast(size_t) node.index!N.prev;
                     }else{
-                        static assert(0,"signals not implemented for Hashed "
+                        static assert(0,"signals not implemented for Hashed " ~
                                 "indices without version=BucketHackery");
                     }
                 }else{
