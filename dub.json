@@ -1,93 +1,132 @@
 {
-    "name": "pyd",
-    "description": "Pyd is a library for the D programming language that wraps the raw Python/C API with a cleaner, simpler interface.",
-    "homepage": "https://github.com/ariovistus/pyd",
-    "targetType": "sourceLibrary",
-    "authors": [
-        "Kirk McDonald"
-    ],
-    "license": "MIT",
-    "importPaths": [
-        "infrastructure/"
-    ],
-    "sourcePaths": [
-        "infrastructure/pyd/",
-        "infrastructure/deimos/",
-        "infrastructure/util/"
-    ],
-    "versions-linux":   ["Python_Unicode_UCS4"],
-    "versions-osx":     ["Python_Unicode_UCS2"],
-    "versions-windows": ["Python_Unicode_UCS2"],
-    "configurations": [
-        {
-            "name": "python27",
-            "versions": [
-                "Python_2_4_Or_Later",
-                "Python_2_5_Or_Later",
-                "Python_2_6_Or_Later",
-                "Python_2_7_Or_Later",
-            ],
-            "libs-posix": [
-                "python2.7"
-            ],
-            "libs-windows-dmd": [
-                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python27_digitalmars"
-            ]
-        },
-        {
-            "name": "python33",
-            "versions": [
-                "Python_2_4_Or_Later",
-                "Python_2_5_Or_Later",
-                "Python_2_6_Or_Later",
-                "Python_2_7_Or_Later",
-                "Python_3_0_Or_Later",
-                "Python_3_1_Or_Later",
-                "Python_3_2_Or_Later",
-                "Python_3_3_Or_Later",
-            ],
-            "libs-posix": ["python3.3m"],
-            "libs-windows-dmd": [
-                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python33_digitalmars"
-            ]
-        },
-        {
-            "name": "python34",
-            "versions": [
-                "Python_2_4_Or_Later",
-                "Python_2_5_Or_Later",
-                "Python_2_6_Or_Later",
-                "Python_2_7_Or_Later",
-                "Python_3_0_Or_Later",
-                "Python_3_1_Or_Later",
-                "Python_3_2_Or_Later",
-                "Python_3_3_Or_Later",
-                "Python_3_4_Or_Later",
-            ],
-            "libs-posix": ["python3.4m"],
-            "libs-windows-dmd": [
-                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python34_digitalmars"
-            ]
-        },
-        {
-            "name": "python35",
-            "versions": [
-                "Python_2_4_Or_Later",
-                "Python_2_5_Or_Later",
-                "Python_2_6_Or_Later",
-                "Python_2_7_Or_Later",
-                "Python_3_0_Or_Later",
-                "Python_3_1_Or_Later",
-                "Python_3_2_Or_Later",
-                "Python_3_3_Or_Later",
-                "Python_3_4_Or_Later",
-                "Python_3_5_Or_Later"
-            ],
-            "libs-posix": ["python3.5m"],
-            "libs-windows-dmd": [
-                "$PYD_PACKAGE_DIR\\infrastructure\\windows\\python35_digitalmars"
-            ]
-        }
-    ]
+	"authors": [
+		"Kirk McDonald"
+	],
+	"configurations": [
+		{
+			"name": "python27",
+			"targetType": "sourceLibrary",
+			"libs-windows-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python27_digitalmars"
+			],
+			"libs-posix": [
+				"python2.7"
+			],
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later"
+			]
+		},
+		{
+			"name": "python33",
+			"targetType": "sourceLibrary",
+			"libs-windows-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python33_digitalmars"
+			],
+			"libs-posix": [
+				"python3.3m"
+			],
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later"
+			]
+		},
+		{
+			"name": "python34",
+			"targetType": "sourceLibrary",
+			"libs-windows-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python34_digitalmars"
+			],
+			"libs-posix": [
+				"python3.4m"
+			],
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later",
+				"Python_3_4_Or_Later"
+			]
+		},
+		{
+			"name": "python35",
+			"targetType": "sourceLibrary",
+			"libs-windows-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python35_digitalmars"
+			],
+			"libs-posix": [
+				"python3.5m"
+			],
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later",
+				"Python_3_4_Or_Later",
+				"Python_3_5_Or_Later"
+			]
+		},
+		{
+			"name": "python36",
+			"targetType": "sourceLibrary",
+			"libs-windows-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python35_digitalmars"
+			],
+			"libs-posix": [
+				"python3.6m"
+			],
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later",
+				"Python_3_4_Or_Later",
+				"Python_3_5_Or_Later",
+				"Python_3_6_Or_Later"
+			]
+		}
+	],
+	"importPaths": [
+		"infrastructure/"
+	],
+	"name": "pyd",
+	"versions-osx": [
+		"Python_Unicode_UCS2"
+	],
+	"targetType": "sourceLibrary",
+	"license": "MIT",
+	"version": "~master",
+	"versions-linux": [
+		"Python_Unicode_UCS4"
+	],
+	"description": "Pyd is a library for the D programming language that wraps the raw Python/C API with a cleaner, simpler interface.",
+	"homepage": "https://github.com/ariovistus/pyd",
+	"versions-windows": [
+		"Python_Unicode_UCS2"
+	],
+	"sourcePaths": [
+		"infrastructure/pyd/",
+		"infrastructure/deimos/",
+		"infrastructure/util/"
+	]
 }
-
