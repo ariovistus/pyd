@@ -86,7 +86,7 @@
 			"name": "python36",
 			"targetType": "sourceLibrary",
 			"libs-windows-dmd": [
-				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python35_digitalmars"
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python36_digitalmars"
 			],
 			"libs-posix": [
 				"python3.6m"
