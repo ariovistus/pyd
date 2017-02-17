@@ -142,3 +142,93 @@ class Z {
 }
 //static assert(is(StripSafeTrusted!(typeof(&Z.a)) == typeof(&Z.a) ));
 //static assert(is(StripSafeTrusted!(typeof(&Z.init.a)) == typeof(&Z.init.a) ));
+import std.traits : isCallable;
+import std.typetuple : TypeTuple;
+template WorkaroundParameterDefaults(func...)
+	if (func.length == 1 && isCallable!func)
+{
+    static if (is(FunctionTypeOf!(func[0]) PT == __parameters))
+    {
+        template Get(size_t i)
+        {
+            // workaround scope escape check, see
+            // https://issues.dlang.org/show_bug.cgi?id=16582
+            // should use return scope once available
+            enum get = (PT[i .. i + 1] __args) @trusted
+			{
+                // If __args[0] is lazy, we force it to be evaluated like this.
+                auto __pd_value = __args[0];
+                auto __pd_val = &__pd_value; // workaround Bugzilla 16582
+                return *__pd_val;
+            };
+            static if (is(typeof(get())))
+                enum Get = get();
+            else
+                alias Get = void;
+                // If default arg doesn't exist, returns void instead.
+        }
+    }
+    else
+    {
+        static assert(0, func[0].stringof ~ "is not a function");
+
+        // Define dummy entities to avoid pointless errors
+        template Get(size_t i) { enum Get = ""; }
+        alias PT = TypeTuple!();
+    }
+
+    template Impl(size_t i = 0)
+    {
+        static if (i == PT.length)
+            alias Impl = TypeTuple!();
+        else
+            alias Impl = TypeTuple!(Get!i, Impl!(i + 1));
+    }
+
+    alias WorkaroundParameterDefaults = Impl!();
+}
+
+@safe unittest
+{
+    int foo(int num, string name = "hello", int[] = [1,2,3], lazy int x = 0);
+    static assert(is(WorkaroundParameterDefaults!foo[0] == void));
+    static assert(   WorkaroundParameterDefaults!foo[1] == "hello");
+    static assert(   WorkaroundParameterDefaults!foo[2] == [1,2,3]);
+    static assert(   WorkaroundParameterDefaults!foo[3] == 0);
+}
+
+@safe unittest
+{
+    alias PDVT = WorkaroundParameterDefaults;
+
+    void bar(int n = 1, string s = "hello"){}
+    static assert(PDVT!bar.length == 2);
+    static assert(PDVT!bar[0] == 1);
+    static assert(PDVT!bar[1] == "hello");
+    static assert(is(typeof(PDVT!bar) == typeof(TypeTuple!(1, "hello"))));
+
+    void baz(int x, int n = 1, string s = "hello"){}
+    static assert(PDVT!baz.length == 3);
+    static assert(is(PDVT!baz[0] == void));
+    static assert(   PDVT!baz[1] == 1);
+    static assert(   PDVT!baz[2] == "hello");
+    static assert(is(typeof(PDVT!baz) == typeof(TypeTuple!(void, 1, "hello"))));
+
+    // bug 10800 - property functions return empty string
+    @property void foo(int x = 3) { }
+    static assert(PDVT!foo.length == 1);
+    static assert(PDVT!foo[0] == 3);
+    static assert(is(typeof(PDVT!foo) == typeof(TypeTuple!(3))));
+
+    struct Colour
+    {
+        ubyte a,r,g,b;
+
+        static immutable Colour white = Colour(255,255,255,255);
+    }
+    void bug8106(Colour c = Colour.white) {}
+    //pragma(msg, PDVT!bug8106);
+    static assert(PDVT!bug8106[0] == Colour.white);
+    void bug16582(scope int* val = null) {}
+    static assert(PDVT!bug16582[0] is null);
+}

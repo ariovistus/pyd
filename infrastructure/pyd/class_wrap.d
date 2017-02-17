@@ -526,7 +526,10 @@ struct Init(cps ...) {
         alias VOverloads[0] FN;
 
         alias ParameterTypeTuple!FN Pt;
-        alias ParameterDefaultValueTuple!FN Pd;
+        //https://issues.dlang.org/show_bug.cgi?id=17192
+        //alias ParameterDefaultValueTuple!FN Pd;
+        import util.typeinfo : WorkaroundParameterDefaults;
+        alias Pd = WorkaroundParameterDefaults!FN;
     }
     static void call(string classname, T)() {
     }

@@ -34,7 +34,10 @@ import pyd.make_object;
 template call_ctor(T, init) {
     alias ParameterTypeTuple!(init.Inner!T.FN) paramtypes;
     alias ParameterIdentifierTuple!(init.Inner!T.FN) paramids;
-    alias ParameterDefaultValueTuple!(init.Inner!T.FN) dfs;
+    //https://issues.dlang.org/show_bug.cgi?id=17192
+    //alias ParameterDefaultValueTuple!(init.Inner!T.FN) dfs;
+    import util.typeinfo : WorkaroundParameterDefaults;
+    alias dfs = WorkaroundParameterDefaults!(init.Inner!T.FN);
     enum params = getparams!(init.Inner!T.FN, "paramtypes", "dfs");
     mixin(Replace!(q{
     T func($params) {
