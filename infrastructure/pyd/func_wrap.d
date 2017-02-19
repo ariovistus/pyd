@@ -459,12 +459,14 @@ private template _pycallable_asdgT(Dg) if(is(Dg == delegate)) {
     alias ReturnType!(Dg) Tr;
 
     Dg func(PyObject* c) {
-        auto f = new PydWrappedFunc(c);
         static if(isImmutableFunction!Dg) {
+            auto f = cast(immutable) new PydWrappedFunc(c);
             return &f.fn_i!(Tr,Info);
         }else static if(isConstFunction!Dg) {
+            auto f = new const(PydWrappedFunc)(c);
             return &f.fn_c!(Tr,Info);
         }else{
+            auto f = new PydWrappedFunc(c);
             return &f.fn!(Tr,Info);
         }
     }

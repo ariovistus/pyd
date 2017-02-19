@@ -1,5 +1,6 @@
 import pyd.pyd, pyd.embedded;
 import std.exception;
+import std.algorithm: countUntil;
 import std.stdio;
 
 shared static this() {

@@ -71,6 +71,7 @@ static assert(NumpyFormatType!(Complex!float).supported);
 PyObject* d_to_python_numpy_ndarray(T)(T t)
 if((isArray!T || IsStaticArrayPointer!T) &&
         NumpyFormatType!(MatrixInfo!T.MatrixElementType).supported) {
+    import std.exception: enforce;
     enforce(numpy_ndarray_Type(), "numpy is not available");
     alias MatrixInfo!T.MatrixElementType ME;
     Py_ssize_t[] shape = MatrixInfo!T.build_shape(t);

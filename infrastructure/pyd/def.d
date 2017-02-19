@@ -27,9 +27,6 @@ module pyd.def;
 
 import deimos.python.Python;
 
-import std.algorithm: startsWith;
-import std.exception: enforce;
-import std.string: format;
 import std.typetuple;
 import std.traits;
 import util.conv;
@@ -83,6 +80,7 @@ struct ModuleName(string _modulename) {
     enum modulename = _modulename;
 }
 template IsModuleName(T...) {
+    import std.algorithm: startsWith;
     enum bool IsModuleName = T[0].stringof.startsWith("ModuleName!");
 }
 
@@ -92,6 +90,7 @@ struct Docstring(string _doc) {
 }
 
 template IsDocstring(T...) {
+    import std.algorithm: startsWith;
     enum bool IsDocstring = T[0].stringof.startsWith("Docstring!");
 }
 /// Param of def, Def, StaticDef
@@ -99,6 +98,7 @@ struct PyName(string _name) {
     enum name = _name;
 }
 template IsPyName(T...) {
+    import std.algorithm: startsWith;
     enum bool IsPyName = T[0].stringof.startsWith("PyName!");
 }
 
@@ -107,6 +107,7 @@ struct Mode(string _mode) {
     enum mode = _mode;
 }
 template IsMode(T...) {
+    import std.algorithm: startsWith;
     enum bool IsMode = T[0].stringof.startsWith("Mode!");
 }
 
@@ -219,6 +220,8 @@ template Typeof(alias fn0) {
 }
 
 template def_selector(alias fn, fn_t) {
+    import std.string: format;
+
     alias alias_selector!(fn, fn_t) als;
     static if(als.VOverloads.length == 0 && als.Overloads.length != 0) {
         alias staticMap!(Typeof, als.Overloads) OverloadsT;
@@ -420,6 +423,8 @@ version(Python_3_0_Or_Later) {
   */
 void on_py_init(void delegate() dg,
         PyInitOrdering ord = ModuleInit) {
+    import std.exception: enforce;
+
     with(PyInitOrdering) switch(ord) {
         case Before:
             if(py_init_called) {

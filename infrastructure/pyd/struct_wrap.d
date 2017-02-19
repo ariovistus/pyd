@@ -39,6 +39,8 @@ import pyd.make_object;
 // as a template parameter, rather than the struct type itself.
 
 template wrapped_member(T, string name, string mode, PropertyParts...) {
+    import std.algorithm: countUntil;
+
     alias PydTypeObject!(T) type;
     alias wrapped_class_object!(T) obj;
     static if(PropertyParts.length != 0) {
@@ -97,7 +99,8 @@ struct Member(string name, Options...) {
 template _Member(string realname, string pyname, string mode, string docstring, parts...) {
     static const bool needs_shim = false;
     static void call(string classname, T) () {
-        //pragma(msg, "struct.member: " ~ pyname);
+        import std.algorithm: countUntil;
+
         static PyGetSetDef empty = {null, null, null, null, null};
         alias wrapped_prop_list!(T) list;
         list[$-1].name = (pyname ~ "\0").dup.ptr;

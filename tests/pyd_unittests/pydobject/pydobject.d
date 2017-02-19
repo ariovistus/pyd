@@ -198,7 +198,8 @@ unittest {
 
 // PydObject as python object
 unittest {
-    py_stmts(q"<class X:
+    py_stmts(q"<
+    class X:
         def __init__(self):
             self.a = "widget"
             self.b = 515
@@ -267,9 +268,9 @@ version(Python_2_6_Or_Later) {
         }
 
         if(numpy) {
-            py_stmts(
-                    "from numpy import eye\n"
-                    "a = eye(4,k=1)\n"
+            py_stmts("
+                    from numpy import eye
+                    a = eye(4,k=1)"
                     ,
                     "testing");
             PydObject ao = py_eval("a","testing");

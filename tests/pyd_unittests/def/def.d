@@ -1,4 +1,5 @@
 import pyd.pyd, pyd.embedded;
+import pyd.pyd: def;
 import std.string;
 
 int a(int i) {

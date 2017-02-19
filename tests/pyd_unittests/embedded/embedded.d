@@ -13,8 +13,9 @@ static this() {
 // py_def
 unittest {
     alias py_def!(
-            "def func1(a):\n"
-            " return a*2+1",
+            "def func1(a):
+             return a*2+1
+            ",
             "testing",
             int function(int)) func1;
     assert(func1(1) == 3);
@@ -32,9 +33,9 @@ version(Python_3_0_Or_Later) {
                 ,
                 "testing");
         assert(py_eval!double("a", "testing") == 0);
-        py_stmts(
-                "from __future__ import division\n"
-                "b = 3 / 4;"
+        py_stmts("
+                from __future__ import division
+                b = 3 / 4;"
                 ,
                 "testing");
         assert(py_eval!double("b", "testing") == 0.75);
@@ -46,14 +47,14 @@ version(Python_3_0_Or_Later) {
 
         // but they do across contextual py_stmts calls.
         InterpContext c = new InterpContext();
-        c.py_stmts(
-                "import testing\n"
-                "a = 3 / 4;"
+        c.py_stmts("
+                import testing
+                a = 3 / 4;"
                 );
         assert(c.py_eval!double("a") == 0);
-        c.py_stmts(
-                "from __future__ import division\n"
-                "b = 3 / 4;"
+        c.py_stmts("
+                from __future__ import division
+                b = 3 / 4;"
                 );
         assert(c.py_eval!double("b") == 0.75);
         c.py_stmts(
@@ -69,29 +70,29 @@ unittest {
             "a = \"doctor!\""
             ,
             "testing");
-    py_stmts(
-            "import testing\n"
-            "assert testing.a == \"doctor!\""
+    py_stmts("
+            import testing
+            assert testing.a == \"doctor!\""
             );
 
     // however, py_stmts contextualized or without modulename does not.
 
-    py_stmts(
-            "import testing\n"
-            "a = \"nurse!\""
+    py_stmts("
+            import testing
+            a = \"nurse!\""
             );
-    py_stmts(
-            "import testing\n"
-            "assert testing.a == \"doctor!\""
+    py_stmts("
+            import testing
+            assert testing.a == \"doctor!\""
             );
     InterpContext c = new InterpContext();
-    c.py_stmts(
-            "import testing\n"
-            "a = \"nurse!\""
+    c.py_stmts("
+            import testing
+            a = \"nurse!\""
             );
-    py_stmts(
-            "import testing\n"
-            "assert testing.a == \"doctor!\""
+    py_stmts("
+            import testing
+            assert testing.a == \"doctor!\""
             );
 }
 
@@ -100,10 +101,10 @@ unittest {
     c.locals["i"] = py(1);
     c.j = py(2);
     c.k = 4;
-    c.py_stmts(
-        "assert i == 1;"
-        "assert j == 2;"
-        "assert k == 4"
+    c.py_stmts("
+        assert i == 1;
+        assert j == 2;
+        assert k == 4"
         );
    // (*^&^&* broken @property
    // static assert(is(typeof(c.unicode("abc")) == PydObject));

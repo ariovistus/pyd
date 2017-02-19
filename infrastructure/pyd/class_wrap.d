@@ -27,17 +27,11 @@ module pyd.class_wrap;
 
 import deimos.python.Python;
 
-import std.algorithm: countUntil, startsWith;
 import std.traits;
 import std.conv;
-import std.exception: enforce;
 import std.functional;
 import std.typetuple;
-import std.string: format;
-import std.typecons: Tuple;
-import std.typetuple;
 import util.typelist;
-import util.replace: Replace;
 import util.typeinfo;
 import pyd.references;
 import pyd.ctor_wrap;
@@ -117,6 +111,8 @@ template wrapped_methods(T) {
 
 // why we no use method_wrap ?
 template wrapped_repr(T, alias fn) {
+    import std.string: format;
+
     static assert(constCompatible(constness!T, constness!(typeof(fn))),
             format("constness mismatch instance: %s function: %s",
                 T.stringof, typeof(fn).stringof));
@@ -158,6 +154,9 @@ template IsAnySetter(alias T) {
 // getter form and the setter form. It requires that the getter form return the
 // same type that the setter form accepts.
 struct property_parts(alias p, string _mode) {
+    import std.algorithm: countUntil;
+    import std.string: format;
+
     alias ID!(__traits(parent, p)) Parent;
     enum nom = __traits(identifier, p);
     alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
@@ -167,7 +166,6 @@ struct property_parts(alias p, string _mode) {
             enum isgproperty = false;
             enum rmode = "";
         }else {
-            import std.string;
             static assert(Getters.length != 0,
                     format!("can't find property %s.%s getter",
                         Parent.stringof, nom));
@@ -319,6 +317,7 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
         PydTypeObject!(T).tp_methods = list.ptr;
     }
     template shim(size_t i, T) {
+        import util.replace: Replace;
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
             $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
@@ -403,8 +402,9 @@ struct Property(alias fn, Options...) {
 }
 
 template _Property(alias fn, string pyname, string _mode, string docstring) {
+    import std.algorithm: countUntil;
     alias property_parts!(fn, _mode) parts;
-    //pragma(msg, "property: ", parts.nom);
+
     static if(parts.isproperty) {
         mixin _Member!(parts.nom, pyname, parts.mode, docstring, parts);
 
@@ -445,6 +445,7 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
                 wrapped_prop_list!(T).ptr;
         }
         template shim(size_t i, T) {
+            import util.replace: Replace;
             static if(countUntil(parts.mode, "r") != -1) {
                 enum getter = Replace!(q{
                 override ReturnType!(__pyd_p$i.get_t) $realname() {
@@ -513,6 +514,8 @@ struct Init(cps ...) {
     alias cps CtorParams;
     enum bool needs_shim = false;
     template Inner(T) {
+        import std.string: format;
+
         alias NewParamT!T BaseT;
         alias TypeTuple!(__traits(getOverloads, BaseT, "__ctor")) Overloads;
         template IsDesired(alias ctor) {
@@ -534,6 +537,8 @@ struct Init(cps ...) {
     static void call(string classname, T)() {
     }
     template shim(size_t i, T) {
+        import util.replace: Replace;
+        import std.string: format;
         enum params = getparams!(Inner!T.FN,
                 format("__pyd_p%s.Inner!T.Pt",i),
                 format("__pyd_p%s.Inner!T.Pd",i));
@@ -612,6 +617,7 @@ bool IsPyUnary(string op) {
 //  type: a PyObjectType.
 string autoInitializeMethods() {
     return q{
+        import std.algorithm: countUntil;
         static if(countUntil(slot, "tp_as_number") != -1) {
             if(type.tp_as_number is null)
                 type.tp_as_number = new PyNumberMethods;
@@ -637,6 +643,8 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
     enum bool needs_shim = false;
 
     template Inner(C) {
+        import std.string: format;
+
         enum fn_str1 = "Alias!(C."~nom~"!(op))";
         enum fn_str2 = "C."~nom~"!(op,rhs_t)";
         enum string OP = op;
@@ -818,6 +826,7 @@ struct OpCompare(_rhs_t = Guess) {
 
 
     template Inner(C) {
+        import std.string: format;
         static if(is(_rhs_t == Guess) && is(C == class)) {
             alias Object rhs_t;
         }else {
@@ -871,6 +880,8 @@ Params:
 struct OpIndex(index_t...) {
     enum bool needs_shim = false;
     template Inner(C) {
+        import std.string: format;
+
         static if(!__traits(hasMember, C, "opIndex")) {
             static assert(0, C.stringof ~ " has no index operator overloads");
         }
@@ -919,6 +930,8 @@ struct OpIndexAssign(index_t...) {
             "opIndexAssign must have at least 2 parameters");
     enum bool needs_shim = false;
     template Inner(C) {
+        import std.string: format;
+
         static if(!__traits(hasMember, C, "opIndexAssign")) {
             static assert(0, C.stringof ~ " has no index operator overloads");
         }
@@ -980,6 +993,8 @@ Foo.opSlice(Py_ssize_t, Py_ssize_t);
 struct OpSlice() {
     enum bool needs_shim = false;
     template Inner(C) {
+        import std.string: format;
+
         static if(!__traits(hasMember, C, "opSlice")) {
             static assert(0, C.stringof ~ " has no slice operator overloads");
         }
@@ -1084,6 +1099,8 @@ struct OpCall(Args_t...) {
     enum bool needs_shim = false;
 
     template Inner(T) {
+        import std.string: format;
+
         alias TypeTuple!(__traits(getOverloads, T, "opCall")) Overloads;
         template IsDesiredOverload(alias fn) {
             alias ParameterTypeTuple!fn ps;
@@ -1133,6 +1150,8 @@ template Len(alias fn) {
 struct _Len(fnt...) {
     enum bool needs_shim = false;
     template Inner(T) {
+        import std.string: format;
+
         static if(fnt.length == 0) {
             enum nom = "length";
         }else{
@@ -1173,14 +1192,21 @@ template param1(C) {
 }
 
 enum IsOp(A) = __traits(hasMember, A, "op");
-enum IsUn(A) = A.stringof.startsWith("OpUnary!");
+
+template IsUn(A) {
+    import std.algorithm: startsWith;
+    enum IsUn = A.stringof.startsWith("OpUnary!");
+}
+
 template IsBin(T...) {
+    import std.algorithm: startsWith;
     static if(T[0].stringof.startsWith("BinaryOperatorX!"))
         enum bool IsBin = !T[0].isRight;
     else
         enum bool IsBin = false;
 }
 template IsBinR(T...) {
+    import std.algorithm: startsWith;
     static if(T[0].stringof.startsWith("BinaryOperatorX!"))
         enum IsBinR = T[0].isRight;
     else
@@ -1189,6 +1215,7 @@ template IsBinR(T...) {
 
 // handle all operator overloads. Ops must only contain operator overloads.
 struct Operators(Ops...) {
+    import util.replace: Replace;
     enum bool needs_shim = false;
 
     template BinOp(string op, T) {
@@ -1224,6 +1251,7 @@ struct Operators(Ops...) {
 
     }
     struct UnOp(string op, T) {
+        import util.replace: Replace;
         enum IsThisOp(A) = A.op == op;
         alias Filter!(IsUn, Filter!(IsThisOp, Ops)) Ops1;
         static assert(Ops1.length <= 1,
@@ -1278,6 +1306,7 @@ struct Constructors(string classname, Ctors...) {
 
 template IsDef(string pyname) {
     template IsDef(Params...) {
+        import std.algorithm: startsWith;
         static if(Params[0].stringof.startsWith("Def!") &&
                 __traits(hasMember,Params[0], "funcname")) {
             enum bool IsDef = (Params[0].funcname == pyname);
@@ -1306,18 +1335,23 @@ struct Iterator(Params...) {
 }
 
 template IsOpIndex(P...) {
+    import std.algorithm: startsWith;
     enum bool IsOpIndex = P[0].stringof.startsWith("OpIndex!");
 }
 template IsOpIndexAssign(P...) {
+    import std.algorithm: startsWith;
     enum bool IsOpIndexAssign = P[0].stringof.startsWith("OpIndexAssign!");
 }
 template IsOpSlice(P...) {
+    import std.algorithm: startsWith;
     enum bool IsOpSlice = P[0].stringof.startsWith("OpSlice!");
 }
 template IsOpSliceAssign(P...) {
+    import std.algorithm: startsWith;
     enum bool IsOpSliceAssign = P[0].stringof.startsWith("OpSliceAssign!");
 }
 template IsLen(P...) {
+    import std.algorithm: startsWith;
     enum bool IsLen = P[0].stringof.startsWith("Len!");
 }
 /*
@@ -1359,6 +1393,8 @@ struct IndexSliceMerge(Params...) {
 
 
     static extern(C) PyObject* op_func(T)(PyObject* self, PyObject* key) {
+        import std.string: format;
+
         static if(OpIndexs.length) {
             version(Python_2_5_Or_Later) {
                 Py_ssize_t i;
@@ -1401,6 +1437,8 @@ slice:
 
     static extern(C) int ass_func(T)(PyObject* self, PyObject* key,
             PyObject* val) {
+        import std.string: format;
+
         static if(OpIndexAssigns.length) {
             version(Python_2_5_Or_Later) {
                 Py_ssize_t i;

@@ -134,6 +134,7 @@ python = python statements
     void py_stmts(string python,
             string file = __FILE__,
             size_t line = __LINE__) {
+        import std.string: outdent;
 
         auto pres = PyRun_StringFlags(
                 zcc(outdent(python)),

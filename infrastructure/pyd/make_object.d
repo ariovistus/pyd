@@ -45,8 +45,6 @@ import std.conv;
 import std.range;
 import std.stdio;
 
-import core.stdc.string : memcpy, strlen;
-
 import pyd.references;
 import pyd.pydobject;
 import pyd.class_wrap;
@@ -54,7 +52,6 @@ import pyd.struct_wrap;
 import pyd.func_wrap;
 import pyd.def;
 import pyd.exception;
-import std.string: format;
 
 
 shared static this() {
@@ -430,6 +427,8 @@ class PydConversionException : Exception {
  * the given D type.
  */
 T python_to_d(T) (PyObject* o) {
+    import std.string: format;
+
     // This ordering is somewhat important. The checks for Tuple and Complex
     // must be before the check for general structs.
     version(PydPythonExtension) {
@@ -800,6 +799,10 @@ T python_to_d_string(T) (PyObject* o) {
 /// Used by python_to_d.
 T python_array_array_to_d(T)(PyObject* o)
 if(isArray!T || IsStaticArrayPointer!T) {
+    import std.exception: enforce;
+    import std.string: format;
+    import core.stdc.string : memcpy;
+
     static if(isPointer!T)
         alias Unqual!(ElementType!(PointerTarget!T)) E;
     else
@@ -852,6 +855,7 @@ PyObject* d_to_python_array_array(T)(T t)
 if((isArray!T || IsStaticArrayPointer!T) &&
         MatrixInfo!T.ndim == 1 &&
         SimpleFormatType!(MatrixInfo!T.MatrixElementType).supported) {
+    import core.stdc.string : memcpy;
 
     alias MatrixInfo!T.MatrixElementType ME;
     PyObject* pyformat = SimpleFormatType!ME.pyType();
@@ -886,6 +890,8 @@ PyObject* d_to_python_bytes(T)(T t) if(is(T == string)) {
   * Used by python_to_d.
   */
 T python_iter_to_d(T)(PyObject* o) if(isArray!T || IsStaticArrayPointer!T) {
+    import std.string: format;
+
     static if(isPointer!T)
         alias Unqual!(ElementType!(PointerTarget!T)) E;
     else
@@ -947,6 +953,8 @@ bool isPyNumber(PyObject* obj) {
 }
 
 const(char)[] type_name(PyObject* obj) {
+    import core.stdc.string : strlen;
+
     auto type = cast(PyTypeObject*)PyObject_Type(obj);
     return type.tp_name[0 .. strlen(type.tp_name)];
 }
@@ -1006,6 +1014,9 @@ version(Python_2_6_Or_Later) {
 /// Used by python_to_d.
 T python_buffer_to_d(T)(PyObject* o)
 if (isArray!T || IsStaticArrayPointer!T) {
+    import std.string: format;
+    import core.stdc.string : memcpy;
+
     PydObject bob = new PydObject(borrowed(o));
     auto buf = bob.buffer_view();
     alias MatrixInfo!T.MatrixElementType ME;
@@ -1179,6 +1190,8 @@ struct RangeWrapper {
 /// <a href='http://docs.python.org/library/struct.html#struct-format-strings'>
 /// Struct Format Strings </a>
 bool match_format_type(T)(string format) {
+    import std.exception: enforce;
+
     alias T S;
     size_t S_size = S.sizeof;
     enforce(format.length > 0);
@@ -1495,6 +1508,7 @@ alias python_to_d!(Object) python_to_d_Object;
 
 void could_not_convert(T) (PyObject* o, string reason = "",
         string file = __FILE__, size_t line = __LINE__) {
+    import std.string: format;
     // Pull out the name of the type of this Python object, and the
     // name of the D type.
     string py_typename, d_typename;

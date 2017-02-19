@@ -7,6 +7,8 @@ import std.exception;
 import std.datetime;
 import deimos.python.Python;
 import std.stdio;
+import std.typecons;
+import std.string;
 
 static this() {
     on_py_init({
@@ -72,11 +74,11 @@ unittest {
     }
 
     if(numpy) {
-        py_stmts(
-                "from numpy import eye, ndarray\n"
-                "a = eye(4,k=1)\n"
-                "b = eye(3,4)\n"
-                "f = ndarray(shape=[3,4], buffer=b, order='F')\n"
+        py_stmts("
+                from numpy import eye, ndarray
+                a = eye(4,k=1)
+                b = eye(3,4)
+                f = ndarray(shape=[3,4], buffer=b, order='F')"
                 ,
                 "testing");
         assert(py_eval!(double[][])("a","testing") ==
@@ -213,10 +215,10 @@ unittest{
     auto z = (iota(10));
     alias typeof(z) Z;
     alias py_def!(
-            "def foozit(a):\n"
-            " import itertools\n"
-            " b = list(itertools.islice(a, 0, 2))\n"
-            " return b,a"
+            "def foozit(a):
+                import itertools
+                b = list(itertools.islice(a, 0, 2))
+                return b,a"
             ,
             "testing", Tuple!(int[],Z) function(Z)) Foo1;
     auto t = Foo1(z);
