@@ -17,7 +17,7 @@ d:
  - dmd-2.066.1
  - ldc-1.1.0
  - ldc-1.0.0
- - ldc-0.17.3
+   #- ldc-0.17.3
  - ldc-0.16.1
  - ldc-0.15.1
  - gdc
@@ -68,6 +68,44 @@ matrix:
    - d: dmd-2.066.1
      env: TEST=runtests:test_def
    - d: dmd-2.066.1
+     env: TEST=runtests:test_d_and_c
+
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_hello
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_many_libs
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_arraytest
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_inherit
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_rawexample
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_testdll
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_multithreading
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_def
+   - d: ldc-1.1.0 
+     env: TEST=runtests:test_d_and_c
+
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_hello
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_many_libs
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_arraytest
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_inherit
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_rawexample
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_testdll
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_multithreading
+   - d: ldc-1.0.0 
+     env: TEST=runtests:test_def
+   - d: ldc-1.0.0 
      env: TEST=runtests:test_d_and_c
 
    - d: ldc-0.16.1
