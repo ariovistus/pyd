@@ -124,4 +124,8 @@ PyObject* PyCodec_XMLCharRefReplaceErrors(PyObject* exc);
 /** replace the unicode encode error with backslash escapes (\x, \u and \U) */
 PyObject* PyCodec_BackslashReplaceErrors(PyObject* exc);
 
+version(Python_3_5_Or_Later) {
+    /** replace the unicode encode error with backslash escapes (\N, \x, \u and \U) */
+    PyObject* PyCodec_NameReplaceErrors(PyObject* exc);
+}
 

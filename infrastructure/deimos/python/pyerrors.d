@@ -214,6 +214,10 @@ version(Python_2_5_Or_Later) {
 }
 /// _
 mixin(PyAPI_DATA!"PyObject* PyExc_Exception");
+version(Python_3_5_Or_Later) {
+    /// _
+    mixin(PyAPI_DATA!"PyObject* PyExc_StopAsyncIteration");
+}
 /// _
 mixin(PyAPI_DATA!"PyObject* PyExc_StopIteration");
 version(Python_2_5_Or_Later) {
@@ -260,6 +264,10 @@ mixin(PyAPI_DATA!"PyObject* PyExc_NameError");
 mixin(PyAPI_DATA!"PyObject* PyExc_OverflowError");
 /// _
 mixin(PyAPI_DATA!"PyObject* PyExc_RuntimeError");
+version(Python_3_5_Or_Later) {
+    /// _
+    mixin(PyAPI_DATA!"PyObject* PyExc_RecursionError;");
+}
 /// _
 mixin(PyAPI_DATA!"PyObject* PyExc_NotImplementedError");
 /// _

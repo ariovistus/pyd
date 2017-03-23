@@ -431,6 +431,11 @@ struct PyNumberMethods {
         /// Availability: >= 2.5
         unaryfunc nb_index;
     }
+
+    version(Python_3_5_Or_Later) {
+        binaryfunc nb_matrix_multiply;
+        binaryfunc nb_inplace_matrix_multiply;
+    }
 }
 
 /// _
@@ -475,6 +480,15 @@ struct PyMappingMethods {
     binaryfunc mp_subscript;
     /// _
     objobjargproc mp_ass_subscript;
+}
+
+version(Python_3_5_Or_Later) {
+    /// _
+    struct PyAsyncMethods {
+        unaryfunc am_await;
+        unaryfunc am_aiter;
+        unaryfunc am_anext;
+    }
 }
 
 /// _
@@ -579,8 +593,10 @@ struct PyTypeObject {
     /// ditto
     setattrfunc tp_setattr;
     /// ditto
-    version(Python_3_0_Or_Later) {
-        void* tp_reserved; /* formerly known as tp_compare */
+    version(Python_3_5_Or_Later) {
+        PyAsyncMethods* tp_as_async;
+    }else version(Python_3_0_Or_Later) {
+        void* tp_reserved; 
     }else{
         cmpfunc tp_compare;
     }
@@ -718,6 +734,10 @@ struct PyHeapTypeObject {
     }else{
         /// Availability: 2.4
         PyTypeObject type;
+    }
+    version(Python_3_5_Or_Later) {
+        /// Availability: >= 3.5
+        PyAsyncMethods as_async;
     }
     /// _
     PyNumberMethods as_number;

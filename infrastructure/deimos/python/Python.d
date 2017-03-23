@@ -50,6 +50,7 @@ version(Python_2_4_Or_Later) {
     public import deimos.python.node;
     public import deimos.python.object;
     public import deimos.python.objimpl;
+    public import deimos.python.odictobject;
     public import deimos.python.parsetok;
     public import deimos.python.pgenheaders;
     public import deimos.python.pyarena;

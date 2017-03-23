@@ -229,6 +229,12 @@ PyObject* PyNumber_Add(PyObject* o1, PyObject* o2);
 PyObject* PyNumber_Subtract(PyObject* o1, PyObject* o2);
 /// _
 PyObject* PyNumber_Multiply(PyObject* o1, PyObject* o2);
+
+version(Python_3_5_Or_Later) {
+    /// _
+    PyObject* PyNumber_MatrixMultiply(PyObject* o1, PyObject* o2);
+}
+
 version(Python_3_0_Or_Later) {
 }else{
     /// Availability: 2.*
@@ -311,6 +317,12 @@ PyObject* PyNumber_InPlaceAdd(PyObject* o1, PyObject* o2);
 PyObject* PyNumber_InPlaceSubtract(PyObject* o1, PyObject* o2);
 /// _
 PyObject* PyNumber_InPlaceMultiply(PyObject* o1, PyObject* o2);
+
+version(Python_3_5_Or_Later) {
+    /// _
+     PyObject* PyNumber_InPlaceMatrixMultiply(PyObject* o1, PyObject* o2);
+}
+
 version(Python_3_0_Or_Later) {
 }else{
     /// Availability: 2.*

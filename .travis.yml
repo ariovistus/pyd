@@ -30,6 +30,10 @@ matrix:
      env: TEST=runtests:test_extra
    - d: ldc-0.16.1
      env: TEST=runtests:test_extra
+   - d: ldc-1.0.0
+     env: TEST=runtests:test_extra
+   - d: ldc-1.1.0
+     env: TEST=runtests:test_extra
 
   exclude:
    - d: dmd-2.067.1

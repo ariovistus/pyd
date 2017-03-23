@@ -76,6 +76,13 @@ struct PyDictObject{
     PyDictEntry[PyDict_MINSIZE] ma_smalltable;
 }
 
+version(Python_3_5_Or_Later) {
+    struct _PyDictViewObject {
+        mixin PyObject_HEAD;
+        PyDictObject* dv_dict;
+    }
+}
+
 /// _
 mixin(PyAPI_DATA!"PyTypeObject PyDict_Type");
 version(Python_2_7_Or_Later) {

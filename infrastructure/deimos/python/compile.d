@@ -90,3 +90,7 @@ filename = decoded from the filesystem encoding
     /// Availability: >= 2.5
     PyFutureFeatures* PyFuture_FromAST(_mod*, const(char)*);
 }
+
+version(Python_3_5_Or_Later) {
+    enum FUTURE_GENERATOR_STOP = "generator_stop";
+}

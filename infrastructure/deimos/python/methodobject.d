@@ -127,6 +127,9 @@ struct PyCFunctionObject {
     PyObject*    m_self;
     /** The __module__ attribute, can be anything */
     PyObject*    m_module;
+    version(Python_3_5_Or_Later) {
+        PyObject* m_weakreflist;
+    }
 }
 
 version(Python_2_6_Or_Later) {

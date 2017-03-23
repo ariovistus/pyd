@@ -11,6 +11,11 @@ extern(C):
 
 /// _
 void* PyObject_Malloc(size_t);
+
+version(Python_3_5_Or_Later) {
+    /// _
+    void* PyObject_Calloc(size_t, size_t);
+}
 /// _
 void* PyObject_Realloc(void*, size_t);
 /// _
@@ -93,6 +98,10 @@ union PyGC_Head {
 
 /// _
 PyObject* _PyObject_GC_Malloc(size_t);
+version(Python_3_5_Or_Later) {
+    /// _
+    PyObject* _PyObject_GC_Calloc(size_t);
+}
 /// _
 PyObject* _PyObject_GC_New(PyTypeObject*);
 /// _

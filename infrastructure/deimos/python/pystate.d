@@ -159,6 +159,12 @@ struct PyThreadState {
         /// Availability: >= 3.4
         void* on_delete_data;
     }
+    version(Python_3_5_Or_Later) {
+        /// Availability: >= 3.5
+        PyObject* coroutine_wrapper;
+        /// Availability: >= 3.5
+        int in_coroutine_wrapper;
+    }
 }
 
 /// _

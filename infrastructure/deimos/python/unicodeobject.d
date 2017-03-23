@@ -4469,6 +4469,11 @@ version(Python_3_0_Or_Later) {
             );
     }
 
+    version(Python_3_5_Or_Later) {
+        /// Availability: >= 3.5
+        PyObject* _PyUnicode_FormatLong(PyObject*, int, int, int);
+    }
+
     version(Python_3_2_Or_Later) {
     /** Create a copy of a unicode string ending with a nul character. Return NULL
        and raise a MemoryError exception on memory allocation failure, otherwise

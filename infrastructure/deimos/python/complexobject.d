@@ -19,20 +19,20 @@ struct Py_complex {
 }
 
 /// _
-Py_complex c_sum(Py_complex, Py_complex);
+Py_complex _Py_c_sum(Py_complex, Py_complex);
 /// _
-Py_complex c_diff(Py_complex, Py_complex);
+Py_complex _Py_c_diff(Py_complex, Py_complex);
 /// _
-Py_complex c_neg(Py_complex);
+Py_complex _Py_c_neg(Py_complex);
 /// _
-Py_complex c_prod(Py_complex, Py_complex);
+Py_complex _Py_c_prod(Py_complex, Py_complex);
 /// _
-Py_complex c_quot(Py_complex, Py_complex);
+Py_complex _Py_c_quot(Py_complex, Py_complex);
 /// _
-Py_complex c_pow(Py_complex, Py_complex);
+Py_complex _Py_c_pow(Py_complex, Py_complex);
 version(Python_2_6_Or_Later){
     /// Availability: >= 2.6
-    double c_abs(Py_complex);
+    double _Py_c_abs(Py_complex);
 }
 
 /**

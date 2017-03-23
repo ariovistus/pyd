@@ -59,6 +59,16 @@ version(Python_3_0_Or_Later) {
         PyObject* m_copy;
     }
 
+    version(Python_3_5_Or_Later) {
+        struct PyModuleDef_Slot {
+            int slot;
+            void* value;
+        }
+
+        enum Py_mod_create = 1;
+        enum Py_mod_exec = 2;
+    }
+
     /// Availability: 3.*
     struct PyModuleDef{
         /// _
@@ -71,6 +81,10 @@ version(Python_3_0_Or_Later) {
         Py_ssize_t m_size;
         /// _
         PyMethodDef* m_methods;
+        version(Python_3_5_Or_Later) {
+            /// _
+            PyModuleDef_Slot *m_slots;
+        }
         /// _
         inquiry m_reload;
         /// _

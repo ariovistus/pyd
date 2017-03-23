@@ -56,14 +56,24 @@ struct PySetObject {
          * saves repeated runtime null-tests.
          */
         setentry* table;
-        /// _
-        version(Python_3_2_Or_Later) {
+        version(Python_3_5_Or_Later) {
+            /// _
+            Py_hash_t hash;
+            /// _
+            Py_ssize_t finger;
+        }else version(Python_3_2_Or_Later) {
+            /// _
             setentry* function(PySetObject* so, PyObject* key, Py_hash_t hash) lookup;
         }else{
+            /// _
             setentry* function(PySetObject* so, PyObject* key, C_long hash) lookup;
         }
         /// _
         setentry[PySet_MINSIZE] smalltable;
+        version(Python_3_5_Or_Later) {
+            /// _
+            PyObject* weakreflist;
+        }
     }else{
         /// Availability: 2.4
         PyObject* data;
@@ -142,7 +152,13 @@ version(Python_2_5_Or_Later){
     int _PySet_Update(PyObject* set, PyObject* iterable);
 }
 
+version(Python_3_5_Or_Later) {
+    /// Availability: >= 3.5
+    int PySet_ClearFreeList();
+}
+
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
     void _PySet_DebugMallocStats(FILE* out_);
 }
+

@@ -76,6 +76,13 @@ enum int CO_NESTED      = 0x0010;
 enum int CO_GENERATOR   = 0x0020;
 /// ditto
 enum int CO_NOFREE      = 0x0040;
+version(Python_3_5_Or_Later) {
+    /** The CO_COROUTINE flag is set for coroutine functions (defined with
+       ``async def`` keywords) */
+    enum int CO_COROUTINE   = 0x0080;
+    /// _
+    enum int CO_ITERABLE_COROUTINE      = 0x0100;
+}
 
 version(Python_2_5_Or_Later){
     // Removed in 2.5
@@ -99,6 +106,10 @@ version(Python_2_5_Or_Later){
 version(Python_3_2_Or_Later) {
     /// Availability: 3.2
     enum CO_FUTURE_BARRY_AS_BDFL =  0x40000;
+}
+version(Python_3_5_Or_Later) {
+    /// Availability: 3.5
+    enum CO_FUTURE_GENERATOR_STOP =  0x80000;
 }
 
 /** Max static block nesting within a function */
