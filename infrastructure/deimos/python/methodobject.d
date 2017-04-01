@@ -103,6 +103,8 @@ enum int METH_STATIC  = 0x0020;
    slot like sq_contains. */
 enum int METH_COEXIST = 0x0040;
 
+enum int METH_FASTCALL = 0x0080;
+
 version(Python_3_0_Or_Later) {
 }else{
     /// Availability: 2.*

@@ -67,6 +67,17 @@ version(Python_2_7_Or_Later) {
     mixin(PyAPI_DATA!"int Py_HashRandomizationFlag");
 }
 
+version(Python_3_4_Or_Later) {
+    /// Availability: >= 3.4
+    mixin(PyAPI_DATA!"int Py_IsolatedFlag");
+}
+
+version(Python_3_6_Or_Later) {
+    version(Windows) {
+        mixin(PyAPI_DATA!"int Py_IsolatedFlag");
+    }
+}
+
 /** this is a wrapper around getenv() that pays attention to
    Py_IgnoreEnvironmentFlag.  It should be used for getting variables like
    PYTHONPATH and PYTHONHOME from the environment */

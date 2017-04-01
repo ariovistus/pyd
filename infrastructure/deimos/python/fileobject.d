@@ -125,6 +125,11 @@ int PyObject_AsFileDescriptor(PyObject*);
 */
 mixin(PyAPI_DATA!"const(char)* Py_FileSystemDefaultEncoding");
 
+version(Python_3_6_Or_Later) {
+    /// _
+    mixin(PyAPI_DATA!"const(char)* Py_FileSystemDefaultEncodeError");
+}
+
 /// _
 enum PY_STDIOTEXTMODE = "b";
 

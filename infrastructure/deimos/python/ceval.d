@@ -13,7 +13,9 @@ extern(C):
 // Python-header-file: Include/ceval.h:
 
 /// _
-PyObject* PyEval_CallObjectWithKeywords(PyObject* , PyObject* , PyObject* );
+PyObject* PyEval_CallObjectWithKeywords(
+        PyObject* func, PyObject* args, PyObject* kwargs);
+
 version(Python_2_5_Or_Later){
     /// _
     PyObject* PyEval_CallObject()(PyObject* func, PyObject* arg) {

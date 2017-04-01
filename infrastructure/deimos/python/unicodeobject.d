@@ -435,25 +435,45 @@ errors = error handling
             const(char)* encoding,
             const(char)* errors);
 
-    version(Python_3_0_Or_Later) {
-    /** Decode a Unicode object unicode and return the result as Python
-      object. */
+    version(Python_3_6_Or_Later) {
+        /** Decode a Unicode object unicode and return the result as Python
+          object. */
+        /// Deprecated in 3.6
+        deprecated("Deprecated in 3.6")
+        PyObject* PyUnicode_AsDecodedObject(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors
+                );
+        /** Decode a Unicode object unicode and return the result as Unicode
+          object. */
         /// Availability: 3.*
 
-    PyObject* PyUnicode_AsDecodedObject(
-            PyObject* unicode,
-            const(char)* encoding,
-            const(char)* errors
-            );
-    /** Decode a Unicode object unicode and return the result as Unicode
-      object. */
-        /// Availability: 3.*
+        /// Deprecated in 3.6
+        deprecated("Deprecated in 3.6")
+        PyObject* PyUnicode_AsDecodedUnicode(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors
+                );
+    }else version(Python_3_0_Or_Later) {
+        /** Decode a Unicode object unicode and return the result as Python
+          object. */
+            /// Availability: 3.*
+        PyObject* PyUnicode_AsDecodedObject(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors
+                );
+        /** Decode a Unicode object unicode and return the result as Unicode
+          object. */
+            /// Availability: 3.*
 
-    PyObject* PyUnicode_AsDecodedUnicode(
-            PyObject* unicode,
-            const(char)* encoding,
-            const(char)* errors
-            );
+        PyObject* PyUnicode_AsDecodedUnicode(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors
+                );
     }
 
     /** Encodes a Py_UNICODE buffer of the given size and returns a
@@ -470,12 +490,22 @@ errors = error handling
             const(char)* encoding,
             const(char)* errors);
 
-    /** Encodes a Unicode object and returns the result as Python object.
-     */
-    PyObject* PyUnicode_AsEncodedObject(
-            PyObject* unicode,
-            const(char)* encoding,
-            const(char)* errors);
+    version(Python_3_6_Or_Later) {
+        /** Encodes a Unicode object and returns the result as Python object.
+         */
+        deprecated("Deprecated in 3.6")
+        PyObject* PyUnicode_AsEncodedObject(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors);
+    }else{
+        /** Encodes a Unicode object and returns the result as Python object.
+         */
+        PyObject* PyUnicode_AsEncodedObject(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors);
+    }
 
     /** Encodes a Unicode object and returns the result as Python string
       object. */
@@ -485,6 +515,15 @@ errors = error handling
             const(char)* errors);
 
     version(Python_3_0_Or_Later) {
+        /** Encodes a Unicode object and returns the result as Unicode
+           object. */
+        deprecated("Deprecated in 3.6")
+        PyObject* PyUnicode_AsEncodedUnicode(
+                PyObject* unicode,
+                const(char)* encoding,
+                const(char)* errors
+                );
+    }else version(Python_3_0_Or_Later) {
         /** Encodes a Unicode object and returns the result as Unicode
            object. */
         /// Availability: >= 3.*

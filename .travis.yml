@@ -16,9 +16,9 @@ d:
  - dmd-2.067.1
  - ldc-1.1.0
  - ldc-1.0.0
- - ldc-0.17.3
+   # - ldc-0.17.3 # wtf, travis?
  - ldc-0.16.1
- - gdc-6.3.0
+   #- gdc-6.3.0 # wtf, travis?
 
 matrix:
   allow_failures:
@@ -49,25 +49,6 @@ matrix:
    - d: dmd-2.067.1
      env: TEST=runtests:test_def
    - d: dmd-2.067.1
-     env: TEST=runtests:test_d_and_c
-
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_hello
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_many_libs
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_arraytest
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_inherit
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_rawexample
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_testdll
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_multithreading
-   - d: dmd-2.066.1
-     env: TEST=runtests:test_def
-   - d: dmd-2.066.1
      env: TEST=runtests:test_d_and_c
 
    - d: ldc-1.1.0 

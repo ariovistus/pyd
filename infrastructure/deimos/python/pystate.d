@@ -14,6 +14,12 @@ import deimos.python.moduleobject;
 extern(C):
 // Python-header-file: Include/pystate.h:
 
+enum MAX_CO_EXTRA_USERS = 255;
+
+version(Python_3_5_Or_Later) {
+    alias PyObject* function(PyFrameObject*, int) _PyFrameEvalFunction;
+}
+
 /// _
 struct PyInterpreterState {
     /// _
@@ -52,6 +58,17 @@ struct PyInterpreterState {
     //#ifdef WITH_TSC
     //  int tscdump;
     //#endif
+
+    version(Python_3_4_Or_Later) {
+        PyObject* builtins_copy;
+    }
+    version(Python_3_6_Or_Later) {
+        PyObject* import_func;
+    }
+
+    version(Python_3_5_Or_Later) {
+        _PyFrameEvalFunction eval_frame;
+    }
 }
 
 /// _
@@ -164,6 +181,17 @@ struct PyThreadState {
         PyObject* coroutine_wrapper;
         /// Availability: >= 3.5
         int in_coroutine_wrapper;
+    }
+
+    version(Python_3_6_Or_Later) {
+        /// Availability: >= 3.6
+        Py_ssize_t co_extra_user_count;
+        /// Availability: >= 3.6
+        freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+        /// Availability: >= 3.6
+        PyObject* async_gen_firstiter;
+        /// Availability: >= 3.6
+        PyObject* async_gen_finalizer;
     }
 }
 

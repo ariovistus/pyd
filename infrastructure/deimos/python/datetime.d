@@ -89,6 +89,9 @@ struct _PyDateTime_BaseTime {
 /// _
 struct PyDateTime_Time {
     mixin _PyDateTime_TIMEHEAD;
+    version(Python_3_6_Or_Later) {
+        ubyte fold;
+    }
     PyObject* tzinfo;
 }
 
@@ -117,6 +120,9 @@ struct _PyDateTime_BaseDateTime {
 /// _
 struct PyDateTime_DateTime {
     mixin _PyDateTime_DATETIMEHEAD;
+    version(Python_3_6_Or_Later) {
+        ubyte fold;
+    }
     PyObject* tzinfo;
 }
 
@@ -158,6 +164,14 @@ int PyDateTime_DATE_GET_MICROSECOND()(PyObject* o) {
     return (ot.data[7] << 16) | (ot.data[8] << 8) | ot.data[9];
 }
 
+version(Python_3_6_Or_Later) {
+    /// _
+    int PyDateTime_DATE_GET_FOLD()(PyObject* o) {
+        auto ot = cast(PyDateTime_DateTime*)o;
+        return ot.fold;
+    }
+}
+
 /** Applies for time instances. */
 int PyDateTime_TIME_GET_HOUR()(PyObject* o) {
     PyDateTime_Time* ot = cast(PyDateTime_Time*) o;
@@ -179,6 +193,14 @@ int PyDateTime_TIME_GET_MICROSECOND()(PyObject* o) {
     return (ot.data[3] << 16) | (ot.data[4] << 8) | ot.data[5];
 }
 
+version(Python_3_6_Or_Later) {
+    /// _
+    int PyDateTime_TIME_GET_FOLD()(PyObject* o) {
+        auto ot = cast(PyDateTime_Time*) o;
+        return ot.fold;
+    }
+}
+
 /** Structure for C API. */
 struct PyDateTime_CAPI {
     /** type objects */
@@ -196,9 +218,11 @@ struct PyDateTime_CAPI {
     PyObject* function(int, int, int, PyTypeObject*) Date_FromDate;
     /// ditto
     PyObject* function(int, int, int, int, int, int, int,
-            PyObject*, PyTypeObject*) DateTime_FromDateAndTime;
+            PyObject*, PyTypeObject*) 
+        DateTime_FromDateAndTime;
     /// ditto
-    PyObject* function(int, int, int, int, PyObject*, PyTypeObject*) Time_FromTime;
+    PyObject* function(int, int, int, int, PyObject*, PyTypeObject*) 
+        Time_FromTime;
     /// ditto
     PyObject* function(int, int, int, int, PyTypeObject*) Delta_FromDelta;
 
@@ -206,6 +230,14 @@ struct PyDateTime_CAPI {
     PyObject* function(PyObject*, PyObject*, PyObject*) DateTime_FromTimestamp;
     /// ditto
     PyObject* function(PyObject*, PyObject*) Date_FromTimestamp;
+
+    version(Python_3_6_Or_Later) {
+        PyObject* function(int, int, int, int, int, int, int, PyObject*, int, PyTypeObject*) 
+            DateTime_FromDateAndTimeAndFold;
+
+        PyObject* function(int, int, int, int, PyObject*, int, PyTypeObject*) 
+            Time_FromTimeAndFold;
+    }
 }
 
 // went away in python 3. who cares?
@@ -277,14 +309,38 @@ PyObject* PyDate_FromDate()(int year, int month, int day) {
     return PyDateTimeAPI.Date_FromDate(year, month, day, PyDateTimeAPI.DateType);
 }
 /// _
-PyObject* PyDateTime_FromDateAndTime()(int year, int month, int day, int hour, int min, int sec, int usec) {
-    return PyDateTimeAPI.DateTime_FromDateAndTime(year, month, day, hour,
-            min, sec, usec, cast(PyObject*) Py_None(), PyDateTimeAPI.DateTimeType);
+PyObject* PyDateTime_FromDateAndTime()(
+        int year, int month, int day, int hour, int min, int sec, int usec) {
+    return PyDateTimeAPI.DateTime_FromDateAndTime(
+            year, month, day, hour, min, sec, usec, 
+            cast(PyObject*) Py_None(), PyDateTimeAPI.DateTimeType);
 }
+
+version(Python_3_6_Or_Later) {
+    /// _
+    PyObject* PyDateTime_FromDateAndTimeAndFold()(
+            int year, int month, int day, int hour, int min, int sec, 
+            int usec, int fold) {
+        return PyDateTimeAPI.DateTime_FromDateAndTimeAndFold(
+                year, month, day, hour,
+                min, sec, usec, cast(PyObject*) Py_None(), fold, 
+                PyDateTimeAPI.DateTimeType);
+    }
+}
+
 /// _
 PyObject* PyTime_FromTime()(int hour, int minute, int second, int usecond) {
     return PyDateTimeAPI.Time_FromTime(hour, minute, second, usecond,
             cast(PyObject*) Py_None(), PyDateTimeAPI.TimeType);
+}
+
+version(Python_3_6_Or_Later) {
+    /// _
+    PyObject* PyTime_FromTimeAndFold()(
+            int hour, int minute, int second, int usecond, int fold) {
+        return PyDateTimeAPI.Time_FromTimeAndFold(hour, minute, second, usecond,
+                cast(PyObject*) Py_None(), fold, PyDateTimeAPI.TimeType);
+    }
 }
 /// _
 PyObject* PyDelta_FromDSU()(int days, int seconds, int useconds) {

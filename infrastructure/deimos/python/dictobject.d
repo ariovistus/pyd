@@ -50,30 +50,57 @@ To avoid slowing down lookups on a near-full table, we resize the table when
 it's two-thirds full.
 
 */
-/// subclass of PyObject
-struct PyDictObject{
-    mixin PyObject_HEAD;
 
-    /// _
-    Py_ssize_t ma_fill;
-    /// _
-    Py_ssize_t ma_used;
-    /** The table contains ma_mask + 1 slots, and that's a power of 2.
-     * We store the mask instead of the size because the mask is more
-     * frequently needed.
-     */
-    Py_ssize_t ma_mask;
-    /** ma_table points to ma_smalltable for small tables, else to
-     * additional malloc'ed memory.  ma_table is never NULL!  This rule
-     * saves repeated runtime null-tests in the workhorse getitem and
-     * setitem calls.
-     */
-    PyDictEntry* ma_table;
-    /// _
-    PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash)
-        ma_lookup;
-    /// _
-    PyDictEntry[PyDict_MINSIZE] ma_smalltable;
+/// subclass of PyObject
+version(Python_3_4_Or_Later) {
+    struct PyDictKeysObject {
+        // ??!
+    }
+
+    struct PyDictObject {
+        mixin PyObject_HEAD;
+        /** number of items in the dictionary */
+        Py_ssize_t ma_used;
+
+        version(Python_3_6_Or_Later) {
+            /** Dictionary version: globally unique, value change each time 
+              the dictionary is modified */
+            ulong ma_version_tag;
+        }
+        PyDictKeysObject* ma_keys;
+
+        /** If ma_values is NULL, the table is "combined": 
+          keys and values are stored in ma_keys.
+
+          If ma_values is not NULL, the table is split:
+          keys are stored in ma_keys and values are stored in ma_values */
+        PyObject** ma_values;
+    }
+}else{
+    struct PyDictObject{
+        mixin PyObject_HEAD;
+
+        /// _
+        Py_ssize_t ma_fill;
+        /// _
+        Py_ssize_t ma_used;
+        /** The table contains ma_mask + 1 slots, and that's a power of 2.
+         * We store the mask instead of the size because the mask is more
+         * frequently needed.
+         */
+        Py_ssize_t ma_mask;
+        /** ma_table points to ma_smalltable for small tables, else to
+         * additional malloc'ed memory.  ma_table is never NULL!  This rule
+         * saves repeated runtime null-tests in the workhorse getitem and
+         * setitem calls.
+         */
+        PyDictEntry* ma_table;
+        /// _
+        PyDictEntry* function(PyDictObject* mp, PyObject* key, Py_hash_t hash)
+            ma_lookup;
+        /// _
+        PyDictEntry[PyDict_MINSIZE] ma_smalltable;
+    }
 }
 
 version(Python_3_5_Or_Later) {

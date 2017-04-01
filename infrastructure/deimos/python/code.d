@@ -28,6 +28,12 @@ struct PyCodeObject {
     int co_stacksize;
     /** CO_..., see below */
     int co_flags;
+
+    version(Python_3_6_Or_Later) {
+        /** first source line number */
+        int co_firstlineno;
+    }
+
     /** instruction opcodes */
     PyObject* co_code;
     /** list (constants used) */
@@ -45,8 +51,11 @@ struct PyCodeObject {
     PyObject* co_filename;
     /** string (name, for reference) */
     PyObject* co_name;
-    /** first source line number */
-    int co_firstlineno;
+    version(Python_3_6_Or_Later) {
+    }else{
+        /** first source line number */
+        int co_firstlineno;
+    }
     /** string (encoding addr<->lineno mapping) See
        Objects/lnotab_notes.txt for details. */
     PyObject* co_lnotab;
@@ -59,6 +68,12 @@ struct PyCodeObject {
         /** to support weakrefs to code objects */
         /// Availability: >= 2.7
         PyObject* co_weakreflist;
+    }
+    version(Python_3_6_Or_Later) {
+        /** Scratch space for extra data relating to the code object.
+          Type is a void* to keep the format private in codeobject.c to force
+          people to go through the proper APIs */
+        void* co_extra;
     }
 }
 
