@@ -1,6 +1,6 @@
 /** Mirror warnings.h */
 
-module deimos.python.abstract_;
+module deimos.python.warnings;
 
 import deimos.python.pyport;
 import deimos.python.object;
