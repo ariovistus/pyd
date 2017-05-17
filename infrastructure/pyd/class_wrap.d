@@ -523,19 +523,23 @@ struct Init(cps ...) {
             enum bool IsDesired = is(ps == CtorParams);
         }
         alias Filter!(IsDesired, Overloads) VOverloads;
-        static assert(VOverloads.length != 0,
-                format("%s: Cannot find constructor with params %s",
-                    T.stringof, CtorParams.stringof));
-        alias VOverloads[0] FN;
-
-        alias ParameterTypeTuple!FN Pt;
-        //https://issues.dlang.org/show_bug.cgi?id=17192
-        //alias ParameterDefaultValueTuple!FN Pd;
-        import util.typeinfo : WorkaroundParameterDefaults;
-        alias Pd = WorkaroundParameterDefaults!FN;
+        static if(VOverloads.length == 0) {
+            static assert(false,
+                    format("%s: Cannot find constructor with params %s",
+                        T.stringof, CtorParams.stringof));
+        }else{
+            alias VOverloads[0] FN;
+            alias ParameterTypeTuple!FN Pt;
+            //https://issues.dlang.org/show_bug.cgi?id=17192
+            //alias ParameterDefaultValueTuple!FN Pd;
+            import util.typeinfo : WorkaroundParameterDefaults;
+            alias Pd = WorkaroundParameterDefaults!FN;
+        }
     }
+
     static void call(string classname, T)() {
     }
+
     template shim(size_t i, T) {
         import util.replace: Replace;
         import std.string: format;
