@@ -187,7 +187,7 @@ struct PyThreadState {
         /// Availability: >= 3.6
         Py_ssize_t co_extra_user_count;
         /// Availability: >= 3.6
-        freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+        freefunc[MAX_CO_EXTRA_USERS] co_extra_freefuncs;
         /// Availability: >= 3.6
         PyObject* async_gen_firstiter;
         /// Availability: >= 3.6
