@@ -524,9 +524,17 @@ struct Init(cps ...) {
         }
         alias Filter!(IsDesired, Overloads) VOverloads;
         static if(VOverloads.length == 0) {
+            template concatumStrings(s...) {
+                static if(s.length == 0) {
+                    enum concatumStrings = "";
+                }else {
+                    enum concatumStrings = T.stringof ~ (ParameterTypeTuple!(s[0])).stringof ~ "\n" ~ concatumStrings!(s[1 .. $]); 
+                }
+            }
+            alias allOverloadsString = concatumStrings!(Overloads);
             static assert(false,
-                    format("%s: Cannot find constructor with params %s",
-                        T.stringof, CtorParams.stringof));
+                    format("%s: Cannot find constructor with params %s among\n %s",
+                        T.stringof, CtorParams.stringof, allOverloadsString));
         }else{
             alias VOverloads[0] FN;
             alias ParameterTypeTuple!FN Pt;

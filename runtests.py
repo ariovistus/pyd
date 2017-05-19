@@ -155,6 +155,27 @@ def test_extra():
     build_and_run_pydexe("extra")
 
 
+class ErrorTests(TestCase):
+    def setUp(self):
+        setup();
+        os.chdir("tests")
+        os.chdir("errors")
+
+    def test_error1(self):
+        os.chdir("error1")
+        if do_clean:
+            if os.path.exists("build"):
+                shutil.rmtree("build")
+            return
+        pybuild_cmds = [sys.executable, "setup.py", "build"]
+        if compiler is not None:
+            pybuild_cmds.append("--compiler="+compiler)
+        proc = subprocess.Popen(pybuild_cmds, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        stderr = stderr.decode('utf-8')
+        assert "Test: Cannot find constructor with params (int) among" in stderr 
+        assert "Test(immutable(int))" in stderr 
+
 class PydUnittests(TestCase):
     def setUp(self):
         setup()
