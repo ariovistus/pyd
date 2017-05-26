@@ -74,7 +74,7 @@ version(Python_3_4_Or_Later) {
 
 version(Python_3_6_Or_Later) {
     version(Windows) {
-        mixin(PyAPI_DATA!"int Py_IsolatedFlag");
+        mixin(PyAPI_DATA!"int Py_LegacyWindowsStdioFlag");
     }
 }
 
