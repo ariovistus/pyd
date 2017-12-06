@@ -515,6 +515,10 @@ class DCompiler(cc.CCompiler):
         extra_preargs = extra_preargs or []
         extra_postargs = extra_postargs or []
 
+        # On 64-bit Windows we just link to pythonXX.lib from the installation
+        if _is_win64() and library_dirs == []:
+            library_dirs = _build_ext_library_dirs()
+
         binpath = self._binpath
         if hasattr(self, '_linkOutputOpts'):
             outputOpts = self._linkOutputOpts[:]
@@ -615,6 +619,11 @@ class DMDDCompiler(DCompiler):
         # _compileOpts
         self._exeCompileOpts = ['-c']
         self._compileOpts = ['-c']
+
+        if _is_win64():
+            self._exeCompileOpts.append('-m64')
+            self._compileOpts.append('-m64')
+
         if not _isPlatWin: self._compileOpts.append('-fPIC')
         # _outputOpts
         self._outputOpts = ['-of%s']
@@ -632,6 +641,11 @@ class DMDDCompiler(DCompiler):
             self._linkOpts = ['-shared', '-L'+posix_static_python_lib()]
         else:
             self._linkOpts = ['-shared','-defaultlib=libphobos2.so']
+
+        if _is_win64():
+            self._exeLinkOpts.append('-m64')
+            self._linkOpts.append('-m64')
+
         # _includeOpts
         self._includeOpts = ['-I%s']
         # _versionOpt
@@ -666,7 +680,8 @@ class DMDDCompiler(DCompiler):
             return []
 
     def _lib_file(self, libraries):
-        if _isPlatWin:
+
+        if _isPlatWin and not _is_win64():
             # The DMD-compatible .lib file can be generated with implib.exe
             # (from the Digital Mars "Basic Utilities" package) using a command
             # series similar to the following:
@@ -703,7 +718,10 @@ class DMDDCompiler(DCompiler):
             return ''
 
     def library_dir_option(self, dir):
-        return '-L-L' + dir
+        if _is_win64():
+            return r'-L/LIBPATH:\"' + dir + r'\"'
+        else:
+            return '-L-L' + dir
 
     def runtime_library_dir_option(self, dir):
         if not _isPlatWin:
@@ -906,3 +924,16 @@ def _qp(path): # If path contains any whitespace, quote it.
         return path
     else:
         return '"%s"' % path
+
+def _is_win64():
+    import platform
+    return _isPlatWin and platform.architecture()[0] == '64bit'
+
+
+def _build_ext_library_dirs():
+    # _setup_distribution is private but I don't know of any other way to get
+    # the already built-up library_dirs so as to be able to link to the
+    # python library
+    from distutils.core import _setup_distribution as dist
+    build_ext = dist.get_command_obj('build_ext')
+    return build_ext.library_dirs
