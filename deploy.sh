@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "deploy! $TRAVIS_TAG"
-if [ $TRAVIS_TAG -ne '' ]; then
+echo "deploy! $PWD"
+if [ "$TRAVIS_TAG" != "" ]; then
     echo "deploy really! $TRAVIS_TAG"
 fi

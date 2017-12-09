@@ -216,7 +216,8 @@ jobs:
         - stage: deploy
           script: ./deploy.sh
           d: dmd-2.073.0
-          env: TEST=bahimdeploying
+          env: 
+            secure: "VZLNJjIQG8c+8dqYb533S9F94Mb8Eflx4231MlJHdVw146bWSOqy8dR70xJAai/jt7o3+YQMBj3MC+DRYAvaEr5+ofK72vaPVEU3/OL5G9LRdz7bsN5tNqSPpukENlsladdKecZHhJU7wSIH1TBbHhJEQLlZU+CiQwYh3KCyASM="
           os: linux
           if: tag IS present
         
