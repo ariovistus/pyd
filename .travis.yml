@@ -214,12 +214,11 @@ script:
 jobs:
     include:
         - stage: deploy
-          script: echo "I deployed!"
+          script: ./deploy.sh
           d: dmd-2.073.0
-          env: TEST=runtests:test_hello
+          env: TEST=bahimdeploying
           os: linux
-          on:
-            tags: true
+          if: tag IS present
         
 #before_deploy: python versionchecker.py
 
