@@ -221,12 +221,12 @@ jobs:
           os: linux
           if: tag IS present
         
-#before_deploy: python versionchecker.py
+          before_deploy: echo "before deploying!" #python versionchecker.py
 
-#deploy:
-    #provider: pypi
-    #user: ariovistus
-    #password:
-        #secure: "fBaxJv4pJOA2gq6VYlBUXKrGJmKN8TdNU1erFvH5ohvcSIpF4a95ElPpu7dBruMuorGYDXvHlfGhEFpaxxkpBWTknJwUp15HUvx1qMJnyfi9qxcID3ieRQ2lbrktiIkNwfjBKPP+nu4/uLg4P7ZgDdY1rGTGCBPOgc9FqVB1ny4="
-    #on:
-        #tags: true
+          deploy:
+            provider: pypi
+            user: ariovistus
+            password: wrongpassword
+                #secure: "fBaxJv4pJOA2gq6VYlBUXKrGJmKN8TdNU1erFvH5ohvcSIpF4a95ElPpu7dBruMuorGYDXvHlfGhEFpaxxkpBWTknJwUp15HUvx1qMJnyfi9qxcID3ieRQ2lbrktiIkNwfjBKPP+nu4/uLg4P7ZgDdY1rGTGCBPOgc9FqVB1ny4="
+            on:
+                tags: true
