@@ -211,12 +211,22 @@ install:
 script: 
     - python3 runtests.py --compiler=$DC $TEST
 
-before_deploy: python versionchecker.py
+jobs:
+    include:
+        - stage: deploy
+          script: echo "I deployed!"
+          d: dmd-2.073.0
+          env: TEST=runtests:test_hello
+          os: linux
+          on:
+            tags: true
+        
+#before_deploy: python versionchecker.py
 
-deploy:
-    provider: pypi
-    user: ariovistus
-    password:
-        secure: "fBaxJv4pJOA2gq6VYlBUXKrGJmKN8TdNU1erFvH5ohvcSIpF4a95ElPpu7dBruMuorGYDXvHlfGhEFpaxxkpBWTknJwUp15HUvx1qMJnyfi9qxcID3ieRQ2lbrktiIkNwfjBKPP+nu4/uLg4P7ZgDdY1rGTGCBPOgc9FqVB1ny4="
-    on:
-        tags: true
+#deploy:
+    #provider: pypi
+    #user: ariovistus
+    #password:
+        #secure: "fBaxJv4pJOA2gq6VYlBUXKrGJmKN8TdNU1erFvH5ohvcSIpF4a95ElPpu7dBruMuorGYDXvHlfGhEFpaxxkpBWTknJwUp15HUvx1qMJnyfi9qxcID3ieRQ2lbrktiIkNwfjBKPP+nu4/uLg4P7ZgDdY1rGTGCBPOgc9FqVB1ny4="
+    #on:
+        #tags: true
