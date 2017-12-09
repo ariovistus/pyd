@@ -1,6 +1,6 @@
 #!/bin/sh
 
 echo "deploy! $NACHOS"
-if [ "$TRAVIS_TAG" != "" ]; then
+if [ "$NACHOS" == "tacos" ]; then
     echo "deploy really! $TRAVIS_TAG"
 fi
