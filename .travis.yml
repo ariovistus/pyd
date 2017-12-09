@@ -225,7 +225,7 @@ jobs:
 
           deploy:
             provider: pypi
-            deploy.skip_cleanup: true
+            skip_cleanup: true
             user: ariovistus
             password: wrongpassword
                 #secure: "fBaxJv4pJOA2gq6VYlBUXKrGJmKN8TdNU1erFvH5ohvcSIpF4a95ElPpu7dBruMuorGYDXvHlfGhEFpaxxkpBWTknJwUp15HUvx1qMJnyfi9qxcID3ieRQ2lbrktiIkNwfjBKPP+nu4/uLg4P7ZgDdY1rGTGCBPOgc9FqVB1ny4="
