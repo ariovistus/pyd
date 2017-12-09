@@ -214,9 +214,6 @@ script:
 jobs:
     include:
         - stage: deploy
-          d: dmd-2.073.0
-          env: 
-            secure: "E4Gkfa3IrIAMWQ6nw2T1Giz+Fn/AN74gHbKQIDd4zTyW9158Wrpm2vhAGoorYzcvVtsBGbbfbKxIEaCw8uHB/KHLOZzIotGAJ9ZojJPO5LHq6KruNsHzXKxrSPB7GfiQbCrByOlQOOo6Aw0bS3rs1m2h+CPPmKDqWLMfCy7Fkdo="
           os: linux
           language: python
           if: tag IS present
