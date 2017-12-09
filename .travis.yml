@@ -217,7 +217,7 @@ jobs:
           script: ./deploy.sh
           d: dmd-2.073.0
           env: 
-            secure: "VZLNJjIQG8c+8dqYb533S9F94Mb8Eflx4231MlJHdVw146bWSOqy8dR70xJAai/jt7o3+YQMBj3MC+DRYAvaEr5+ofK72vaPVEU3/OL5G9LRdz7bsN5tNqSPpukENlsladdKecZHhJU7wSIH1TBbHhJEQLlZU+CiQwYh3KCyASM="
+            secure: "E4Gkfa3IrIAMWQ6nw2T1Giz+Fn/AN74gHbKQIDd4zTyW9158Wrpm2vhAGoorYzcvVtsBGbbfbKxIEaCw8uHB/KHLOZzIotGAJ9ZojJPO5LHq6KruNsHzXKxrSPB7GfiQbCrByOlQOOo6Aw0bS3rs1m2h+CPPmKDqWLMfCy7Fkdo="
           os: linux
           if: tag IS present
         
