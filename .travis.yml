@@ -214,6 +214,8 @@ script:
 jobs:
     include:
         - stage: deploy
+          install: echo "yay not installing to system"
+          script: echo "yay not running tests"
           os: linux
           language: python
           if: tag IS present
