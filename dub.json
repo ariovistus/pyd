@@ -91,6 +91,9 @@
 			"libs-posix": [
 				"python3.6m"
 			],
+			"libs-windows-x86_64": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python36"
+			],
 			"versions": [
 				"Python_2_4_Or_Later",
 				"Python_2_5_Or_Later",
