@@ -3,6 +3,8 @@
   */
 module deimos.python.pyport;
 
+import core.stdc.config;
+
 /* D long is always 64 bits, but when the Python/C API mentions long, it is of
  * course referring to the C type long, the size of which is 32 bits on both
  * X86 and X86_64 under Windows, but 32 bits on X86 and 64 bits on X86_64 under
@@ -13,25 +15,8 @@ alias long C_longlong;
 /// _
 alias ulong C_ulonglong;
 
-version(Windows) {
-/// _
-  alias int C_long;
-/// _
-  alias uint C_ulong;
-} else {
-  version (X86) {
-/// _
-    alias int C_long;
-/// _
-    alias uint C_ulong;
-  } else {
-/// _
-    alias long C_long;
-/// _
-    alias ulong C_ulong;
-  }
-}
-
+alias core.stdc.config.c_long C_long;
+alias core.stdc.config.c_ulong C_ulong;
 
 /*
  * Py_ssize_t is defined as a signed type which is 8 bytes on X86_64 and 4
