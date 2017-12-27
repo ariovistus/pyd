@@ -1,0 +1,83 @@
+skip_tags: true
+platform: x64
+environment:
+    MYPYTHONPATH: "C:\\Python36-x64"
+    matrix:
+        - TEST: "runtests:test_hello"
+          DVersion: stable
+          arch: x64
+          DC: dmd
+matrix:
+    allow_failures:
+        - TEST: "runtests:test_hello"
+          DVersion: stable
+          arch: x64
+          DC: dmd
+install:
+    - ps: function ResolveLatestDMD
+        {
+            $version = $env:DVersion;
+            if($version -eq "stable") {
+                $latest = (Invoke-WebRequest "http://downloads.dlang.org/releases/LATEST").toString();
+                $url = "http://downloads.dlang.org/releases/2.x/$($latest)/dmd.$($latest).windows.7z";
+            }elseif($version -eq "beta") {
+                $latest = (Invoke-WebRequest "http://downloads.dlang.org/pre-releases/LATEST").toString();
+                $latestVersion = $latest.split("-")[0].split("~")[0];
+                $url = "http://downloads.dlang.org/pre-releases/2.x/$($latestVersion)/dmd.$($latest).windows.7z";
+            }elseif($version -eq "nightly") {
+                $url = "http://nightlies.dlang.org/dmd-master-2017-05-20/dmd.master.windows.7z"
+            }else {
+                $url = "http://downloads.dlang.org/releases/2.x/$($version)/dmd.$($version).windows.7z";
+            }
+            $env:PATH += ";C:\dmd2\windows\bin;";
+            return $url;
+        }
+    - ps: function SetUpDCompiler
+        {
+            $env:toolchain = "msvc";
+            if($env:DC -eq "dmd"){
+              echo "downloading ...";
+              $url = ResolveLatestDMD;
+              echo $url;
+              Invoke-WebRequest $url -OutFile "c:\dmd.7z";
+              echo "finished.";
+              pushd c:\\;
+              7z x dmd.7z > $null;
+              popd;
+            }
+            elseif($env:DC -eq "ldc"){
+              echo "downloading ...";
+              $url = ResolveLatestLDC;
+              echo $url;
+              Invoke-WebRequest $url -OutFile "c:\ldc.zip";
+              echo "finished.";
+              pushd c:\\;
+              7z x ldc.zip > $null;
+              popd;
+            }
+        }
+    - ps: SetUpDCompiler
+    - ps: . "$env:MYPYTHONPATH\scripts\pip.exe" install nose numpy
+    - ps: . "$env:MYPYTHONPATH\python.exe" setup.py install
+
+build_script:
+    - ps: if($env:arch -eq "x86"){
+            $env:compilersetupargs = "x86";
+            $env:Darch = "x86";
+            $env:DConf = "m32";
+        }elseif($env:arch -eq "x64"){
+            $env:compilersetupargs = "amd64";
+            $env:Darch = "x86_64";
+            $env:DConf = "m64";
+        }
+    - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
+    - '"%compilersetup%" %compilersetupargs%'
+    - ps: . ls "$env:MYPYTHONPATH"
+    - ps: . "$env:MYPYTHONPATH\python.exe" --version
+    - ps: echo "$? $lastExitCode"
+    - ps: dmd --version
+    - ps: echo "$? $lastExitCode"
+
+test_script:
+    - ps: . "$env:MYPYTHONPATH\python.exe" runtests.py --compiler=$env:DC "$env:TEST"
+    - ps: echo "$? $lastExitCode"
