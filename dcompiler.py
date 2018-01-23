@@ -919,11 +919,12 @@ def _findInPath(fileName, startIn=None):
     return None
 
 
-def _qp(path): # If path contains any whitespace, quote it.
-    if len(path.split()) == 1:
-        return path
-    else:
-        return '"%s"' % path
+def _qp(path): # Originally: If path contains any whitespace, quote it.
+    # Actually paths with spaces will be quoted again later
+    # so if we do it here, there will be extra quotes like
+    # ""C:\Program Files\..."" and the build will fail
+    # So, don't do it here.
+    return path
 
 def _is_win64():
     import platform
