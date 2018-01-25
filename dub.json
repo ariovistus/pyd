@@ -6,11 +6,17 @@
 		{
 			"name": "python27",
 			"targetType": "sourceLibrary",
-			"libs-windows-dmd": [
+			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python27_digitalmars"
+			],
+			"libs-windows-x86_64": [
+				"python27"
 			],
 			"libs-posix": [
 				"python2.7"
+			],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python27\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -22,11 +28,17 @@
 		{
 			"name": "python33",
 			"targetType": "sourceLibrary",
-			"libs-windows-dmd": [
+			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python33_digitalmars"
+			],
+			"libs-windows-x86_64": [
+				"python33"
 			],
 			"libs-posix": [
 				"python3.3m"
+			],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python33\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -42,11 +54,17 @@
 		{
 			"name": "python34",
 			"targetType": "sourceLibrary",
-			"libs-windows-dmd": [
+			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python34_digitalmars"
+			],
+			"libs-windows-x86_64": [
+				"python34"
 			],
 			"libs-posix": [
 				"python3.4m"
+			],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python34\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -63,11 +81,17 @@
 		{
 			"name": "python35",
 			"targetType": "sourceLibrary",
-			"libs-windows-dmd": [
+			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python35_digitalmars"
+			],
+			"libs-windows-x86_64": [
+				"python35"
 			],
 			"libs-posix": [
 				"python3.5m"
+			],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python35\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -85,11 +109,17 @@
 		{
 			"name": "python36",
 			"targetType": "sourceLibrary",
-			"libs-windows-dmd": [
+			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python36_digitalmars"
+			],
+			"libs-windows-x86_64": [
+				"python36"
 			],
 			"libs-posix": [
 				"python3.6m"
+			],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
