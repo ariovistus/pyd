@@ -516,8 +516,8 @@ class DCompiler(cc.CCompiler):
         extra_postargs = extra_postargs or []
 
         # On 64-bit Windows we just link to pythonXX.lib from the installation
-        if _is_win64() and library_dirs == []:
-            library_dirs = _build_ext_library_dirs()
+        if _is_win64(): 
+            library_dirs = list(set(_build_ext_library_dirs() + library_dirs))
 
         binpath = self._binpath
         if hasattr(self, '_linkOutputOpts'):
