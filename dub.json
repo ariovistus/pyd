@@ -12,11 +12,17 @@
 			"libs-windows-x86_64": [
 				"python27"
 			],
+			"libs-windows-x86_mscoff": [
+				"python27"
+			],
 			"libs-posix": [
 				"python2.7"
 			],
 			"lflags-windows-x86_64": [
 				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python27\\libs"
+			],
+			"lflags-windows-x86_mscoff": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python27-32\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -34,11 +40,17 @@
 			"libs-windows-x86_64": [
 				"python33"
 			],
+			"libs-windows-x86_mscoff": [
+				"python33"
+			],
 			"libs-posix": [
 				"python3.3m"
 			],
 			"lflags-windows-x86_64": [
 				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python33\\libs"
+			],
+			"lflags-windows-x86_mscoff": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python33-32\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -60,11 +72,17 @@
 			"libs-windows-x86_64": [
 				"python34"
 			],
+			"libs-windows-x86_mscoff": [
+				"python34"
+			],
 			"libs-posix": [
 				"python3.4m"
 			],
 			"lflags-windows-x86_64": [
 				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python34\\libs"
+			],
+			"lflags-windows-x86_mscoff": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python34-32\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -87,11 +105,17 @@
 			"libs-windows-x86_64": [
 				"python35"
 			],
+			"libs-windows-x86_mscoff": [
+				"python35"
+			],
 			"libs-posix": [
 				"python3.5m"
 			],
 			"lflags-windows-x86_64": [
 				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python35\\libs"
+			],
+			"lflags-windows-x86_mscoff": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python35-32\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -112,6 +136,9 @@
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python36_digitalmars"
 			],
+			"libs-windows-x86_mscoff": [
+				"python36"
+			],
 			"libs-windows-x86_64": [
 				"python36"
 			],
@@ -120,6 +147,9 @@
 			],
 			"lflags-windows-x86_64": [
 				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36\\libs"
+			],
+			"lflags-windows-x86_mscoff": [
+				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36-32\\libs"
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
