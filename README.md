@@ -26,7 +26,7 @@ their own verisoning schemes, I only pay attention to the front end version.
 [build-status]: https://travis-ci.org/ariovistus/pyd
 [docs-badge]: https://readthedocs.org/projects/pyd/badge/
 [docs]: http://pyd.readthedocs.org/
-[pypi-version]: https://pypip.in/version/pyd/badge.svg
+[pypi-version]: https://img.shields.io/pypi/v/pyd.svg
 [pypi]: https://pypi.python.org/pypi/pyd
-[license-badge]: https://pypip.in/license/pyd/badge.svg
+[license-badge]: https://img.shields.io/pypi/l/pyd.svg
 [license]: https://pypi.python.org/pypi/pyd/
