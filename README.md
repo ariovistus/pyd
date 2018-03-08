@@ -21,6 +21,16 @@ CPython 2.6+
 Note all D compilers are based on DMD's front end, so while LDC and GDC have
 their own verisoning schemes, I only pay attention to the front end version.
 
+## Boilerplate
+
+On Linux the project must be linked with an object file after compiling infrastructure/d/so_ctor.c.
+
+On both Linux and Windows a D source file must exist in the project with the following lines:
+
+```d
+import pyd.boilerplate: boilerplate;
+mixin(boilerplateMixinStr());
+```
 
 [build-status-badge]: https://travis-ci.org/ariovistus/pyd.svg?branch=master
 [build-status]: https://travis-ci.org/ariovistus/pyd
