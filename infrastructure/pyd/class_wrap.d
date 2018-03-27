@@ -289,14 +289,13 @@ struct Def(alias fn, Options...) {
 }
 
 template _Def(alias _fn, string name, fn_t, string docstring) {
+    import std.traits: fullyQualifiedName;
+
     alias def_selector!(_fn,fn_t).FN func;
-    static assert(!__traits(isStaticFunction, func)); // TODO
-    static assert((functionAttributes!fn_t & (
-                    FunctionAttribute.nothrow_|
-                    FunctionAttribute.pure_|
-                    FunctionAttribute.trusted|
-                    FunctionAttribute.safe)) == 0,
-            "pyd currently does not support pure, nothrow, @trusted, or @safe member functions");
+
+    // TODO
+    static assert(!__traits(isStaticFunction, func),
+                  "Cannot wrap static function " ~ fullyQualifiedName!func);
     alias /*StripSafeTrusted!*/fn_t func_t;
     enum realname = __traits(identifier,func);
     enum funcname = name;
@@ -528,7 +527,7 @@ struct Init(cps ...) {
                 static if(s.length == 0) {
                     enum concatumStrings = "";
                 }else {
-                    enum concatumStrings = T.stringof ~ (ParameterTypeTuple!(s[0])).stringof ~ "\n" ~ concatumStrings!(s[1 .. $]); 
+                    enum concatumStrings = T.stringof ~ (ParameterTypeTuple!(s[0])).stringof ~ "\n" ~ concatumStrings!(s[1 .. $]);
                 }
             }
             alias allOverloadsString = concatumStrings!(Overloads);
@@ -1629,4 +1628,3 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         }
     }
 }
-
