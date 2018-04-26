@@ -146,10 +146,13 @@
 				"python3.6m"
 			],
 			"lflags-windows-x86_64": [
-				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36\\libs"
+			    "/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36\\libs",
+			    "/LIBPATH:\\\"C:\\Program Files\\Python36\\libs\\\"",
 			],
 			"lflags-windows-x86_mscoff": [
-				"/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36-32\\libs"
+			        "/LIBPATH:C:\\Users\\$USERNAME\\AppData\\Local\\Programs\\Python\\Python36-32\\libs",
+				"/LIBPATH:\\\"C:\\Program Files (x86)\\Python36-32\\libs\\\""
+
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
