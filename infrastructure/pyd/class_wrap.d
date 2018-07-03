@@ -150,6 +150,16 @@ template IsAnySetter(alias T) {
     enum bool IsAnySetter = ParameterTypeTuple!T .length == 1;
 }
 
+struct PropertyMode {
+    bool has_get;
+    bool has_set;
+
+    this(bool has_get, bool has_set) {
+        this.has_get = has_get;
+        this.has_set = has_set;
+    }
+}
+
 // This template gets an alias to a property and derives the types of the
 // getter form and the setter form. It requires that the getter form return the
 // same type that the setter form accepts.
@@ -159,12 +169,13 @@ struct property_parts(alias p, string _mode) {
 
     alias ID!(__traits(parent, p)) Parent;
     enum nom = __traits(identifier, p);
+    enum realname = nom;
     alias TypeTuple!(__traits(getOverloads, Parent, nom)) Overloads;
     static if(_mode == "" || countUntil(_mode, "r") != -1) {
         alias Filter!(IsGetter,Overloads) Getters;
         static if(_mode == "" && Getters.length == 0) {
             enum isgproperty = false;
-            enum rmode = "";
+            enum has_get = false;
         }else {
             static assert(Getters.length != 0,
                     format!("can't find property %s.%s getter",
@@ -175,24 +186,23 @@ struct property_parts(alias p, string _mode) {
             alias Getters[0] GetterFn;
             alias typeof(&GetterFn) getter_type;
             enum isgproperty = IsProperty!GetterFn;
-            enum rmode = "r";
+            enum has_get = true;
         }
     }else {
         enum isgproperty = false;
-        enum rmode = "";
+        enum has_get = false;
     }
-    //enum bool pred1 = _mode == "" || countUntil(_mode, "w") != -1;
+    
     static if(_mode == "" || countUntil(_mode, "w") != -1) {
-        static if(rmode == "r") {
+        static if(has_get) {
             alias Filter!(IsSetter!(ReturnType!getter_type), Overloads) Setters;
         }else {
             alias Filter!(IsAnySetter, Overloads) Setters;
         }
 
-        //enum bool pred2 = _mode == "" && Setters.length == 0;
         static if(_mode == "" && Setters.length == 0) {
             enum bool issproperty = false;
-            enum string wmode = "";
+            enum string has_set = false;
         }else{
             static assert(Setters.length != 0, format("can't find property %s.%s setter", Parent.stringof, nom));
             static assert(Setters.length == 1,
@@ -200,26 +210,26 @@ struct property_parts(alias p, string _mode) {
                     Parent.stringof, nom, Setters.stringof));
             alias Setters[0] SetterFn;
             alias typeof(&SetterFn) setter_type;
-            static if(rmode == "r") {
+            static if(has_get) {
                 static assert(!(IsProperty!GetterFn ^ IsProperty!(Setters[0])),
                         format("%s.%s: getter and setter must both be @property or not @property",
                             Parent.stringof, nom));
             }
             enum issproperty = IsProperty!SetterFn;
-            enum wmode = "w";
+            enum has_set = true;
         }
     }else{
         enum issproperty = false;
-        enum wmode = "";
+        enum has_set = false;
     }
 
-    static if(rmode != "") {
+    static if(has_get) {
         alias ReturnType!(GetterFn) Type;
-    }else static if(wmode != "") {
+    }else static if(has_set) {
         alias ParameterTypeTuple!(SetterFn)[0] Type;
     }
 
-    enum mode = rmode ~ wmode;
+    enum mode = PropertyMode(has_get, has_set);
     enum bool isproperty = isgproperty || issproperty;
 }
 
@@ -279,57 +289,18 @@ fn's name in D
 docstring = The function's docstring. Defaults to "".
 */
 struct Def(alias fn, Options...) {
-    alias Args!("","", __traits(identifier,fn), "",Options) args;
+    enum template_name = "Def";
+    alias Args!("","", __traits(identifier,fn), "", Options) args;
     static if(args.rem.length) {
         alias args.rem[0] fn_t;
     }else {
         alias typeof(&fn) fn_t;
     }
-    mixin _Def!(fn, args.pyname, fn_t, args.docstring);
-}
-
-template _Def(alias _fn, string name, fn_t, string docstring) {
-    alias def_selector!(_fn,fn_t).FN func;
-    static assert(!__traits(isStaticFunction, func)); // TODO
-    static assert((functionAttributes!fn_t & (
-                    FunctionAttribute.nothrow_|
-                    FunctionAttribute.pure_|
-                    FunctionAttribute.trusted|
-                    FunctionAttribute.safe)) == 0,
-            "pyd currently does not support pure, nothrow, @trusted, or @safe member functions");
+    alias def_selector!(fn,fn_t).FN func;
     alias /*StripSafeTrusted!*/fn_t func_t;
-    enum realname = __traits(identifier,func);
-    enum funcname = name;
-    enum min_args = minArgs!(func);
-    enum bool needs_shim = false;
+    enum realname = __traits(identifier, func);
 
-    static void call(string classname, T) () {
-        alias ApplyConstness!(T, constness!(typeof(func))) cT;
-        static PyMethodDef empty = { null, null, 0, null };
-        alias wrapped_method_list!(T) list;
-        list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = cast(PyCFunction) &method_wrap!(cT, func, classname ~ "." ~ name).func;
-        list[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
-        list[$-1].ml_doc = (docstring~"\0").ptr;
-        list ~= empty;
-        // It's possible that appending the empty item invalidated the
-        // pointer in the type struct, so we renew it here.
-        PydTypeObject!(T).tp_methods = list.ptr;
-    }
-    template shim(size_t i, T) {
-        import util.replace: Replace;
-        enum shim = Replace!(q{
-            alias Params[$i] __pyd_p$i;
-            $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
-                return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func!(ParameterTypeTuple!(__pyd_p$i.func_t))("$name", t);
-            }
-            alias T.$realname $realname;
-        }, "$i",i,"$realname",realname, "$name", name,
-        "$attrs", attrs_to_string(functionAttributes!func_t) ~ " " ~ tattrs_to_string!(func_t)(),
-        "$override",
-        // todo: figure out what's going on here
-        (variadicFunctionStyle!func == Variadic.no ? "override":""));
-    }
+    static assert(!__traits(isStaticFunction, func)); // TODO
 }
 
 /**
@@ -349,35 +320,16 @@ name in D.
 docstring = The function's docstring. Defaults to "".
 */
 struct StaticDef(alias fn, Options...) {
+    enum template_name = "StaticDef";
     alias Args!("","", __traits(identifier,fn), "",Options) args;
     static if(args.rem.length) {
         alias args.rem[0] fn_t;
     }else {
         alias typeof(&fn) fn_t;
     }
-    mixin _StaticDef!(fn, args.pyname, fn_t, args.docstring);
-}
-
-mixin template _StaticDef(alias fn, string name, fn_t, string docstring) {
     alias def_selector!(fn,fn_t).FN func;
+
     static assert(__traits(isStaticFunction, func)); // TODO
-    alias /*StripSafeTrusted!*/fn_t func_t;
-    enum funcname = name;
-    enum bool needs_shim = false;
-    static void call(string classname, T) () {
-        //pragma(msg, "class.static_def: " ~ name);
-        static PyMethodDef empty = { null, null, 0, null };
-        alias wrapped_method_list!(T) list;
-        list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!(func, classname ~ "." ~ name).func;
-        list[$-1].ml_flags = METH_VARARGS | METH_STATIC | METH_KEYWORDS;
-        list[$-1].ml_doc = (docstring~"\0").ptr;
-        list ~= empty;
-        PydTypeObject!(T).tp_methods = list.ptr;
-    }
-    template shim(size_t i,T) {
-        enum shim = "";
-    }
 }
 
 /**
@@ -396,82 +348,25 @@ to "".
 docstring = The function's docstring. Defaults to "".
 */
 struct Property(alias fn, Options...) {
+    enum template_name = "Property";
     alias Args!("","", __traits(identifier,fn), "",Options) args;
     static assert(args.rem.length == 0, "Propery takes no other parameter");
-    mixin _Property!(fn, args.pyname, args.mode, args.docstring);
-}
-
-template _Property(alias fn, string pyname, string _mode, string docstring) {
-    import std.algorithm: countUntil;
-    alias property_parts!(fn, _mode) parts;
+    alias property_parts!(fn, args.mode) parts;
+    enum mode = parts.mode;
 
     static if(parts.isproperty) {
-        mixin _Member!(parts.nom, pyname, parts.mode, docstring, parts);
-
-        template shim(size_t i, T) {
-            enum shim = "";
-        }
+        enum realname = parts.nom;
     }else {
-        static if(countUntil(parts.mode,"r") != -1) {
+        static if(parts.mode.has_get) {
             alias parts.getter_type get_t;
         }
-        static if(countUntil(parts.mode,"w") != -1) {
+        static if(parts.mode.has_set) {
             alias parts.setter_type set_t;
         }
         enum realname = __traits(identifier, fn);
-        enum funcname = pyname;
-        enum bool needs_shim = false;
-        static void call(string classname, T) () {
-            static PyGetSetDef empty = { null, null, null, null, null };
-            wrapped_prop_list!(T)[$-1].name = (pyname ~ "\0").dup.ptr;
-            static if (countUntil(parts.mode, "r") != -1) {
-                alias ApplyConstness!(T, constness!(typeof(parts.GetterFn)))
-                    cT_g;
-                wrapped_prop_list!(T)[$-1].get =
-                    &wrapped_get!(classname ~ "." ~ pyname, cT_g, parts).func;
-            }
-            static if (countUntil(parts.mode, "w") != -1) {
-                alias ApplyConstness!(T, constness!(typeof(parts.SetterFn)))
-                    cT_s;
-                wrapped_prop_list!(T)[$-1].set =
-                    &wrapped_set!(classname ~ "." ~ pyname,cT_s, parts).func;
-            }
-            wrapped_prop_list!(T)[$-1].doc = (docstring~"\0").dup.ptr;
-            wrapped_prop_list!(T)[$-1].closure = null;
-            wrapped_prop_list!(T) ~= empty;
-            // It's possible that appending the empty item invalidated the
-            // pointer in the type struct, so we renew it here.
-            PydTypeObject!(T).tp_getset =
-                wrapped_prop_list!(T).ptr;
-        }
-        template shim(size_t i, T) {
-            import util.replace: Replace;
-            static if(countUntil(parts.mode, "r") != -1) {
-                enum getter = Replace!(q{
-                override ReturnType!(__pyd_p$i.get_t) $realname() {
-                    return __pyd_get_overload!("$realname", __pyd_p$i.get_t).func("$name");
-                }
-                } , "$i",i,"$realname",realname, "$name", pyname);
-            }else{
-                enum getter = "";
-            }
-            static if(countUntil(parts.mode, "w") != -1) {
-                enum setter = Replace!(q{
-                override ReturnType!(__pyd_p$i.set_t) $realname(ParameterTypeTuple!(__pyd_p$i.set_t) t) {
-                    return __pyd_get_overload!("$realname", __pyd_p$i.set_t).func("$name", t);
-                }
-                }, "$i", i, "$realname",realname, "$name", pyname);
-            }else {
-                enum setter = "";
-            }
-            enum shim = Replace!(q{
-                alias Params[$i] __pyd_p$i;
-                $getter
-                $setter;
-            }, "$i",i, "$getter", getter, "$setter",setter);
-        }
     }
 }
+
 
 /**
 Wraps a method as the class's ___repr__ in Python.
@@ -480,16 +375,8 @@ Params:
 fn = The property to wrap. Must have the signature string function().
 */
 struct Repr(alias _fn) {
+    enum template_name = "Repr";
     alias def_selector!(_fn, string function()).FN fn;
-    enum bool needs_shim = false;
-    static void call(string classname, T)() {
-        alias ApplyConstness!(T, constness!(typeof(fn))) cT;
-        alias PydTypeObject!(T) type;
-        type.tp_repr = &wrapped_repr!(cT, fn).repr;
-    }
-    template shim(size_t i,T) {
-        enum shim = "";
-    }
 }
 
 /**
@@ -511,6 +398,7 @@ This currently does not support having multiple constructors with
 the same number of arguments.
 */
 struct Init(cps ...) {
+    enum string template_name = "Init";
     alias cps CtorParams;
     enum bool needs_shim = false;
     template Inner(T) {
@@ -543,24 +431,6 @@ struct Init(cps ...) {
             import util.typeinfo : WorkaroundParameterDefaults;
             alias Pd = WorkaroundParameterDefaults!FN;
         }
-    }
-
-    static void call(string classname, T)() {
-    }
-
-    template shim(size_t i, T) {
-        import util.replace: Replace;
-        import std.string: format;
-        enum params = getparams!(Inner!T.FN,
-                format("__pyd_p%s.Inner!T.Pt",i),
-                format("__pyd_p%s.Inner!T.Pd",i));
-        alias ParameterIdentifierTuple!(Inner!T.FN) paramids;
-        enum shim = Replace!(q{
-            alias Params[$i] __pyd_p$i;
-            this($params) {
-                super($ids);
-            }
-        }, "$i", i, "$params", params, "$ids", Join!(",", paramids));
     }
 }
 
@@ -646,6 +516,7 @@ string autoInitializeMethods() {
 private struct Guess{}
 
 struct BinaryOperatorX(string _op, bool isR, rhs_t) {
+    enum template_name = "BinaryOperatorX";
     enum op = _op;
     enum isRight = isR;
 
@@ -683,15 +554,6 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
             alias ReturnType!(typeof(mixin(fn_str2))) RET_T;
             mixin("alias "~fn_str2~" FN;");
         } else static assert(false, "Cannot get operator overload");
-    }
-
-    static void call(string classname, T)() {
-        // can't handle __op__ __rop__ pairs here
-    }
-
-    template shim(size_t i, T) {
-        // bah
-        enum shim = "";
     }
 }
 
@@ -735,6 +597,7 @@ template OpBinaryRight(string op, lhs_t = Guess) if(IsPyBinary(op)) {
   Wrap a unary operator overload.
 */
 struct OpUnary(string _op) if(IsPyUnary(_op)) {
+    enum template_name = "OpUnary";
     enum op = _op;
     enum bool needs_shim = false;
 
@@ -747,16 +610,6 @@ struct OpUnary(string _op) if(IsPyUnary(_op)) {
             alias ReturnType!(C.opUnary!(op)) RET_T;
             alias C.opUnary!(op) FN;
         } else static assert(false, "Cannot get operator overload");
-    }
-    static void call(string classname, T)() {
-        alias PydTypeObject!T type;
-        enum slot = unaryslots[op];
-        mixin(autoInitializeMethods());
-        mixin(slot ~ " = &opfunc_unary_wrap!(T, Inner!T .FN).func;");
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
     }
 }
 
@@ -781,6 +634,7 @@ Params:
     there are multiple overloads.
 */
 struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
+    enum template_name = "OpAssign";
     enum op = _op~"=";
 
     enum bool needs_shim = false;
@@ -806,22 +660,6 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
             alias C.opOpAssign!(_op,rhs_t) FN;
         } else static assert(false, "Cannot get operator assignment overload");
     }
-    static void call(string classname, T)() {
-        alias PydTypeObject!T type;
-        enum slot = binaryslots[op];
-        mixin(autoInitializeMethods());
-        alias CW!(TypeTuple!(OpAssign)) OpAsg;
-        alias CW!(TypeTuple!()) Nop;
-        static if(op == "^^=")
-            mixin(slot ~ " = &powopasg_wrap!(T, Inner!T.FN).func;");
-        else
-            mixin(slot ~ " = &binopasg_wrap!(T, Inner!T.FN).func;");
-    }
-
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
-    }
 }
 
 // struct types could probably take any parameter type
@@ -834,6 +672,7 @@ Params:
     are multiple overloads (for classes it will always be Object).
   */
 struct OpCompare(_rhs_t = Guess) {
+    enum template_name = "OpCompare";
     enum bool needs_shim = false;
 
 
@@ -871,15 +710,6 @@ struct OpCompare(_rhs_t = Guess) {
             alias Overloads1[0] FN;
         }
     }
-    static void call(string classname, T)() {
-        alias PydTypeObject!T type;
-        alias ApplyConstness!(T, constness!(typeof(Inner!T.FN))) cT;
-        type.tp_richcompare = &rich_opcmp_wrap!(cT, Inner!T.FN).func;
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
-    }
 }
 
 /**
@@ -890,6 +720,7 @@ Params:
     there are multiple overloads.
 */
 struct OpIndex(index_t...) {
+    enum template_name = "OpIndex";
     enum bool needs_shim = false;
     template Inner(C) {
         import std.string: format;
@@ -922,22 +753,11 @@ struct OpIndex(index_t...) {
                     format("cannot get a handle on %s.opIndex", C.stringof));
         }
     }
-    static void call(string classname, T)() {
-        /*
-        alias PydTypeObject!T type;
-        enum slot = "type.tp_as_mapping.mp_subscript";
-        mixin(autoInitializeMethods());
-        mixin(slot ~ " = &opindex_wrap!(T, Inner!T.FN).func;");
-        */
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
-    }
 }
 
 /// ditto
 struct OpIndexAssign(index_t...) {
+    enum template_name = "OpIndexAssign";
     static assert(index_t.length != 1,
             "opIndexAssign must have at least 2 parameters");
     enum bool needs_shim = false;
@@ -979,18 +799,6 @@ struct OpIndexAssign(index_t...) {
                     format("cannot get a handle on %s.opIndexAssign", C.stringof));
         }
     }
-    static void call(string classname, T)() {
-        /*
-        alias PydTypeObject!T type;
-        enum slot = "type.tp_as_mapping.mp_ass_subscript";
-        mixin(autoInitializeMethods());
-        mixin(slot ~ " = &opindexassign_wrap!(T, Inner!T.FN).func;");
-        */
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
-    }
 }
 
 /**
@@ -1003,6 +811,7 @@ Foo.opSlice(Py_ssize_t, Py_ssize_t);
  This is a limitation of the C/Python API.
   */
 struct OpSlice() {
+    enum template_name = "OpSlice";
     enum bool needs_shim = false;
     template Inner(C) {
         import std.string: format;
@@ -1029,18 +838,6 @@ struct OpSlice() {
                         C.stringof));
         }
     }
-    static void call(string classname, T)() {
-        /*
-        alias PydTypeObject!T type;
-        enum slot = "type.tp_as_sequence.sq_slice";
-        mixin(autoInitializeMethods());
-        mixin(slot ~ " = &opslice_wrap!(T, Inner!T.FN).func;");
-        */
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
-    }
 }
 
 /**
@@ -1053,6 +850,7 @@ Foo.opSliceAssign(Value,Py_ssize_t, Py_ssize_t);
  This is a limitation of the C/Python API.
   */
 struct OpSliceAssign(rhs_t = Guess) {
+    enum template_name = "OpSliceAssign";
     enum bool needs_shim = false;
     template Inner(C) {
         static if(!__traits(hasMember, C, "opSliceAssign")) {
@@ -1090,24 +888,13 @@ struct OpSliceAssign(rhs_t = Guess) {
                         C.stringof));
         }
     }
-    static void call(string classname, T)() {
-        /*
-        alias PydTypeObject!T type;
-        enum slot = "type.tp_as_sequence.sq_ass_slice";
-        mixin(autoInitializeMethods());
-        mixin(slot ~ " = &opsliceassign_wrap!(T, Inner!T.FN).func;");
-        */
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
-    }
 }
 
 /**
   wrap opCall. The parameter types of opCall must be specified.
 */
 struct OpCall(Args_t...) {
+    enum template_name = "OpCall";
     enum bool needs_shim = false;
 
     template Inner(T) {
@@ -1128,16 +915,6 @@ struct OpCall(Args_t...) {
         }else static assert(0,
                 format("%s.%s: cannot choose between %s", T.stringof, nom,
                     VOverloads.stringof));
-    }
-    static void call(string classname, T)() {
-        alias PydTypeObject!T type;
-        alias Inner!T.FN fn;
-        alias ApplyConstness!(T, constness!(typeof(fn))) cT;
-        type.tp_call = &opcall_wrap!(cT, fn).func;
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
     }
 }
 
@@ -1160,6 +937,7 @@ template Len(alias fn) {
 }
 
 struct _Len(fnt...) {
+    enum template_name = "Len";
     enum bool needs_shim = false;
     template Inner(T) {
         import std.string: format;
@@ -1185,16 +963,6 @@ struct _Len(fnt...) {
         }else static assert(0,
                 format("%s.%s: cannot choose between %s", T.stringof, nom,
                     VOverloads.stringof));
-    }
-    static void call(string classname, T)() {
-        alias PydTypeObject!T type;
-        enum slot = "type.tp_as_sequence.sq_length";
-        mixin(autoInitializeMethods());
-        mixin(slot ~ " = &length_wrap!(T, Inner!T.FN).func;");
-    }
-    template shim(size_t i,T) {
-        // bah
-        enum shim = "";
     }
 }
 
@@ -1320,8 +1088,8 @@ template IsDef(string pyname) {
     template IsDef(Params...) {
         import std.algorithm: startsWith;
         static if(Params[0].stringof.startsWith("Def!") &&
-                __traits(hasMember,Params[0], "funcname")) {
-            enum bool IsDef = (Params[0].funcname == pyname);
+            __traits(compiles,(Params[0].args.pyname == pyname))) {
+            enum bool IsDef = (Params[0].args.pyname == pyname);
         }else{
             enum bool IsDef = false;
         }
@@ -1493,6 +1261,305 @@ slice:
     }
 }
 
+struct InheritingClassWrapImpl {
+    import util.replace: Replace;
+
+    static void Def_call(string classname, T, Shim, alias DEF) () {
+        alias ApplyConstness!(T, constness!(typeof(DEF.func))) cT;
+        static PyMethodDef empty = { null, null, 0, null };
+        alias wrapped_method_list!(T) list;
+        list[$-1].ml_name = (DEF.args.pyname ~ "\0").ptr;
+        list[$-1].ml_meth = cast(PyCFunction) &method_wrap!(cT, DEF.func, classname ~ "." ~ DEF.args.pyname).func;
+        list[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
+        list[$-1].ml_doc = (DEF.args.docstring~"\0").ptr;
+        list ~= empty;
+        // It's possible that appending the empty item invalidated the
+        // pointer in the type struct, so we renew it here.
+        PydTypeObject!(T).tp_methods = list.ptr;
+    }
+
+    template Def_shim(size_t i, T, alias DEF) {
+        static assert((functionAttributes!(DEF.fn_t) & (
+                        FunctionAttribute.nothrow_|
+                        FunctionAttribute.pure_|
+                        FunctionAttribute.trusted|
+                        FunctionAttribute.safe)) == 0,
+                "pyd does not support pure, nothrow, @trusted, or @safe member functions in inherit enabled wrappings");
+        enum Def_shim = Replace!(q{
+            alias Params[$i] __pyd_p$i;
+            $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
+                return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func!(ParameterTypeTuple!(__pyd_p$i.func_t))("$name", t);
+            }
+            alias T.$realname $realname;
+        }, "$i", i, "$realname", DEF.realname, "$name", DEF.args.pyname,
+        "$attrs", attrs_to_string(functionAttributes!(DEF.func_t)) ~ " " ~ tattrs_to_string!(DEF.func_t)(),
+        "$override",
+        // todo: figure out what's going on here
+        (variadicFunctionStyle!(DEF.func) == Variadic.no ? "override":""));
+    }
+
+    static void StaticDef_call(string classname, T, Shim, alias STATIC_DEF) () {
+        static PyMethodDef empty = { null, null, 0, null };
+        alias wrapped_method_list!(T) list;
+        list[$-1].ml_name = (STATIC_DEF.args.pyname ~ "\0").ptr;
+        list[$-1].ml_meth = cast(PyCFunction) &function_wrap!(STATIC_DEF.func, classname ~ "." ~ STATIC_DEF.args.pyname).func;
+        list[$-1].ml_flags = METH_VARARGS | METH_STATIC | METH_KEYWORDS;
+        list[$-1].ml_doc = (STATIC_DEF.args.docstring~"\0").ptr;
+        list ~= empty;
+        PydTypeObject!(T).tp_methods = list.ptr;
+    }
+
+    template StaticDef_shim(size_t i,T, alias STATIC_DEF) {
+        enum StaticDef_shim = "";
+    }
+
+    static void Property_call(string classname, T, Shim, alias PROPERTY) () {
+        static if (PROPERTY.parts.isproperty) {
+            Member_call!(classname, T, Shim, PROPERTY);
+        }else{
+            static PyGetSetDef empty = { null, null, null, null, null };
+            wrapped_prop_list!(T)[$-1].name = (PROPERTY.args.pyname ~ "\0").dup.ptr;
+            static if (PROPERTY.parts.mode.has_get) {
+                alias ApplyConstness!(T, constness!(typeof(PROPERTY.parts.GetterFn)))
+                    cT_g;
+                wrapped_prop_list!(T)[$-1].get =
+                    &wrapped_get!(classname ~ "." ~ PROPERTY.args.pyname, cT_g, PROPERTY.parts).func;
+            }
+            static if (PROPERTY.parts.mode.has_set) {
+                alias ApplyConstness!(T, constness!(typeof(PROPERTY.parts.SetterFn)))
+                    cT_s;
+                wrapped_prop_list!(T)[$-1].set =
+                    &wrapped_set!(classname ~ "." ~ PROPERTY.args.pyname,cT_s, PROPERTY.parts).func;
+            }
+            wrapped_prop_list!(T)[$-1].doc = (PROPERTY.args.docstring ~ "\0").dup.ptr;
+            wrapped_prop_list!(T)[$-1].closure = null;
+            wrapped_prop_list!(T) ~= empty;
+            // It's possible that appending the empty item invalidated the
+            // pointer in the type struct, so we renew it here.
+            PydTypeObject!(T).tp_getset =
+                wrapped_prop_list!(T).ptr;
+        }
+    }
+
+    template Property_shim(size_t i, T, alias PROPERTY) {
+        static if(PROPERTY.parts.isproperty) {
+            enum Property_shim = "";
+        }else{
+            static if(PROPERTY.parts.mode.has_get) {
+                enum getter = Replace!(q{
+                override ReturnType!(__pyd_p$i.get_t) $realname() {
+                    return __pyd_get_overload!("$realname", __pyd_p$i.get_t).func("$name");
+                }
+                }, "$i", i, "$realname", PROPERTY.realname, "$name", PROPERTY.args.pyname);
+            }else{
+                enum getter = "";
+            }
+            static if(PROPERTY.parts.mode.has_set) {
+                enum setter = Replace!(q{
+                override ReturnType!(__pyd_p$i.set_t) $realname(ParameterTypeTuple!(__pyd_p$i.set_t) t) {
+                    return __pyd_get_overload!("$realname", __pyd_p$i.set_t).func("$name", t);
+                }
+                }, "$i", i, "$realname", PROPERTY.realname, "$name", PROPERTY.args.pyname);
+            }else {
+                enum setter = "";
+            }
+            enum Property_shim = Replace!(q{
+                alias Params[$i] __pyd_p$i;
+                $getter
+                $setter;
+            }, "$i",i, "$getter", getter, "$setter",setter);
+        }
+    }
+
+    static void Repr_call(string classname, T, Shim, alias REPR)() {
+        alias ApplyConstness!(T, constness!(typeof(REPR.fn))) cT;
+        alias PydTypeObject!(T) type;
+        type.tp_repr = &wrapped_repr!(cT, REPR.fn).repr;
+    }
+
+    template Repr_shim(size_t i,T, alias REPR) {
+        enum Repr_shim = "";
+    }
+
+    static void Init_call(string classname, T, Shim, alias INIT)() {
+    }
+
+    template Init_shim(size_t i, T, alias INIT) {
+        import std.string: format;
+        enum params = getparams!(INIT.Inner!T.FN,
+                format("__pyd_p%s.Inner!T.Pt",i),
+                format("__pyd_p%s.Inner!T.Pd",i));
+        alias ParameterIdentifierTuple!(INIT.Inner!T.FN) paramids;
+        enum Init_shim = Replace!(q{
+            alias Params[$i] __pyd_p$i;
+            this($params) {
+                super($ids);
+            }
+        }, "$i", i, "$params", params, "$ids", Join!(",", paramids));
+    }
+
+    static void BinaryOperatorX_call(string classname, T, Shim, alias OP)() {
+        // can't handle __op__ __rop__ pairs here
+    }
+
+    template BinaryOperatorX_shim(size_t i, T, alias OP) {
+        // bah
+        enum BinaryOperatorX_shim = "";
+    }
+
+    static void OpUnary_call(string classname, T, Shim, alias OP)() {
+        alias PydTypeObject!T type;
+        enum slot = unaryslots[OP.op];
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &opfunc_unary_wrap!(T, OP.Inner!T .FN).func;");
+    }
+    template OpUnary_shim(size_t i, T, alias OP) {
+        // bah
+        enum OpUnary_shim = "";
+    }
+
+    static void OpAssign_call(string classname, T, Shim, OP)() {
+        alias PydTypeObject!T type;
+        enum slot = binaryslots[OP.op];
+        mixin(autoInitializeMethods());
+        alias CW!(TypeTuple!(OpAssign)) OpAsg;
+        alias CW!(TypeTuple!()) Nop;
+        static if(OP.op == "^^=")
+            mixin(slot ~ " = &powopasg_wrap!(T, OP.Inner!T.FN).func;");
+        else
+            mixin(slot ~ " = &binopasg_wrap!(T, OP.Inner!T.FN).func;");
+    }
+
+    template OpAssign_shim(size_t i,T, alias OP) {
+        // bah
+        enum OpAssign_shim = "";
+    }
+
+    static void OpCompare_call(string classname, T, Shim, alias OP)() {
+        alias PydTypeObject!T type;
+        alias ApplyConstness!(T, constness!(typeof(OP.Inner!T.FN))) cT;
+        type.tp_richcompare = &rich_opcmp_wrap!(cT, OP.Inner!T.FN).func;
+    }
+
+    template OpCompare_shim(size_t i,T, alias OP) {
+        // bah
+        enum OpCompare_shim = "";
+    }
+
+    static void OpIndex_call(string classname, T, Shim, alias OP)() {
+    }
+
+    template OpIndex_shim(size_t i, T, alias OP) {
+        // bah
+        enum OpIndex_shim = "";
+    }
+
+    static void OpIndexAssign_call(string classname, T, Shim, alias OP)() {
+    }
+
+    template OpIndexAssign_shim(size_t i, T, alias OP) {
+        // bah
+        enum OpIndexAssign_shim = "";
+    }
+    
+    static void OpSlice_call(string classname, T, Shim, alias OP)() {
+    }
+    template OpSlice_shim(size_t i,T, alias OP) {
+        // bah
+        enum OpSlice_shim = "";
+    }
+
+    static void OpSliceAssign_call(string classname, T, Shim, alias OP)() {
+    }
+
+    template OpSliceAssign_shim(size_t i, T, alias OP) {
+        // bah
+        enum OpSliceAssign_shim = "";
+    }
+
+    static void OpCall_call(string classname, T, Shim, alias OP)() {
+        alias PydTypeObject!T type;
+        alias OP.Inner!T.FN fn;
+        alias ApplyConstness!(T, constness!(typeof(fn))) cT;
+        type.tp_call = &opcall_wrap!(cT, fn).func;
+    }
+
+    template OpCall_shim(size_t i, T, alias OP) {
+        // bah
+        enum OpCall_shim = "";
+    }
+
+    static void Len_call(string classname, T, Shim, alias LEN)() {
+        alias PydTypeObject!T type;
+        enum slot = "type.tp_as_sequence.sq_length";
+        mixin(autoInitializeMethods());
+        mixin(slot ~ " = &length_wrap!(T, LEN.Inner!T.FN).func;");
+    }
+
+    template Len_shim(size_t i, T, alias LEN) {
+        // bah
+        enum Len_shim = "";
+    }
+
+    static void Member_call(string classname, T, Shim, alias MEMBER) () {
+        static PyGetSetDef empty = {null, null, null, null, null};
+        alias wrapped_prop_list!(T) list;
+        list[$-1].name = (MEMBER.args.pyname ~ "\0").dup.ptr;
+        static if(MEMBER.mode.has_get) {
+            list[$-1].get = &wrapped_member!(T, MEMBER.realname, MEMBER.mode, MEMBER.parts).get;
+        }
+        static if(MEMBER.mode.has_set) {
+            list[$-1].set = &wrapped_member!(T, MEMBER.realname, MEMBER.mode, MEMBER.parts).set;
+        }
+        list[$-1].doc = (MEMBER.args.docstring~"\0").dup.ptr;
+        list[$-1].closure = null;
+        list ~= empty;
+        PydTypeObject!(T).tp_getset = list.ptr;
+    }
+
+    template Member_shim(size_t i, T, alias MEMBER) {
+        enum Member_shim = "";
+    }
+
+    static void call_params(string name, T, shim_class, Params...)() {
+        static if(Params.length != 0) {
+            mixin(Replace!("alias call = $name_call;", "$name", Params[0].template_name));
+            call!(name, T, shim_class, Params[0]);
+
+            call_params!(name, T, shim_class, Params[1 .. $]);
+        }
+    }
+
+    template class_decls(uint i, T, Params...) {
+        static if (i < Params.length) {
+            mixin(Replace!("alias shim = $name_shim;", "$name", Params[i].template_name));
+            //enum string decl = mixin(Replace!("$name_shim!(i, T, Params[i])", "$name", Params[i].template_name));
+            enum string class_decls = shim!(i, T, Params[i]) ~ class_decls!(i+1, T, Params);
+        } else {
+            enum string class_decls = "";
+        }
+    }
+
+    template make_wrapper(T, Params...) {
+        enum string cls =
+            "class wrapper : T {\n"~
+            "    mixin OverloadShim;\n"~
+            class_decls!(0, T, Params)~"\n"~
+            "}\n";
+        mixin(cls);
+    }
+}
+
+struct NoInherit {
+}
+
+template IsNoInherit(alias T) {
+    enum bool IsNoInherit = is(T == NoInherit);
+}
+template IsNotNoInherit(alias T) {
+    enum bool IsNotNoInherit = !is(T == NoInherit);
+}
+
 /*
 Params: each param is a Type which supports the interface
 
@@ -1526,18 +1593,22 @@ Params:
   */
 void wrap_class(T, Params...)() {
     alias Args!("","", __traits(identifier,T), "",Params) args;
-    _wrap_class!(T, args.pyname, args.docstring, args.modulename, args.rem).wrap_class();
+    enum hasNoInherit = Filter!(IsNoInherit, args.rem).length != 0;
+    alias params = Filter!(IsNotNoInherit, args.rem);
+    _wrap_class!(T, args.pyname, args.docstring, args.modulename, hasNoInherit, params).wrap_class();
 }
-template _wrap_class(_T, string name, string docstring, string modulename, Params...) {
+
+template _wrap_class(_T, string name, string docstring, string modulename, bool hasNoInherit, Params...) {
     import std.conv;
     import util.typelist;
-    static if (is(_T == class)) {
-        //pragma(msg, "wrap_class: " ~ name);
-        alias pyd.make_wrapper.make_wrapper!(_T, Params).wrapper shim_class;
-        //alias W.wrapper shim_class;
+    alias impl = InheritingClassWrapImpl;
+    static if (is(_T == class) && !hasNoInherit) {
+        alias impl.make_wrapper!(_T, Params).wrapper shim_class;
+        alias _T T;
+    } else static if (is(_T == class)) {
+        alias _T shim_class;
         alias _T T;
     } else {
-        //pragma(msg, "wrap_struct: '" ~ name ~ "'");
         alias void shim_class;
         alias _T* T;
     }
@@ -1551,13 +1622,7 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         alias PydTypeObject!(T) type;
         init_PyTypeObject!T(type);
 
-        foreach (param; Params) {
-            static if (param.needs_shim) {
-                param.call!(name, T, shim_class)();
-            } else {
-                param.call!(name,T)();
-            }
-        }
+        impl.call_params!(name, T, shim_class, Params);
 
         assert(Pyd_Module_p(modulename) !is null, "Must initialize module '" ~ modulename ~ "' before wrapping classes.");
         string module_name = to!string(PyModule_GetName(Pyd_Module_p(modulename)));
@@ -1625,7 +1690,9 @@ template _wrap_class(_T, string name, string docstring, string modulename, Param
         static if (is(T == class)) {
             is_wrapped!(shim_class) = true;
             wrapped_classes[T.classinfo] = &type;
-            wrapped_classes[shim_class.classinfo] = &type;
+            static if(!hasNoInherit) {
+                wrapped_classes[shim_class.classinfo] = &type;
+            }
         }
     }
 }

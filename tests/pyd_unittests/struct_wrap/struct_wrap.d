@@ -48,7 +48,6 @@ static this() {
     py_init();
 }
 
-
 unittest {
     py_stmts(q"{
 foo1 = Foo1(2,3,4);
@@ -57,8 +56,19 @@ assert foo1.i == 2
 }
 
 unittest {
-    const(Foo1) fooboo;
-    d_to_python(fooboo);
+    const(Foo1) fooboo = Foo1(1,2,3);
+    auto x = d_to_python(fooboo);
+}
+
+unittest {
+    auto context = new InterpContext();
+    auto a = Foo2(1);
+    assert (a.i == 1);
+    context.a = a;
+    context.py_stmts("assert a.i == 1");
+    context.b = Foo2(1);
+    context.py_stmts("assert b.i == 1");
+
 }
 
 void main(){}

@@ -210,7 +210,7 @@ unittest {
 }
 
 
-// test arbirary ranges
+// test arbitrary ranges
 unittest{
     auto z = (iota(10));
     alias typeof(z) Z;

@@ -9,7 +9,7 @@ shared static this() {
     });
     py_init();
     on_py_init({
-    wrap_class!(Bizzy,
+        wrap_class!(Bizzy,
             ModuleName!"testing",
             //Init!(int[]),
             Init!(int,double,string),
@@ -34,8 +34,8 @@ shared static this() {
             OpSliceAssign!(),
             OpCall!(double),
             Len!(Bizzy.pylen),
-    )();
-    wrap_class!(Bizzy2,
+        )();
+        wrap_class!(Bizzy2,
             ModuleName!"testing",
             Init!(int[]),
             StaticDef!(Bizzy2.a),
@@ -43,34 +43,41 @@ shared static this() {
             StaticDef!(Bizzy2.c),
             StaticDef!(Bizzy2.d),
             Def!(Bizzy2.jj),
-    )();
-    wrap_class!(Bizzy3,
+        )();
+        wrap_class!(Bizzy3,
             ModuleName!"testing",
             Init!(int,int),
             Def!(Bizzy3.a),
             Def!(Bizzy3.b),
             Def!(Bizzy3.c),
             Def!(Bizzy3.d),
-    )();
-    wrap_class!(Bizzy4,
+        )();
+        wrap_class!(Bizzy4,
             ModuleName!"testing",
             Property!(Bizzy4.i),
             Repr!(Bizzy4.repr),
             Def!(Bizzy4.foo),
             Len!(),
-    )();
-    wrap_class!(Bizzy5,
+        )();
+        wrap_class!(Bizzy5,
             ModuleName!"testing",
             Init!(int,double,string),
             Def!(Bizzy5.a),
             Property!(Bizzy5.b, Mode!"r"),
             Property!(Bizzy5.c, Mode!"rw"),
             Property!(Bizzy5.e, Mode!"w"),
-    )();
-    wrap_class!(TBizzy,
+        )();
+
+        wrap_class!(Bizzy6,
+            ModuleName!"testing",
+            NoInherit,
+            Def!(Bizzy6.a),
+        )();
+
+        wrap_class!(TBizzy,
             ModuleName!"testing",
             Def!(TBizzy.f),
-    )();
+        )();
     }, PyInitOrdering.After);
 
 }
@@ -246,6 +253,12 @@ class Bizzy5 {
 
     @property void e(string _val) { }
 
+}
+
+class Bizzy6 {
+    pure string a() {
+        return "a";
+    }
 }
 
 mixin template t3(T) {

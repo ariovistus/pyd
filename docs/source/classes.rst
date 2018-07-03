@@ -131,3 +131,12 @@ python names:
       termination. Signature must be :code:`PyObject* next()`.
 
 Alternatively, you can supply a single :code:`__iter__` that returns a Range.
+
+
+Inheritance
+-----------
+Wrapped classes can be extended in python and the resulting instances can be 
+passed back to D. By default, `class_wrap` ensures these instances behave as 
+expected with regard to member overrides. This functionality comes at the cost 
+of being able to wrap `pure`, `trusted`, `safe`, and `nothrow` methods. If this 
+is not desired, it can be turned off by passing `NoInherit` to class_wrap.

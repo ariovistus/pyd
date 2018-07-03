@@ -26,6 +26,7 @@ SOFTWARE.
 module pyd.struct_wrap;
 
 import std.traits;
+import std.typetuple;
 import deimos.python.Python;
 
 import util.typeinfo;
@@ -38,9 +39,7 @@ import pyd.make_object;
 // It is intended that all of these templates accept a pointer-to-struct type
 // as a template parameter, rather than the struct type itself.
 
-template wrapped_member(T, string name, string mode, PropertyParts...) {
-    import std.algorithm: countUntil;
-
+template wrapped_member(T, string name, alias mode, PropertyParts...) {
     alias PydTypeObject!(T) type;
     alias wrapped_class_object!(T) obj;
     static if(PropertyParts.length != 0) {
@@ -55,7 +54,8 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
         alias T GT;
         mixin("alias typeof(T."~name~") M;");
     }
-    static if(countUntil(mode, "r") != -1) {
+
+    static if(mode.has_get) {
         static if(PropertyParts.length != 0) {
         }
         extern(C)
@@ -67,7 +67,7 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
         }
     }
 
-    static if(countUntil(mode, "w") != -1) {
+    static if(mode.has_set) {
         extern(C)
         int set(PyObject* self, PyObject* value, void* closure) {
             return exception_catcher(delegate int() {
@@ -92,29 +92,12 @@ are "r", "w", "rw". Defaults to "rw".
 docstring = The function's docstring. Defaults to "".
 */
 struct Member(string name, Options...) {
+    enum template_name = "Member";
+    
     alias Args!("","", name, "rw",Options) args;
-    mixin _Member!(name, args.pyname, args.mode, args.docstring);
-}
-
-template _Member(string realname, string pyname, string mode, string docstring, parts...) {
-    static const bool needs_shim = false;
-    static void call(string classname, T) () {
-        import std.algorithm: countUntil;
-
-        static PyGetSetDef empty = {null, null, null, null, null};
-        alias wrapped_prop_list!(T) list;
-        list[$-1].name = (pyname ~ "\0").dup.ptr;
-        static if(countUntil(mode, "r") != -1) {
-            list[$-1].get = &wrapped_member!(T, realname, mode, parts).get;
-        }
-        static if(countUntil(mode, "w") != -1) {
-            list[$-1].set = &wrapped_member!(T, realname, mode, parts).set;
-        }
-        list[$-1].doc = (docstring~"\0").dup.ptr;
-        list[$-1].closure = null;
-        list ~= empty;
-        PydTypeObject!(T).tp_getset = list.ptr;
-    }
+    enum realname = name;
+    alias parts = TypeTuple!();
+    enum mode = PropertyMode(true, true);
 }
 
 /// Wrap a struct.

@@ -37,6 +37,7 @@ import std.array;
 import std.algorithm;
 import std.complex;
 import std.typetuple;
+import std.exception;
 import std.bigint;
 import std.datetime;
 import std.traits;
