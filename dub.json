@@ -181,7 +181,7 @@
 				"python37"
 			],
 			"libs-posix": [
-				"python3.6m"
+				"python3.7m"
 			],
 			"lflags-windows-x86_64": [
 			    "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs",
@@ -204,6 +204,7 @@
 				"Python_3_4_Or_Later",
 				"Python_3_5_Or_Later",
 				"Python_3_6_Or_Later"
+				"Python_3_7_Or_Later"
 			]
 		}
 	],
