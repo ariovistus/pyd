@@ -210,6 +210,7 @@ install:
 
 script: 
     - python3 runtests.py --compiler=$DC $TEST
+    - dub test
 
 jobs:
     include:
