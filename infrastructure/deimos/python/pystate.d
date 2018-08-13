@@ -236,7 +236,16 @@ PyObject_BorrowedRef* PyThreadState_GetDict();
 /// _
 int PyThreadState_SetAsyncExc(C_long, PyObject*);
 
-version(Python_3_0_Or_Later) {
+version(Python_3_7_Or_Later) {
+    ///
+    mixin(PyAPI_DATA!"PyThreadState* _PyThreadState_UncheckedGet");
+
+    ///
+    auto PyThreadState_GET()() {
+        return _PyThreadState_UncheckedGet;
+    }
+
+} else version(Python_3_0_Or_Later) {
     /// _
     mixin(PyAPI_DATA!"_Py_atomic_address _PyThreadState_Current");
 
@@ -245,7 +254,7 @@ version(Python_3_0_Or_Later) {
         return cast(PyThreadState*)
                 _Py_atomic_load_relaxed(&_PyThreadState_Current);
     }
-}else{
+} else {
     /// _
     mixin(PyAPI_DATA!"PyThreadState* _PyThreadState_Current");
 
