@@ -214,17 +214,22 @@ struct PyDateTime_CAPI {
     /// ditto
     PyTypeObject* TZInfoType;
 
+    version(Python_3_7_Or_Later)
+        PyObject* TimeZone_UTC;
+
     /** constructors */
     PyObject* function(int, int, int, PyTypeObject*) Date_FromDate;
     /// ditto
     PyObject* function(int, int, int, int, int, int, int,
-            PyObject*, PyTypeObject*) 
+            PyObject*, PyTypeObject*)
         DateTime_FromDateAndTime;
     /// ditto
-    PyObject* function(int, int, int, int, PyObject*, PyTypeObject*) 
+    PyObject* function(int, int, int, int, PyObject*, PyTypeObject*)
         Time_FromTime;
     /// ditto
     PyObject* function(int, int, int, int, PyTypeObject*) Delta_FromDelta;
+    /// ditto
+    version(Python_3_7_Or_Later) PyObject* function(PyObject *offset, PyObject *name) TimeZone_FromTimeZone;
 
     /** constructors for the DB API */
     PyObject* function(PyObject*, PyObject*, PyObject*) DateTime_FromTimestamp;
@@ -232,10 +237,10 @@ struct PyDateTime_CAPI {
     PyObject* function(PyObject*, PyObject*) Date_FromTimestamp;
 
     version(Python_3_6_Or_Later) {
-        PyObject* function(int, int, int, int, int, int, int, PyObject*, int, PyTypeObject*) 
+        PyObject* function(int, int, int, int, int, int, int, PyObject*, int, PyTypeObject*)
             DateTime_FromDateAndTimeAndFold;
 
-        PyObject* function(int, int, int, int, PyObject*, int, PyTypeObject*) 
+        PyObject* function(int, int, int, int, PyObject*, int, PyTypeObject*)
             Time_FromTimeAndFold;
     }
 }
@@ -312,18 +317,18 @@ PyObject* PyDate_FromDate()(int year, int month, int day) {
 PyObject* PyDateTime_FromDateAndTime()(
         int year, int month, int day, int hour, int min, int sec, int usec) {
     return PyDateTimeAPI.DateTime_FromDateAndTime(
-            year, month, day, hour, min, sec, usec, 
+            year, month, day, hour, min, sec, usec,
             cast(PyObject*) Py_None(), PyDateTimeAPI.DateTimeType);
 }
 
 version(Python_3_6_Or_Later) {
     /// _
     PyObject* PyDateTime_FromDateAndTimeAndFold()(
-            int year, int month, int day, int hour, int min, int sec, 
+            int year, int month, int day, int hour, int min, int sec,
             int usec, int fold) {
         return PyDateTimeAPI.DateTime_FromDateAndTimeAndFold(
                 year, month, day, hour,
-                min, sec, usec, cast(PyObject*) Py_None(), fold, 
+                min, sec, usec, cast(PyObject*) Py_None(), fold,
                 PyDateTimeAPI.DateTimeType);
     }
 }
@@ -357,5 +362,3 @@ PyObject* PyDate_FromTimestamp()(PyObject* args) {
     return PyDateTimeAPI.Date_FromTimestamp(
             cast(PyObject*) (PyDateTimeAPI.DateType), args);
 }
-
-
