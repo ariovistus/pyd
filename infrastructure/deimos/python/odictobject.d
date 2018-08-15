@@ -30,7 +30,11 @@ version(Python_3_5_Or_Later) {
     // D translation of C macro:
     /// _
     int PyODict_SIZE()(PyObject* op) {
-        return (cast(PyDictObject*)op).ma_used;
+        version(Python_3_7_Or_Later) {
+            return PyDict_GET_SIZE(op);
+        }else{
+            return (cast(PyDictObject*)op).ma_used;
+        }
     }
 
     // D translation of C macro:

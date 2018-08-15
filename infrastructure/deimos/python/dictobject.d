@@ -191,6 +191,11 @@ Py_ssize_t PyDict_Size(PyObject* mp);
 PyObject* PyDict_Copy(PyObject* mp);
 /// _
 int PyDict_Contains(PyObject* mp, PyObject* key);
+version(Python_3_7_Or_Later) {
+    Py_ssize_t PyDict_GET_SIZE()(PyObject* mp) {
+        return (cast(PyDictObject*)mp).ma_used;
+    }
+}
 version(Python_2_5_Or_Later) {
     /// Availability: >= 2.5
     int _PyDict_Contains(PyObject* mp, PyObject* key, Py_hash_t* hash);

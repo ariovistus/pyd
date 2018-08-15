@@ -47,6 +47,12 @@ struct PyCodeObject {
     /** tuple of strings (cell variable names) */
     PyObject* co_cellvars;
 
+    version(Python_3_7_Or_Later) {
+        Py_ssize_t *co_cell2arg;
+    }else version(Python_3_3_Or_Later) {
+        ubyte *co_cell2arg;
+    }
+
     /** string (where it was loaded from) */
     PyObject* co_filename;
     /** string (name, for reference) */
@@ -125,6 +131,17 @@ version(Python_3_2_Or_Later) {
 version(Python_3_5_Or_Later) {
     /// Availability: 3.5
     enum CO_FUTURE_GENERATOR_STOP =  0x80000;
+}
+
+version(Python_3_5_Or_Later) {
+    /// Availability: 3.7
+    enum CO_FUTURE_ANNOTATIONS =  0x100000;
+}
+
+version(Python_3_7_Or_Later) {
+    enum CO_CELL_NOT_AN_ARG = -1;
+}else version(Python_3_2_Or_Later) {
+    enum CO_CELL_NOT_AN_ARG = 255;
 }
 
 /** Max static block nesting within a function */

@@ -55,9 +55,9 @@ PyObject* PyObject_Type(PyObject* o);
 //-//////////////////////////////////////////////////////////////////////////
 
 /// _
-Py_ssize_t PyObject_Size(PyObject* o);
+Py_ssize_t PyObject_Length(PyObject* o);
 /// _
-alias PyObject_Size PyObject_Length;
+alias PyObject_Length PyObject_Size;
 
 /** The length hint function returns a non-negative value from o.__len__()
    or o.__length_hint__().  If those methods aren't found or return a negative
@@ -415,8 +415,6 @@ PyObject** PySequence_Fast_ITEMS()(PyObject* sf) {
 /// _
 Py_ssize_t PySequence_Count(PyObject* o, PyObject* value);
 /// _
-int PySequence_Contains(PyObject* seq, PyObject* ob);
-/// _
 enum PY_ITERSEARCH_COUNT    = 1;
 /// _
 enum PY_ITERSEARCH_INDEX    = 2;
@@ -424,8 +422,11 @@ enum PY_ITERSEARCH_INDEX    = 2;
 enum PY_ITERSEARCH_CONTAINS = 3;
 /// _
 Py_ssize_t _PySequence_IterSearch(PyObject* seq, PyObject* obj, int operation);
+
 /// _
-alias PySequence_Contains PySequence_In;
+int PySequence_In(PyObject* o, PyObject* value);
+/// _
+alias PySequence_In PySequence_Contains;
 /// _
 Py_ssize_t PySequence_Index(PyObject* o, PyObject* value);
 /// _
@@ -439,9 +440,9 @@ PyObject*  PySequence_InPlaceRepeat(PyObject* o, Py_ssize_t count);
 /// _
 int PyMapping_Check(PyObject* o);
 /// _
-Py_ssize_t PyMapping_Size(PyObject* o);
+Py_ssize_t PyMapping_Length(PyObject* o);
 /// _
-alias PyMapping_Size PyMapping_Length;
+alias PyMapping_Length PyMapping_Size;
 
 // D translations of C macros:
 /// _

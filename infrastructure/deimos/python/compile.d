@@ -7,12 +7,30 @@ import deimos.python.code;
 import deimos.python.node;
 import deimos.python.pythonrun;
 import deimos.python.pyarena;
+import deimos.python.code;
 
 extern(C):
 // Python-header-file: Include/compile.h:
 
 /// _
 PyCodeObject* PyNode_Compile(node*, const(char)*);
+
+version(Python_3_7_Or_Later) {
+    enum PyCF_MASK =
+               CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | 
+               CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | 
+               CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | 
+               CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS;
+    enum PyCF_MASK_OBSOLETE = CO_NESTED;
+    enum PyCF_SOURCE_IS_UTF8 = 0x100;
+    enum PyCF_DONT_IMPLY_DEDENT = 0x200;
+    enum PyCF_ONLY_AST = 0x400;
+    enum PyCF_IGNORE_COOKIE = 0x800;
+
+    struct PyCompilerFlags {
+        int cf_flags;
+    }
+}
 
 /// _
 struct PyFutureFeatures {
@@ -93,4 +111,8 @@ filename = decoded from the filesystem encoding
 
 version(Python_3_5_Or_Later) {
     enum FUTURE_GENERATOR_STOP = "generator_stop";
+}
+
+version(Python_3_7_Or_Later) {
+    enum FUTURE_ANNOTATIONS = "annotations";
 }
