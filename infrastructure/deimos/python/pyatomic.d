@@ -4,6 +4,7 @@
   Note this is python 3 only
   (and very probably doesn't work period)
   */
+// todo: 3.7 update
 module deimos.python.pyatomic;
 
 /* This is modeled after the atomics interface from C1x, according to

@@ -130,6 +130,11 @@ version(Python_3_6_Or_Later) {
     mixin(PyAPI_DATA!"const(char)* Py_FileSystemDefaultEncodeError");
 }
 
+version(Python_3_7_Or_Later) {
+    /// _
+    mixin(PyAPI_DATA!"int Py_UTF8Mode");
+}
+
 /// _
 enum PY_STDIOTEXTMODE = "b";
 

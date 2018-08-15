@@ -21,7 +21,9 @@ import deimos.python.symtable;
 extern(C):
 // Python-header-file: Include/pythonrun.h:
 
-version(Python_3_2_Or_Later) {
+version(Python_3_7_Or_Later){
+    // moved to compile.d
+}else version(Python_3_2_Or_Later) {
     /// _
     enum PyCF_MASK = (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT |
             CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION |
@@ -40,25 +42,31 @@ version(Python_3_2_Or_Later) {
     enum PyCF_MASK = CO_FUTURE_DIVISION;
 }
 
-/// _
-enum PyCF_SOURCE_IS_UTF8 =  0x0100;
-/// _
-enum PyCF_DONT_IMPLY_DEDENT = 0x0200;
-
-version(Python_2_5_Or_Later) {
-    /// Availability: >= 2.5
-    enum PyCF_ONLY_AST = 0x0400;
-}
-version(Python_3_2_Or_Later) {
-    /// Availability: >= 3.2
-    enum PyCF_IGNORE_COOKIE = 0x0800;
-}
-
-/// _
-struct PyCompilerFlags {
+version(Python_3_7_Or_Later) {
+    // moved to compile.d
+    import deimos.python.compile;
+}else{
     /// _
-    int cf_flags;
+    enum PyCF_SOURCE_IS_UTF8 =  0x0100;
+    /// _
+    enum PyCF_DONT_IMPLY_DEDENT = 0x0200;
+
+    version(Python_2_5_Or_Later) {
+        /// Availability: >= 2.5
+        enum PyCF_ONLY_AST = 0x0400;
+    }
+    version(Python_3_2_Or_Later) {
+        /// Availability: >= 3.2
+        enum PyCF_IGNORE_COOKIE = 0x0800;
+    }
+
+    /// _
+    struct PyCompilerFlags {
+        /// _
+        int cf_flags;
+    }
 }
+
 
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2

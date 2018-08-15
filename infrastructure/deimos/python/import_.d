@@ -40,6 +40,11 @@ cpathname = decoded from the filesystem encoding
 }
 /// _
 PyObject* PyImport_GetModuleDict();
+
+version(Python_3_7_Or_Later) {
+    PyObject* PyImport_GetModule(PyObject* name);
+}
+
 /// _
 PyObject* PyImport_AddModule(const(char)* name);
 /// _
@@ -84,10 +89,18 @@ version(Python_3_0_Or_Later) {
 Params:
 name = UTF-8 encoded string
 */
-    /// Availability: 3.*
-    PyObject* _PyImport_FindBuiltin(
-            char* name
-            );
+    version(Python_3_7_Or_Later) {
+        /// Availability: 3.*
+        PyObject* _PyImport_FindBuiltin(
+                char* name,
+                PyObject* modules
+                );
+    }else{
+        /// Availability: 3.*
+        PyObject* _PyImport_FindBuiltin(
+                char* name
+                );
+    }
     /// Availability: 3.*
     PyObject* _PyImport_FindExtensionUnicode(char*, PyObject*);
     /**
@@ -95,11 +108,20 @@ Params:
 mod =
 name = UTF-8 encoded string
 */
-    /// Availability: 3.*
-    int _PyImport_FixupBuiltin(
+    version(Python_3_7_Or_Later) {
+        /// Availability: 3.*
+        int _PyImport_FixupBuiltin(
+            PyObject* mod,
+            char* name,
+            PyObject* modules
+            );
+    }else{
+        /// Availability: 3.*
+        int _PyImport_FixupBuiltin(
             PyObject* mod,
             char* name
             );
+    }
     /// Availability: 3.*
     int _PyImport_FixupExtensionUnicode(PyObject*, char*, PyObject*);
 }else {
