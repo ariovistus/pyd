@@ -81,3 +81,6 @@ build_script:
 test_script:
     - ps: . "$env:MYPYTHONPATH\python.exe" runtests.py --compiler=$env:DC "$env:TEST"
     - ps: echo "$? $lastExitCode"
+    - cmd: dub test
+    - cmd: set_env_vars.bat
+    - cmd: dub test -c env
