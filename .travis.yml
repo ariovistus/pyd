@@ -211,6 +211,7 @@ install:
 script: 
     - python3 runtests.py --compiler=$DC $TEST
     - dub test
+    - source set_env_vars.sh python3 && dub test -c env
 
 jobs:
     include:

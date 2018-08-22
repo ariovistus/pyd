@@ -7,6 +7,13 @@
 
 PyD provides seamless interoperability between Python and the D programming language.
 
+# Usage
+
+To use with dub, either specify the relevant subConfiguration, or run
+`source set_env_vars.sh <your python>` on linux or
+`set_env_vars.bat <your python>` on windows to set the relevant environment variables
+and use the `env` subConfiguration
+
 # Requirements
 
 ## Python

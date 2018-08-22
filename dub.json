@@ -200,6 +200,33 @@
 				"Python_3_6_Or_Later",
 				"Python_3_7_Or_Later"
 			]
+		},
+		{
+			"name": "env",
+			"versions": [
+				"$PYD_D_VERSION_1",
+				"$PYD_D_VERSION_2",
+				"$PYD_D_VERSION_3",
+				"$PYD_D_VERSION_4",
+				"$PYD_D_VERSION_5",
+				"$PYD_D_VERSION_6",
+				"$PYD_D_VERSION_7",
+				"$PYD_D_VERSION_8",
+				"$PYD_D_VERSION_9",
+				"$PYD_D_VERSION_10",
+				"$PYD_D_VERSION_11",
+				"$PYD_D_VERSION_12",
+				"$PYD_D_VERSION_13",
+			],
+			"lflags-posix": [
+				"-L$PYD_LIBPYTHON_DIR"
+			],
+			"lflags-windows": [
+				"/LIBPATH:$PYD_LIBPYTHON_DIR"
+			],
+			"libs": [
+				"$PYD_LIBPYTHON"
+			]
 		}
 	],
 	"importPaths": [
