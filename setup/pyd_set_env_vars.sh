@@ -15,4 +15,4 @@ else
 	PYD_PYTHON=$1
 fi
 
-eval $($PYD_PYTHON $THISDIR/get_env_set_text.py)
+eval $($PYD_PYTHON $THISDIR/pyd_get_env_set_text.py)

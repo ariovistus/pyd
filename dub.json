@@ -229,6 +229,7 @@
 			]
 		}
 	],
+	"subPackages": ["setup"],
 	"importPaths": [
 		"infrastructure/"
 	],
