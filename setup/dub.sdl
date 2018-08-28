@@ -1,0 +1,6 @@
+name "setup"
+description "Copy the environment setup files to the calling directory"
+mainSourceFile "copyFiles.d"
+targetType "executable"
+stringImportPaths "."
+targetName "dump_files"
