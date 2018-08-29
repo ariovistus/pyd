@@ -18,6 +18,7 @@ Contents:
    functions
    classes
    pydobject
+   dub
    exception
    authors
 

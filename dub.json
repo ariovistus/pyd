@@ -5,7 +5,6 @@
 	"configurations": [
 		{
 			"name": "python27",
-			"targetType": "sourceLibrary",
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python27_digitalmars"
 			],
@@ -33,7 +32,6 @@
 		},
 		{
 			"name": "python33",
-			"targetType": "sourceLibrary",
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python33_digitalmars"
 			],
@@ -65,7 +63,6 @@
 		},
 		{
 			"name": "python34",
-			"targetType": "sourceLibrary",
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python34_digitalmars"
 			],
@@ -98,7 +95,6 @@
 		},
 		{
 			"name": "python35",
-			"targetType": "sourceLibrary",
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python35_digitalmars"
 			],
@@ -132,7 +128,6 @@
 		},
 		{
 			"name": "python36",
-			"targetType": "sourceLibrary",
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python36_digitalmars"
 			],
@@ -170,7 +165,6 @@
 		},
 		{
 			"name": "python37",
-			"targetType": "sourceLibrary",
 			"libs-windows-x86-dmd": [
 				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python37_digitalmars"
 			],
@@ -206,8 +200,36 @@
 				"Python_3_6_Or_Later",
 				"Python_3_7_Or_Later"
 			]
+		},
+		{
+			"name": "env",
+			"versions": [
+				"$PYD_D_VERSION_1",
+				"$PYD_D_VERSION_2",
+				"$PYD_D_VERSION_3",
+				"$PYD_D_VERSION_4",
+				"$PYD_D_VERSION_5",
+				"$PYD_D_VERSION_6",
+				"$PYD_D_VERSION_7",
+				"$PYD_D_VERSION_8",
+				"$PYD_D_VERSION_9",
+				"$PYD_D_VERSION_10",
+				"$PYD_D_VERSION_11",
+				"$PYD_D_VERSION_12",
+				"$PYD_D_VERSION_13",
+			],
+			"lflags-posix": [
+				"-L$PYD_LIBPYTHON_DIR"
+			],
+			"lflags-windows": [
+				"/LIBPATH:$PYD_LIBPYTHON_DIR"
+			],
+			"libs": [
+				"$PYD_LIBPYTHON"
+			]
 		}
 	],
+	"subPackages": ["setup"],
 	"importPaths": [
 		"infrastructure/"
 	],
@@ -215,7 +237,7 @@
 	"versions-osx": [
 		"Python_Unicode_UCS2"
 	],
-	"targetType": "sourceLibrary",
+	"targetType": "library",
 	"license": "MIT",
 	"version": "~master",
 	"versions-linux": [
