@@ -22,6 +22,7 @@ version(Python_2_4_Or_Later) {
     public import deimos.python.codecs;
     public import deimos.python.compile;
     public import deimos.python.complexobject;
+    public import deimos.python.context;
     public import deimos.python.cStringIO;
     public import deimos.python.datetime;
     public import deimos.python.descrobject;

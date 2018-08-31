@@ -22,6 +22,11 @@ version(Python_3_2_Or_Later) {
     }
 }
 
+version(Python_3_7_Or_Later) {
+    /// _
+    enum PYTHREAD_INVALID_THREAD_ID = -1;
+}
+
 /// _
 alias void* PyThread_type_lock;
 /// _
@@ -29,14 +34,24 @@ alias void* PyThread_type_sema;
 
 /// _
 void PyThread_init_thread();
-/// _
-C_long PyThread_start_new_thread(void function(void*), void*);
+version(Python_3_7_Or_Later) {
+    /// _
+    C_ulong PyThread_start_new_thread(void function(void*), void*);
+}else{
+    /// _
+    C_long PyThread_start_new_thread(void function(void*), void*);
+}
 /// _
 void PyThread_exit_thread();
 /// _
 void PyThread__PyThread_exit_thread();
-/// _
-C_long PyThread_get_thread_ident();
+version(Python_3_7_Or_Later) {
+    /// _
+    C_ulong PyThread_get_thread_ident();
+}else{
+    /// _
+    C_long PyThread_get_thread_ident();
+}
 
 /// _
 PyThread_type_lock PyThread_allocate_lock();
@@ -121,3 +136,28 @@ version(Python_2_5_Or_Later) {
     void PyThread_ReInitTLS();
 }
 
+version(Python_3_7_Or_Later) {
+    version(Posix) {
+        import core.sys.posix.pthread;
+
+        alias pthread_key_t NATIVE_TSS_KEY_T;
+    }else {
+        alias C_ulong NATIVE_TSS_KEY_T;
+    }
+
+    struct Py_tss_t {
+        int _is_initialized;
+        NATIVE_TSS_KEY_T _key;
+    }
+
+    enum Py_tss_NEEDS_INIT = 0;
+
+    Py_tss_t* PyThread_tss_alloc();
+    void PyThread_tss_free(Py_tss_t* key);
+
+    int PyThread_tss_is_created(Py_tss_t* key);
+    int PyThread_tss_create(Py_tss_t* key);
+    void PyThread_tss_delete(Py_tss_t* key);
+    int PyThread_tss_set(Py_tss_t* key, void* value);
+    void* PyThread_tss_get(Py_tss_t* key);
+}

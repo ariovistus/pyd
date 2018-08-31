@@ -23,8 +23,13 @@ mixin(PyAPI_DATA!"int Py_InteractiveFlag");
 mixin(PyAPI_DATA!"int Py_OptimizeFlag");
 /// _
 mixin(PyAPI_DATA!"int Py_NoSiteFlag");
-/// _
-mixin(PyAPI_DATA!"int Py_UseClassExceptionsFlag");
+
+version(Python_3_7_Or_Later) {
+}else{
+    /// _
+    mixin(PyAPI_DATA!"int Py_UseClassExceptionsFlag");
+}
+
 /// _
 mixin(PyAPI_DATA!"int Py_FrozenFlag");
 version(Python_3_0_Or_Later) {
@@ -72,8 +77,11 @@ version(Python_3_4_Or_Later) {
     mixin(PyAPI_DATA!"int Py_IsolatedFlag");
 }
 
-version(Python_3_6_Or_Later) {
-    version(Windows) {
+version(Windows) {
+    version(Python_3_7_Or_Later) {
+        mixin(PyAPI_DATA!"int Py_LegacyWindowsFSEncodingFlag");
+    }
+    version(Python_3_6_Or_Later) {
         mixin(PyAPI_DATA!"int Py_LegacyWindowsStdioFlag");
     }
 }

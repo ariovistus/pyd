@@ -44,20 +44,31 @@ struct PyFrameObject {
     PyObject** f_stacktop;
     /** Trace function */
     PyObject* f_trace;
-    /** If an exception is raised in this frame, the next three are used to
-     * record the exception info (if any) originally in the thread state.  See
-     * comments before set_exc_info() -- it's not obvious.
-     * Invariant:  if _type is NULL, then so are _value and _traceback.
-     * Desired invariant:  all three are NULL, or all three are non-NULL.  That
-     * one isn't currently true, but "should be".
-     */
-    PyObject* f_exc_type;
-    /// _
-    PyObject* f_exc_value;
-    /// _
-    PyObject* f_exc_traceback;
-    /// _
-    PyThreadState* f_tstate;
+
+    char f_trace_lines;
+    char f_trace_opcodes;
+    version(Python_3_7_Or_Later) {
+    }else {
+        /** If an exception is raised in this frame, the next three are used to
+         * record the exception info (if any) originally in the thread state.  See
+         * comments before set_exc_info() -- it's not obvious.
+         * Invariant:  if _type is NULL, then so are _value and _traceback.
+         * Desired invariant:  all three are NULL, or all three are non-NULL.  That
+         * one isn't currently true, but "should be".
+         */
+        PyObject* f_exc_type;
+        /// _
+        PyObject* f_exc_value;
+        /// _
+        PyObject* f_exc_traceback;
+    }
+    version(Python_3_4_Or_Later) {
+        /// _
+        PyObject* f_gen;
+    }else{
+        /// _
+        PyThreadState* f_tstate;
+    }
     /** Last instruction if called */
     int f_lasti;
     /** Call PyFrame_GetLineNumber() instead of reading this field
@@ -76,6 +87,9 @@ struct PyFrameObject {
     }
     /** index in f_blockstack */
     int f_iblock;
+    version(Python_3_4_Or_Later) {
+        char f_executing;
+    }
     /** for try and loop blocks */
     PyTryBlock[CO_MAXBLOCKS] f_blockstack;
     version(Python_2_5_Or_Later){

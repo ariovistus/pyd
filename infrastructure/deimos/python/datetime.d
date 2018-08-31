@@ -214,8 +214,9 @@ struct PyDateTime_CAPI {
     /// ditto
     PyTypeObject* TZInfoType;
 
-    version(Python_3_7_Or_Later)
+    version(Python_3_7_Or_Later) {
         PyObject* TimeZone_UTC;
+    }
 
     /** constructors */
     PyObject* function(int, int, int, PyTypeObject*) Date_FromDate;
@@ -229,7 +230,9 @@ struct PyDateTime_CAPI {
     /// ditto
     PyObject* function(int, int, int, int, PyTypeObject*) Delta_FromDelta;
     /// ditto
-    version(Python_3_7_Or_Later) PyObject* function(PyObject *offset, PyObject *name) TimeZone_FromTimeZone;
+    version(Python_3_7_Or_Later) {
+        PyObject* function(PyObject *offset, PyObject *name) TimeZone_FromTimeZone;
+    }
 
     /** constructors for the DB API */
     PyObject* function(PyObject*, PyObject*, PyObject*) DateTime_FromTimestamp;
@@ -268,6 +271,12 @@ PyDateTime_CAPI* PyDateTime_IMPORT()() {
 }
 
 // D translations of C macros:
+version(Python_3_7_Or_Later) {
+    /// _
+    PyObject* PyDateTime_TimeZone_UTC()() {
+        return PyDateTimeAPI.TimeZone_UTC;
+    }
+}
 /// _
 int PyDate_Check()(PyObject* op) {
     return PyObject_TypeCheck(op, PyDateTimeAPI.DateType);
@@ -351,6 +360,17 @@ version(Python_3_6_Or_Later) {
 PyObject* PyDelta_FromDSU()(int days, int seconds, int useconds) {
     return PyDateTimeAPI.Delta_FromDelta(days, seconds, useconds, 1,
             PyDateTimeAPI.DeltaType);
+}
+version(Python_3_7_Or_Later) {
+    /// _
+    PyObject* PyTimeZone_FromOffset()(PyObject* offset) { 
+        return PyDateTimeAPI.TimeZone_FromTimeZone(offset, null);
+    }
+
+    /// _
+    PyObject* PyTimeZone_FromOffsetAndName()(PyObject* offset, PyObject* name) { 
+        return PyDateTimeAPI.TimeZone_FromTimeZone(offset, name);
+    }
 }
 /// _
 PyObject* PyDateTime_FromTimestamp()(PyObject* args) {

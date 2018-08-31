@@ -8,6 +8,7 @@ import deimos.python.object;
 import deimos.python.frameobject;
 import deimos.python.pystate;
 import deimos.python.pythonrun;
+import deimos.python.compile;
 
 extern(C):
 // Python-header-file: Include/ceval.h:
@@ -145,8 +146,12 @@ version(Python_3_0_Or_Later) {
 const(char)* PyEval_GetFuncName(PyObject*);
 /// _
 const(char)* PyEval_GetFuncDesc(PyObject*);
-/// _
-PyObject* PyEval_GetCallStats(PyObject*);
+
+version(Python_3_7_Or_Later) {
+}else{
+    /// _
+    PyObject* PyEval_GetCallStats(PyObject*);
+}
 /// _
 PyObject* PyEval_EvalFrame(PyFrameObject*);
 version(Python_2_5_Or_Later){

@@ -10,6 +10,7 @@ import deimos.python.object;
 import deimos.python.frameobject;
 import deimos.python.pyatomic;
 import deimos.python.moduleobject;
+import deimos.python.pythread;
 
 extern(C):
 // Python-header-file: Include/pystate.h:
@@ -20,6 +21,85 @@ version(Python_3_5_Or_Later) {
     alias PyObject* function(PyFrameObject*, int) _PyFrameEvalFunction;
 }
 
+version(Python_3_7_Or_Later) {
+    struct _PyCoreConfig {
+        int install_signal_handlers;  /* Install signal handlers? -1 means unset */
+
+        int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
+        int use_hash_seed;      /* PYTHONHASHSEED=x */
+        C_long hash_seed;
+        char* allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+        int dev_mode;           /* PYTHONDEVMODE, -X dev */
+        int faulthandler;       /* PYTHONFAULTHANDLER, -X faulthandler */
+        int tracemalloc;        /* PYTHONTRACEMALLOC, -X tracemalloc=N */
+        int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
+        int show_ref_count;     /* -X showrefcount */
+        int show_alloc_count;   /* -X showalloccount */
+        int dump_refs;          /* PYTHONDUMPREFS */
+        int malloc_stats;       /* PYTHONMALLOCSTATS */
+        int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+        int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+        int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
+
+        wchar* program_name;  /* Program name, see also Py_GetProgramName() */
+        int argc;               /* Number of command line arguments,
+                                   -1 means unset */
+        wchar** argv;         /* Command line arguments */
+        wchar* program;       /* argv[0] or "" */
+
+        int nxoption;           /* Number of -X options */
+        wchar** xoptions;     /* -X options */
+
+        int nwarnoption;        /* Number of warnings options */
+        wchar** warnoptions;  /* Warnings options */
+
+        /* Path configuration inputs */
+        wchar* module_search_path_env; /* PYTHONPATH environment variable */
+        wchar* home;          /* PYTHONHOME environment variable,
+                                   see also Py_SetPythonHome(). */
+        /* Path configuration outputs */
+        int nmodule_search_path;        /* Number of sys.path paths,
+                                           -1 means unset */
+        wchar** module_search_paths;  /* sys.path paths */
+        wchar* executable;    /* sys.executable */
+        wchar* prefix;        /* sys.prefix */
+        wchar* base_prefix;   /* sys.base_prefix */
+        wchar* exec_prefix;   /* sys.exec_prefix */
+        wchar* base_exec_prefix;  /* sys.base_exec_prefix */
+
+        /* Private fields */
+        int _disable_importlib; /* Needed by freeze_importlib */
+    }
+
+    struct _PyMainInterpreterConfig{
+        int install_signal_handlers;   /* Install signal handlers? -1 means unset */
+        PyObject* argv;                /* sys.argv list, can be NULL */
+        PyObject* executable;          /* sys.executable str */
+        PyObject* prefix;              /* sys.prefix str */
+        PyObject* base_prefix;         /* sys.base_prefix str, can be NULL */
+        PyObject* exec_prefix;         /* sys.exec_prefix str */
+        PyObject* base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+        PyObject* warnoptions;         /* sys.warnoptions list, can be NULL */
+        PyObject* xoptions;            /* sys._xoptions dict, can be NULL */
+        PyObject* module_search_path;  /* sys.path list */
+    }
+
+    struct _PyErr_StackItem{
+        /* This struct represents an entry on the exception stack, which is a
+         * per-coroutine state. (Coroutine in the computer science sense,
+         * including the thread and generators).
+         * This ensures that the exception state is not impacted by "yields"
+         * from an except handler.
+         */
+        PyObject* exc_type; 
+        PyObject* exc_value; 
+        PyObject* exc_traceback;
+
+        _PyErr_StackItem* previous_item;
+
+    }
+}
+
 /// _
 struct PyInterpreterState {
     /// _
@@ -27,6 +107,11 @@ struct PyInterpreterState {
     /// _
     PyThreadState* tstate_head;
 
+    version(Python_3_7_Or_Later) {
+        long id;
+        long id_refcount;
+        PyThread_type_lock id_mutex;
+    }
     /// _
     PyObject* modules;
     version(Python_3_0_Or_Later) {
@@ -37,6 +122,17 @@ struct PyInterpreterState {
     PyObject* sysdict;
     /// _
     PyObject* builtins;
+
+    version(Python_3_3_Or_Later) {
+        /// _
+        PyObject* importlib;
+    }
+    version(Python_3_7_Or_Later) {
+        /// _
+        int check_interval;
+        C_long num_threads;
+        size_t pythread_stacksize;
+    }
 
     /// _
     PyObject* codec_search_path;
@@ -49,6 +145,11 @@ struct PyInterpreterState {
         int codecs_initialized;
         /// Availability: 3.*
         int fscodec_initialized;
+    }
+
+    version(Python_3_7_Or_Later) {
+        _PyCoreConfig core_config;
+        _PyMainInterpreterConfig config;
     }
 
     /// _
@@ -68,6 +169,23 @@ struct PyInterpreterState {
 
     version(Python_3_5_Or_Later) {
         _PyFrameEvalFunction eval_frame;
+    }
+
+    version(Python_3_7_Or_Later) {
+        Py_ssize_t co_extra_user_count;
+        freefunc[MAX_CO_EXTRA_USERS] co_extra_freefuncs;
+
+        // ifdef HAVE_FORK
+        PyObject* before_forkers;
+        PyObject* after_forkers_parent;
+        PyObject* after_forkers_child;
+        // end ifdef HAVE_FORK
+
+        void function(PyObject*) pyexitfunc;
+        PyObject* pyexitmodule;
+
+        ulong tstate_next_unique_id;
+
     }
 }
 
@@ -114,6 +232,10 @@ struct PyThreadState {
         /// Availability: 3.*
         ubyte recursion_critical;
     }
+    version(Python_3_7_Or_Later) {
+        /// _
+        int stackcheck_counter;
+    }
     /// _
     int tracing;
     /// _
@@ -135,12 +257,19 @@ struct PyThreadState {
     /// _
     PyObject* curexc_traceback;
 
-    /// _
-    PyObject* exc_type;
-    /// _
-    PyObject* exc_value;
-    /// _
-    PyObject* exc_traceback;
+    version(Python_3_7_Or_Later) {
+        /// _
+        _PyErr_StackItem exc_state;
+        /// _
+        _PyErr_StackItem* exc_info;
+    }else{
+        /// _
+        PyObject* exc_type;
+        /// _
+        PyObject* exc_value;
+        /// _
+        PyObject* exc_traceback;
+    }
 
     /// _
     PyObject* dict;
@@ -176,6 +305,9 @@ struct PyThreadState {
         /// Availability: >= 3.4
         void* on_delete_data;
     }
+    version(Python_3_7_Or_Later) {
+        int coroutine_origin_tracking_depth;
+    }
     version(Python_3_5_Or_Later) {
         /// Availability: >= 3.5
         PyObject* coroutine_wrapper;
@@ -183,10 +315,18 @@ struct PyThreadState {
         int in_coroutine_wrapper;
     }
 
-    version(Python_3_6_Or_Later) {
-        /// Availability: >= 3.6
+    version(Python_3_7_Or_Later) {
+        PyObject* async_gen_firstiter;
+        PyObject* async_gen_finalizer;
+
+        PyObject* context;
+        ulong context_ver;
+
+        ulong id;
+    }else version(Python_3_6_Or_Later) {
+        /// Availability: = 3.6
         Py_ssize_t co_extra_user_count;
-        /// Availability: >= 3.6
+        /// Availability: = 3.6
         freefunc[MAX_CO_EXTRA_USERS] co_extra_freefuncs;
         /// Availability: >= 3.6
         PyObject* async_gen_firstiter;
@@ -236,15 +376,11 @@ PyObject_BorrowedRef* PyThreadState_GetDict();
 /// _
 int PyThreadState_SetAsyncExc(C_long, PyObject*);
 
-version(Python_3_7_Or_Later) {
-    ///
-    mixin(PyAPI_DATA!"PyThreadState* _PyThreadState_UncheckedGet");
-
-    ///
+version(Python_3_3_Or_Later) {
+    /// _
     auto PyThreadState_GET()() {
-        return _PyThreadState_UncheckedGet;
+        return PyThreadState_Get();
     }
-
 } else version(Python_3_0_Or_Later) {
     /// _
     mixin(PyAPI_DATA!"_Py_atomic_address _PyThreadState_Current");
