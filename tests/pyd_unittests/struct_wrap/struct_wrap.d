@@ -1,4 +1,6 @@
 import pyd.pyd, pyd.embedded;
+import deimos.python.Python;
+import std.string;
 
 struct Foo1{
     int i;
@@ -19,6 +21,19 @@ struct Foo2 {
     string[] s;
     dchar[][] d;
     immutable(dchar)[][] d2;
+}
+
+struct Foo3 {
+    int i;
+    Foo4 foo;
+}
+
+struct Foo4 {
+    int j;
+}
+
+struct Foo5 {
+    Foo4 foo;
 }
 
 static this() {
@@ -43,6 +58,22 @@ static this() {
             Member!("d"),
             Member!("d2"),
         )();
+        wrap_struct!(
+            Foo3,
+            ModuleName!"testing",
+            Member!"i",
+            Member!"foo"
+        )();
+        wrap_struct!(
+            Foo4,
+            ModuleName!"testing",
+            Member!"j",
+        )();
+        wrap_struct!(
+            Foo5,
+            ModuleName!"testing",
+            Member!"foo",
+        )();
     }, PyInitOrdering.After);
 
     py_init();
@@ -57,8 +88,66 @@ assert foo1.i == 2
 }
 
 unittest {
-    const(Foo1) fooboo;
-    d_to_python(fooboo);
+    //const(Foo1) fooboo;
+    //d_to_python(fooboo);
+}
+
+unittest {
+    auto context = new InterpContext();
+    Foo3 a;
+    a.i = 1;
+    a.foo.j = 2;
+    context.a = &a;
+    Foo4* x = context.py_eval("a.foo").to_d!(Foo4*)();
+    assert(x == &a.foo);
+    context.py_stmts(q"{
+a.foo.j = 3
+assert a.foo.j == 3
+}","testing");
+}
+
+unittest {
+    auto context = new InterpContext();
+    context.py_stmts(q"{
+    from testing import Foo3
+    a3 = Foo3()
+}","testing");
+    Foo3* x = context.py_eval("a3").to_d!(Foo3*)();
+    Foo4* x4 = context.py_eval("a3.foo").to_d!(Foo4*)();
+    assert(&x.foo == x4);
+}
+
+unittest {
+    auto context = new InterpContext();
+    Foo3 a;
+    a.i = 1;
+    a.foo.j = 2;
+    context.a = a;
+    context.py_stmts(q"{
+a.foo.j = 3
+assert a.foo.j == 3
+}","testing");
+}
+
+unittest {
+    auto context = new InterpContext();
+    Foo5 a;
+    a.foo.j = 2;
+    context.a = &a;
+    Foo4* x4 = context.py_eval("a.foo").to_d!(Foo4*)();
+    assert (x4.j == 2);
+}
+
+
+unittest {
+    Foo5 a;
+    auto x = py(&a);
+
+    // hello weirdness: comment this line out, and the assertion fails
+    // it prints <testing.Foo3 object at xxxxx>
+    Borrowed!PyObject* ptr1 = x.ptr;
+
+    assert (x.toString().startsWith("<testing.Foo5"));
 }
 
 void main(){}

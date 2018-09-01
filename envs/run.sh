@@ -1,1 +1,1 @@
-docker run -v$(pwd)/../:/pyd -it wazoo sh
+docker run -v$(pwd)/../:/pyd -it hazoo bash
