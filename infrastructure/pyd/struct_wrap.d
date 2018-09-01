@@ -55,14 +55,22 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
         alias T GT;
         mixin("alias typeof(T."~name~") M;");
     }
+
     static if(countUntil(mode, "r") != -1) {
-        static if(PropertyParts.length != 0) {
-        }
+
+        enum isStructInStruct = isPointer!GT &&
+            is(PointerTarget!GT == struct) &&
+            is(typeof(mixin("GT.init."~name)) == struct);
+
         extern(C)
             PyObject* get(PyObject* self, void* closure) {
             return exception_catcher(delegate PyObject*() {
                 GT t = get_d_reference!GT(self);
-                mixin("return d_to_python(t."~name~");");
+                static if(isStructInStruct) {
+                    mixin("return d_to_python(&t."~name~");");
+                }else{
+                    mixin("return d_to_python(t."~name~");");
+                }
             });
         }
     }

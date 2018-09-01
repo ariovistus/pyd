@@ -55,7 +55,7 @@ template PydTypeObject(T) {
         alias PydTypeObject!(Mapping.TypeInfoType!T) PydTypeObject;
     }else{
         // The type object, an instance of PyType_Type
-        PyTypeObject PydTypeObject;
+        __gshared PyTypeObject PydTypeObject;
     }
 }
 
@@ -255,9 +255,9 @@ template pyd_references(T) {
 }
 
 void set_pyd_mapping(T) (PyObject* _self, T t) {
-    import std.stdio;
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
+
 
     Mapping mapping = Mapping(t, _self);
     auto py_index = container.python;
