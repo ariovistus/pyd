@@ -83,10 +83,11 @@ version(Python_3_0_Or_Later) {
         PyMethodDef* m_methods;
         version(Python_3_5_Or_Later) {
             /// _
-            PyModuleDef_Slot *m_slots;
+            PyModuleDef_Slot* m_slots;
+        }else{
+            /// _
+            inquiry m_reload;
         }
-        /// _
-        inquiry m_reload;
         /// _
         traverseproc m_traverse;
         /// _

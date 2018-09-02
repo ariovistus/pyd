@@ -165,9 +165,6 @@ struct PyInterpreterState {
     }
     version(Python_3_6_Or_Later) {
         PyObject* import_func;
-    }
-
-    version(Python_3_5_Or_Later) {
         _PyFrameEvalFunction eval_frame;
     }
 

@@ -22,6 +22,10 @@ struct PyCodeObject {
 
     /** #arguments, except *args */
     int co_argcount;
+    version(Python_3_4_Or_Later) {
+        /** #keyword only arguments */
+        int co_kwonlyargcount;	
+    }
     /** #local variables */
     int co_nlocals;
     /** #entries needed for evaluation stack */

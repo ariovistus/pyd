@@ -67,6 +67,12 @@ def build_and_run():
 
 
 @with_setup(setup, teardown)
+def test_compare_offsets():
+    os.chdir("tests")
+    os.chdir("compare_offsets")
+    build_and_run()
+
+@with_setup(setup, teardown)
 def test_hello():
     os.chdir("examples")
     os.chdir("hello")

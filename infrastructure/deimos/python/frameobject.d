@@ -45,8 +45,14 @@ struct PyFrameObject {
     /** Trace function */
     PyObject* f_trace;
 
-    char f_trace_lines;
-    char f_trace_opcodes;
+    version(Python_3_4_Or_Later) {
+    }else{
+        /// Availability < 3.4
+        char f_trace_lines;
+        /// Availability < 3.4
+        char f_trace_opcodes;
+    }
+
     version(Python_3_7_Or_Later) {
     }else {
         /** If an exception is raised in this frame, the next three are used to

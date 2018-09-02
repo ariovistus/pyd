@@ -23,12 +23,24 @@ version(Python_2_6_Or_Later) {
     /// Availability: >= 2.6
     struct PyByteArrayObject {
         mixin PyObject_VAR_HEAD!();
-        /** how many buffer exports */
-        int ob_exports;
-        /** How many bytes allocated */
-        Py_ssize_t ob_alloc;
-        /// _
-        char* ob_bytes;
+        version(Python_3_4_Or_Later) {
+            /// _
+            Py_ssize_t ob_alloc;
+            /// _
+            char* ob_bytes;
+            /// _
+            char* ob_start;
+            /// _
+            int ob_exports;
+        }else{
+            /** how many buffer exports */
+            int ob_exports;
+            /** How many bytes allocated */
+            Py_ssize_t ob_alloc;
+            /// _
+            char* ob_bytes;
+        }
+
     }
 
     /* Type object */

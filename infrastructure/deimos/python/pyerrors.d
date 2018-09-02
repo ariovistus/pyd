@@ -25,6 +25,11 @@ version(Python_3_0_Or_Later) {
         PyObject* context;
         /// _
         PyObject* cause;
+
+        version(Python_3_4_Or_Later) {
+            /// Availability >= 3.4
+            char suppress_content;
+        }
     }
 }else version(Python_2_5_Or_Later) {
     /// _
@@ -106,6 +111,12 @@ version(Python_2_5_Or_Later) {
         PyObject* strerror;
         /// _
         PyObject* filename;
+        version(Python_3_4_Or_Later) {
+            /// Availability: >= 3.4
+            PyObject* filename2;
+            /// Availability: >= 3.4
+            Py_ssize_t written;
+        }
     }
 
     version(Windows) {
@@ -119,8 +130,16 @@ version(Python_2_5_Or_Later) {
             PyObject* strerror;
             /// _
             PyObject* filename;
+            version(Python_3_4_Or_Later) {
+                /// Availability: >= 3.4
+                PyObject* filename2;
+            }
             /// _
             PyObject* winerror;
+            version(Python_3_4_Or_Later) {
+                /// Availability: >= 3.4
+                Py_ssize_t written;
+            }
         }
     }
 }

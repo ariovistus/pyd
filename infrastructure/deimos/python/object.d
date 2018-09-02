@@ -279,10 +279,11 @@ version(Python_2_6_Or_Later){
         Py_ssize_t* strides;
         /// _
         Py_ssize_t* suboffsets;
-        version(Python_2_7_Or_Later) {
+        version(Python_3_4_Or_Later) {
+        }else version(Python_2_7_Or_Later) {
             /** static store for shape and strides of
               mono-dimensional buffers. */
-            /// Availability: >= 2.7
+            /// Availability: >= 2.7 < 3.4
             Py_ssize_t[2] smalltable;
         }
         /// _
@@ -696,6 +697,11 @@ struct PyTypeObject {
     version(Python_2_6_Or_Later){
         /** Type attribute cache version tag. Added in version 2.6 */
         uint tp_version_tag;
+    }
+
+    version(Python_3_0_Or_Later) {
+        /// Availability: 3.??
+        destructor tp_finalize;
     }
 }
 

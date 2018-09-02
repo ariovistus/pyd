@@ -21,23 +21,26 @@ extern(C):
  */
 enum int PyDict_MINSIZE = 8;
 
-/// _
-struct PyDictEntry {
-    /** Cached hash code of me_key.  Note that hash codes are C longs.
-     * We have to use Py_ssize_t instead because dict_popitem() abuses
-     * me_hash to hold a search finger.
-     */
-    version(Python_3_2_Or_Later) {
-        Py_hash_t me_hash;
-    }else version(Python_2_5_Or_Later) {
-        Py_ssize_t me_hash;
-    }else{
-        C_long me_hash;
-    }
-    /// _
-    PyObject* me_key;
-    /// _
-    PyObject* me_value;
+version(Python_3_4_Or_Later) {
+}else{
+	/// Availability: ??
+	struct PyDictEntry {
+	    /** Cached hash code of me_key.  Note that hash codes are C longs.
+	     * We have to use Py_ssize_t instead because dict_popitem() abuses
+	     * me_hash to hold a search finger.
+	     */
+	    version(Python_3_2_Or_Later) {
+		Py_hash_t me_hash;
+	    }else version(Python_2_5_Or_Later) {
+		Py_ssize_t me_hash;
+	    }else{
+		C_long me_hash;
+	    }
+	    /// _
+	    PyObject* me_key;
+	    /// _
+	    PyObject* me_value;
+	}
 }
 
 /**

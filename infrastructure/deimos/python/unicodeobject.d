@@ -29,22 +29,128 @@ version (Python_Unicode_UCS2) {
     alias uint Py_UNICODE;
 }
 alias Py_UNICODE Py_UCS4;
+alias ubyte Py_UCS1;
+alias ushort Py_UCS2;
 
-/**
-  subclass of PyObject.
-  */
-struct PyUnicodeObject {
-    mixin PyObject_HEAD;
-    /** Length of raw Unicode data in buffer */
-    Py_ssize_t length;
-    /** Raw Unicode buffer */
-    Py_UNICODE* str;
-    /** Hash value; -1 if not set */
-    C_long hash;
-    /** (Default) Encoded version as Python
-      string, or NULL; this is used for
-      implementing the buffer protocol */
-    PyObject* defenc;
+version(Python_3_4_Or_Later) {
+    /** There are 4 forms of Unicode strings:
+       - compact ascii:
+         * structure = PyASCIIObject
+         * test: PyUnicode_IS_COMPACT_ASCII(op)
+         * kind = PyUnicode_1BYTE_KIND
+         * compact = 1
+         * ascii = 1
+         * ready = 1
+         * (length is the length of the utf8 and wstr strings)
+         * (data starts just after the structure)
+         * (since ASCII is decoded from UTF-8, the utf8 string are the data)
+       - compact:
+         * structure = PyCompactUnicodeObject
+         * test: PyUnicode_IS_COMPACT(op) && !PyUnicode_IS_ASCII(op)
+         * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
+           PyUnicode_4BYTE_KIND
+         * compact = 1
+         * ready = 1
+         * ascii = 0
+         * utf8 is not shared with data
+         * utf8_length = 0 if utf8 is NULL
+         * wstr is shared with data and wstr_length=length
+           if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
+           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_t)=4
+         * wstr_length = 0 if wstr is NULL
+         * (data starts just after the structure)
+       - legacy string, not ready:
+         * structure = PyUnicodeObject
+         * test: kind == PyUnicode_WCHAR_KIND
+         * length = 0 (use wstr_length)
+         * hash = -1
+         * kind = PyUnicode_WCHAR_KIND
+         * compact = 0
+         * ascii = 0
+         * ready = 0
+         * interned = SSTATE_NOT_INTERNED
+         * wstr is not NULL
+         * data.any is NULL
+         * utf8 is NULL
+         * utf8_length = 0
+       - legacy string, ready:
+         * structure = PyUnicodeObject structure
+         * test: !PyUnicode_IS_COMPACT(op) && kind != PyUnicode_WCHAR_KIND
+         * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
+           PyUnicode_4BYTE_KIND
+         * compact = 0
+         * ready = 1
+         * data.any is not NULL
+         * utf8 is shared and utf8_length = length with data.any if ascii = 1
+         * utf8_length = 0 if utf8 is NULL
+         * wstr is shared with data.any and wstr_length = length
+           if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
+           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
+         * wstr_length = 0 if wstr is NULL
+       Compact strings use only one memory block (structure + characters),
+       whereas legacy strings use one block for the structure and one block
+       for characters.
+       Legacy strings are created by PyUnicode_FromUnicode() and
+       PyUnicode_FromStringAndSize(NULL, size) functions. They become ready
+       when PyUnicode_READY() is called.
+       See also _PyUnicode_CheckConsistency().
+	Availability >= 3.4
+    */
+	struct PyASCIIObject {
+		mixin PyObject_HEAD;
+		/** Number of code points in the string */
+		Py_ssize_t length;
+		/** Hash value; -1 if not set */
+		Py_hash_t hash;
+		/// _
+		int state;
+		/** wchar_t representation (null-terminated) */
+		wchar* wstr;
+	}
+
+    /// Availability >= 3.4
+    struct PyCompactUnicodeObject {
+        /// _
+        PyASCIIObject _base;
+        /// _
+        Py_ssize_t utf8_length;
+        /// _
+        char* utf8;
+        /// _
+        Py_ssize_t wstr_length;
+    }
+
+    /**
+      subclass of PyObject.
+      */
+    struct PyUnicodeObject {
+        PyCompactUnicodeObject _base;
+        PyUnicodeObject_data data;
+    }
+
+    union PyUnicodeObject_data {
+        void* any;
+        Py_UCS1* latin1;
+        Py_UCS2* ucs2;
+        Py_UCS4* ucs4;
+    }
+}else{
+    /**
+      subclass of PyObject.
+      */
+    struct PyUnicodeObject {
+        mixin PyObject_HEAD;
+        /** Length of raw Unicode data in buffer */
+        Py_ssize_t length;
+        /** Raw Unicode buffer */
+        Py_UNICODE* str;
+        /** Hash value; -1 if not set */
+        C_long hash;
+        /** (Default) Encoded version as Python
+          string, or NULL; this is used for
+          implementing the buffer protocol */
+        PyObject* defenc;
+    }
 }
 
 /// _
