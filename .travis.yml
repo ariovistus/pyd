@@ -1,3 +1,4 @@
+language: minimal
 sudo: required
 services: 
 - docker
@@ -32,6 +33,18 @@ env:
   DUBCFG=python34
   RUNSPEC=runtests
   DOCKER=ariovistus/pyd-test-env:jessie-dmd2_074-py34
+- DC=gdc
+  PYTHON=python
+  DUBCFG=python37
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:stretch-gdc63-py37
+matrix: 
+  allow_failures:
+   - env: DC=gdc
+          PYTHON=python
+          DUBCFG=python37
+          RUNSPEC=runtests
+          DOCKER=ariovistus/pyd-test-env:stretch-gdc63-py37
 script: 
 - docker run -v$(pwd)/:/src -e "COMPILER=$DC" -e "RUNSPEC=$RUNSPEC" -e "PYTHON=$PYTHON" -e "DUBCONFIG=$DUBCFG" -t $DOCKER bash runtests.sh
 jobs:

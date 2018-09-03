@@ -11,6 +11,7 @@ unittest {
 }
 
 extern(C) int foo(int i) {
+	auto a = new char[1];
     return i+1;
 }
 

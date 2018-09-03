@@ -774,7 +774,7 @@ class GDCDCompiler(DCompiler):
         else:
             self._exeLinkOpts = []
         # _linkOpts
-        self._linkOpts = ['-fPIC', '-nostartfiles', '-shared']
+        self._linkOpts = ['-fPIC', '-shared', '-lgdruntime', '-lgphobos']
         # _includeOpts
         self._includeOpts = ['-I', '%s']
         # _versionOpt
@@ -793,11 +793,22 @@ class GDCDCompiler(DCompiler):
         self._debugOptimizeOpts = self._defaultOptimizeOpts + ['-g', self._unittestOpt]
         # _releaseOptimizeOpts
         self._releaseOptimizeOpts = ['-fversion=Optimized', '-frelease', '-O3']
+
     def compile(self, *args, **kwargs):
-        if not self.build_exe:
-            print("gdc does not support building shared libraries, so python extensions are out of the question")
-            sys.exit(1)
+        if not _isPlatWin and not self.build_exe:
+            output_dir = kwargs.get('output_dir', '')
+            if not os.path.exists(os.path.join(output_dir,'infra')):
+                os.makedirs(os.path.join(output_dir,'infra'))
+            src = os.path.join(_infraDir, 'd', 'so_ctor.c')
+            dsto = os.path.join(output_dir, 'infra', 'so_ctor.o')
+            spawn0(self,['gcc','-c', src, '-fPIC','-o',dsto])
+            self._gdc_so_ctor = dsto
         return DCompiler.compile(self, *args, **kwargs)
+
+    def link (self, *args, **kwargs):
+        if not _isPlatWin and not self.build_exe:
+            args[1].append(self._gdc_so_ctor)
+        return DCompiler.link(self, *args, **kwargs)
 
     def _def_file(self, output_dir, output_filename):
         return ['-Wl,-soname,' + os.path.basename(output_filename)]
