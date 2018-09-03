@@ -2,9 +2,16 @@
 #include <datetime.h>
 #include <frameobject.h>
 #include <structmember.h>
+#include <structseq.h>
+#include <pystate.h>
+#include <longintrepr.h>
 #include <stdio.h>
 
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
+	typedef _PyCoreConfig PyCoreConfig;
+#endif
 typedef struct wrapperbase s_wrapperbase;
+typedef struct _longobject PyLongObject;
 
 #define RRadd(tipo, member) { \
 	tipo t; \
@@ -44,7 +51,6 @@ PyObject *offsets(PyObject *ignoredparam1, PyObject *ignoredparam2) {
 	RRadd(PyMappingMethods, mp_ass_subscript);
 	RRadd(PyTypeObject, tp_richcompare);
 	RRadd(PyTypeObject, tp_alloc);
-	RRadd(PyTypeObject, tp_finalize);
 	RRadd(PyHeapTypeObject, as_buffer);
 	RRadd(PyThreadState, thread_id);
 	RRadd(PyInterpreterState, dlopenflags);
@@ -63,17 +69,17 @@ PyObject *offsets(PyObject *ignoredparam1, PyObject *ignoredparam2) {
 	RRadd(PyUnicodeObject, data);
 	RRadd(PyCompactUnicodeObject, wstr_length);
 	RRadd(PyASCIIObject, wstr);
+	RRadd(PyTypeObject, tp_finalize);
 #else
 	RRadd(PyClassObject, cl_delattr);
 	RRadd(PyInstanceObject, in_weakreflist);
-	RRadd(PycStringIO_CAPI, OutputType);
 	RRadd(PyFileObject, weakreflist);
 	RRadd(PyIntObject, ob_ival);
 	RRadd(PyStringObject, ob_sstate);
 	RRadd(PyUnicodeObject, defenc);
 #endif
 
-#if PY_MAJOR_VERSION > 2 || PY_MINOR_VERSION > 5
+#if PY_MAJOR_VERSION > 2 || PY_MINOR_VERSION >= 5
 	RRadd(PySyntaxErrorObject, print_file_and_line);
 	RRadd(PyUnicodeErrorObject, reason);
 	RRadd(PySystemExitObject, code);
@@ -83,11 +89,11 @@ PyObject *offsets(PyObject *ignoredparam1, PyObject *ignoredparam2) {
 #endif
 #endif
 
-#if PY_MAJOR_VERSION > 2 || PY_MINOR_VERSION > 6
+#if PY_MAJOR_VERSION > 2 || PY_MINOR_VERSION >= 6
 	RRadd(Py_buffer, internal);
 #endif
 
-#if PY_MAJOR_VERSION > 2 || PY_MINOR_VERSION > 7
+#if PY_MAJOR_VERSION > 2 || PY_MINOR_VERSION >= 7
 	RRadd(PyMemoryViewObject, view);
 #endif
 
@@ -113,14 +119,11 @@ PyObject *offsets(PyObject *ignoredparam1, PyObject *ignoredparam2) {
 #endif
 
 #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
-typedef struct _PyCoreConfig PyCoreConfig;
-	RRadd(PyContext, ctx_entered);
-	RRadd(PyContextVar, var_hash);
-	RRadd(PyContextToken, tok_used);
 	RRadd(PyCoreConfig, base_exec_prefix);
 	RRadd(PyThreadState, id);
 	RRadd(PyInterpreterState, tstate_next_unique_id);
 #endif
+
 
 	return dict;
 }
@@ -149,7 +152,7 @@ static struct PyModuleDef moduledef = {
 PyObject *PyInit_coffsets(void)
 #else
     PyMODINIT_FUNC
-initx(void)
+initcoffsets(void)
 #endif
 {
     PyObject* m;
@@ -159,7 +162,7 @@ initx(void)
 #else
 
     // this is important!
-    m = Py_InitModule3("x", x_methods, "Hi ho, pipsissiwa is slow");
+    m = Py_InitModule3("coffsets", x_methods, "Hi ho, pipsissiwa is slow");
 #endif
 
 #if PY_MAJOR_VERSION >= 3

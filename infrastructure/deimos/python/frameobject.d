@@ -45,11 +45,10 @@ struct PyFrameObject {
     /** Trace function */
     PyObject* f_trace;
 
-    version(Python_3_4_Or_Later) {
-    }else{
-        /// Availability < 3.4
+    version(Python_3_7_Or_Later) {
+        /// Availability >= 3.7
         char f_trace_lines;
-        /// Availability < 3.4
+        /// Availability >= 3.7
         char f_trace_opcodes;
     }
 

@@ -108,8 +108,11 @@ struct PyInterpreterState {
     PyThreadState* tstate_head;
 
     version(Python_3_7_Or_Later) {
+        /// Availability >= 3.7
         long id;
+        /// Availability >= 3.7
         long id_refcount;
+        /// Availability >= 3.7
         PyThread_type_lock id_mutex;
     }
     /// _
@@ -122,6 +125,12 @@ struct PyInterpreterState {
     PyObject* sysdict;
     /// _
     PyObject* builtins;
+
+    version(Python_3_0_Or_Later) {
+    }else version(Python_2_7_Or_Later) {
+        /// Availability: 2.7 (?)
+        PyObject* modules_reloading;
+    }
 
     version(Python_3_3_Or_Later) {
         /// _

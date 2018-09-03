@@ -7,7 +7,13 @@ import deimos.python.Python;
 
 alias wrapperbase s_wrapperbase;
 version(Python_3_7_Or_Later) {
-alias PyCoreConfig _PyCoreConfig;
+    import deimos.python.internal.context;
+    alias _PyCoreConfig PyCoreConfig ;
+}
+
+version(Python_3_0_Or_Later) {
+}else{
+    alias PycStringIO_CAPI s_PycStringIO_CAPI;
 }
 void add(string member)(ref int[string] dict) {
     dict[member] = mixin(member ~".offsetof");
@@ -45,7 +51,6 @@ int[string] offsets() {
 	add!"PyMappingMethods.mp_ass_subscript"(r);
 	add!"PyTypeObject.tp_richcompare"(r);
 	add!"PyTypeObject.tp_alloc"(r);
-	add!"PyTypeObject.tp_finalize"(r);
 	add!"PyHeapTypeObject.as_buffer"(r);
 	add!"PyThreadState.thread_id"(r);
 	add!"PyInterpreterState.dlopenflags"(r);
@@ -64,10 +69,10 @@ version(Python_3_0_Or_Later) {
 	add!"PyUnicodeObject.data"(r);
 	add!"PyCompactUnicodeObject.wstr_length"(r);
 	add!"PyASCIIObject.wstr"(r);
+	add!"PyTypeObject.tp_finalize"(r);
 }else{
 	add!"PyClassObject.cl_delattr"(r);
 	add!"PyInstanceObject.in_weakreflist"(r);
-	add!"PycStringIO_CAPI.OutputType"(r);
 	add!"PyFileObject.weakreflist"(r);
 	add!"PyIntObject.ob_ival"(r);
 	add!"PyStringObject.ob_sstate"(r);
@@ -115,9 +120,6 @@ version(Python_3_6_Or_Later) {
 }
 
 version(Python_3_7_Or_Later) {
-	add!"PyContext.ctx_entered"(r);
-	add!"PyContextVar.var_hash"(r);
-	add!"PyContextToken.tok_used"(r);
 	add!"PyCoreConfig.base_exec_prefix"(r);
 	add!"PyThreadState.id"(r);
 	add!"PyInterpreterState.tstate_next_unique_id"(r);
