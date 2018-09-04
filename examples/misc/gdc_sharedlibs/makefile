@@ -18,19 +18,22 @@ clean:
 	rm -f *.so
 	rm -f *.x
 
-LIBS= -lrt -lpthread -ldl -lm -lpython2.7 /usr/lib64/libgdruntime.a /usr/lib64/libgphobos2.a
+LIBS= -lrt -lpthread -ldl -lm -lpython3.7m
+
+so_ctor.o: so_ctor.c
+	gcc -c -fPIC so_ctor.c -o so_ctor.o
 
 %.o: %.d
 	echo "building $@"
-	$(GDC) -fPIC -c $^ -o $@
+	$(GDC) -fPIC -c $^ -o $@ --shared
 
-lib%.so: %.o boilerplate.o
+lib%.so: %.o boilerplate.o so_ctor.o
 	echo "building $@"
-	gcc -nostartfiles -shared $(LIBS) $^ -o $@
+	$(GDC) -shared $(LIBS) $^ -o $@ -lgphobos -lgdruntime
 
 test1.x: test1.c libtest1.so
 	echo "building $@"
-	gcc $< -l:libtest1.so -o $@
+	gcc $< -L. -ltest1 -o $@ --verbose
 
 test2.x: test2.c libtest2a.so libtest2b.so
 	echo "building $@"

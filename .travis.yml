@@ -1,233 +1,52 @@
-sudo: false
-
-os:
- - linux
- - osx
-
-language: d
-
-d:
- - dmd-2.073.0
- - dmd-2.072.2
- - dmd-2.071.2
- - dmd-2.070.2
- - dmd-2.069.2
- - dmd-2.068.2
- - dmd-2.067.1
- - ldc-1.1.0
- - ldc-1.0.0
-   # - ldc-0.17.3 # wtf, travis?
- - ldc-0.16.1
-   #- gdc-6.3.0 # wtf, travis?
-
-matrix:
-  allow_failures:
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_extra
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_extra
-   - d: ldc-1.0.0
-     env: TEST=runtests:test_extra
-   - d: ldc-1.1.0
-     env: TEST=runtests:test_extra
-
-  exclude:
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_hello
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_many_libs
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_arraytest
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_inherit
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_rawexample
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_testdll
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_multithreading
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_def
-   - d: dmd-2.067.1
-     env: TEST=runtests:test_d_and_c
-   - d: dmd-2.067.1
-     env:  TEST=runtests:test_compare_offsets
-
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_hello
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_many_libs
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_arraytest
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_inherit
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_rawexample
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_testdll
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_multithreading
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_def
-   - d: ldc-1.1.0 
-     env: TEST=runtests:test_d_and_c
-   - d: ldc-1.1.0 
-     env:  TEST=runtests:test_compare_offsets
-
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_hello
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_many_libs
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_arraytest
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_inherit
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_rawexample
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_testdll
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_multithreading
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_def
-   - d: ldc-1.0.0 
-     env: TEST=runtests:test_d_and_c
-   - d: ldc-1.0.0 
-     env:  TEST=runtests:test_compare_offsets
-
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_hello
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_many_libs
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_arraytest
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_inherit
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_rawexample
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_testdll
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_multithreading
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_def
-   - d: ldc-0.16.1
-     env: TEST=runtests:test_d_and_c
-   - d: ldc-0.16.1
-     env:  TEST=runtests:test_compare_offsets
-
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_hello
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_many_libs
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_arraytest
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_inherit
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_rawexample
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_testdll
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_multithreading
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_def
-   - d: ldc-0.15.1
-     env: TEST=runtests:test_d_and_c
-   - d: ldc-0.15.1
-     env:  TEST=runtests:test_compare_offsets
-
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_hello
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_many_libs
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_arraytest
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_inherit
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_rawexample
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_testdll
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_multithreading
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_def
-   - d: gdc-4.9.2
-     env: TEST=runtests:test_d_and_c
-   - d: gdc-4.9.2
-     env:  TEST=runtests:test_compare_offsets
-
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_hello
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_many_libs
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_arraytest
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_inherit
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_rawexample
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_testdll
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_multithreading
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_def
-   - d: gdc-5.2.0
-     env: TEST=runtests:test_d_and_c
-   - d: gdc-5.2.0
-     env:  TEST=runtests:test_compare_offsets
-  
-   - d: gdc-4.9.2
-   - d: gdc-5.2.0
-   #- os: osx
-   #  d: gdc-4.9.2
-   #- os: osx
-   #  d: gdc-5.2.0
-   - os: osx
-  env:
-   - ARCH=x86
-   - ARCH=x86_64
-
-addons:
-  apt:
-    packages:
-     - python3
-     - python
-     - python3-nose
-     - python-nose
-     - python3-numpy
-     - python-numpy
-     - python-dev
-     - python3-dev
+language: minimal
+sudo: required
+services: 
+- docker
 env:
-    - TEST=runtests:test_hello
-    - TEST=runtests:test_many_libs
-    - TEST=runtests:test_arraytest
-    - TEST=runtests:test_inherit
-    - TEST=runtests:test_rawexample
-    - TEST=runtests:test_testdll
-    - TEST=runtests:test_d_and_c
-    - TEST=runtests:test_multithreading
-    - TEST=runtests:PydUnittests
-    - TEST=runtests:test_extra
-    - TEST=runtests:DeimosUnittests
-    - TEST=runtests:test_pyind
-    - TEST=runtests:test_simple_embedded
-    - TEST=runtests:test_interpcontext
-    - TEST=runtests:test_def
-    - TEST=runtests:test_pydobject
-    - TEST=runtests:test_compare_offsets
-
-install:
-    - python3 setup.py install --user
-
+- DC=dmd
+  PYTHON=python
+  DUBCFG=python37
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:stretch-dmd2_080-py37
+- DC=ldc
+  PYTHON=python3
+  DUBCFG=python35
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:ubuntu1604-ldc190-py35
+- DC=ldc
+  PYTHON=python
+  DUBCFG=python27
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:ubuntu1604-ldc190-py35
+- DC=ldc
+  PYTHON=python3
+  DUBCFG=python36
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:fedora28-ldc180-py36
+- DC=ldc
+  PYTHON=python
+  DUBCFG=python27
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:fedora28-ldc180-py36
+- DC=dmd
+  PYTHON=python3
+  DUBCFG=python34
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:jessie-dmd2_074-py34
+- DC=gdc
+  PYTHON=python
+  DUBCFG=python37
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:stretch-gdc63-py37
+matrix: 
+  allow_failures:
+   - env: DC=gdc
+          PYTHON=python
+          DUBCFG=python37
+          RUNSPEC=runtests
+          DOCKER=ariovistus/pyd-test-env:stretch-gdc63-py37
 script: 
-    - python3 runtests.py --compiler=$DC $TEST
-    - dub test
-    - source setup/pyd_set_env_vars.sh python3 && dub test -c env
-
+- docker run -v$(pwd)/:/src -e "COMPILER=$DC" -e "RUNSPEC=$RUNSPEC" -e "PYTHON=$PYTHON" -e "DUBCONFIG=$DUBCFG" -t $DOCKER bash runtests.sh
 jobs:
     include:
         - stage: deploy
@@ -236,14 +55,14 @@ jobs:
           os: linux
           language: python
           if: tag IS present
-        
+
           before_deploy: python versionchecker.py
 
           deploy:
             provider: pypi
             skip_cleanup: true
             user: ariovistus
-            password: 
+            password:
                 secure: "fBaxJv4pJOA2gq6VYlBUXKrGJmKN8TdNU1erFvH5ohvcSIpF4a95ElPpu7dBruMuorGYDXvHlfGhEFpaxxkpBWTknJwUp15HUvx1qMJnyfi9qxcID3ieRQ2lbrktiIkNwfjBKPP+nu4/uLg4P7ZgDdY1rGTGCBPOgc9FqVB1ny4="
             on:
                 tags: true
