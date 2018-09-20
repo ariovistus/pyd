@@ -115,7 +115,6 @@
 	],
 	"targetType": "sourceLibrary",
 	"license": "MIT",
-	"version": "~master",
 	"versions-linux": [
 		"Python_Unicode_UCS4"
 	],
