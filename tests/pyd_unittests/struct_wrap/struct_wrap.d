@@ -142,11 +142,6 @@ unittest {
 unittest {
     Foo5 a;
     auto x = py(&a);
-
-    // hello weirdness: comment this line out, and the assertion fails
-    // it prints <testing.Foo3 object at xxxxx>
-    Borrowed!PyObject* ptr1 = x.ptr;
-
     assert (x.toString().startsWith("<testing.Foo5"));
 }
 

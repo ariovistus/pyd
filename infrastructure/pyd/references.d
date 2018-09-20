@@ -217,11 +217,19 @@ struct DClass_Py_Mapping {
 /// We use malloc for the container's structure because we can't use the GC
 /// inside a destructor and we need to use this container there.
 template reference_container(Mapping) {
-    alias MultiIndexContainer!(Mapping, IndexedBy!(
-                HashedUnique!("a.d"), "d",
-                HashedUnique!("a.py"), "python"),
-            MallocAllocator, MutableView)
-        Container;
+    static if(is(Mapping == DStruct_Py_Mapping)) {
+        alias MultiIndexContainer!(Mapping, IndexedBy!(
+                    HashedNonUnique!("a.d"), "d",
+                    HashedUnique!("a.py"), "python"),
+                MallocAllocator, MutableView)
+            Container;
+    }else{
+        alias MultiIndexContainer!(Mapping, IndexedBy!(
+                    HashedUnique!("a.d"), "d",
+                    HashedUnique!("a.py"), "python"),
+                MallocAllocator, MutableView)
+            Container;
+    }
     Container _reference_container = null;
 
     @property reference_container() {
@@ -257,7 +265,6 @@ template pyd_references(T) {
 void set_pyd_mapping(T) (PyObject* _self, T t) {
     alias pyd_references!T.Mapping Mapping;
     alias pyd_references!T.container container;
-
 
     Mapping mapping = Mapping(t, _self);
     auto py_index = container.python;
@@ -383,8 +390,20 @@ PyObject_BorrowedRef* get_python_reference(T) (T t) {
 
     auto d_index = container.d;
     auto range = d_index.equalRange(Mapping.DKey(t));
+    static if(is(Mapping == DStruct_Py_Mapping)) {
+        findMatchingType!T(range);
+    }
     if(range.empty) return null;
     return borrowed(range.front.py);
+}
+
+void findMatchingType(T, R)(ref R range) {
+    while(!range.empty) {
+        if(range.front.d_typeinfo == typeid(T)) {
+            break;
+        }
+        range.popFront();
+    }
 }
 
 /**
