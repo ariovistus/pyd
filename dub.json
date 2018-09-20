@@ -179,7 +179,7 @@
 			],
 			"lflags-windows-x86_64": [
 			    "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs",
-			    "/LIBPATH:\\\"C:\\Program Files\\Python37\\libs\\\"",
+			    "/LIBPATH:\\\"C:\\Program Files\\Python37\\libs\\\""
 			],
 			"lflags-windows-x86_mscoff": [
 			        "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37-32\\libs",
@@ -216,7 +216,7 @@
 				"$PYD_D_VERSION_10",
 				"$PYD_D_VERSION_11",
 				"$PYD_D_VERSION_12",
-				"$PYD_D_VERSION_13",
+				"$PYD_D_VERSION_13"
 			],
 			"lflags-posix": [
 				"-L$PYD_LIBPYTHON_DIR"
@@ -239,7 +239,6 @@
 	],
 	"targetType": "library",
 	"license": "MIT",
-	"version": "~master",
 	"versions-linux": [
 		"Python_Unicode_UCS4"
 	],
