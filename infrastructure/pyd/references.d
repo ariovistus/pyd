@@ -218,10 +218,14 @@ struct DClass_Py_Mapping {
 /// inside a destructor and we need to use this container there.
 template reference_container(Mapping) {
     static if(is(Mapping == DStruct_Py_Mapping)) {
-        alias MultiIndexContainer!(Mapping, IndexedBy!(
-                    HashedNonUnique!("a.d"), "d",
-                    HashedUnique!("a.py"), "python"),
-                MallocAllocator, MutableView)
+        // See #104 for the reason for the hash functions below
+        alias MultiIndexContainer!(
+            Mapping,
+            IndexedBy!(
+                HashedNonUnique!("a.d", "cast(size_t) *cast(const void**) &a"), "d",
+                HashedUnique!("a.py", "cast(size_t) *cast(const void**) &a"), "python"
+                ),
+            MallocAllocator, MutableView)
             Container;
     }else{
         alias MultiIndexContainer!(Mapping, IndexedBy!(
@@ -432,4 +436,3 @@ PyObject* wrap_d_object(T)(T t, PyTypeObject* type = null) {
         return null;
     }
 }
-
