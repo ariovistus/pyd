@@ -161,6 +161,18 @@ void ex_python_to_d(dg_t) (dg_t dg) {
  * RuntimeError will be raised and this function will return null.
  */
 PyObject* d_to_python(T) (T t) {
+
+    // If T is a U or a U*
+    enum isTypeOrPointerTo(U) = is(T == U) || is(T == U*);
+
+    static if(isTypeOrPointerTo!DateTime || isTypeOrPointerTo!Date ||
+              isTypeOrPointerTo!SysTime || isTypeOrPointerTo!TimeOfDay)
+    {
+        if(PyDateTimeAPI is null) {
+            PyDateTime_IMPORT();
+        }
+    }
+
     static if (!is(T == PyObject*) && is(typeof(t is null)) &&
             !isAssociativeArray!T && !isArray!T) {
         if (t is null) {
@@ -179,29 +191,17 @@ PyObject* d_to_python(T) (T t) {
         return PyFloat_FromDouble(t);
     } else static if( isTuple!T) {
         return d_tuple_to_python!T(t);
-    } else static if (is(T == DateTime)) {
-        if(PyDateTimeAPI is null) {
-            PyDateTime_IMPORT();
-        }
+    } else static if (isTypeOrPointerTo!DateTime) {
         return PyDateTime_FromDateAndTime(t.year, t.month, t.day, t.hour, t.minute, t.second, 0);
-    } else static if (is(T == Date)) {
-        if(PyDateTimeAPI is null) {
-            PyDateTime_IMPORT();
-        }
+    } else static if (isTypeOrPointerTo!Date) {
         return PyDate_FromDate(t.year, t.month, t.day);
-    } else static if (is(T == SysTime)) {
-        if(PyDateTimeAPI is null) {
-            PyDateTime_IMPORT();
-        }
+    } else static if (isTypeOrPointerTo!SysTime) {
         return PyDateTime_FromDateAndTime(t.year, t.month, t.day, t.hour, t.minute, t.second, 0);
-    } else static if (is(T == TimeOfDay)) {
-        if(PyDateTimeAPI is null) {
-            PyDateTime_IMPORT();
-        }
+    } else static if (isTypeOrPointerTo!TimeOfDay) {
         return PyTime_FromTime(t.hour, t.minute, t.second, 0);
     } else static if (is(Unqual!T _unused : Complex!F, F)) {
         return PyComplex_FromDoubles(t.re, t.im);
-    } else static if(is(T == std.bigint.BigInt)) {
+    } else static if(isTypeOrPointerTo!(std.bigint.BigInt)) {
         return d_bigint_to_python(t);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return Py_INCREF(t.ptr);
