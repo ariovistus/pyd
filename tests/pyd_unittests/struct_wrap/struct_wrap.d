@@ -36,6 +36,11 @@ struct Foo5 {
     Foo4 foo;
 }
 
+struct Foo6 {
+    import std.datetime: DateTime;
+    DateTime dateTime;
+}
+
 static this() {
     on_py_init({
     add_module!(ModuleName!"testing")();
@@ -73,6 +78,11 @@ static this() {
             Foo5,
             ModuleName!"testing",
             Member!"foo",
+        )();
+        wrap_struct!(
+            Foo6,
+            ModuleName!"testing",
+            Member!"dateTime",
         )();
     }, PyInitOrdering.After);
 
@@ -143,6 +153,18 @@ unittest {
     Foo5 a;
     auto x = py(&a);
     assert (x.toString().startsWith("<testing.Foo5"));
+}
+
+
+unittest {
+
+    auto context = new InterpContext();
+    context.py_stmts(q"{
+    from testing import Foo6
+    from datetime import datetime as Date
+    f = Foo6(Date(2018, 7, 3))
+    y = f.dateTime.year
+}", "testing");
 }
 
 void main(){}
