@@ -2283,7 +2283,7 @@ Complexity: ??
     OrderedRange remove(R)(R r)
     if(is(R == OrderedRange) ||
        is(ElementType!R == Position!ThisNode))
-    out(r){
+    out(r2){
         version(RBDoChecks) _Check();
     }body{
         while(!r.empty) {
@@ -3375,11 +3375,11 @@ template Hashed(bool allowDuplicates = false, alias KeyFromValue="a",
                 }
                 auto nxt = n.index!N.next;
                 hashes[index] = nxt;
+                n.index!N.next = null;
+                n.index!N.prev = null;
                 if (nxt){
                     version(BucketHackery){
                         nxt.index!N.prev = cast(ThisNode*) index;
-                        n.index!N.next = null;
-                        n.index!N.prev = null;
                     }else{
                         nxt.index!N.removePrev();
                     }
@@ -3754,12 +3754,12 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                 size_t newfindex = -1;
                 while(!r.empty){
                     ThisNode* node = r.front_node;
-                    ThisNode* node2 = node;
+                    ThisNode* lastInChain = node;
                     auto k = key(node.value);
                     size_t index = hash(key(node.value))%newhashes.length;
                     r.popFront();
                     while(!r.empty && eq(k, key(r.front))){
-                        node2 = r.front_node;
+                        lastInChain = r.front_node;
                         r.popFront();
                     }
                     version(BucketHackery){
@@ -3767,7 +3767,7 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                     }else{
                         node.index!N.prev = null;
                     }
-                    node2.index!N.next = null;
+                    lastInChain.index!N.next = null;
                     if(!newhashes[index]){
                         newhashes[index] = node;
                         if (index < newfindex){
@@ -3777,7 +3777,8 @@ $(BIGOH n) ($(BIGOH n $(SUB result)) on a good day)
                     }else{
                         auto p = newhashes[index];
                         newhashes[index] = node;
-                        node2.index!N.insertNext(p);
+                        p.index!N.prev = lastInChain;
+                        lastInChain.index!N.next = p;
                         if(newfirst == p){
                             newfirst = node;
                         }
