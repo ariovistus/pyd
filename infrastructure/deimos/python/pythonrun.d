@@ -9,6 +9,8 @@ See_Also:
 module deimos.python.pythonrun;
 
 import core.stdc.stdio;
+import core.stdc.stddef : wchar_t;
+
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.code;
@@ -70,14 +72,14 @@ version(Python_3_7_Or_Later) {
 
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
-    void Py_SetProgramName(wchar*);
+    void Py_SetProgramName(wchar_t*);
     /// Availability: >= 3.2
-    wchar* Py_GetProgramName();
+    wchar_t* Py_GetProgramName();
 
     /// Availability: >= 3.2
-    void Py_SetPythonHome(wchar*);
+    void Py_SetPythonHome(wchar_t*);
     /// Availability: >= 3.2
-    wchar* Py_GetPythonHome();
+    wchar_t* Py_GetPythonHome();
 }else{
     /// Availability: <= 2.7
     void Py_SetProgramName(char*);
@@ -386,25 +388,25 @@ int Py_FdIsInteractive(FILE*, const(char)*);
 
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
-    int Py_Main(int argc, wchar** argv);
+    int Py_Main(int argc, wchar_t** argv);
 }else{
     /// Availability: <= 2.7
-    int Py_Main(int argc, char** argv);
+    int Py_Main(int argc, wchar_t** argv);
 }
 
 /* In getpath.c */
 version(Python_3_0_Or_Later) {
     /// Availability: >= 3.0
-    wchar* Py_GetProgramFullPath();
+    wchar_t* Py_GetProgramFullPath();
     /// Availability: >= 3.0
-    wchar* Py_GetPrefix();
+    wchar_t* Py_GetPrefix();
     /// Availability: >= 3.0
-    wchar* Py_GetExecPrefix();
+    wchar_t* Py_GetExecPrefix();
     /// Availability: >= 3.0
-    wchar* Py_GetPath();
+    wchar_t* Py_GetPath();
     version(Python_3_2_Or_Later) {
         /// Availability: >= 3.2
-        void Py_SetPath(const(wchar)*);
+        void Py_SetPath(const(wchar_t)*);
     }
     version(Windows) {
         /// Availability: >= 3.0, Windows only
