@@ -18,10 +18,10 @@
 				"python2.7"
 			],
 			"lflags-windows-x86_64": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27\\libs\\\""
 			],
 			"lflags-windows-x86_mscoff": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27-32\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27-32\\libs\\\""
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -45,10 +45,10 @@
 				"python3.3m"
 			],
 			"lflags-windows-x86_64": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33\\libs\\\""
 			],
 			"lflags-windows-x86_mscoff": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33-32\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33-32\\libs\\\""
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -76,10 +76,10 @@
 				"python3.4m"
 			],
 			"lflags-windows-x86_64": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34\\libs\\\""
 			],
 			"lflags-windows-x86_mscoff": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34-32\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34-32\\libs\\\""
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -108,10 +108,10 @@
 				"python3.5m"
 			],
 			"lflags-windows-x86_64": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35\\libs\\\""
 			],
 			"lflags-windows-x86_mscoff": [
-				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35-32\\libs"
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35-32\\libs\\\""
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -141,13 +141,12 @@
 				"python3.6m"
 			],
 			"lflags-windows-x86_64": [
-			    "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36\\libs",
-			    "/LIBPATH:\\\"C:\\Program Files\\Python36\\libs\\\"",
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36\\libs\\\"",
+				"/LIBPATH:\\\"C:\\Program Files\\Python36\\libs\\\"",
 			],
 			"lflags-windows-x86_mscoff": [
-			        "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36-32\\libs",
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36-32\\libs\\\"",
 				"/LIBPATH:\\\"C:\\Program Files (x86)\\Python36-32\\libs\\\""
-
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
@@ -178,13 +177,12 @@
 				"python3.7m"
 			],
 			"lflags-windows-x86_64": [
-			    "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs",
-			    "/LIBPATH:\\\"C:\\Program Files\\Python37\\libs\\\""
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs\\\"",
+				"/LIBPATH:\\\"C:\\Program Files\\Python37\\libs\\\""
 			],
 			"lflags-windows-x86_mscoff": [
-			        "/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37-32\\libs",
+				"/LIBPATH:\\\"$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37-32\\libs\\\"",
 				"/LIBPATH:\\\"C:\\Program Files (x86)\\Python37-32\\libs\\\""
-
 			],
 			"versions": [
 				"Python_2_4_Or_Later",
