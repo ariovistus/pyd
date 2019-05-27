@@ -10,6 +10,8 @@ module deimos.python.unicodeobject;
 
 import core.stdc.stdarg;
 import core.stdc.string;
+import core.stdc.stddef : wchar_t;
+
 import deimos.python.pyport;
 import deimos.python.object;
 
@@ -21,7 +23,7 @@ extern(C):
    type. */
 version (Python_Unicode_UCS2) {
     version (Windows) {
-        alias wchar Py_UNICODE;
+        alias wchar_t Py_UNICODE;
     } else {
         alias ushort Py_UNICODE;
     }
@@ -105,7 +107,7 @@ version(Python_3_4_Or_Later) {
 		/// _
 		int state;
 		/** wchar_t representation (null-terminated) */
-		wchar* wstr;
+		wchar_t* wstr;
 	}
 
     /// Availability >= 3.4
@@ -468,7 +470,7 @@ length = New length.
       size.
 
       The buffer is copied into the new object. */
-    PyObject* PyUnicode_FromWideChar(const(wchar)* w, Py_ssize_t size);
+    PyObject* PyUnicode_FromWideChar(const(wchar_t)* w, Py_ssize_t size);
 
     /** Copies the Unicode Object contents into the wchar_t buffer w.  At
       most size wchar_t characters are copied.
@@ -483,7 +485,7 @@ length = New length.
       error. */
     Py_ssize_t PyUnicode_AsWideChar(
             PyUnicodeObject* unicode,
-            const(wchar)* w,
+            const(wchar_t)* w,
             Py_ssize_t size);
 
     /** Create a Unicode Object from the given Unicode code point ordinal.
@@ -2352,7 +2354,7 @@ alias PyUnicodeUCS2_FromObject PyUnicode_FromObject;
       size.
 
       The buffer is copied into the new object. */
-    PyObject* PyUnicodeUCS2_FromWideChar(const(wchar)* w, Py_ssize_t size);
+    PyObject* PyUnicodeUCS2_FromWideChar(const(wchar_t)* w, Py_ssize_t size);
  /// ditto
 
 alias PyUnicodeUCS2_FromWideChar PyUnicode_FromWideChar;
@@ -2371,7 +2373,7 @@ alias PyUnicodeUCS2_FromWideChar PyUnicode_FromWideChar;
       error. */
     Py_ssize_t PyUnicodeUCS2_AsWideChar(
             PyUnicodeObject* unicode,
-            const(wchar)* w,
+            const(wchar_t)* w,
             Py_ssize_t size);
  /// ditto
 
@@ -3589,7 +3591,7 @@ alias PyUnicodeUCS4_FromObject PyUnicode_FromObject;
       size.
 
       The buffer is copied into the new object. */
-    PyObject* PyUnicodeUCS4_FromWideChar(const(wchar)* w, Py_ssize_t size);
+    PyObject* PyUnicodeUCS4_FromWideChar(const(wchar_t)* w, Py_ssize_t size);
  /// ditto
 
 alias PyUnicodeUCS4_FromWideChar PyUnicode_FromWideChar;
@@ -3608,7 +3610,7 @@ alias PyUnicodeUCS4_FromWideChar PyUnicode_FromWideChar;
       error. */
     Py_ssize_t PyUnicodeUCS4_AsWideChar(
             PyUnicodeObject* unicode,
-            const(wchar)* w,
+            const(wchar_t)* w,
             Py_ssize_t size);
  /// ditto
 

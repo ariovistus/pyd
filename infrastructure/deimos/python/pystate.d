@@ -5,6 +5,8 @@
   */
 module deimos.python.pystate;
 
+import core.stdc.stddef : wchar_t;
+
 import deimos.python.pyport;
 import deimos.python.object;
 import deimos.python.frameobject;
@@ -41,31 +43,31 @@ version(Python_3_7_Or_Later) {
         int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
         int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
 
-        wchar* program_name;  /* Program name, see also Py_GetProgramName() */
+        wchar_t* program_name;  /* Program name, see also Py_GetProgramName() */
         int argc;               /* Number of command line arguments,
                                    -1 means unset */
-        wchar** argv;         /* Command line arguments */
-        wchar* program;       /* argv[0] or "" */
+        wchar_t** argv;         /* Command line arguments */
+        wchar_t* program;       /* argv[0] or "" */
 
         int nxoption;           /* Number of -X options */
-        wchar** xoptions;     /* -X options */
+        wchar_t** xoptions;     /* -X options */
 
         int nwarnoption;        /* Number of warnings options */
-        wchar** warnoptions;  /* Warnings options */
+        wchar_t** warnoptions;  /* Warnings options */
 
         /* Path configuration inputs */
-        wchar* module_search_path_env; /* PYTHONPATH environment variable */
-        wchar* home;          /* PYTHONHOME environment variable,
+        wchar_t* module_search_path_env; /* PYTHONPATH environment variable */
+        wchar_t* home;          /* PYTHONHOME environment variable,
                                    see also Py_SetPythonHome(). */
         /* Path configuration outputs */
         int nmodule_search_path;        /* Number of sys.path paths,
                                            -1 means unset */
-        wchar** module_search_paths;  /* sys.path paths */
-        wchar* executable;    /* sys.executable */
-        wchar* prefix;        /* sys.prefix */
-        wchar* base_prefix;   /* sys.base_prefix */
-        wchar* exec_prefix;   /* sys.exec_prefix */
-        wchar* base_exec_prefix;  /* sys.base_exec_prefix */
+        wchar_t** module_search_paths;  /* sys.path paths */
+        wchar_t* executable;    /* sys.executable */
+        wchar_t* prefix;        /* sys.prefix */
+        wchar_t* base_prefix;   /* sys.base_prefix */
+        wchar_t* exec_prefix;   /* sys.exec_prefix */
+        wchar_t* base_exec_prefix;  /* sys.base_exec_prefix */
 
         /* Private fields */
         int _disable_importlib; /* Needed by freeze_importlib */

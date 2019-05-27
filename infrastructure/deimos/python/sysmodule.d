@@ -6,6 +6,8 @@
 module deimos.python.sysmodule;
 
 import core.stdc.stdio;
+import core.stdc.stddef : wchar_t;
+
 import deimos.python.pyport;
 import deimos.python.object;
 
@@ -18,11 +20,11 @@ PyObject* PySys_GetObject(const(char)*);
 int PySys_SetObject(const(char)*, PyObject*);
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    void PySys_SetArgv(int, wchar**);
+    void PySys_SetArgv(int, wchar_t**);
     /// Availability: 3.*
-    void PySys_SetArgvEx(int, wchar**, int);
+    void PySys_SetArgvEx(int, wchar_t**, int);
     /// Availability: 3.*
-    void PySys_SetPath(wchar*);
+    void PySys_SetPath(wchar_t*);
 }else{
     /// Availability: 2.*
     FILE* PySys_GetFile(char*, FILE*);
@@ -57,7 +59,7 @@ mixin(PyAPI_DATA!"PyObject** _PySys_ProfileFunc");
 void PySys_ResetWarnOptions();
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
-    void PySys_AddWarnOption(const(wchar)*);
+    void PySys_AddWarnOption(const(wchar_t)*);
     version(Python_3_2_Or_Later) {
         /// Availability: >= 3.2
         void PySys_AddWarnOptionUnicode(PyObject*);
@@ -72,7 +74,7 @@ version(Python_2_6_Or_Later){
 }
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
-    void PySys_AddXOption(const(wchar)*);
+    void PySys_AddXOption(const(wchar_t)*);
     /// Availability: >= 3.2
     PyObject* PySys_GetXOptions();
 }
