@@ -31,7 +31,7 @@ private bool isAttached = false;
 alias ThreadSet = MultiIndexContainer!(
     Thread,
     IndexedBy!(HashedUnique!()),
-    MallocAllocator, MutableView
+    MutableView
 );
 
 __gshared ThreadSet threadSet = null;
