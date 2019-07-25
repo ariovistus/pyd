@@ -225,13 +225,13 @@ template reference_container(Mapping) {
                 HashedNonUnique!("a.d", "cast(size_t) *cast(const void**) &a"), "d",
                 HashedUnique!("a.py", "cast(size_t) *cast(const void**) &a"), "python"
                 ),
-            MallocAllocator, MutableView)
+            MutableView)
             Container;
     }else{
         alias MultiIndexContainer!(Mapping, IndexedBy!(
                     HashedUnique!("a.d"), "d",
                     HashedUnique!("a.py"), "python"),
-                MallocAllocator, MutableView)
+                MutableView)
             Container;
     }
     Container _reference_container = null;
