@@ -220,7 +220,7 @@
 				"-L$PYD_LIBPYTHON_DIR"
 			],
 			"lflags-windows": [
-				"/LIBPATH:$PYD_LIBPYTHON_DIR"
+				"/LIBPATH:\\\"$PYD_LIBPYTHON_DIR\\\""
 			],
 			"libs": [
 				"$PYD_LIBPYTHON"
