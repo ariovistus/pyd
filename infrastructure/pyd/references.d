@@ -238,7 +238,7 @@ template reference_container(Mapping) {
 
     @property reference_container() {
         if(!_reference_container) {
-            _reference_container = new Container();
+            _reference_container = Container.create();
             Py_AtExit(&clear);
         }
         return _reference_container;

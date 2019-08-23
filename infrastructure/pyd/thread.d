@@ -37,7 +37,7 @@ alias ThreadSet = MultiIndexContainer!(
 __gshared ThreadSet threadSet = null;
 
 shared static this() {
-    threadSet = new ThreadSet();
+    threadSet = ThreadSet.create();
 }
 
 void ensureAttached() {

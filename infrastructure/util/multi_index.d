@@ -4039,14 +4039,6 @@ class Position(MNode) {
     alias MNode.ThisContainer.ValueView ValueView;
     alias MNode.ThisContainer.Allocator Allocator;
 
-    new(size_t sz) {
-        void* p = Allocator.allocate!void(sz);
-        return p;
-    }
-    delete(void* p) {
-        Allocator.deallocate(p);
-    }
-
     @property ValueView v() {
         return node.value;
     }
@@ -4055,9 +4047,19 @@ class Position(MNode) {
         bool obliterated = true;
         MNode* _node;
 
-        this(MNode* _node) {
-            obliterated = false;
-            this._node = _node;
+        @disable this();
+
+        static auto create(MNode* _node) {
+            import std.conv : emplace;
+            auto p = cast(Position)Allocator.allocate!void(__traits(classInstanceSize, Position));
+            p.emplace();
+            p.obliterated = false;
+            p._node = _node;
+            return p;
+        }
+
+        void release(Position p){
+            Allocator.deallocate(cast(void*) p);
         }
 
         @property node() {
@@ -4080,7 +4082,7 @@ auto PSR(Range)(Range rng)
         }
 
         @property Pos front() {
-            return new Pos(source.front_node);
+            return Pos.create(source.front_node);
         }
 
         void popFront() {
@@ -4089,7 +4091,7 @@ auto PSR(Range)(Range rng)
 
         static if(isBidirectionalRange!Range) {
             @property Pos back() {
-                return new Pos(source.back_node);
+                return Pos.create(source.back_node);
             }
 
             void popBack() {
@@ -4879,7 +4881,13 @@ if(IndexedByCount!(Args)() == 1 &&
         }else enum result = "";
     }
 
-    this(){
+    // private to help avoid people accidentally using `new`,
+    // can't be @disable because then emplace doesn't work
+    // no point calling initialize because emplace doesn't call this
+    private this(){
+    }
+
+    void initialize(){
         mixin(ForEachCtorMixin!(0).result);
     }
 
@@ -4902,12 +4910,16 @@ if(IndexedByCount!(Args)() == 1 &&
         Allocator.deallocate(node);
     }
 
-    new(size_t sz) {
-        void* p = Allocator.allocate!void(sz);
-        return p;
+    static auto create(){
+        import std.conv : emplace;
+        auto c = cast(MultiIndexContainer) Allocator.allocate!void(__traits(classInstanceSize, MultiIndexContainer));
+        c.emplace();
+        c.initialize();
+        return c;
     }
-    delete(void* p) {
-        Allocator.deallocate(p);
+
+    void release(MultiIndexContainer c){
+        Allocator.deallocate(cast(void*) c);
     }
 
     template ForEachIndex(size_t N,L...){
@@ -5304,7 +5316,7 @@ void main(){
                 ),
             ValueChangedSlots!(ValueSignal!(1))) C;
 
-    C i = new C;
+    C i = C.create();
 
     alias MultiIndexContainer!(const(S1),
         IndexedBy!(OrderedUnique!("a.s"))
