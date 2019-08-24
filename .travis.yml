@@ -28,11 +28,6 @@ env:
   DUBCFG=python27
   RUNSPEC=runtests
   DOCKER=ariovistus/pyd-test-env:fedora28-ldc180-py36
-- DC=dmd
-  PYTHON=python3
-  DUBCFG=python34
-  RUNSPEC=runtests
-  DOCKER=ariovistus/pyd-test-env:jessie-dmd2_074-py34
 - DC=gdc
   PYTHON=python
   DUBCFG=python37

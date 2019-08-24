@@ -225,20 +225,20 @@ template reference_container(Mapping) {
                 HashedNonUnique!("a.d", "cast(size_t) *cast(const void**) &a"), "d",
                 HashedUnique!("a.py", "cast(size_t) *cast(const void**) &a"), "python"
                 ),
-            MutableView)
+            MallocAllocator, MutableView)
             Container;
     }else{
         alias MultiIndexContainer!(Mapping, IndexedBy!(
                     HashedUnique!("a.d"), "d",
                     HashedUnique!("a.py"), "python"),
-                MutableView)
+                MallocAllocator, MutableView)
             Container;
     }
     Container _reference_container = null;
 
     @property reference_container() {
         if(!_reference_container) {
-            _reference_container = new Container();
+            _reference_container = Container.create();
             Py_AtExit(&clear);
         }
         return _reference_container;

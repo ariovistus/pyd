@@ -31,13 +31,13 @@ private bool isAttached = false;
 alias ThreadSet = MultiIndexContainer!(
     Thread,
     IndexedBy!(HashedUnique!()),
-    MutableView
+    MallocAllocator, MutableView
 );
 
 __gshared ThreadSet threadSet = null;
 
 shared static this() {
-    threadSet = new ThreadSet();
+    threadSet = ThreadSet.create();
 }
 
 void ensureAttached() {
