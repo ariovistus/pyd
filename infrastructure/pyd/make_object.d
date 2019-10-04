@@ -1289,8 +1289,9 @@ template SimpleFormatType(T) {
                 return to_python(isSigned!T ? "i" : "I");
             }else static if(isIntegral!T && T.sizeof == 8) {
                 return to_python(isSigned!T ? "q" : "Q");
+            }else {
+                return null;
             }
-            return null;
         }else{
             assert(false);
         }
