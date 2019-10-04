@@ -162,6 +162,13 @@ unittest {
 }
 }
 
+// tests that SimpleFormatType template compiles
+unittest
+{
+    auto type = SimpleFormatType!int.pyType();
+    assert(type != null);
+}
+
 // tests on MatrixInfo utility template
 unittest {
     alias MatrixInfo!(double[][]) M1;
