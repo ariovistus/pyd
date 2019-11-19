@@ -30,7 +30,7 @@ if os.name == 'nt':
 	libname = "python" + python_version_compact
 else:
 	library_path = sysconfig.get_config_var('LIBDIR')
-	libname = "python" + python_version + ('' if python_version[0] == '2' else 'm')
+	libname = "python" + (sysconfig.get_config_var('LDVERSION') or python_version)
 
 print("{} PYD_LIBPYTHON_DIR={}".format(set_prefix, library_path))
 print("{} PYD_LIBPYTHON={}".format(set_prefix, libname))
