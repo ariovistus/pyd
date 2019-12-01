@@ -6,7 +6,7 @@
         "targetType": "executable",
         "dflags-posix-dmd": ["-defaultlib=libphobos2.so"],
 	"dependencies": {
-            "pyd": "0.9.3",
+            "pyd": "~>0.13.0",
 	},
         "subConfigurations": {
             "pyd": "python27",
