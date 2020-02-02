@@ -19,6 +19,7 @@ shared static this() {
             Property!(Bizzy.m, Mode!"r"),
             OpBinary!("+"),
             OpBinary!("*"),
+            OpBinary!("/"),
             OpBinary!("^^"),
             OpBinaryRight!("in"),
             OpBinaryRight!("+"),
@@ -106,6 +107,7 @@ class Bizzy {
         static if(op == "+") return i+1;
         else static if(op == "*") return i+2;
         else static if(op == "^^") return i+3;
+        else static if(op == "/") return i+4;
         else static assert(0);
     }
     bool opBinaryRight(string op)(int i) if(op == "in") {
@@ -267,6 +269,7 @@ unittest {
     c.py_stmts("assert repr(bizzy) == 'bye'");
     c.py_stmts("assert bizzy+1 == 2");
     c.py_stmts("assert bizzy*1 == 3");
+    c.py_stmts("assert bizzy/1 == 5");
     c.py_stmts("assert bizzy**1 == 4");
     c.py_stmts("assert 1+bizzy == 5");
     c.py_stmts("assert 19 in bizzy");

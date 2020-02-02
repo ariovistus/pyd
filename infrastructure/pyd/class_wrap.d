@@ -596,6 +596,14 @@ enum binaryslots = [
     "in": "type.tp_as_sequence.sq_contains",
 ];
 
+string getBinarySlot(string op) {
+    version(Python_3_0_Or_Later) {
+        if (op == "/") return "type.tp_as_number.nb_true_divide";
+        if (op == "/=") return "type.tp_as_number.nb_inplace_true_divide";
+    }
+    return binaryslots[op];
+}
+
 bool IsPyBinary(string op) {
     foreach(_op, slot; binaryslots) {
         if (op[$-1] != '=' && op == _op) return true;
@@ -668,6 +676,10 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
             alias fn Alias;
         }
         static if(is(typeof(mixin(fn_str1)) == function)) {
+            static if(_op == "/") {
+                pragma(msg, "getted here 1");
+                pragma(msg, C.stringof);
+            }
             alias ParameterTypeTuple!(typeof(mixin(fn_str1)))[0] RHS_T;
             alias ReturnType!(typeof(mixin(fn_str1))) RET_T;
             mixin("alias " ~ fn_str1 ~ " FN;");
@@ -808,7 +820,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
     }
     static void call(string classname, T)() {
         alias PydTypeObject!T type;
-        enum slot = binaryslots[op];
+        enum slot = getBinarySlot(op);
         mixin(autoInitializeMethods());
         alias CW!(TypeTuple!(OpAssign)) OpAsg;
         alias CW!(TypeTuple!()) Nop;
@@ -1249,7 +1261,7 @@ struct Operators(Ops...) {
         static void call() {
             static if(OpsL.length + OpsR.length != 0) {
                 alias PydTypeObject!T type;
-                enum slot = binaryslots[op];
+                enum slot = getBinarySlot(op);
                 mixin(autoInitializeMethods());
                 static if(op == "in") {
                     mixin(slot ~ " = &inop_wrap!(T, CW!OpsL, CW!OpsR).func;");
