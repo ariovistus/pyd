@@ -367,6 +367,29 @@ void PyErr_Print();
 void PyErr_PrintEx(int);
 /// _
 void PyErr_Display(PyObject*, PyObject*, PyObject*);
+
+version(Python_3_8_Or_Later) {
+    /// Availability: >= 3.8
+    int PyRun_AnyFile(FILE* fp, const(char)* name);
+    /// Availability: >= 3.8
+    int PyRun_AnyFileEx(FILE* fp, const(char)* name, int closeit);
+    /// Availability: >= 3.8
+    int PyRun_AnyFileFlags(FILE*, const(char)*, PyCompilerFlags *);
+    /// Availability: >= 3.8
+    int PyRun_SimpleString(const(char)* s);
+    /// Availability: >= 3.8
+    int PyRun_SimpleFile(FILE* f, const(char)* p);
+    /// Availability: >= 3.8
+    int PyRun_SimpleFileEx(FILE* f, const(char)* p, int c);
+    /// Availability: >= 3.8
+    int PyRun_InteractiveOne(FILE* f, const(char)* p);
+    /// Availability: >= 3.8
+    int PyRun_InteractiveLoop(FILE* f, const(char)* p);
+    /// Availability: >= 3.8
+    PyObject* PyRun_File(FILE* fp, const(char)* p, int s, PyObject* g, PyObject* l);
+
+}
+
 version(Python_3_2_Or_Later) {
     /// Availability: >= 3.2
     void _Py_PyAtExit(void function() func);

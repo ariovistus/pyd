@@ -112,9 +112,9 @@ version(Python_3_5_Or_Later) {
         PyDictObject* dv_dict;
     }
 }
-
 /// _
 mixin(PyAPI_DATA!"PyTypeObject PyDict_Type");
+
 version(Python_2_7_Or_Later) {
     /// Availability: >= 2.7
     mixin(PyAPI_DATA!"PyTypeObject PyDictIterKey_Type");

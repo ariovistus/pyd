@@ -7,7 +7,7 @@
 #include <longintrepr.h>
 #include <stdio.h>
 
-#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION == 7
 	typedef _PyCoreConfig PyCoreConfig;
 #endif
 typedef struct wrapperbase s_wrapperbase;
@@ -53,7 +53,9 @@ PyObject *offsets(PyObject *ignoredparam1, PyObject *ignoredparam2) {
 	RRadd(PyTypeObject, tp_alloc);
 	RRadd(PyHeapTypeObject, as_buffer);
 	RRadd(PyThreadState, thread_id);
+#if PY_MAJOR_VERSION != 3 || PY_MINOR_VERSION <= 7
 	RRadd(PyInterpreterState, dlopenflags);
+#endif
 	RRadd(PySetObject, weakreflist);
 	RRadd(PySliceObject, step);
 	RRadd(PyMemberDef, doc);
@@ -115,10 +117,12 @@ PyObject *offsets(PyObject *ignoredparam1, PyObject *ignoredparam2) {
 #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 6
 	RRadd(PyCodeObject, co_extra);
 	RRadd(PyThreadState, async_gen_finalizer);
+#if PY_MINOR_VERSION < 8
 	RRadd(PyInterpreterState, eval_frame);
 #endif
+#endif
 
-#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION == 7
 	RRadd(PyCoreConfig, base_exec_prefix);
 	RRadd(PyThreadState, id);
 	RRadd(PyInterpreterState, tstate_next_unique_id);

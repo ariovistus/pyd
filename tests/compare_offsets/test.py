@@ -29,6 +29,8 @@ all_sum = len(dx)
 for k in dx.keys():
     d_o = dx.get(k)
     c_o = cx.get(k)
+    if d_o is None or c_o is None:
+        print(k, d_o, c_o)
     if d_o != c_o:
         print ("%s  D=0x%x  C=0x%x" % (k, d_o, c_o))
     else:

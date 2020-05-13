@@ -30,6 +30,23 @@ PyObject_BorrowedRef* PyObject_Init(PyObject*, PyTypeObject*);
 /// ditto
 Borrowed!PyVarObject* PyObject_InitVar(PyVarObject*,
         PyTypeObject*, Py_ssize_t);
+
+version(Python_3_5_Or_Later) {
+    /// _
+    struct PyObjectArenaAllocator {
+        void* ctx;
+        void* function(void* ctx, size_t size) alloc;
+        void* function(void* ctx, void* ptr, size_t size) free;
+    }
+
+
+    /** Get the arena allocator. */
+    void PyObject_GetArenaAllocator(PyObjectArenaAllocator* allocator);
+
+    /** Set the arena allocator. */
+    void PyObject_SetArenaAllocator(PyObjectArenaAllocator* allocator);
+}
+
 /// _
 PyObject* _PyObject_New(PyTypeObject*);
 /// _

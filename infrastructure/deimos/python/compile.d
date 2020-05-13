@@ -26,11 +26,14 @@ version(Python_3_7_Or_Later) {
     enum PyCF_DONT_IMPLY_DEDENT = 0x200;
     enum PyCF_ONLY_AST = 0x400;
     enum PyCF_IGNORE_COOKIE = 0x800;
+    enum PyCF_TYPE_COMMENTS = 0x1000;
+    enum PyCF_ALLOW_TOP_LEVEL_AWAIT = 0x2000;
 
     struct PyCompilerFlags {
         int cf_flags;
     }
 }
+
 
 /// _
 struct PyFutureFeatures {

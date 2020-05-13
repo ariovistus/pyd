@@ -177,8 +177,9 @@ void PyEval_RestoreThread(PyThreadState*);
 int PyEval_ThreadsInitialized();
 /// _
 void PyEval_InitThreads();
-version(Python_3_0_Or_Later) {
-    /// Availability: 3.*
+version(Python_3_8_Or_Later) {
+}else version(Python_3_0_Or_Later) {
+    /// Availability: 3.0 - 3.7
     void _PyEval_FiniThreads();
 }
 /// _
@@ -189,8 +190,11 @@ void PyEval_ReleaseLock();
 void PyEval_AcquireThread(PyThreadState* tstate);
 /// _
 void PyEval_ReleaseThread(PyThreadState* tstate);
-/// _
-void PyEval_ReInitThreads();
+version(Python_3_8_Or_Later) {
+}else {
+    /// Availability: < 3.8
+    void PyEval_ReInitThreads();
+}
 
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
@@ -231,7 +235,8 @@ string Py_ALLOW_THREADS()(string inner_code) {
 
 ///_
 int _PyEval_SliceIndex(PyObject*, Py_ssize_t*);
-version(Python_3_0_Or_Later) {
-    /// Availability: 3.*
+version(Python_3_8_Or_Later) {
+}else version(Python_3_0_Or_Later) {
+    /// Availability: 3.0 - 3.7
     void _PyEval_SignalAsyncExc();
 }

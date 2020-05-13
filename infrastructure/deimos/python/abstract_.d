@@ -59,14 +59,21 @@ Py_ssize_t PyObject_Length(PyObject* o);
 /// _
 alias PyObject_Length PyObject_Size;
 
-/** The length hint function returns a non-negative value from o.__len__()
-   or o.__length_hint__().  If those methods aren't found or return a negative
-   value, then the defaultvalue is returned.  If one of the calls fails,
-   this function returns -1.
-*/
-version(Python_2_6_Or_Later){
+version(Python_3_0_Or_Later) {
+    Py_ssize_t PyObject_LengthHint(PyObject*, Py_ssize_t);
+}else version(Python_2_6_Or_Later){
+    /** The length hint function returns a non-negative value from o.__len__()
+       or o.__length_hint__().  If those methods aren't found or return a negative
+       value, then the defaultvalue is returned.  If one of the calls fails,
+       this function returns -1.
+    */
     Py_ssize_t _PyObject_LengthHint(PyObject*, Py_ssize_t);
 }else version(Python_2_5_Or_Later){
+    /** The length hint function returns a non-negative value from o.__len__()
+       or o.__length_hint__().  If those methods aren't found or return a negative
+       value, then the defaultvalue is returned.  If one of the calls fails,
+       this function returns -1.
+    */
     Py_ssize_t _PyObject_LengthHint(PyObject*);
 }
 
@@ -94,7 +101,7 @@ version(Python_2_6_Or_Later){
 
     /** Return 1 if the getbuffer function is available, otherwise
        return 0 */
-    int PyObject_CheckBuffer()(PyObject* obj){
+    int PyObject_CheckBuffer()(PyObject* obj) {
         version(Python_3_0_Or_Later) {
             return (obj.ob_type.tp_as_buffer !is null) &&
                 (obj.ob_type.tp_as_buffer.bf_getbuffer !is null);
@@ -414,6 +421,7 @@ PyObject** PySequence_Fast_ITEMS()(PyObject* sf) {
 }
 /// _
 Py_ssize_t PySequence_Count(PyObject* o, PyObject* value);
+
 /// _
 enum PY_ITERSEARCH_COUNT    = 1;
 /// _
@@ -492,9 +500,9 @@ int PyObject_IsInstance(PyObject* object, PyObject* typeorclass);
 /// _
 int PyObject_IsSubclass(PyObject* object, PyObject* typeorclass);
 version(Python_2_6_Or_Later){
-/// Availability: >= 2.6
+    /// Availability: >= 2.6
     int _PyObject_RealIsInstance(PyObject* inst, PyObject* cls);
-/// Availability: >= 2.6
+    /// Availability: >= 2.6
     int _PyObject_RealIsSubclass(PyObject* derived, PyObject* cls);
 }
 

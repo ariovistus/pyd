@@ -57,6 +57,12 @@ struct PyFunctionObject {
         /** Annotations, a dict or NULL */
         /// Availability: 3.*
         PyObject* func_annotations;
+        PyObject* func_qualname;
+    }
+
+    version(Python_3_8_Or_Later) {
+        /// Availability: >= 3.8
+        vectorcallfunc vectorcall;
     }
 }
 

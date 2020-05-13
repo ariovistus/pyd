@@ -316,7 +316,8 @@ struct PyThreadState {
     version(Python_3_7_Or_Later) {
         int coroutine_origin_tracking_depth;
     }
-    version(Python_3_5_Or_Later) {
+    version(Python_3_7_Or_Later) {
+    }else version(Python_3_5_Or_Later) {
         /// Availability: >= 3.5
         PyObject* coroutine_wrapper;
         /// Availability: >= 3.5
@@ -349,6 +350,11 @@ PyInterpreterState* PyInterpreterState_New();
 void PyInterpreterState_Clear(PyInterpreterState *);
 /// _
 void PyInterpreterState_Delete(PyInterpreterState *);
+version(Python_3_8_Or_Later) {
+    /// Availability: >=3.8
+    PyObject* PyInterpreterState_GetDict(PyInterpreterState*);
+}
+
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
     int _PyState_AddModule(PyObject*, PyModuleDef*);

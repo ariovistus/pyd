@@ -6,7 +6,8 @@ import std.stdio;
 import deimos.python.Python;
 
 alias wrapperbase s_wrapperbase;
-version(Python_3_7_Or_Later) {
+version(Python_3_8_Or_Later) {
+}else version(Python_3_7_Or_Later) {
     import deimos.python.internal.context;
     alias _PyCoreConfig PyCoreConfig ;
 }
@@ -52,8 +53,11 @@ int[string] offsets() {
 	add!"PyTypeObject.tp_richcompare"(r);
 	add!"PyTypeObject.tp_alloc"(r);
 	add!"PyHeapTypeObject.as_buffer"(r);
-	add!"PyThreadState.thread_id"(r);
-	add!"PyInterpreterState.dlopenflags"(r);
+    add!"PyThreadState.thread_id"(r);
+    version(Python_3_8_Or_Later) {
+    }else{
+        add!"PyInterpreterState.dlopenflags"(r);
+    }
 	add!"PySetObject.weakreflist"(r);
 	add!"PySliceObject.step"(r);
 	add!"PyMemberDef.doc"(r);
@@ -115,14 +119,20 @@ version(Python_3_5_Or_Later)  {
 
 version(Python_3_6_Or_Later) {
 	add!"PyCodeObject.co_extra"(r);
-	add!"PyThreadState.async_gen_finalizer"(r);
-	add!"PyInterpreterState.eval_frame"(r);
+    add!"PyThreadState.async_gen_finalizer"(r);
+    version(Python_3_8_Or_Later) {
+    }else{
+        add!"PyInterpreterState.eval_frame"(r);
+    }
 }
 
 version(Python_3_7_Or_Later) {
-	add!"PyCoreConfig.base_exec_prefix"(r);
-	add!"PyThreadState.id"(r);
-	add!"PyInterpreterState.tstate_next_unique_id"(r);
+    version(Python_3_8_Or_Later) {
+    }else{
+        add!"PyCoreConfig.base_exec_prefix"(r);
+        add!"PyThreadState.id"(r);
+        add!"PyInterpreterState.tstate_next_unique_id"(r);
+    }
 }
 
 	return r;

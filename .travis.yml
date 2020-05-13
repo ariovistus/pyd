@@ -5,6 +5,11 @@ services:
 env:
 - DC=dmd
   PYTHON=python
+  DUBCFG=python38
+  RUNSPEC=runtests
+  DOCKER=ariovistus/pyd-test-env:buster-dmd2_080-py38
+- DC=dmd
+  PYTHON=python
   DUBCFG=python37
   RUNSPEC=runtests
   DOCKER=ariovistus/pyd-test-env:stretch-dmd2_080-py37

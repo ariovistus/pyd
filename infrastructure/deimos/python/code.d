@@ -13,6 +13,9 @@ import deimos.python.object;
 
 extern(C):
 
+struct _PyOpcache {
+}
+
 /** Bytecode object
 
   subclass of PyObject.
@@ -22,6 +25,10 @@ struct PyCodeObject {
 
     /** #arguments, except *args */
     int co_argcount;
+    version(Python_3_8_Or_Later) {
+        /** #positional only arguments */
+        int co_posonlyargcount;
+    }
     version(Python_3_4_Or_Later) {
         /** #keyword only arguments */
         int co_kwonlyargcount;	
@@ -84,6 +91,23 @@ struct PyCodeObject {
           Type is a void* to keep the format private in codeobject.c to force
           people to go through the proper APIs */
         void* co_extra;
+    }
+
+    version(Python_3_8_Or_Later) {
+        /* Per opcodes just-in-time cache
+         *
+         * To reduce cache size, we use indirect mapping from opcode index to
+         * cache object:
+         *   cache = co_opcache[co_opcache_map[next_instr - first_instr] - 1]
+         */
+
+        // co_opcache_map is indexed by (next_instr - first_instr).
+        //  * 0 means there is no cache for this opcode.
+        //  * n > 0 means there is cache in co_opcache[n-1].
+        ubyte* co_opcache_map;
+        _PyOpcache* co_opcache;
+        int co_opcache_flag; // used to determine when create a cache.
+        ubyte co_opcache_size; // length of co_opcache.
     }
 }
 
@@ -164,9 +188,49 @@ size_t PyCode_GetNumFree()(PyObject* op) {
     return PyObject_Length((cast(PyCodeObject *) op).co_freevars);
 }
 
-/// _
-PyCodeObject* PyCode_New(
+version(Python_3_0_Or_Later) {
+    /// _
+    PyCodeObject* PyCode_New(
+            int argcount,
+            int kwonlyargcount,
+            int nlocals,
+            int stacksize,
+            int flags,
+            PyObject* code,
+            PyObject* consts,
+            PyObject* names,
+            PyObject* varnames,
+            PyObject* freevars,
+            PyObject* cellvars,
+            PyObject* filenames,
+            PyObject* name,
+            int firstlineno,
+            PyObject* lnotab);
+}else{
+    /// _
+    PyCodeObject* PyCode_New(
+            int argcount,
+            int nlocals,
+            int stacksize,
+            int flags,
+            PyObject* code,
+            PyObject* consts,
+            PyObject* names,
+            PyObject* varnames,
+            PyObject* freevars,
+            PyObject* cellvars,
+            PyObject* filenames,
+            PyObject* name,
+            int firstlineno,
+            PyObject* lnotab);
+}
+
+version(Python_3_8_Or_Later) {
+    /// Availability: >= 3.8
+    PyCodeObject* PyCode_NewWithPosOnlyArgs(
         int argcount,
+        int posonlyargcount,
+        int kwonlyargcount,
         int nlocals,
         int stacksize,
         int flags,
@@ -176,10 +240,11 @@ PyCodeObject* PyCode_New(
         PyObject* varnames,
         PyObject* freevars,
         PyObject* cellvars,
-        PyObject* filenames,
+        PyObject* filename,
         PyObject* name,
         int firstlineno,
         PyObject* lnotab);
+}
 
 version(Python_2_7_Or_Later) {
     /** Creates a new empty code object with the specified source location. */

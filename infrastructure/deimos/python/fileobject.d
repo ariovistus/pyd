@@ -120,10 +120,13 @@ int PyFile_WriteString(const(char)*, PyObject*);
 /// _
 int PyObject_AsFileDescriptor(PyObject*);
 
-/** The default encoding used by the platform file system APIs
-   If non-NULL, this is different than the default encoding for strings
-*/
-mixin(PyAPI_DATA!"const(char)* Py_FileSystemDefaultEncoding");
+version(Python_3_8_Or_Later) {
+}else {
+    /** The default encoding used by the platform file system APIs
+      If non-NULL, this is different than the default encoding for strings
+     */
+    mixin(PyAPI_DATA!"const(char)* Py_FileSystemDefaultEncoding");
+}
 
 version(Python_3_6_Or_Later) {
     /// _
@@ -131,18 +134,18 @@ version(Python_3_6_Or_Later) {
 }
 
 version(Python_3_7_Or_Later) {
-    /// _
+    /// Availablility: >= 3.7
     mixin(PyAPI_DATA!"int Py_UTF8Mode");
 }
 
 /// _
 enum PY_STDIOTEXTMODE = "b";
-
 /// _
 /* Routine to replace fgets() which accept any of \r, \n
    or \r\n as line terminators.
 */
 char* Py_UniversalNewlineFgets(char*, int, FILE*, PyObject*);
+
 version(Python_3_0_Or_Later) {
     /// Availability: 3.*
     mixin(PyAPI_DATA!"int Py_HasFileSystemDefaultEncoding");

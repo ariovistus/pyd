@@ -118,6 +118,15 @@ version(Python_2_5_Or_Later) {
             Py_ssize_t written;
         }
     }
+    alias PyEnvironmentErrorObject PyOSErrorObject;
+
+    version(Python_3_5_Or_Later) {
+        /// _
+        struct PyStopIterationObject {
+            mixin PyException_HEAD;
+            PyObject* value;
+        }
+    }
 
     version(Windows) {
         /// subclass of PyBaseExceptionObject

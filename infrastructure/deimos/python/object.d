@@ -295,6 +295,11 @@ version(Python_2_6_Or_Later){
     /// Availability: >= 2.6
     alias void function(PyObject*, Py_buffer*) releasebufferproc;
 
+    version(Python_3_8_Or_Later) {
+        alias PyObject* function(PyObject* callable, const(PyObject*)* args,
+                size_t nargsf, PyObject* kwnames) vectorcallfunc;
+    }
+
     /** Flags for getting buffers */
     /// Availability: >= 2.6
     enum PyBUF_SIMPLE = 0;
@@ -496,19 +501,19 @@ version(Python_3_5_Or_Later) {
 struct PyBufferProcs {
     version(Python_3_0_Or_Later) {
     }else{
-        /// Availability: 3.*
+        /// Availability: 2.*
         readbufferproc bf_getreadbuffer;
-        /// Availability: 3.*
+        /// Availability: 2.*
         writebufferproc bf_getwritebuffer;
-        /// Availability: 3.*
+        /// Availability: 2.*
         segcountproc bf_getsegcount;
-        /// Availability: 3.*
+        /// Availability: 2.*
         charbufferproc bf_getcharbuffer;
     }
     version(Python_2_6_Or_Later){
-        /// Availability: 2.6, 2.7
+        /// Availability: 2.6+
         getbufferproc bf_getbuffer;
-        /// Availability: 2.6, 2.7
+        /// Availability: 2.6+
         releasebufferproc bf_releasebuffer;
     }
 }
@@ -587,8 +592,13 @@ struct PyTypeObject {
 
     /** Methods to implement standard operations */
     destructor tp_dealloc;
-    /// ditto
-    printfunc tp_print;
+    version(Python_3_8_Or_Later) {
+        /// ditto
+        Py_ssize_t tp_vectorcall_offset;
+    }else{
+        /// ditto
+        printfunc tp_print;
+    }
     /// ditto
     getattrfunc tp_getattr;
     /// ditto
@@ -703,6 +713,11 @@ struct PyTypeObject {
         /// Availability: 3.??
         destructor tp_finalize;
     }
+
+    version(Python_3_8_Or_Later) {
+        vectorcallfunc tp_vectorcall;
+        int function(PyObject*, FILE*, int) tp_print;
+    }
 }
 
 version(Python_3_0_Or_Later) {
@@ -767,6 +782,11 @@ struct PyHeapTypeObject {
         PyObject* name;
         /// Availability: 2.4
         PyObject* slots;
+    }
+
+    version(Python_3_5_Or_Later) {
+        PyObject* ht_qualname;
+        void* ht_cached_keys;
     }
 }
 

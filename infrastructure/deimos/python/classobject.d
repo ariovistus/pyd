@@ -63,6 +63,9 @@ struct PyMethodObject {
     }
     /** List of weak references */
     PyObject* im_weakreflist;
+    version(Python_3_8_Or_Later) {
+        vectorcallfunc vectorcall;
+    }
 }
 
 /// _
