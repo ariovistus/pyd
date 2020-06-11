@@ -274,7 +274,7 @@
 				"python38"
 			],
 			"libs-posix": [
-				"python3.8m"
+				"python3.8"
 			],
 			"lflags-windows-x86_64-ldc": [
 				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python38\\libs\"\"",
