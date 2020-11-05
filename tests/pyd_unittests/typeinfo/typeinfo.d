@@ -1,5 +1,5 @@
 
-import util.typeinfo;
+import pyd.util.typeinfo;
 
 unittest {
     static assert(constness!Object == Constness.Mutable);

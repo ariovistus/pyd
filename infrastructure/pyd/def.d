@@ -29,8 +29,8 @@ import deimos.python.Python;
 
 import std.typetuple;
 import std.traits;
-import util.conv;
-import util.typelist;
+import pyd.util.conv;
+import pyd.util.typelist;
 import pyd.func_wrap;
 
 private PyMethodDef[] module_global_methods = [

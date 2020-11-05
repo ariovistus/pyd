@@ -27,8 +27,8 @@ import std.exception: enforce;
 
 import pyd.func_wrap;
 import deimos.python.Python;
-import util.multi_index;
-import util.typeinfo;
+import pyd.util.multi_index;
+import pyd.util.typeinfo;
 
 // s/wrapped_class_object!T/PyObject/
 

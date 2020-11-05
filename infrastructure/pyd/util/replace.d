@@ -1,4 +1,4 @@
-module util.replace;
+module pyd.util.replace;
 import std.conv;
 
 /**

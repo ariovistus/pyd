@@ -23,8 +23,8 @@ module pyd.make_wrapper;
 
 import deimos.python.Python;
 
-import util.typeinfo;
-import util.replace: Replace;
+import pyd.util.typeinfo;
+import pyd.util.replace: Replace;
 import pyd.references;
 import pyd.class_wrap;
 import pyd.exception;

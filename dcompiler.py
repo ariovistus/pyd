@@ -374,7 +374,7 @@ class DCompiler(cc.CCompiler):
                     )
                 sources.append((winpath(filePath,self.winonly), 'infra'))
             for file in _utilFiles:
-                filePath = os.path.join(_infraDir, 'util', file)
+                filePath = os.path.join(_infraDir, 'pyd', 'util', file)
                 if not os.path.isfile(filePath):
                     raise DistutilsPlatformError("Required util source file '%s' is"
                         " missing." % filePath

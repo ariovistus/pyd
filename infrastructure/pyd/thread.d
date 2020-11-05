@@ -24,7 +24,7 @@ module pyd.thread;
 import std.compiler;
 
 import core.thread;
-import util.multi_index;
+import pyd.util.multi_index;
 
 private bool isAttached = false;
 

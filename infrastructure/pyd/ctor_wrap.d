@@ -23,9 +23,9 @@ module pyd.ctor_wrap;
 
 import std.traits;
 import std.exception: enforce;
-import util.typelist: Join;
-import util.typeinfo;
-import util.replace: Replace;
+import pyd.util.typelist: Join;
+import pyd.util.typeinfo;
+import pyd.util.replace: Replace;
 import deimos.python.Python;
 import pyd.references;
 import pyd.class_wrap;
@@ -38,7 +38,7 @@ template call_ctor(T, init) {
     alias ParameterIdentifierTuple!(init.Inner!T.FN) paramids;
     //https://issues.dlang.org/show_bug.cgi?id=17192
     //alias ParameterDefaultValueTuple!(init.Inner!T.FN) dfs;
-    import util.typeinfo : WorkaroundParameterDefaults;
+    import pyd.util.typeinfo : WorkaroundParameterDefaults;
     alias dfs = WorkaroundParameterDefaults!(init.Inner!T.FN);
     enum params = getparams!(init.Inner!T.FN, "paramtypes", "dfs");
     mixin(Replace!(q{

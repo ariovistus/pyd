@@ -60,3 +60,6 @@ tests/pyd_unittests/pydobject/pydobject
 tests/pyd_unittests/struct_wrap/struct_wrap
 tests/pyd_unittests/thread/thread
 tests/pyd_unittests/typeinfo/typeinfo
+tests/deimos_unittests/datetime/datetime
+tests/deimos_unittests/link/link
+tests/deimos_unittests/object_/object_

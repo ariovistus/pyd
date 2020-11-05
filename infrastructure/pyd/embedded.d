@@ -41,7 +41,7 @@ module pyd.embedded;
 
 import deimos.python.Python;
 import pyd.pyd;
-import util.conv;
+import pyd.util.conv;
 import std.algorithm: findSplit;
 import std.string: strip, outdent;
 import std.traits;

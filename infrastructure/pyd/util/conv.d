@@ -1,4 +1,4 @@
-module util.conv;
+module pyd.util.conv;
 
 import std.string;
 

@@ -1,4 +1,4 @@
-module util.typelist;
+module pyd.util.typelist;
 
 template Join(string delimit, T...) {
         static if(T.length == 0) {

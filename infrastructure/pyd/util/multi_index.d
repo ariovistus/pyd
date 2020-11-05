@@ -1,4 +1,4 @@
-module util.multi_index;
+module pyd.util.multi_index;
 
 /**
  * TODO:
@@ -22,7 +22,7 @@ import std.exception: enforce;
 import std.algorithm: find, swap, copy, fill, max, startsWith, moveAll;
 import std.algorithm: move, sort, map;
 import std.traits: isImplicitlyConvertible, isDynamicArray;
-import util.replace: Replace;
+import pyd.util.replace: Replace;
 import std.typetuple: TypeTuple, staticMap, NoDuplicates, staticIndexOf, allSatisfy;
 import std.functional: unaryFun, binaryFun;
 import std.string: format;

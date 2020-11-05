@@ -28,7 +28,7 @@ module pyd.struct_wrap;
 import std.traits;
 import deimos.python.Python;
 
-import util.typeinfo;
+import pyd.util.typeinfo;
 import pyd.references;
 import pyd.def;
 import pyd.class_wrap;

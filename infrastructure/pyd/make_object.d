@@ -703,7 +703,7 @@ T python_to_d_tuple(T) (PyObject* o) {
 }
 
 T python_to_d_complex(T) (PyObject* o) {
-    import util.conv;
+    import pyd.util.conv;
     static if (is(Unqual!T _unused : Complex!F, F)) {
         double real_ = python_to_d!double(PyObject_GetAttrString(o, "real"));
         handle_exception();

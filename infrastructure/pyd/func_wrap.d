@@ -32,9 +32,9 @@ import std.range;
 import std.conv;
 import std.compiler;
 import std.string: format;
-import util.typelist;
-import util.typeinfo;
-import util.replace: Replace;
+import pyd.util.typelist;
+import pyd.util.typeinfo;
+import pyd.util.replace: Replace;
 
 import pyd.def;
 import pyd.references;
@@ -176,7 +176,7 @@ ReturnType!fn applyPyTupleToAlias(alias fn, string fname)(PyObject* args, PyObje
         static if(MaxArgs.vstyle == Variadic.no) {
 			//https://issues.dlang.org/show_bug.cgi?id=17192
 			//alias ParameterDefaultValueTuple!fn Defaults;
-			import util.typeinfo : WorkaroundParameterDefaults;
+			import pyd.util.typeinfo : WorkaroundParameterDefaults;
 			alias Defaults = WorkaroundParameterDefaults!fn;
             if (i < argCount) {
                 auto bpobj =  PyTuple_GetItem(args, cast(Py_ssize_t) i);
@@ -397,7 +397,7 @@ template memberfunc_to_func(T, alias memfn) {
     alias ParameterIdentifierTuple!memfn ids;
 	//https://issues.dlang.org/show_bug.cgi?id=17192
     //alias ParameterDefaultValueTuple!memfn dfs;
-	import util.typeinfo : WorkaroundParameterDefaults;
+	import pyd.util.typeinfo : WorkaroundParameterDefaults;
     alias dfs = WorkaroundParameterDefaults!memfn;
     enum params = getparams!(memfn,"PS","dfs");
     enum t = gensym!ids();
@@ -543,7 +543,7 @@ PyObject* arrangeNamedArgs(alias fn, string fname)(PyObject* args, PyObject* kwa
     static if(vstyle == Variadic.no) {
         //https://issues.dlang.org/show_bug.cgi?id=17192
         //alias ParameterDefaultValueTuple!fn Defaults;
-		import util.typeinfo : WorkaroundParameterDefaults;
+		import pyd.util.typeinfo : WorkaroundParameterDefaults;
         alias Defaults = WorkaroundParameterDefaults!fn;
         foreach(i, v; Defaults) {
             static if(!is(v == void)) {
@@ -597,7 +597,7 @@ template minNumArgs_impl(alias fn, fnT) {
     alias ParameterTypeTuple!(fnT) Params;
 	//https://issues.dlang.org/show_bug.cgi?id=17192
     //alias ParameterDefaultValueTuple!(fn) Defaults;
-	import util.typeinfo : WorkaroundParameterDefaults;
+	import pyd.util.typeinfo : WorkaroundParameterDefaults;
 	alias Defaults = WorkaroundParameterDefaults!fn;
     alias variadicFunctionStyle!fn vstyle;
     static if(Params.length == 0) {
@@ -651,7 +651,7 @@ bool supportsNArgs(alias fn, fn_t = typeof(&fn))(size_t n) {
     alias ParameterTypeTuple!fn ps;
 	//https://issues.dlang.org/show_bug.cgi?id=17192
     //alias ParameterDefaultValueTuple!fn defaults;
-	import util.typeinfo : WorkaroundParameterDefaults;
+	import pyd.util.typeinfo : WorkaroundParameterDefaults;
 	alias defaults = WorkaroundParameterDefaults!fn;
     static if(vstyle == Variadic.no) {
         return (n >= minArgs!(fn,fn_t) && n <= maxArgs!(fn,fn_t).max);
@@ -683,7 +683,7 @@ template getparams(alias fn, string pt_alias, string pd_alias) {
     alias ParameterIdentifierTuple!fn Pi;
     //https://issues.dlang.org/show_bug.cgi?id=17192
     //alias ParameterDefaultValueTuple!fn Pd;
-    import util.typeinfo : WorkaroundParameterDefaults;
+    import pyd.util.typeinfo : WorkaroundParameterDefaults;
     alias Pd = WorkaroundParameterDefaults!fn;
     enum var = variadicFunctionStyle!fn;
 

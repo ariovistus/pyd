@@ -31,8 +31,8 @@ import std.traits;
 import std.conv;
 import std.functional;
 import std.typetuple;
-import util.typelist;
-import util.typeinfo;
+import pyd.util.typelist;
+import pyd.util.typeinfo;
 import pyd.references;
 import pyd.ctor_wrap;
 import pyd.def;
@@ -317,7 +317,7 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
         PydTypeObject!(T).tp_methods = list.ptr;
     }
     template shim(size_t i, T) {
-        import util.replace: Replace;
+        import pyd.util.replace: Replace;
         enum shim = Replace!(q{
             alias Params[$i] __pyd_p$i;
             $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
@@ -445,7 +445,7 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
                 wrapped_prop_list!(T).ptr;
         }
         template shim(size_t i, T) {
-            import util.replace: Replace;
+            import pyd.util.replace: Replace;
             static if(countUntil(parts.mode, "r") != -1) {
                 enum getter = Replace!(q{
                 override ReturnType!(__pyd_p$i.get_t) $realname() {
@@ -540,7 +540,7 @@ struct Init(cps ...) {
             alias ParameterTypeTuple!FN Pt;
             //https://issues.dlang.org/show_bug.cgi?id=17192
             //alias ParameterDefaultValueTuple!FN Pd;
-            import util.typeinfo : WorkaroundParameterDefaults;
+            import pyd.util.typeinfo : WorkaroundParameterDefaults;
             alias Pd = WorkaroundParameterDefaults!FN;
         }
     }
@@ -549,7 +549,7 @@ struct Init(cps ...) {
     }
 
     template shim(size_t i, T) {
-        import util.replace: Replace;
+        import pyd.util.replace: Replace;
         import std.string: format;
         enum params = getparams!(Inner!T.FN,
                 format("__pyd_p%s.Inner!T.Pt",i),
@@ -1239,7 +1239,7 @@ template IsBinR(T...) {
 
 // handle all operator overloads. Ops must only contain operator overloads.
 struct Operators(Ops...) {
-    import util.replace: Replace;
+    import pyd.util.replace: Replace;
     enum bool needs_shim = false;
 
     template BinOp(string op, T) {
@@ -1275,7 +1275,7 @@ struct Operators(Ops...) {
 
     }
     struct UnOp(string op, T) {
-        import util.replace: Replace;
+        import pyd.util.replace: Replace;
         enum IsThisOp(A) = A.op == op;
         alias Filter!(IsUn, Filter!(IsThisOp, Ops)) Ops1;
         static assert(Ops1.length <= 1,
@@ -1542,7 +1542,7 @@ void wrap_class(T, Params...)() {
 }
 template _wrap_class(_T, string name, string docstring, string modulename, Params...) {
     import std.conv;
-    import util.typelist;
+    import pyd.util.typelist;
     static if (is(_T == class)) {
         //pragma(msg, "wrap_class: " ~ name);
         alias pyd.make_wrapper.make_wrapper!(_T, Params).wrapper shim_class;

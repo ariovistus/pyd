@@ -28,7 +28,7 @@ import std.traits;
 import std.exception: enforce;
 import std.string: format;
 import std.conv: to;
-import util.typeinfo;
+import pyd.util.typeinfo;
 
 import pyd.references;
 import pyd.class_wrap;
