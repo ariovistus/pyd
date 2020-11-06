@@ -90,13 +90,19 @@ template wrapped_member(T, string name, string mode, PropertyParts...) {
 /**
 Wrap a member variable of a class or struct.
 
-Params:
+$(BR)
+Template Parameters:
+$(BR)
 name = The name of the member to wrap
+$(BR)
 Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname),
 and Mode!(mode)
+$(BR)
 pyname = The name of the member as it will appear in Python. Defaults to name
+$(BR)
 mode = specifies whether this member is readable, writable. possible values
 are "r", "w", "rw". Defaults to "rw".
+$(BR)
 docstring = The function's docstring. Defaults to "".
 */
 struct Member(string name, Options...) {

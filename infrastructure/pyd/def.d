@@ -162,15 +162,15 @@ keyword arguments.
 
 Params:
 
-fn   = The function to wrap.
+_fn   = The function to wrap.
 Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname), ModuleName!(modulename), and fn_t
-modulename = The name of the python module in which the wrapped function
+modulename: The name of the python module in which the wrapped function
             resides.
-pyname = The name of the function as it will appear in Python.
-fn_t = The function type of the function to wrap. This must be
+pyname: The name of the function as it will appear in Python.
+fn_t: The function type of the function to wrap. This must be
             specified if more than one function shares the same name,
             otherwise the first one defined lexically will be used.
-docstring = The function's docstring.
+docstring: The function's docstring.
 
 Examples:
 ---

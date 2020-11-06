@@ -85,11 +85,12 @@ void PyImport_Cleanup();
 int PyImport_ImportFrozenModule(char* );
 
 version(Python_3_0_Or_Later) {
-    /**
-Params:
-name = UTF-8 encoded string
-*/
     version(Python_3_7_Or_Later) {
+        /**
+        Params:
+        name = UTF-8 encoded string
+        modules =
+        */
         /// Availability: 3.*
         PyObject* _PyImport_FindBuiltin(
                 char* name,
@@ -103,12 +104,13 @@ name = UTF-8 encoded string
     }
     /// Availability: 3.*
     PyObject* _PyImport_FindExtensionUnicode(char*, PyObject*);
-    /**
-Params:
-mod =
-name = UTF-8 encoded string
-*/
     version(Python_3_7_Or_Later) {
+        /**
+            Params:
+            mod =
+            name = UTF-8 encoded string
+            modules =
+            */
         /// Availability: 3.*
         int _PyImport_FixupBuiltin(
             PyObject* mod,

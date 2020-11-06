@@ -77,9 +77,9 @@ struct symtable {
 /// _
 struct PySTEntryObject{
 	mixin PyObject_HEAD;
-        /** int: key in st_symbols) */
+        /** int: key in st_symbols */
 	PyObject* ste_id;
-        /** dict: name to flags) */
+        /** dict: name to flags */
 	PyObject* ste_symbols;
         /** string: name of scope */
 	PyObject* ste_name;

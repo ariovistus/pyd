@@ -107,8 +107,8 @@ version(Python_3_0_Or_Later) {
  * Return value:  0 if all is OK, -1 if error (and an exception is
  * set, most likely OverflowError).
  * There are two problems on non-IEEE platforms:
- * 1):  What this does is undefined if x is a NaN or infinity.
- * 2):  -0.0 and +0.0 produce the same string.
+ * 1$(RPAREN):  What this does is undefined if x is a NaN or infinity.
+ * 2$(RPAREN):  -0.0 and +0.0 produce the same string.
  */
 int _PyFloat_Pack4(double x, ubyte* p, int le);
 /// ditto

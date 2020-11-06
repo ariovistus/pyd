@@ -1231,7 +1231,7 @@ version(Python_3_3_Or_Later) {
 Params:
 string = UTF-7 encoded string
 length = size of string
-error = error handling
+errors = error handling
 consumed = bytes consumed
 */
         /// Availability: >= 2.6
@@ -1244,14 +1244,14 @@ consumed = bytes consumed
 
       /**
 Params:
-string = UTF-32 encoded string
+_string = UTF-32 encoded string
 length = size of string
-error = error handling
+errors = error handling
 byteorder = pointer to byteorder to use 0=native;-1=LE,1=BE; updated on exit
 */
         /// Availability: >= 2.6
       PyObject* PyUnicode_DecodeUTF32(
-              const(char)* string,
+              const(char)* _string,
               Py_ssize_t length,
               const(char)*errors,
               int *byteorder
@@ -1259,14 +1259,15 @@ byteorder = pointer to byteorder to use 0=native;-1=LE,1=BE; updated on exit
 
       /**
 Params:
-string = UTF-32 encoded string
+_string = UTF-32 encoded string
 length = size of string
-error = error handling
+errors = error handling
 byteorder = pointer to byteorder to use 0=native;-1=LE,1=BE; updated on exit
+consumed = bytes consumed
 */
         /// Availability: >= 2.6
       PyObject* PyUnicode_DecodeUTF32Stateful(
-              const(char)*string,
+              const(char)*_string,
               Py_ssize_t length,
               const(char)*errors,
               int *byteorder,
@@ -1525,6 +1526,8 @@ Params:
             Py_ssize_t length,
             const(char)* errors);
 
+    version(Python_3_8_Or_Later) {
+    }else{
     /**
 Params:
     data = Unicode char buffer
@@ -1533,13 +1536,15 @@ Params:
     base64WhiteSpace = Encode whitespace (sp, ht, nl, cr) in base64
     errors = error handling
     */
+    /// Availability: < 3.8
     PyObject* PyUnicode_EncodeUTF7(
             Py_UNICODE* data,
             Py_ssize_t length,
-            int encodeSetO,
-            int encodeWhiteSpace,
+            int base64Set0,
+            int base64WhiteSpace,
             const(char)* errors
       );
+    }
 
     /// _
     PyObject* PyUnicode_DecodeUTF8(
@@ -1714,7 +1719,7 @@ errors = error handling
 
     /**
 Params:
-    data = Unicode char buffer
+    string = Unicode char buffer
     length = Number of Py_UNICODE chars to encode
     errors = error handling
     */
@@ -1860,6 +1865,7 @@ right = Right string
            (sets *pleft to NULL on error)
 Params:
 pleft = Pointer to left string
+right =
          */
         /// Availability: 3.*
         void PyUnicode_AppendAndDel(

@@ -103,6 +103,8 @@ class InterpContext {
 
 Params:
 python = a python expression
+file =
+line =
 Returns:
 the result of expression
      */
@@ -128,8 +130,11 @@ the result of expression
     /**
       Evaluate one or more python statements once.
 
-Params:
-python = python statements
+    Params:
+     python =
+     python = python statements
+     file = 
+     line =
      */
     void py_stmts(string python,
             string file = __FILE__,
@@ -167,7 +172,7 @@ python = python statements
 Wraps a python function (specified as a string) as a D function roughly of
 signature func_t
 
-Params:
+Template Parameters:
 python = a python function
 modl = context in which to run expression. must be a python module name.
 func_t = type of d function
@@ -222,8 +227,11 @@ ReturnType!func_t py_def( string python, string modl, func_t)
 Evaluate a python expression once and return the result.
 
 Params:
+python =
 python = a python expression
 modl = context in which to run expression. either a python module name, or "".
+file =
+line =
  +/
 T py_eval(T = PydObject)(string python, string modl = "", string file = __FILE__, size_t line = __LINE__) {
     debug assert(Py_IsInitialized(), "python not initialized");
@@ -256,8 +264,11 @@ T py_eval(T = PydObject)(string python, string modl = "", string file = __FILE__
 Evaluate one or more python statements once.
 
 Params:
+python =
 python = python statements
 modl = context in which to run expression. either a python module name, or "".
+file =
+line =
  +/
 void py_stmts(string python, string modl = "",string file = __FILE__, size_t line = __LINE__) {
     debug assert(Py_IsInitialized(), "python not initialized");

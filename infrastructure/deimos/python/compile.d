@@ -94,7 +94,11 @@ version(Python_2_5_Or_Later){
         }
         /**
 Params:
+mod =
 filename = decoded from the filesystem encoding
+flags =
+optimize =
+arena =
 */
         /// Availability: >= 3.2
         PyCodeObject* PyAST_CompileEx(

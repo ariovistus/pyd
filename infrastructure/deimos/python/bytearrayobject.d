@@ -3,7 +3,7 @@
  *
  * Type PyByteArrayObject represents a mutable array of bytes.
  * The Python API is that of a sequence;
- * the bytes are mapped to ints in [0, 256).
+ * the bytes are mapped to ints in [0, 256$(RPAREN).
  * Bytes are not characters; they may be used to encode characters.
  * The only way to go between bytes and str/unicode is via encoding
  * and decoding.

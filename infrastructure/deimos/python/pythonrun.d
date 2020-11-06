@@ -262,7 +262,7 @@ PyObject* PyRun_StringFlags(
         const(char)* str,
         int s,
         PyObject* g,
-        PyObject* g,
+        PyObject* l,
         PyCompilerFlags* flags);
 
 version(Python_2_5_Or_Later){

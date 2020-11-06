@@ -272,11 +272,11 @@ Params:
 fn = The member function to wrap.
 Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname),
 and fn_t.
-fn_t = The type of the function. It is only useful to specify this
+fn_t: The type of the function. It is only useful to specify this
        if more than one function has the same name as this one.
-pyname = The name of the function as it will appear in Python. Defaults to
+pyname: The name of the function as it will appear in Python. Defaults to
 fn's name in D
-docstring = The function's docstring. Defaults to "".
+docstring: The function's docstring. Defaults to "".
 */
 struct Def(alias fn, Options...) {
     alias Args!("","", __traits(identifier,fn), "",Options) args;
@@ -342,11 +342,11 @@ Params:
 fn = The member function to wrap.
 Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname),
 and fn_t
-fn_t = The type of the function. It is only useful to specify this
+fn_t: The type of the function. It is only useful to specify this
        if more than one function has the same name as this one.
-pyname = The name of the function as it will appear in Python. Defaults to fn's
+pyname: The name of the function as it will appear in Python. Defaults to fn's
 name in D.
-docstring = The function's docstring. Defaults to "".
+docstring: The function's docstring. Defaults to "".
 */
 struct StaticDef(alias fn, Options...) {
     alias Args!("","", __traits(identifier,fn), "",Options) args;
@@ -387,13 +387,13 @@ Params:
 fn = The property to wrap.
 Options = Optional parameters. Takes Docstring!(docstring), PyName!(pyname),
 and Mode!(mode)
-pyname = The name of the property as it will appear in Python. Defaults to
+pyname: The name of the property as it will appear in Python. Defaults to
 fn's name in D.
-mode = specifies whether this property is readable, writable. possible values
+mode: specifies whether this property is readable, writable. possible values
 are "r", "w", "rw", and "" (in the latter case, automatically determine which
 mode to use based on availability of getter and setter forms of fn). Defaults
 to "".
-docstring = The function's docstring. Defaults to "".
+docstring: The function's docstring. Defaults to "".
 */
 struct Property(alias fn, Options...) {
     alias Args!("","", __traits(identifier,fn), "",Options) args;
@@ -477,7 +477,7 @@ template _Property(alias fn, string pyname, string _mode, string docstring) {
 Wraps a method as the class's ___repr__ in Python.
 
 Params:
-fn = The property to wrap. Must have the signature string function().
+_fn = The property to wrap. Must have the signature string function().
 */
 struct Repr(alias _fn) {
     alias def_selector!(_fn, string function()).FN fn;
@@ -788,7 +788,7 @@ class_wrap!(Foo,
     OpAssign!("+"));
 ---
 Params:
-    op = Base operator to wrap
+    _op = Base operator to wrap
     rhs_t = (optional) Type of opOpAssign's parameter for disambiguation if
     there are multiple overloads.
 */
@@ -842,7 +842,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
   Wrap opCmp.
 
 Params:
-    rhs_t = (optional) Type of opCmp's parameter for disambiguation if there
+    _rhs_t = (optional) Type of opCmp's parameter for disambiguation if there
     are multiple overloads (for classes it will always be Object).
   */
 struct OpCompare(_rhs_t = Guess) {
@@ -1525,16 +1525,24 @@ where T is the type being wrapped, Shim is the wrapped type
 /**
   Wrap a class.
 
-Params:
+Parameters:
     T = The class being wrapped.
+    $(BR)
     Params = Mixture of definitions of members of T to be wrapped and
     optional arguments.
-    Concerning optional arguments, accepts PyName!(pyname), ModuleName!(modulename), and Docstring!(docstring).
-    pyname = The name of the class as it will appear in Python. Defaults to
+    $(BR)
+    Concerning optional arguments, accepts 
+    $(BR) 
+    PyName!(pyname)
+    The name of the class as it will appear in Python. Defaults to
     T's name in D
-    modulename = The name of the python module in which the wrapped class
+    $(BR)
+    ModuleName!(modulename):
+    The name of the python module in which the wrapped class
             resides. Defaults to "".
-    docstring = The class's docstring. Defaults to "".
+    $(BR)
+    Docstring!(docstring):
+    The class's docstring. Defaults to "".
   */
 void wrap_class(T, Params...)() {
     alias Args!("","", __traits(identifier,T), "",Params) args;
