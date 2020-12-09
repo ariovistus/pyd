@@ -21,10 +21,10 @@
 				"python2.7"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python27\\libs\\\""
@@ -57,10 +57,10 @@
 				"python3.3m"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python33\\libs\\\""
@@ -97,10 +97,10 @@
 				"python3.4m"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python34\\libs\\\""
@@ -138,10 +138,10 @@
 				"python3.5m"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python35\\libs\\\""
@@ -180,12 +180,12 @@
 				"python3.6m"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36\\libs\"\"",
-				"\"\"/LIBPATH:C:\\Program Files\\Python36\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36\\libs",
+				"/LIBPATH:C:\\Program Files\\Python36\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36-32\\libs\"\"",
-				"\"\"/LIBPATH:C:\\Program Files (x86)\\Python36-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36-32\\libs",
+				"/LIBPATH:C:\\Program Files (x86)\\Python36-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python36\\libs\\\"",
@@ -228,12 +228,12 @@
 				"python3.7m"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs\"\"",
-				"\"\"/LIBPATH:C:\\Program Files\\Python37\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs",
+				"/LIBPATH:C:\\Program Files\\Python37\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37-32\\libs\"\"",
-				"\"\"/LIBPATH:C:\\Program Files (x86)\\Python37-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37-32\\libs",
+				"/LIBPATH:C:\\Program Files (x86)\\Python37-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python37\\libs\\\"",
@@ -277,12 +277,12 @@
 				"python3.8"
 			],
 			"lflags-windows-x86_64-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python38\\libs\"\"",
-				"\"\"/LIBPATH:C:\\Program Files\\Python38\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python38\\libs",
+				"/LIBPATH:C:\\Program Files\\Python38\\libs"
 			],
 			"lflags-windows-x86-ldc": [
-				"\"\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python38-32\\libs\"\"",
-				"\"\"/LIBPATH:C:\\Program Files (x86)\\Python38-32\\libs\"\""
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python38-32\\libs",
+				"/LIBPATH:C:\\Program Files (x86)\\Python38-32\\libs"
 			],
 			"lflags-windows-x86_64-dmd": [
 				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python38\\libs\\\"",
@@ -330,7 +330,7 @@
 				"-L$PYD_LIBPYTHON_DIR"
 			],
 			"lflags-windows-ldc": [
-				"\"\"/LIBPATH:$PYD_LIBPYTHON_DIR\"\""
+				"/LIBPATH:$PYD_LIBPYTHON_DIR"
 			],
 			"lflags-windows-dmd": [
 				"\\\"/LIBPATH:$PYD_LIBPYTHON_DIR\\\""
