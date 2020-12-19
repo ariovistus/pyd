@@ -316,11 +316,11 @@ struct PyThreadState {
     version(Python_3_7_Or_Later) {
         int coroutine_origin_tracking_depth;
     }
-    version(Python_3_7_Or_Later) {
+    version(Python_3_8_Or_Later) {
     }else version(Python_3_5_Or_Later) {
-        /// Availability: >= 3.5
+        /// Availability: = 3.5 - 3.7
         PyObject* coroutine_wrapper;
-        /// Availability: >= 3.5
+        /// Availability: = 3.5 - 3.7
         int in_coroutine_wrapper;
     }
 
