@@ -360,7 +360,6 @@
 	],
 	"sourcePaths": [
 		"infrastructure/pyd/",
-		"infrastructure/deimos/",
-		"infrastructure/util/"
+		"infrastructure/deimos/"
 	]
 }
