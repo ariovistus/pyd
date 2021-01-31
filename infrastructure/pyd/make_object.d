@@ -52,6 +52,7 @@ import pyd.struct_wrap;
 import pyd.func_wrap;
 import pyd.def;
 import pyd.exception;
+import pyd.pytypes;
 
 
 shared static this() {
@@ -205,6 +206,8 @@ PyObject* d_to_python(T) (T t) {
         return d_bigint_to_python(t);
     } else static if(is(Unqual!T _unused : PydInputRange!E, E)) {
         return Py_INCREF(t.ptr);
+    } else static if(is(Unqual!T : Bytes)) {
+        return PyBytes_FromStringAndSize(t.data.ptr, t.data.length);
     } else static if(isSomeString!T) {
         return d_string_to_python(t);
     } else static if (isArray!(T)) {
@@ -557,7 +560,19 @@ T python_to_d(T) (PyObject* o) {
             }
         }
         return python_to_d_try_extends!T(o);
+    } else static if(is(Unqual!T : Bytes)) {
+        if(PyBytes_Check(o)) {
+            Bytes bytes;
+            char* ptr;
+            Py_ssize_t length;
+            PyBytes_AsStringAndSize(o, &ptr, &length);
+            bytes.data = ptr[0 .. length];
+            return bytes;
+        }else {
+            could_not_convert!(T)(o);
+        }
     } else static if (is(T == struct)) { // struct by value
+        
         // struct is wrapped
         if (is_wrapped!(T*) && PyObject_TypeCheck(o, &PydTypeObject!(T*))) {
             return *get_d_reference!(T*)(o);

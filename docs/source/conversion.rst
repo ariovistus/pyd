@@ -30,6 +30,7 @@ a wrapped struct                wrapped type
 pointer to wrapped struct       wrapped type
 PydObject                       wrapped object's type
 PyObject*                       object's type
+pyd.pytypes.Bytes               bytes
 ==============================  ======================
 
 
@@ -55,6 +56,7 @@ buffer                          dynamic or static array (with many dimensions!)
 datetime.date                   std.datetime.Date, std.datetime.DateTime, std.datetime.SysTime
 datetime.datetime               std.datetime.Date, std.datetime.DateTime, std.datetime.SysTime, std.datetime.Time
 datetime.time                   std.datetime.Time
+bytes                           string, char[], pyd.pytypes.Bytes
 ======================          ===============================================
 
 Numpy
