@@ -102,7 +102,7 @@ rop:
                         dgr(python_to_d!ROtherT(o1));
                         return Py_INCREF(Py_None());
                     } else {
-                        return d_to_python(dgr(python_to_d!LOtherT(o1)));
+                        return d_to_python(dgr(python_to_d!ROtherT(o1)));
                     }
                 }
         });

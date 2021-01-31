@@ -23,11 +23,13 @@ shared static this() {
             OpBinary!("^^"),
             OpBinaryRight!("in"),
             OpBinaryRight!("+"),
+            OpBinaryRight!("%", float),
             OpUnary!("+"),
             OpUnary!("~"),
             OpAssign!("+"),
             OpAssign!("%"),
             OpAssign!("^^"),
+            OpAssign!("/", float),
             OpIndex!(),
             OpIndexAssign!(),
             OpCompare!(),
@@ -118,11 +120,18 @@ class Bizzy {
         return i + 4;
     }
 
-    void opOpAssign(string op)(int i) {
+    float opBinaryRight(string op)(float i) if(op == "%") {
+        return i + 4.0;
+    }
+
+    void opOpAssign(string op)(int i) if (op != "/") {
         static if(op == "+") _m = i + 22;
         else static if(op == "%") _m = i + 33;
         else static if(op == "^^") _m = i + 44;
         else static assert(0);
+    }
+
+    void opOpAssign(string op)(float i) if(op == "/") {
     }
 
     int opUnary(string op)() {

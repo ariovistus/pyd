@@ -686,7 +686,7 @@ struct BinaryOperatorX(string _op, bool isR, rhs_t) {
             static if(!is(rhs_t == Guess))
                 static assert(is(RHS_T == rhs_t),
                         format("expected typeof(rhs) = %s, found %s",
-                            rhs.stringof, RHS_T.stringof));
+                            rhs_t.stringof, RHS_T.stringof));
         }else static if(is(rhs_t == Guess)) {
             static assert(false,
                     format("Operator %s: Cannot determine type of rhs", op));
@@ -798,6 +798,8 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
     enum bool needs_shim = false;
 
     template Inner(C) {
+        import std.string: format;
+
         enum string OP = op;
         static if(!__traits(hasMember, C, "opOpAssign")) {
             static assert(0, C.stringof ~ " has no operator assignment overloads");
@@ -809,7 +811,7 @@ struct OpAssign(string _op, rhs_t = Guess) if(IsPyAsg(_op)) {
             static if(!is(rhs_t == Guess))
                 static assert(is(RHS_T == rhs_t),
                         format("expected typeof(rhs) = %s, found %s",
-                            rhs.stringof, RHS_T.stringof));
+                            rhs_t.stringof, RHS_T.stringof));
         }else static if(is(rhs_t == Guess)) {
             static assert(false, "Cannot determine type of rhs");
         } else static if(is(typeof(C.opOpAssign!(_op,rhs_t)) == function)) {
