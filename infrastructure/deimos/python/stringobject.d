@@ -162,7 +162,7 @@ PyObject* PyString_AsDecodedObject(PyObject* str, const(char)* encoding, const(c
 // omitted.
 
 /// Availability: 2.*
-int PyString_AsStringAndSize(PyObject* obj, char** s, int* len);
+int PyString_AsStringAndSize(PyObject* obj, char** s, Py_ssize_t* len);
 
 version(Python_2_6_Or_Later){
     /** Using the current locale, insert the thousands grouping

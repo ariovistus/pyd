@@ -1,4 +1,5 @@
 import pyd.pyd, pyd.embedded;
+import pyd.pytypes;
 import std.traits;
 import std.functional;
 import std.range;
@@ -216,6 +217,18 @@ unittest {
 }
 }
 
+// bytes tests
+unittest {
+    auto context = new InterpContext();
+    context.py_stmts(
+            "a = b'a\\xFF\\xFFdefg'\n");
+    auto a = context.py_eval!(char[])("a");
+    context.b = pyd.pytypes.Bytes(a);
+    context.py_stmts("assert(type(b) == bytes)");
+    auto c = context.py_eval!(pyd.pytypes.Bytes)("b");
+    context.d = "tacos";
+    assert(cantconvert(context.py_eval!(pyd.pytypes.Bytes)("d")));
+}
 
 // test arbirary ranges
 unittest{

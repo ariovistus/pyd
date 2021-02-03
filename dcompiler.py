@@ -72,6 +72,7 @@ _pydFiles = [
     'make_wrapper.d',
     'op_wrap.d',
     'pyd.d',
+    'pytypes.d',
     'pydobject.d',
     'references.d',
     'struct_wrap.d',
