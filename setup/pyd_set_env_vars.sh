@@ -1,22 +1,25 @@
-main() {
+#!/===you-must-source-this-script===/
+
+main_b97532fa() {
 	if [ -v BASH_SOURCE ]; then
-		local -r THIS=${BASH_SOURCE[0]}
+		local THIS=${BASH_SOURCE[0]}
 	elif [ -v ZSH_VERSION ]; then
-		local -r THIS=${(%):-%x}
+		local THIS=${(%):-%x}
 	else
-		local -r THIS=$0
+		local THIS=$0
 	fi
 
-	local -r THISDIR=$( cd $(dirname $THIS) > /dev/null ; pwd -P )
+	local THISDIR
+	THISDIR=$( cd "$(dirname "$THIS")" > /dev/null ; pwd -P ) || return 1
 
-	if [ -z $1 ]; then
+	if [ $# -eq 0 ]; then
 		echo 'python interpreter not specified, using "python"'
-		local -r PYD_PYTHON=python
+		local PYD_PYTHON=python
 	else
-		local -r PYD_PYTHON=$1
+		local PYD_PYTHON=$1
 	fi
 
-	eval $($PYD_PYTHON $THISDIR/pyd_get_env_set_text.py)
+	eval "$($PYD_PYTHON "$THISDIR"/pyd_get_env_set_text.py)"
 }
 
-main
+main_b97532fa "$@"
