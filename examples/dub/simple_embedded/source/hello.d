@@ -16,8 +16,8 @@ void main() {
        So we have this kind of compromise where no parameters are treated as obj.property and
        presence of parameters are treated as a method call.
      */
-    auto hm = c.__hash__;      // return <method-wrapper '__hash__' of complex object at 0x7fa8c49897d0>
-    auto hr = c.__hash__()();  // return the result of the function call.
+    auto hm = c.conjugate;      // return <method-wrapper 'conjugate' of complex object at 0x7fa8c49897d0>
+    auto hr = c.conjugate()();  // return the result of the function call.
     writeln(c);
     writeln(hm);
     writeln(hr);
