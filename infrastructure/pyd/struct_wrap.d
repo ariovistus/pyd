@@ -112,6 +112,9 @@ struct Member(string name, Options...) {
 
 template _Member(string realname, string pyname, string mode, string docstring, parts...) {
     static const bool needs_shim = false;
+    template shim(size_t i, T) {
+        enum shim = "";
+    }
     static void call(string classname, T) () {
         import std.algorithm: countUntil;
 
