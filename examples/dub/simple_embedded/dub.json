@@ -6,9 +6,13 @@
         "targetType": "executable",
         "dflags-posix-dmd": ["-defaultlib=libphobos2.so"],
 	"dependencies": {
-            "pyd": "~>0.13.0",
+            "pyd": "~>0.14.0",
 	},
         "subConfigurations": {
-            "pyd": "python27",
-        }
+            "pyd": "python38",
+        },
+	"lflags-linux": [
+		"-L/home/zhou/anaconda3/lib",
+		"-lpython3.8"
+	]
 }
