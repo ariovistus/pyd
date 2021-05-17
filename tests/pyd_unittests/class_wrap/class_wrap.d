@@ -16,6 +16,7 @@ shared static this() {
             Def!(Bizzy.a, int function(double)),
             StaticDef!(Bizzy.b, int function(double)),
             Repr!(Bizzy.repr),
+            Member!("k"),
             Property!(Bizzy.m, Mode!"r"),
             OpBinary!("+"),
             OpBinary!("*"),
@@ -80,6 +81,7 @@ shared static this() {
 
 class Bizzy {
     int _m;
+    int k;
 
     int m() { return _m; }
 
