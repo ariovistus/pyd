@@ -22,7 +22,7 @@ import std.exception: enforce;
 import std.algorithm: find, swap, copy, fill, max, startsWith, moveAll;
 import std.algorithm: move, sort, map;
 import std.traits: isImplicitlyConvertible, isDynamicArray;
-import pyd.util.replace: Replace;
+import replace: Replace;
 import std.typetuple: TypeTuple, staticMap, NoDuplicates, staticIndexOf, allSatisfy;
 import std.functional: unaryFun, binaryFun;
 import std.string: format;
@@ -169,7 +169,7 @@ bidirectional range
             void popFront()
             in{
                 assert(_front !is _front.index!N.next);
-            }body{
+            }do{
                 _front = _front.index!N.next;
             }
 
@@ -196,7 +196,7 @@ bidirectional range
                             format("node.prev = %x",node.index!N.prev));
                     assert(node.index!N.next is null,
                             format("node.next = %x",node.index!N.next));
-                }body{
+                }do{
                     typeof(this)* n = next;
                     next = node;
                     node.index!N.prev = &this;
@@ -214,7 +214,7 @@ bidirectional range
                             format("node.prev = %x",node.index!N.prev));
                     assert(node.index!N.next is null,
                             format("node.next = %x",node.index!N.next));
-                }body{
+                }do{
                     typeof(this)* p = prev;
                     if(p !is null) p.index!N.next = node;
                     node.index!N.prev = p;
@@ -228,7 +228,7 @@ bidirectional range
             typeof(this)* removeNext() nothrow
                 in{
                     assert(next);
-                }body{
+                }do{
                     typeof(this)* n = next, nn = n.index!N.next;
                     next = nn;
                     if(nn) nn.index!N.prev = &this;
@@ -242,7 +242,7 @@ bidirectional range
             typeof(this)* removePrev() nothrow
                 in{
                     assert(prev);
-                }body{
+                }do{
                     typeof(this)* p = prev, pp = p.index!N.prev;
                     prev = pp;
                     if(pp) pp.index!N.next = &this;
@@ -360,7 +360,7 @@ Complexity: $(BIGOH 1)
                     assert(moveme.front.node);
                     assert(tohere.front.node);
                 }
-            }body{
+            }do{
                 static if(is(PosRange == SeqRange)) {
                     ThisNode* m = moveme.front_node;
                     ThisNode* n = tohere.front_node;
@@ -394,7 +394,7 @@ Complexity: $(BIGOH 1)
                     assert(moveme.back.node);
                     assert(tohere.back.node);
                 }
-            }body{
+            }do{
                 static if(is(PosRange == SeqRange)) {
                     ThisNode* m = moveme.back_node;
                     ThisNode* n = tohere.back_node;
@@ -439,7 +439,7 @@ Complexity: ??
                     assert(node !is null);
                     assert(node.index!N.prev is null);
                     assert(node.index!N.next is null);
-                }body{
+                }do{
                     if(_front is null){
                         debug assert(_back is null);
                         _front = _back = node;
@@ -456,7 +456,7 @@ Complexity: ??
             bool _insertBack(ThisNode* node) nothrow
                 in{
                     debug assert (node !is null);
-                }body{
+                }do{
                     if(_front is null){
                         debug assert(_back is null);
                         _front = _back = node;
@@ -570,7 +570,7 @@ Forwards to insertBack
                 in{
                     assert(_back !is null);
                     assert(_front !is null);
-                }body{
+                }do{
                     ThisNode* n = _front;
                     if(_back == _front){
                         _back = _front = null;
@@ -1246,7 +1246,7 @@ version(PtrHackery){
         {
             assert(_left !is null);
         }
-    body
+    do
     {
         // sets _left._parent also
         if(isLeftNode)
@@ -1289,7 +1289,7 @@ version(PtrHackery){
         {
             assert(_right !is null);
         }
-    body
+    do
     {
         // sets _right._parent also
         if(isLeftNode)
@@ -1318,7 +1318,7 @@ version(PtrHackery){
         {
             assert(_parent !is null);
         }
-    body
+    do
     {
         return _parent.index!N._left is &this;
     }
@@ -1654,7 +1654,7 @@ version(PtrHackery){
     in{
         debug assert( &this !is this.index!N.parentmost.index!N.rightmost,
             "calling prev on _end.rightmost");
-    }body{
+    }do{
         auto n = &this;
         if(n.index!N.right is null)
         {
@@ -1676,7 +1676,7 @@ version(PtrHackery){
     in{
         debug assert( &this !is this.index!N.parentmost.index!N.leftmost,
             "calling prev on _end.leftmost");
-    }body{
+    }do{
         auto n = &this;
         if(n.index!N.left is null)
         {
@@ -2122,7 +2122,7 @@ Complexity: ??
     void _FixPosition(ThisNode* node, KeyType oldPosition, ThisNode* cursor)
         out{
             version(RBDoChecks) _Check();
-        }body{
+        }do{
         static if(allowDuplicates){
             if(cursor){
                 _Remove(node);
@@ -2149,7 +2149,7 @@ Complexity: ??
     bool _NotifyChange(Node node)
     out(r){
         _Check();
-    }body{
+    }do{
         auto newPosition = key(node.value);
         Node next = _end.index!N.rightmost is node ? null : node.index!N.next;
         Node prev = _end.index!N.leftmost  is node ? null : node.index!N.prev;
@@ -2196,7 +2196,7 @@ Complexity: ??
         if (isImplicitlyConvertible!(Stuff, Elem))
         out(r){
             version(RBDoChecks) _Check();
-        }body{
+        }do{
             static if(!allowDuplicates){
                 Node p;
                 if(_find2(key(stuff),p)){
@@ -2223,7 +2223,7 @@ Complexity: ??
                 isImplicitlyConvertible!(ElementType!Stuff, Elem))
         out(r){
             version(RBDoChecks) _Check();
-        }body{
+        }do{
             size_t result = 0;
             foreach(e; stuff)
             {
@@ -2235,7 +2235,7 @@ Complexity: ??
     Node _Remove(Node n)
     out(r){
         version(RBDoChecks) _Check();
-    }body{
+    }do{
         return n.index!N.remove(_end);
     }
 
@@ -2285,7 +2285,7 @@ Complexity: ??
        is(ElementType!R == Position!ThisNode))
     out(r2){
         version(RBDoChecks) _Check();
-    }body{
+    }do{
         while(!r.empty) {
             static if(is(R == OrderedRange)) {
                 auto node = r.front_node;
@@ -2324,7 +2324,7 @@ Complexity: ??
     if(allSatisfy!(implicitlyConverts,Keys))
     out(r){
         version(RBDoChecks) _Check();
-    }body{
+    }do{
         // stack allocation - is ok
         Unqual!KeyType[Keys.length] toRemove;
         foreach(i,k; keys) {
@@ -2339,7 +2339,7 @@ Complexity: ??
     if(isImplicitlyConvertible!(Key, KeyType))
     out(r){
         version(RBDoChecks) _Check();
-    }body{
+    }do{
         size_t count = 0;
 
         foreach(k; keys)
@@ -2366,7 +2366,7 @@ Complexity: ??
             !isDynamicArray!Stuff)
     out(r){
         version(RBDoChecks) _Check();
-    }body{
+    }do{
         //We use array in case stuff is a Range from this RedBlackTree - either
         //directly or indirectly.
 
@@ -2593,7 +2593,7 @@ Complexity: $(BIGOH log(n))
         else assert(_less(lower,upper),
                 format("nonsensical bounds %s%s,%s%s",
                     boundaries[0], lower, upper, boundaries[1]));
-    }body{
+    }do{
         static if(boundaries[0] == '[') {
             auto n_lower = _firstGreaterEqual(lower);
         }else static if(boundaries[0] == '('){
@@ -2618,7 +2618,7 @@ Complexity: $(BIGOH log(n))
         else assert(CompatibleLess.cc_less(lower,upper),
                 format("nonsensical bounds %s%s,%s%s",
                     boundaries[0], lower, upper, boundaries[1]));
-    }body{
+    }do{
         static if(boundaries[0] == '[') {
             auto n_lower = _firstGreaterEqual!CompatibleLess(lower);
         }else static if(boundaries[0] == '('){
@@ -3924,7 +3924,7 @@ $(BIGOH n + n $(SUB k)) for this index ($(BIGOH n $(SUB k)) on a good day)
             if(isImplicitlyConvertible!(Key, KeyType))
             out(r){
                 version(RBDoChecks) _Check();
-            }body{
+            }do{
                 ThisNode* node;
                 size_t index;
                 size_t count = 0;
