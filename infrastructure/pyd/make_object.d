@@ -1186,7 +1186,7 @@ struct RangeWrapper {
     bool delegate() empty;
     TypeInfo tid;
 
-    RangeWrapper* iter() return {
+    RangeWrapper* iter() {
         return &this;
     }
     PyObject* next() {
