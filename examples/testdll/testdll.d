@@ -167,6 +167,7 @@ extern(C) void PydMain() {
     module_init();
     wrap_class!(
         Foo,
+        Member!("m_i", Mode!"rw"),
         PyName!"Foo",
         Docstring!"A sample class.",
         Init!(int),
