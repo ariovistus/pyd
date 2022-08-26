@@ -361,6 +361,58 @@
 			]
 		},
 		{
+			"name": "python310",
+			"libs-windows-x86-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python310_digitalmars"
+			],
+			"libs-windows-x86_mscoff": [
+				"python310"
+			],
+			"libs-windows-x86-ldc": [
+				"python310"
+			],
+			"libs-windows-x86_64": [
+				"python310"
+			],
+			"libs-posix": [
+				"python3.10"
+			],
+			"lflags-windows-x86_64-ldc": [
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python310\\libs",
+				"/LIBPATH:C:\\Program Files\\Python310\\libs"
+			],
+			"lflags-windows-x86-ldc": [
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python310-32\\libs",
+				"/LIBPATH:C:\\Program Files (x86)\\Python310-32\\libs"
+			],
+			"lflags-windows-x86_64-dmd": [
+				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python310\\libs\\\"",
+				"\\\"/LIBPATH:C:\\Program Files\\Python310\\libs\\\""
+			],
+			"lflags-windows-x86_mscoff-dmd": [
+				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python310-32\\libs\\\"",
+				"\\\"/LIBPATH:C:\\Program Files (x86)\\Python310-32\\libs\\\""
+			],
+
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later",
+				"Python_3_4_Or_Later",
+				"Python_3_5_Or_Later",
+				"Python_3_6_Or_Later",
+				"Python_3_7_Or_Later",
+				"Python_3_8_Or_Later",
+				"Python_3_9_Or_Later",
+				"Python_3_10_Or_Later"
+			]
+		},
+		{
 			"name": "env",
 			"versions": [
 				"$PYD_D_VERSION_1",
