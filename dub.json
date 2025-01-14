@@ -466,6 +466,115 @@
 			]
 		},
 		{
+			"name": "python312",
+			"libs-windows-x86-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python312_digitalmars"
+			],
+			"libs-windows-x86_mscoff": [
+				"python312"
+			],
+			"libs-windows-x86-ldc": [
+				"python312"
+			],
+			"libs-windows-x86_64": [
+				"python312"
+			],
+			"libs-posix": [
+				"python3.12"
+			],
+			"lflags-windows-x86_64-ldc": [
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python312\\libs",
+				"/LIBPATH:C:\\Program Files\\Python312\\libs"
+			],
+			"lflags-windows-x86-ldc": [
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python312-32\\libs",
+				"/LIBPATH:C:\\Program Files (x86)\\Python312-32\\libs"
+			],
+			"lflags-windows-x86_64-dmd": [
+				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python312\\libs\\\"",
+				"\\\"/LIBPATH:C:\\Program Files\\Python312\\libs\\\""
+			],
+			"lflags-windows-x86_mscoff-dmd": [
+				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python312-32\\libs\\\"",
+				"\\\"/LIBPATH:C:\\Program Files (x86)\\Python312-32\\libs\\\""
+			],
+
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later",
+				"Python_3_4_Or_Later",
+				"Python_3_5_Or_Later",
+				"Python_3_6_Or_Later",
+				"Python_3_7_Or_Later",
+				"Python_3_8_Or_Later",
+				"Python_3_9_Or_Later",
+				"Python_3_10_Or_Later",
+				"Python_3_11_Or_Later",
+				"Python_3_12_Or_Later"
+			]
+		},
+		{
+			"name": "python313",
+			"libs-windows-x86-dmd": [
+				"$PYD_PACKAGE_DIR\\infrastructure\\windows\\python313_digitalmars"
+			],
+			"libs-windows-x86_mscoff": [
+				"python313"
+			],
+			"libs-windows-x86-ldc": [
+				"python313"
+			],
+			"libs-windows-x86_64": [
+				"python313"
+			],
+			"libs-posix": [
+				"python3.13"
+			],
+			"lflags-windows-x86_64-ldc": [
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python313\\libs",
+				"/LIBPATH:C:\\Program Files\\Python313\\libs"
+			],
+			"lflags-windows-x86-ldc": [
+				"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python313-32\\libs",
+				"/LIBPATH:C:\\Program Files (x86)\\Python313-32\\libs"
+			],
+			"lflags-windows-x86_64-dmd": [
+				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python313\\libs\\\"",
+				"\\\"/LIBPATH:C:\\Program Files\\Python313\\libs\\\""
+			],
+			"lflags-windows-x86_mscoff-dmd": [
+				"\\\"/LIBPATH:$USERPROFILE\\AppData\\Local\\Programs\\Python\\Python313-32\\libs\\\"",
+				"\\\"/LIBPATH:C:\\Program Files (x86)\\Python313-32\\libs\\\""
+			],
+
+			"versions": [
+				"Python_2_4_Or_Later",
+				"Python_2_5_Or_Later",
+				"Python_2_6_Or_Later",
+				"Python_2_7_Or_Later",
+				"Python_3_0_Or_Later",
+				"Python_3_1_Or_Later",
+				"Python_3_2_Or_Later",
+				"Python_3_3_Or_Later",
+				"Python_3_4_Or_Later",
+				"Python_3_5_Or_Later",
+				"Python_3_6_Or_Later",
+				"Python_3_7_Or_Later",
+				"Python_3_8_Or_Later",
+				"Python_3_9_Or_Later",
+				"Python_3_10_Or_Later",
+				"Python_3_11_Or_Later",
+				"Python_3_12_Or_Later",
+				"Python_3_13_Or_Later"
+			]
+		},
+		{
 			"name": "env",
 			"versions": [
 				"$PYD_D_VERSION_1",
