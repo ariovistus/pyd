@@ -120,6 +120,12 @@ template IsAllocator(T) {
         is(typeof(T.deallocate!int((int*).init)) == void);
 }
 
+auto noThrowFormat(Args...)(string pattern, Args args) nothrow {
+    try return format(pattern, args);
+    catch (Exception e) { assert(0,e.msg); }
+}
+
+
 /// A doubly linked list index.
 template Sequenced() {
     // no memory allocations occur within this index.
@@ -190,9 +196,9 @@ bidirectional range
             void insertNext(typeof(this)* node) nothrow
             in (node !is null)
             in (node.index!N.prev is null,
-                    format("node.prev = %x", node.index!N.prev))
+                    noThrowFormat("node.prev = %x", node.index!N.prev))
             in (node.index!N.next is null,
-                    format("node.next = %x", node.index!N.next))
+                    noThrowFormat("node.next = %x", node.index!N.next))
             {
                 typeof(this)* n = next;
                 next = node;
@@ -207,9 +213,9 @@ bidirectional range
             void insertPrev(typeof(this)* node) nothrow
             in (node !is null)
             in (node.index!N.prev is null,
-                    format("node.prev = %x", node.index!N.prev))
+                    noThrowFormat("node.prev = %x", node.index!N.prev))
             in (node.index!N.next is null,
-                    format("node.next = %x", node.index!N.next))
+                    noThrowFormat("node.next = %x", node.index!N.next))
             {
                 typeof(this)* p = prev;
                 if(p !is null) p.index!N.next = node;
